@@ -89,8 +89,8 @@ results/qwen2.5-7b-megatron-experiment/
 
 `summary.json`에서 다음을 확인합니다.
 
-- `checkpoint_reload_verified`가 `true`인지 확인합니다.
-- `tuned_eval_loss`와 `tuned_perplexity`가 대응하는 base 값보다 낮은지 비교합니다.
+- `validation.checkpoint_reload_verified`가 `true`인지 확인합니다.
+- `quality.tuned_eval_loss`와 `quality.tuned_perplexity`가 대응하는 base 값보다 낮은지 비교합니다.
 - 세 log에 `nan`, 무한대, checkpoint load 오류가 없는지 확인합니다.
 
 ```bash
@@ -98,6 +98,8 @@ results/qwen2.5-7b-megatron-experiment/
 ```
 
 짧은 subset과 5 step에서의 loss 변화는 workflow 검증 신호일 뿐, 일반적인 모델 품질이나 cluster-scale 성능을 의미하지 않습니다.
+
+`summary.json`은 `schema_version: 1`과 `configuration`, `environment`, `quality`, `performance`, `artifacts`, `validation` section을 사용합니다. 현재 Megatron workflow는 안정적으로 추출하는 performance metric이 없으므로 `performance`는 빈 object로 기록합니다.
 
 ## CPU-only Concept Exercise
 
@@ -118,6 +120,7 @@ GPU 초기화, checkpoint download, NCCL 통신 없이 Bridge recipe와 논리�
 - `megatron_lab/preflight.py`: GPU, dependency, input path 검사
 - `megatron_lab/inspect_recipe.py`: GPU 초기화 없는 recipe 요약
 - `megatron_lab/parallelism.py`: TP/PP/CP/DP rank group simulation
+- `run_summary.py`: framework 공통 summary schema
 - `scripts/run_experiment.sh`: end-to-end experiment orchestration
 - `tests/`: data, log parsing, rank layout의 CPU unit tests
 
