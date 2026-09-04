@@ -30,7 +30,7 @@
 | Optimizer steps | 20 |
 | Learning rate | `2e-4`, cosine schedule, warmup ratio 0.1 |
 
-로컬 cache를 재사용한 명령은 다음과 같습니다. 일반 실행에서는 `--dataset-parquet-dir`와 `--local-files-only`를 생략할 수 있습니다.
+`scripts/setup.sh`로 준비한 로컬 dataset과 model cache를 재사용해 실행한 명령은 다음과 같습니다. `run_smoke.sh`는 이 dataset 옵션을 자동으로 전달합니다.
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \

@@ -33,7 +33,7 @@
 
 ## Dataset
 
-`setup.sh`는 의존성을 설치한 뒤 필요한 UltraChat SFT parquet split만 `data/ultrachat_200k/data`에 미리 내려받습니다. 이 경로는 Git에서 제외되며, 이후 smoke run은 dataset을 네트워크로 내려받지 않습니다.
+`setup.sh`는 의존성을 설치한 뒤 필요한 UltraChat SFT parquet split만 `data/ultrachat_200k/data`에 미리 내려받습니다. 이후 smoke run은 이 로컬 dataset을 사용합니다.
 
 다른 디스크에 저장하려면 setup 시작 시 경로를 지정합니다.
 
@@ -54,6 +54,56 @@ TRAIN_SAMPLES=128 EVAL_SAMPLES=32 MAX_STEPS=20 OUTPUT_DIR=results/qwen2.5-14b-ql
 ```
 
 `run_smoke.sh`는 기본 경로를 사용합니다. 다른 경로를 사용했다면 `DATASET_PARQUET_DIR=/mnt/datasets/ultrachat_200k/data ./scripts/run_smoke.sh`처럼 지정합니다.
+
+## What Happens During a Run
+
+`run_smoke.sh`는 다음 순서로 실행됩니다.
+
+1. 로컬 UltraChat의 train/evaluation subset을 읽고, Qwen2.5-14B-Instruct와 tokenizer를 준비합니다.
+2. 학습 전 base model의 held-out loss와 고정 prompt 두 개의 응답을 측정합니다.
+3. NF4 4-bit base model 위에서 LoRA adapter만 학습합니다. 콘솔의 `loss`, `grad_norm`, `learning_rate`는 이 단계의 optimizer log입니다.
+4. 같은 held-out subset으로 tuned model을 다시 평가하고, 같은 prompt의 응답을 생성합니다.
+5. adapter, 마지막 checkpoint, 환경·품질·성능·생성 결과를 output directory에 저장합니다.
+
+## Console Log Guide
+
+| Console output | Meaning |
+| --- | --- |
+| `Loading checkpoint shards` progress | Qwen base model weight를 GPU에 준비하는 단계입니다. 처음에는 시간이 걸리고 GPU memory가 증가합니다. |
+| `Filter` 또는 `Map` progress | UltraChat 대화를 검사하고 chat template와 assistant-only label을 준비하는 단계입니다. |
+| `{'loss': ..., 'grad_norm': ..., 'learning_rate': ..., 'epoch': ...}` | 한 optimizer step의 학습 log입니다. `loss`는 해당 batch의 loss, `grad_norm`은 gradient 크기, `learning_rate`는 현재 cosine schedule의 learning rate입니다. |
+| `{'train_runtime': ..., 'train_steps_per_second': ..., 'train_loss': ...}` | 학습 loop가 끝난 뒤의 처리 시간과 평균 training loss입니다. |
+| 마지막 JSON object | 저장된 `summary.json`과 같은 내용입니다. 학습 전후 평가, generation, 성능, 환경 정보를 확인합니다. |
+
+새 스크립트로 실행했다면 `train_gen-*.parquet` 다운로드 progress는 나타나지 않아야 합니다. 그 출력이 다시 보이면 이전 버전의 `run_smoke.sh`가 실행 중이거나 `sft_lab.train`을 직접 실행한 경우입니다.
+
+## Did Training Work?
+
+| Signal | What to check | Interpretation |
+| --- | --- | --- |
+| Held-out loss | `tuned_eval_loss < base_eval_loss` | 이 실습에서 학습 성공을 판단하는 주 지표입니다. 같은 평가 subset에서 낮아져야 합니다. |
+| `loss_change_percent` | 음수 | held-out loss의 상대 변화입니다. 예를 들어 `-20`은 loss가 20% 감소했다는 뜻입니다. |
+| Perplexity | `tuned_perplexity < base_perplexity` | loss를 사람이 비교하기 쉽게 변환한 보조 지표입니다. loss와 같은 방향으로 감소해야 합니다. |
+| Step `loss` | 큰 폭의 발산이나 `nan` 없음 | batch마다 달라 단조 감소하지 않아도 됩니다. 학습 안정성 확인용이지 최종 품질 지표는 아닙니다. |
+| `grad_norm` | 유한한 값으로 유지 | `nan` 또는 계속 커지는 값은 수치 불안정 가능성을 알립니다. 품질 향상을 직접 뜻하지는 않습니다. |
+| Base/tuned generation | 고정 prompt의 응답 비교 | 형식·완결성의 정성 확인입니다. 두 예시만으로 일반화 품질을 결론내릴 수는 없습니다. |
+
+따라서 완료된 run은 held-out loss 감소, 유한한 training log, adapter 저장과 재로딩 성공을 함께 확인합니다. 기본 5-step smoke run은 경로 검증용이며, 품질 경향은 20-step 예시와 [reproduced result](docs/reproduced-result.md)처럼 더 큰 subset에서 판단합니다.
+
+## Read the Result
+
+학습 중 출력되는 각 step의 `loss`는 서로 다른 batch에서 계산되므로 항상 감소할 필요는 없습니다. 학습 전후를 판단할 때는 완료 시 출력되는 `base_eval_loss`와 `tuned_eval_loss`를 비교합니다.
+
+```bash
+.venv/bin/python -m json.tool results/qwen2.5-14b-qlora-smoke/summary.json
+```
+
+`summary.json`에서 다음 항목을 확인합니다.
+
+- `quality.base_eval_loss`와 `quality.tuned_eval_loss`: 같은 held-out assistant token의 loss입니다. tuned 값이 낮으면 이 subset에 대한 optimization이 진행됐다는 뜻입니다.
+- `quality.loss_change_percent`, `base_perplexity`, `tuned_perplexity`: 학습 전후 품질 차이를 보조적으로 보여줍니다.
+- `performance`: 학습 시간, optimizer step/s, sample/s, 최고 GPU 할당 메모리입니다.
+- `generations.base`와 `generations.tuned`: 고정 prompt에 대한 학습 전후 응답 비교입니다. 정성 확인용이며 loss보다 강한 품질 근거는 아닙니다.
 
 ## Outputs
 
