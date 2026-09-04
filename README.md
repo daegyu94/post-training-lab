@@ -35,7 +35,10 @@
 `examples/observability/targets/*.json`의 예시 주소를 실제 compute node 주소로 바꾼 후 다음을 실행합니다.
 
 ```bash
+./scripts/setup.sh
 cd examples/observability
+export GRAFANA_ADMIN_PASSWORD=<strong-password>
+docker compose config
 docker compose up -d
 ```
 
@@ -50,3 +53,12 @@ Prometheus는 `http://<monitoring-host>:9090`, Grafana는 `http://<monitoring-ho
 - `profiling_lab/schema.py`: metric schema validation
 
 이 저장소는 Megatron, verl, Ray 또는 exporter 자체를 재구현하지 않습니다. workload별 adapter는 framework가 이미 제공하는 timer와 metric을 재사용하고, 없는 semantic signal만 얇게 추가하는 것을 원칙으로 합니다.
+
+## Validate the Repository
+
+GPU나 exporter 없이 Python helper, metric schema, shell script syntax를 확인할 수 있습니다.
+
+```bash
+.venv/bin/python -m pytest -q
+bash -n scripts/*.sh
+```
