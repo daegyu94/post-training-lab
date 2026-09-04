@@ -1,1 +1,1 @@
-"""Small Megatron Core exercises for local and simulated topologies."""
+"""Qwen2.5 supervised fine-tuning with Megatron Bridge."""

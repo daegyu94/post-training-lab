@@ -1,109 +1,171 @@
-# Megatron Core Lab
+# Megatron Bridge Qwen2.5 SFT Lab
 
-이 브랜치는 작은 GPT와 mock token을 사용해 Megatron Core의 model-parallel process group과 tensor/data parallel 동작을 직접 확인하는 독립 실습입니다. 큰 model이나 실제 corpus가 없어도 single GPU와 single-host multi-GPU에서 core API를 실행할 수 있고, multi-node topology는 GPU cluster 없이 검증할 수 있습니다.
+이 브랜치는 Megatron Bridge로 `Qwen/Qwen2.5-14B-Instruct`를 `HuggingFaceH4/ultrachat_200k`에 LoRA fine-tuning하는 SFT 예제만 포함합니다.
+UltraChat의 `train_sft`와 `test_sft`를 분리하고, assistant token에만 loss를 적용합니다.
 
-## 먼저 알아둘 점: Megatron Core와 Megatron-LM
+## 검증 범위
 
-이 저장소는 **Megatron Core**를 사용하는 입문 실습입니다. Megatron Core는 GPT layer, TP/DP process group, 병렬 linear layer처럼 다른 학습 프로그램에서 재사용할 수 있는 라이브러리입니다. 이 실습의 `megatron_lab/train.py`도 `megatron.core.models.gpt.GPTModel`과 `megatron.core.parallel_state`만 직접 가져옵니다.
+실제 학습 launcher는 `CUDA_VISIBLE_DEVICES`로 GPU 한 장만 노출합니다.
+학습 전 held-out loss, optimizer step, 학습 후 같은 held-out loss, native Megatron checkpoint의 새 프로세스 재로딩을 순서대로 검증합니다.
+TP와 DP는 실제 GPU를 점유하지 않고 rank topology만 시뮬레이션합니다.
 
-**Megatron-LM**은 Megatron Core 위에 만든 더 큰 학습 애플리케이션입니다. 실제 데이터셋 읽기, 수많은 학습 옵션, checkpoint, 재시작, 대규모 launcher recipe와 `pretrain_gpt.py` 같은 실행 진입점까지 포함합니다.
+현재 장비의 GPU는 장당 24GiB입니다.
+Megatron Bridge의 14B LoRA는 quantized base model을 사용하지 않으므로 이 장비의 단일 GPU에는 들어가지 않습니다.
+스크립트는 최소 40GiB를 보수적인 시작 조건으로 검사하지만, 통과가 학습 성공을 보장하지는 않습니다.
+공식 recipe가 대상으로 하는 H100 80GiB급 GPU에서 실행하는 것을 권장합니다.
 
-| 지금 이 실습 | Megatron-LM 전체 학습 |
-| --- | --- |
-| 병렬화가 모델과 GPU에 어떤 일을 하는지 확인 | 대규모 데이터셋으로 모델을 오래 학습 |
-| 작은 mock batch와 2-layer GPT | 데이터 전처리, 설정 파일, checkpoint와 scheduler 필요 |
-| `megatron-core` 패키지만 설치 | Megatron-LM checkout/환경과 training recipe 필요 |
+## 1. 환경 설치
 
-따라서 Megatron-LM 설명이 적었던 것은 누락이 아니라 의도된 범위입니다. 처음부터 전체 training stack을 올리면 병렬화 자체보다 데이터와 환경 설정이 더 큰 장벽이 됩니다. 이 실습으로 TP/DP를 이해한 뒤 [Megatron-LM training examples](https://github.com/NVIDIA/Megatron-LM/blob/main/docs/user-guide/training-examples.md)의 `pretrain_gpt.py --mock-data`로 넘어가는 순서가 좋습니다.
-
-## 처음 실행하는 순서
-
-1. 저장소 최상위에서 `nvidia-smi`를 실행해 CUDA GPU가 보이는지 확인합니다. GPU가 없으면 topology simulation만 실행할 수 있습니다.
-2. `./scripts/setup.sh`를 실행합니다. 프로젝트 안의 `.venv`에 PyTorch, Megatron Core, pytest가 설치되고 이후 스크립트는 이 환경을 자동으로 사용합니다.
-3. GPU 없이 rank 배치를 먼저 확인하려면 `./scripts/simulate_multi_node.sh --nodes 1 --gpus-per-node 2 --tp 2 --pp 1`을 실행합니다. `world_size: 2`, `data_parallel: 1`, 두 rank의 `tp: 0`/`tp: 1`이 보이면 같은 모델의 tensor shard 둘을 뜻합니다. 실제 출력은 [topology console](docs/reproduced-result.md#topology-console-gpu-불필요)에 있습니다.
-4. 다음으로 `./scripts/run_single_gpu.sh --steps 20`을 실행합니다. `step=1 loss=...`부터 `step=20 loss=...`와 JSON summary가 출력되면 성공입니다. 정확히 같은 수치보다 마지막 loss가 처음보다 전반적으로 낮은지를 봅니다. GPU 0이 바쁘고 GPU 1이 비어 있다면 `CUDA_VISIBLE_DEVICES=1 ./scripts/run_single_gpu.sh --steps 20`을 사용합니다.
-5. 마지막으로 두 GPU가 모두 유휴일 때 DP와 TP 명령을 각각 실행합니다. DP는 모델 사본 둘의 gradient를 평균내고, TP는 한 model layer의 연산을 둘로 나눠 collective 통신합니다.
-
-Transformer Engine과 Apex는 이 입문 실습에 설치하지 않습니다. 따라서 `Apex is not installed. Falling back to Torch Norm` 경고는 오류가 아니라 PyTorch 기본 LayerNorm을 사용한다는 뜻입니다.
-
-## Exercise Matrix
-
-| Exercise | Required hardware | What it verifies | This node |
-| --- | --- | --- | --- |
-| Single GPU | NVIDIA GPU 1장 | GPTModel forward/backward, optimizer, local PyTorch layer spec | 실제 실행 |
-| Data parallel | NVIDIA GPU 2장 | replicated model, 서로 다른 mock batch, DP gradient all-reduce | 실제 실행 |
-| Tensor parallel | NVIDIA GPU 2장 | attention/MLP weight shard와 TP collective | 실제 실행 |
-| Pipeline parallel | GPU 2장 이상 | layer stage와 pipeline schedule | topology dry run |
-| Context parallel | GPU 2장 이상과 긴 sequence | sequence shard와 CP communication | topology dry run |
-| Multi-node 3D parallel | node 2대 이상 | TP·PP·DP rank 배치와 launcher 설정 | simulation |
-
-실제 node에는 RTX PRO 4000 Blackwell 24GiB GPU가 2장 있지만 GPU 사이에 NVLink가 없고 PCIe host bridge 경로를 사용합니다. 따라서 이 브랜치의 multi-GPU 결과는 기능 검증에는 유효하지만 NVLink/NVSwitch cluster의 성능을 대표하지 않습니다.
-
-## Setup
-
-Megatron Core 공식 요구사항인 Python 3.10 이상, PyTorch 2.6 이상과 CUDA GPU가 필요합니다.
+Python 3.12 환경이 필요합니다.
 
 ```bash
 ./scripts/setup.sh
 ```
 
-이 실습은 Transformer Engine이나 Apex 없이 `transformer_impl="local"`을 사용합니다. fused kernel과 FP8을 학습하려면 NVIDIA NGC PyTorch container 또는 Megatron Core의 `training,dev` extra가 필요하며, 별도 CUDA extension build는 이 실습 범위에 포함하지 않습니다.
+## 2. UltraChat 준비
 
-## Single GPU
-
-```bash
-./scripts/run_single_gpu.sh --steps 20
-```
-
-두 layer, hidden size 256, sequence length 64의 GPT가 synthetic next-token rule을 학습합니다. 결과는 `results/single-gpu/summary.json`에 저장됩니다.
-
-## Data Parallel
+기본값은 학습 32개와 평가 8개 대화입니다.
+두 subset은 각각 `train_sft`와 `test_sft`에서 가져오므로 서로 섞이지 않습니다.
 
 ```bash
-./scripts/run_two_gpu_dp.sh --steps 20
+./scripts/prepare_data.sh
 ```
 
-각 DP rank는 다른 seed의 mock batch를 만들고, optimizer step 전에 Megatron data-parallel group에서 gradient를 합산합니다. 두 rank의 model은 같은 update를 적용합니다.
+생성 파일은 `data/ultrachat_200k/training.jsonl`과 `validation.jsonl`이며 Git에 포함되지 않습니다.
 
-## Tensor Parallel
+## 3. Qwen checkpoint 준비
+
+다음 명령은 약 28GB의 BF16 model weight를 내려받으므로 여유 공간을 먼저 확인합니다.
 
 ```bash
-./scripts/run_two_gpu_tp.sh --steps 20
+./scripts/download_model.sh
 ```
 
-TP=2에서는 Megatron Core가 attention head, MLP와 vocabulary projection을 두 rank에 나누고 collective communication을 수행합니다. `hidden-size`, `num-attention-heads`, `vocab-size`는 TP 크기로 나누어져야 합니다.
+이미 받은 Hugging Face checkpoint가 있으면 `MODEL_DIR`로 지정할 수 있습니다.
 
-## Multi-Node Simulation
-
-다음 명령은 2 node x 8 GPU에서 TP=2, PP=2를 가정하고 DP=4를 계산한 뒤 16개 global rank의 node, local rank와 parallel coordinate를 출력합니다.
+## 4. 단일 GPU smoke run
 
 ```bash
-./scripts/simulate_multi_node.sh
+CUDA_VISIBLE_DEVICES=0 ./scripts/run_smoke.sh
 ```
 
-잘못된 parallel product는 실행 전에 실패합니다.
+두 번째 물리 GPU를 쓰더라도 프로세스에는 그 GPU 한 장만 보입니다.
 
 ```bash
-NODES=2 GPUS_PER_NODE=8 TP=4 PP=8 ./scripts/simulate_multi_node.sh
+CUDA_VISIBLE_DEVICES=1 ./scripts/run_smoke.sh
 ```
 
-실제 multi-node 실행에서는 topology 검증 후 scheduler 환경에 맞게 `torchrun --nnodes`, `--node-rank`, `--master-addr`, `--master-port`를 설정해야 합니다. 실습 script는 존재하지 않는 host나 port를 임의로 만들지 않습니다.
+## 실제 실행 흐름
 
-## Results
+`run_smoke.sh`는 다음 순서를 고정합니다.
 
-이 node에서 직접 실행한 single-GPU, DP=2, TP=2 결과와 해석은 [reproduced result](docs/reproduced-result.md)에 기록합니다.
+1. GPU가 정확히 한 장만 보이는지, memory와 model/data 파일이 준비됐는지 검사합니다.
+2. 새 프로세스에서 pretrained checkpoint를 읽고 `test_sft` loss를 측정합니다.
+3. 새 프로세스에서 `train_sft`로 LoRA adapter를 5 optimizer step 학습하고 native Megatron checkpoint를 저장합니다.
+4. 다시 새 프로세스를 시작해 base checkpoint와 저장된 adapter checkpoint를 불러오고 같은 `test_sft` loss를 측정합니다.
+5. 두 log의 `lm loss value`와 perplexity를 `summary.json`에 기록합니다.
 
-## What to Try Next
+성공 판정의 핵심은 `tuned_eval_loss < base_eval_loss`입니다.
+Step loss는 batch마다 달라 단조 감소하지 않아도 되지만 `nan`이나 무한대가 없어야 합니다.
+마지막 평가는 학습 프로세스와 분리되어 있으므로 checkpoint 재로딩도 함께 확인합니다.
 
-- sequence length를 늘려 activation memory 변화를 비교합니다.
-- `--hidden-size`와 `--num-layers`를 늘려 TP가 필요한 지점을 찾습니다.
-- NGC container에서 Transformer Engine local spec, BF16과 FP8을 비교합니다.
-- official `pretrain_gpt.py --mock-data`로 full Megatron-LM training stack을 확인합니다.
-- distributed checkpoint를 TP=1로 저장하고 TP=2로 resharding해 불러옵니다.
+## 결과 파일
 
-## References
+```text
+results/qwen2.5-14b-megatron-smoke/
+|-- base-eval.log
+|-- train.log
+|-- tuned-eval.log
+|-- checkpoints/
+`-- summary.json
+```
 
-- [Megatron Core installation](https://docs.nvidia.com/megatron-core/developer-guide/latest/get-started/install.html)
-- [Megatron Core first training run](https://docs.nvidia.com/megatron-core/developer-guide/latest/get-started/quickstart.html)
-- [Parallelism strategies](https://docs.nvidia.com/megatron-core/developer-guide/latest/user-guide/parallelism-guide.html)
-- [NVIDIA Megatron-LM training examples](https://github.com/NVIDIA/Megatron-LM/blob/main/docs/user-guide/training-examples.md)
+## TP/DP simulation
+
+다음 명령은 GPU를 초기화하지 않고 world size 2의 두 배치를 모두 출력합니다.
+
+```bash
+./scripts/simulate_parallelism.sh
+```
+
+TP 배치에서는 rank 0과 1의 `tensor_parallel_rank`가 다르고 `data_parallel_rank`는 같습니다.
+DP 배치에서는 `tensor_parallel_rank`가 같고 `data_parallel_rank`가 다릅니다.
+이는 process-group 산술 검증이며 NCCL 통신이나 처리량 검증은 아닙니다.
+
+## 이 장비에서 실제로 확인한 콘솔
+
+UltraChat subset 준비도 실제 공개 split을 대상으로 실행했습니다.
+
+```console
+$ ./scripts/prepare_data.sh
+[data] dataset=HuggingFaceH4/ultrachat_200k train_split=train_sft eval_split=test_sft
+[data] saved train=32 path=data/ultrachat_200k/training.jsonl
+[data] saved evaluation=8 path=data/ultrachat_200k/validation.jsonl
+[data] overlap=0
+```
+
+하드웨어 preflight는 GPU 한 장만 노출한 상태에서 실행했습니다.
+
+```console
+$ CUDA_VISIBLE_DEVICES=1 .venv/bin/python -m megatron_lab.preflight --hardware-only
+[preflight] CUDA_VISIBLE_DEVICES=1 visible_gpus=1
+[preflight] gpu=NVIDIA RTX PRO 4000 Blackwell total_memory_gib=23.42
+[blocked] Qwen2.5-14B Megatron LoRA requires at least 40GiB for this lab; found 23.42GiB
+```
+
+TP/DP simulation과 unit test도 실제로 실행한 결과입니다.
+
+```console
+$ ./scripts/simulate_parallelism.sh
+{
+  "tensor_parallel": {
+    "world_size": 2,
+    "tensor_parallel": 2,
+    "data_parallel": 1,
+    "ranks": [
+      {
+        "global_rank": 0,
+        "tensor_parallel_rank": 0,
+        "data_parallel_rank": 0
+      },
+      {
+        "global_rank": 1,
+        "tensor_parallel_rank": 1,
+        "data_parallel_rank": 0
+      }
+    ]
+  },
+  "data_parallel": {
+    "world_size": 2,
+    "tensor_parallel": 1,
+    "data_parallel": 2,
+    "ranks": [
+      {
+        "global_rank": 0,
+        "tensor_parallel_rank": 0,
+        "data_parallel_rank": 0
+      },
+      {
+        "global_rank": 1,
+        "tensor_parallel_rank": 0,
+        "data_parallel_rank": 1
+      }
+    ]
+  }
+}
+```
+
+```console
+$ .venv/bin/python -m pytest -q
+.........                                                                [100%]
+9 passed in 0.02s
+```
+
+현재 장비에서는 preflight가 memory 부족을 올바르게 차단했으므로 14B 학습 loss나 checkpoint 재로딩 성공을 기록하지 않습니다.
+실행하지 않은 수치를 예시 결과로 제시하지 않습니다.
+
+## 참고 자료
+
+- [Megatron Bridge Qwen 지원 및 recipe](https://docs.nvidia.com/nemo/megatron-bridge/latest/models/qwen/qwen.html)
+- [Megatron Bridge text SFT data](https://github.com/NVIDIA-NeMo/Megatron-Bridge/blob/main/tutorials/data/hf-text-only/README.md)
+- [UltraChat 200k dataset card](https://huggingface.co/datasets/HuggingFaceH4/ultrachat_200k)
