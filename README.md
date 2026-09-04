@@ -134,6 +134,10 @@ Qwen의 기본 chat template는 assistant mask를 반환하지 않으므로 그�
 
 QLoRA는 frozen 4-bit base weight를 직접 갱신하지 않고 attention과 MLP projection에 작은 low-rank matrix를 추가합니다. 이 구성은 full fine-tuning보다 memory를 줄이지만, adapter rank·dataset·step 수에 따라 결과가 크게 달라집니다.
 
+## References
+
+- [TRL SFTTrainer documentation](https://huggingface.co/docs/trl/sft_trainer): SFTTrainer, assistant-only loss, conversational dataset format, logged metric의 공식 기준입니다.
+
 ## Troubleshooting
 
 - CUDA out-of-memory가 발생하면 `--max-length 384`로 낮추고 다른 GPU process를 종료합니다.
