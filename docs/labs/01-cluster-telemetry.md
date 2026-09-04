@@ -58,13 +58,11 @@ Kubernetes에서는 standalone container 대신 Node Exporter와 DCGM Exporter D
 ## 3. Start Prometheus and Grafana
 
 ```bash
-cd examples/observability
 export GRAFANA_ADMIN_PASSWORD=<strong-password>
-docker compose config
-docker compose up -d
+REQUIRE_TARGETS_UP=1 ./scripts/validate_observability.sh
 ```
 
-Prometheus의 `/targets`에서 모든 endpoint가 `UP`인지 확인한 후 Grafana의 `Profiling Lab / Multinode LLM Cluster Resources` dashboard를 엽니다.
+script가 성공하면 target file, Compose configuration, Prometheus와 Grafana health, 기본 Prometheus query와 모든 configured target을 확인한 것입니다. 결과는 `artifacts/observability-validation/summary.json`에 저장됩니다. 이후 Grafana의 `Profiling Lab / Multinode LLM Cluster Resources` dashboard를 엽니다.
 
 ## 4. Exercises
 

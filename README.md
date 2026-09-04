@@ -30,27 +30,35 @@
 
 처음에는 Lab 01, 02와 Lab 06을 순서대로 실행합니다. 이후 실제 Megatron 또는 verl run에 맞는 Lab 03, 04를 적용하고, 이상이 발견된 경우에만 Lab 05로 들어갑니다.
 
-## Quick Start for the Monitoring Control Plane
+## Validate the Monitoring Stack
 
-`examples/observability/targets/*.json`의 예시 주소를 실제 compute node 주소로 바꾼 후 다음을 실행합니다.
+`examples/observability/targets/*.json`의 예시 주소를 실제 compute node 주소로 바꾼 후 repository root에서 validation을 실행합니다.
 
 ```bash
-./scripts/setup.sh
-cd examples/observability
 export GRAFANA_ADMIN_PASSWORD=<strong-password>
-docker compose config
-docker compose up -d
+./scripts/validate_observability.sh
 ```
 
-Prometheus는 `http://<monitoring-host>:9090`, Grafana는 `http://<monitoring-host>:3000`에서 확인합니다. 이 Compose 예제는 monitoring control plane만 실행합니다. exporter는 각 training node에서 별도로 실행해야 하며 production에서는 Kubernetes Operator, systemd 또는 조직의 서비스 관리 방식을 사용합니다.
+script는 target file과 Compose configuration을 검사하고 Prometheus와 Grafana를 시작한 뒤 readiness, Grafana database health, Prometheus `up` query와 active target 상태를 확인합니다. 결과는 `artifacts/observability-validation/summary.json`에 공통 summary schema로 저장합니다.
+
+기본 실행은 monitoring control plane만 검증하므로 exporter target이 `DOWN`이어도 상태를 기록하고 실패로 처리하지 않습니다. 각 training node에 exporter를 배치한 뒤 모든 configured target까지 검증하려면 다음을 실행합니다.
+
+```bash
+REQUIRE_TARGETS_UP=1 ./scripts/validate_observability.sh
+```
+
+Prometheus는 `http://<monitoring-host>:9090`, Grafana는 `http://<monitoring-host>:3000`에서 확인합니다. validation 후 service는 계속 실행됩니다. 종료하려면 `examples/observability`에서 `docker compose down`을 실행합니다. 이 Compose 예제는 monitoring control plane만 실행하며, exporter는 각 training node에서 별도로 배치해야 합니다.
 
 ## Repository Scope
 
 - `examples/observability`: Prometheus file discovery, Grafana provisioning과 resource dashboard
 - `examples/pytorch`: 선택 rank/step용 PyTorch Profiler helper와 DDP demo
 - `scripts/check_tools.sh`: 오픈소스 도구와 vendor fallback의 설치 여부 확인
+- `scripts/validate_observability.sh`: monitoring stack 실행과 validation orchestration
 - `config/metrics.json`: framework에 관계없는 metric vocabulary와 collection policy
+- `profiling_lab/observability.py`: target, readiness, health와 query validation
 - `profiling_lab/schema.py`: metric schema validation
+- `run_summary.py`: framework 공통 summary schema
 
 이 저장소는 Megatron, verl, Ray 또는 exporter 자체를 재구현하지 않습니다. workload별 adapter는 framework가 이미 제공하는 timer와 metric을 재사용하고, 없는 semantic signal만 얇게 추가하는 것을 원칙으로 합니다.
 
