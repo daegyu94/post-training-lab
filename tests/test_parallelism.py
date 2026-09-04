@@ -19,7 +19,7 @@ def test_build_layout_includes_context_parallel_dimension() -> None:
 def test_layout_rejects_incompatible_world_size() -> None:
     with pytest.raises(ValueError, match="must be divisible"):
         build_layout(
-            world_size=8,
+            world_size=10,
             tensor_parallel_size=2,
             pipeline_parallel_size=2,
             context_parallel_size=2,

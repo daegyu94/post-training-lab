@@ -1,91 +1,134 @@
-# Megatron Bridge Qwen2.5-7B SFT Experiment
+# Megatron Bridge Qwen2.5-7B SFT Lab
 
-이 저장소는 Qwen/Qwen2.5-7B-Instruct에 LoRA SFT를 적용하고, 결과를 원본 모델과 비교하는 단일 GPU 실험 예제입니다. 학습 모델은 Hugging Face 체크포인트를 Megatron Bridge의 AutoBridge로 불러오고, Qwen용 PEFT recipe로 구성합니다.
+이 브랜치는 `Qwen/Qwen2.5-7B-Instruct`에 Megatron Bridge의 Qwen recipe로 LoRA supervised fine-tuning(SFT)을 적용하고, 학습 전후의 held-out loss와 checkpoint 재로딩 경로를 확인하는 단일 GPU 실습입니다.
 
-실험 환경과 결과는 [환경 및 실험 기록](docs/experiment.md)에 정리합니다.
+실제 학습은 TP=1, PP=1, CP=1, DP=1로 실행됩니다. 따라서 이 브랜치는 Megatron 기반 model·dataset·checkpoint workflow를 검증하는 출발점이며, multi-GPU 성능이나 확장성을 측정하는 benchmark는 아닙니다.
 
-## 요구 사항
+## Requirements
 
-- Linux와 NVIDIA GPU
-- CUDA를 사용할 수 있는 PyTorch 환경
-- BF16을 지원하는 GPU
-- 실험용 GPU 1개
-- VRAM 20GiB 이상 권장
-- Hugging Face에서 모델을 내려받을 수 있는 네트워크
-- 모델과 결과를 위한 약 16GB 이상의 디스크 공간
+- Linux와 NVIDIA GPU 1개
+- CUDA를 사용할 수 있고 BF16을 지원하는 GPU
+- Python virtual environment를 생성할 수 있는 환경
+- 약 20GiB 이상의 GPU memory
+- model과 결과를 위한 약 16GB 이상의 disk 공간
+- Hugging Face에서 model과 dataset을 받을 수 있는 network 연결
 
-기본 설정은 sequence length 512, micro batch size 1, activation recomputation을 사용합니다. 24GiB GPU에서 시도할 수 있는 구성이나, 드라이버·CUDA·할당자 상태에 따라 OOM이 날 수 있으므로 실제 실행으로 확인해야 합니다.
+기본 설정은 sequence length 512, micro batch size 1, global batch size 8, activation recomputation을 사용합니다. VRAM 20GiB는 preflight의 최소 기준이며, driver·CUDA·allocator 상태에 따라 더 많은 memory가 필요할 수 있습니다.
 
-## 설치
+## Setup
 
-~~~bash
-git clone -b megatron-lab https://github.com/daegyu94/sft-lab.git
+```bash
+git clone -b megatron https://github.com/daegyu94/sft-lab.git
 cd sft-lab
 ./scripts/setup.sh
-~~~
+```
 
-설치 스크립트는 가상환경을 만들고, PyTorch·Megatron Bridge·Transformers·데이터셋 도구를 설치합니다.
+setup script는 `.venv`를 만들고 `requirements.txt`의 PyTorch, Megatron Bridge, dataset 도구를 설치합니다. 이미 environment가 있으면 같은 경로를 재사용합니다.
 
-## 모델과 데이터 준비
+## Prepare the Model and Dataset
 
-Hugging Face CLI 인증이 필요한 환경이라면 먼저 로그인합니다.
+Hugging Face 인증이 필요한 환경이라면 먼저 로그인합니다.
 
-~~~bash
+```bash
 .venv/bin/hf auth login
-~~~
+```
 
-그 다음 Qwen2.5-7B 모델과 Alpaca 데이터셋을 준비합니다.
+Qwen2.5-7B checkpoint와 UltraChat train/evaluation subset을 준비합니다.
 
-~~~bash
+```bash
 ./scripts/download_model.sh
 ./scripts/prepare_data.sh
-~~~
+```
 
-기본 경로는 아래와 같습니다.
-
-| 항목 | 기본 경로 |
+| Item | Default |
 | --- | --- |
-| 모델 | models/Qwen2.5-7B-Instruct |
-| 학습 데이터 | data/alpaca_zh_100.jsonl |
-| 결과 | results/qwen2.5-7b-megatron-experiment |
+| Model | `models/Qwen2.5-7B-Instruct` |
+| Dataset | `HuggingFaceH4/ultrachat_200k` |
+| Training subset | 32 conversations from `train_sft` |
+| Evaluation subset | 8 conversations from `test_sft` |
+| Prepared data | `data/ultrachat_200k/{training,validation}.jsonl` |
+| Output | `results/qwen2.5-7b-megatron-experiment` |
 
-환경 변수로 경로와 학습 조건을 바꿀 수 있습니다.
+`MODEL_DIR`, `DATA_DIR`, `TRAIN_SAMPLES`, `EVAL_SAMPLES`, `SEED`로 준비 경로와 subset을 바꿀 수 있습니다.
 
-~~~bash
+## Run the Experiment
+
+```bash
+CUDA_VISIBLE_DEVICES=0 ./scripts/run_experiment.sh
+```
+
+script는 preflight를 통과한 후 다음 세 stage를 각각 새 `torchrun` process로 실행합니다.
+
+1. pretrained checkpoint의 held-out evaluation
+2. 기본 5 optimizer step의 LoRA SFT와 checkpoint 저장
+3. 저장한 checkpoint를 새 process에서 다시 읽은 held-out evaluation
+
+학습 조건과 경로는 environment variable로 바꿀 수 있습니다.
+
+```bash
 MODEL_DIR=/path/to/Qwen2.5-7B-Instruct \
+DATA_DIR=/path/to/prepared-data \
 OUTPUT_DIR=/path/to/output \
 MAX_STEPS=10 \
 CUDA_VISIBLE_DEVICES=0 \
 ./scripts/run_experiment.sh
-~~~
+```
 
-## 실험 실행
+## Outputs and Verification
 
-아래 명령은 preflight 검사를 거친 뒤 모델을 불러와 LoRA SFT를 수행하고, 고정 프롬프트에서 원본 모델과 adapter 적용 모델의 출력을 비교합니다.
+정상 실행 후 output directory는 다음 핵심 artifact를 포함합니다.
 
-~~~bash
-CUDA_VISIBLE_DEVICES=0 ./scripts/run_experiment.sh
-~~~
+```text
+results/qwen2.5-7b-megatron-experiment/
+├── base-eval.log
+├── train.log
+├── tuned-eval.log
+├── checkpoints/
+└── summary.json
+```
 
-기본 학습 횟수는 3 step입니다. 우선 작은 step 수로 환경과 메모리를 확인한 뒤 늘리는 편이 안전합니다. 결과물은 지정한 OUTPUT_DIR에 저장되며, adapter와 비교 결과는 각각 adapters, comparison.json 파일에서 확인할 수 있습니다.
+`summary.json`에서 다음을 확인합니다.
 
-## Megatron 개념 실습
+- `checkpoint_reload_verified`가 `true`인지 확인합니다.
+- `tuned_eval_loss`와 `tuned_perplexity`가 대응하는 base 값보다 낮은지 비교합니다.
+- 세 log에 `nan`, 무한대, checkpoint load 오류가 없는지 확인합니다.
 
-이 저장소의 실제 SFT는 단일 GPU(TP=1, PP=1, CP=1, DP=1) 실행입니다. GPU 없이 Megatron Bridge recipe와 병렬화 group 배치를 살펴보려면 다음을 실행합니다.
+```bash
+.venv/bin/python -m json.tool results/qwen2.5-7b-megatron-experiment/summary.json
+```
 
-~~~bash
+짧은 subset과 5 step에서의 loss 변화는 workflow 검증 신호일 뿐, 일반적인 모델 품질이나 cluster-scale 성능을 의미하지 않습니다.
+
+## CPU-only Concept Exercise
+
+GPU 초기화, checkpoint download, NCCL 통신 없이 Bridge recipe와 논리적 parallel rank group을 살펴볼 수 있습니다.
+
+```bash
 ./scripts/run_megatron_practice.sh
-~~~
+```
 
-이 실습은 체크포인트를 내려받지 않고, CUDA·NCCL·torch.distributed·멀티 GPU·멀티 노드 통신을 시작하지 않습니다. TP, PP, DP와 Context Parallelism(CP)의 역할 및 사용법은 [Megatron-LM과 Megatron Core 개요](docs/megatron-overview.md)를 참고하세요.
+기본 예제는 TP=2, PP=2, CP=2, DP=2인 16개 논리 rank를 출력합니다. 실제 distributed process group을 만들지는 않습니다. 자세한 내용은 [Megatron stack overview](docs/megatron-overview.md)를 참고하세요.
 
-## 주요 구현
+## Repository Layout
 
-- megatron_lab/config.py: Qwen2.5-7B LoRA recipe와 단일 GPU SFT 설정
-- megatron_lab/sft.py: Bridge 기반 학습과 adapter 저장
-- megatron_lab/compare.py: 원본 모델과 adapter 모델의 생성 결과 비교
-- megatron_lab/preflight.py: GPU와 실행 환경 확인
-- megatron_lab/inspect_recipe.py: GPU 초기화 없이 Bridge recipe 요약
-- megatron_lab/parallelism.py: TP/PP/CP/DP 논리적 rank group 시뮬레이션
-- scripts/run_experiment.sh: 전체 실험 실행
-- scripts/run_megatron_practice.sh: recipe 확인과 병렬화 개념 실습
+- `megatron_lab/config.py`: Qwen2.5-7B LoRA recipe와 single-GPU 설정
+- `megatron_lab/sft.py`: base, train, tuned stage 진입점
+- `megatron_lab/prepare_data.py`: deterministic UltraChat subset 준비
+- `megatron_lab/compare.py`: base와 reloaded-checkpoint loss 비교
+- `megatron_lab/preflight.py`: GPU, dependency, input path 검사
+- `megatron_lab/inspect_recipe.py`: GPU 초기화 없는 recipe 요약
+- `megatron_lab/parallelism.py`: TP/PP/CP/DP rank group simulation
+- `scripts/run_experiment.sh`: end-to-end experiment orchestration
+- `tests/`: data, log parsing, rank layout의 CPU unit tests
+
+## Run the CPU Tests
+
+model checkpoint나 GPU 없이 data selection, log parsing, parallel rank layout을 검증합니다.
+
+```bash
+.venv/bin/python -m pytest -q
+```
+
+## Limitations
+
+이 branch는 실제 multi-GPU·multi-node launcher, distributed checkpoint scale test, throughput benchmark를 제공하지 않습니다. 해당 확장 경로는 `post-training` branch에서 framework 역할과 다음 단계로 구분해 설명하며, cluster resource 분석은 `profiling` branch에서 다룹니다.
