@@ -8,18 +8,22 @@ fi
 
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 dataset_parquet_dir="${DATASET_PARQUET_DIR:-data/ultrachat_200k/data}"
+output_dir="${OUTPUT_DIR:-results/trl-branch-reproduction}"
 
 if [[ ! -d "$dataset_parquet_dir" ]]; then
     echo "Dataset directory not found: $dataset_parquet_dir" >&2
-    echo "Run ./scripts/setup.sh first." >&2
+    echo "Run ./scripts/setup.sh first or set DATASET_PARQUET_DIR." >&2
     exit 1
 fi
 
-.venv/bin/python -m sft_lab.train \
-    --train-samples "${TRAIN_SAMPLES:-32}" \
-    --eval-samples "${EVAL_SAMPLES:-8}" \
-    --max-steps "${MAX_STEPS:-5}" \
-    --output-dir "${OUTPUT_DIR:-results/qwen2.5-14b-qlora-smoke}" \
-    "$@" \
+HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
+    .venv/bin/python -m sft_lab.train \
     --dataset-parquet-dir "$dataset_parquet_dir" \
-    --local-files-only
+    --local-files-only \
+    --train-samples 128 \
+    --eval-samples 16 \
+    --max-steps 20 \
+    --max-length 512 \
+    --gradient-accumulation-steps 8 \
+    --output-dir "$output_dir" \
+    "$@"
