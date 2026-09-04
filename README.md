@@ -98,15 +98,17 @@ results/qwen2.5-14b-qlora/
 
 summary.json은 Git에서 제외됩니다.
 
+모든 새 실행의 `summary.json`은 `schema_version: 1`과 `configuration`, `environment`, `quality`, `performance`, `artifacts`, `validation` section을 사용합니다. 학습 전후 generation은 `validation.generations`에 저장됩니다.
+
 ## Verify the Result
 
 학습 전후의 핵심 결과는 다음 항목으로 확인합니다.
 
 | Signal | Check | Meaning |
 | --- | --- | --- |
-| Held-out loss | `tuned_eval_loss < base_eval_loss` | 같은 held-out assistant token에서 loss가 낮아졌는지 확인합니다. |
-| Loss change | `loss_change_percent < 0` | 학습 전후 held-out loss의 상대 변화를 확인합니다. |
-| Perplexity | `tuned_perplexity < base_perplexity` | loss를 지수 변환한 보조 지표입니다. |
+| Held-out loss | `quality.tuned_eval_loss < quality.base_eval_loss` | 같은 held-out assistant token에서 loss가 낮아졌는지 확인합니다. |
+| Loss change | `quality.loss_change_percent < 0` | 학습 전후 held-out loss의 상대 변화를 확인합니다. |
+| Perplexity | `quality.tuned_perplexity < quality.base_perplexity` | loss를 지수 변환한 보조 지표입니다. |
 | Training log | `loss`와 `grad_norm`이 finite인지 확인 | 학습 과정의 수치 안정성을 확인합니다. |
 | Adapter output | `adapter/`가 생성되었는지 확인 | PEFT adapter 저장이 완료되었는지 확인합니다. |
 
