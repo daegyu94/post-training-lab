@@ -4,24 +4,7 @@
 
 ## What You Will Build
 
-```text
-Megatron ranks / verl actors / rollout engines / tool services
-             |                         |
-             | application metrics     | sampled semantic traces
-             v                         v
-      Prometheus endpoints      OpenTelemetry Collector
-             ^                         |
-             |                         v
- node_exporter + dcgm-exporter    Tempo / Loki
-             |                         |
-             +------------+------------+
-                          |
-                          v
-                        Grafana
-
-Selected ranks and steps -> PyTorch Profiler/Kineto -> HTA or Perfetto
-Allocated cluster         -> NCCL Tests and fio       -> hardware baseline
-```
+![멀티 GPU·멀티 노드 profiling architecture](docs/profiling-architecture.svg)
 
 실습은 다음 흐름으로 진행합니다.
 
@@ -32,6 +15,8 @@ Allocated cluster         -> NCCL Tests and fio       -> hardware baseline
 5. 상시 metric으로 병목 rank와 구간을 찾은 후 일부 rank와 step에만 PyTorch Profiler를 켭니다.
 6. 오픈소스 trace로 원인이 구분되지 않을 때만 Nsight 같은 vendor tool을 짧은 diagnostic run에 사용합니다.
 
+다이어그램의 도구별 관측 범위와 오픈소스만으로 확정할 수 없는 질문은 [tool 선택과 사각지대](docs/tooling.md)에 정리했습니다.
+
 ## Labs
 
 | Lab | Outcome |
@@ -41,8 +26,9 @@ Allocated cluster         -> NCCL Tests and fio       -> hardware baseline
 | [03. Megatron profiling](docs/labs/03-megatron.md) | parallel rank imbalance, communication, pipeline bubble과 checkpoint 병목 분석 |
 | [04. verl agentic RL profiling](docs/labs/04-verl.md) | rollout, training role, Ray scheduling과 tool/environment wait 분석 |
 | [05. Selected trace](docs/labs/05-selected-trace.md) | 이상 rank와 짧은 step window만 trace하고 HTA/Perfetto로 분석 |
+| [06. Distributed PyTorch profiling](docs/labs/06-distributed-pytorch.md) | 작은 DDP workload로 single-node에서 multi-node까지 profiler 흐름을 검증 |
 
-먼저 [tool 선택과 사각지대](docs/tooling.md)를 읽으면 각 도구가 답할 수 있는 질문과 오픈소스만으로 해결되지 않는 영역을 확인할 수 있습니다. 수집 지표의 기준은 [`config/metrics.json`](config/metrics.json)에 있습니다.
+처음에는 Lab 01, 02와 Lab 06을 순서대로 실행합니다. 이후 실제 Megatron 또는 verl run에 맞는 Lab 03, 04를 적용하고, 이상이 발견된 경우에만 Lab 05로 들어갑니다.
 
 ## Quick Start for the Monitoring Control Plane
 
@@ -58,7 +44,7 @@ Prometheus는 `http://<monitoring-host>:9090`, Grafana는 `http://<monitoring-ho
 ## Repository Scope
 
 - `examples/observability`: Prometheus file discovery, Grafana provisioning과 resource dashboard
-- `examples/pytorch`: 선택 rank/step용 PyTorch Profiler helper
+- `examples/pytorch`: 선택 rank/step용 PyTorch Profiler helper와 DDP demo
 - `scripts/check_tools.sh`: 오픈소스 도구와 vendor fallback의 설치 여부 확인
 - `config/metrics.json`: framework에 관계없는 metric vocabulary와 collection policy
 - `profiling_lab/schema.py`: metric schema validation
