@@ -1,6 +1,6 @@
-# Reproduced Result
+# Reference Run
 
-이 문서는 이 브랜치에서 실행한 Qwen2.5-14B-Instruct QLoRA 결과를 기록합니다. 전체 산출물은 Git에서 제외하고 재현에 필요한 명령과 요약만 남깁니다.
+이 문서는 이 브랜치에서 실행한 Qwen2.5-14B-Instruct QLoRA 결과를 기록합니다. 전체 산출물은 Git에서 제외하고 기준 실행에 필요한 명령과 요약만 남깁니다.
 
 ## Environment
 
@@ -30,7 +30,7 @@
 | Optimizer steps | 20 |
 | Learning rate | `2e-4`, cosine schedule, warmup ratio 0.1 |
 
-재현에 사용한 명령은 다음과 같습니다.
+기준 실행에 사용한 명령은 다음과 같습니다.
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
@@ -42,7 +42,7 @@ CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
   --max-steps 20 \
   --max-length 512 \
   --gradient-accumulation-steps 8 \
-  --output-dir results/trl-branch-reproduction
+  --output-dir results/trl-branch-reference
 ```
 
 ## Console Walkthrough
@@ -86,8 +86,8 @@ Stage 1/6에서는 local parquet를 읽고, Stage 2/6에서는 Qwen base model�
 
 ~~~text
 [INFO] Stage 5/6: Evaluating the tuned model and generating comparison responses
-[INFO] Stage 6/6: Saving adapter, checkpoint, and summary under results/trl-branch-reproduction
-[INFO] Complete: Summary written to results/trl-branch-reproduction/summary.json
+[INFO] Stage 6/6: Saving adapter, checkpoint, and summary under results/trl-branch-reference
+[INFO] Complete: Summary written to results/trl-branch-reference/summary.json
 {
   "effective_train_samples": 114,
   "effective_eval_samples": 15,
@@ -134,7 +134,7 @@ Stage 1/6에서는 local parquet를 읽고, Stage 2/6에서는 Qwen base model�
 ```bash
 CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 \
   .venv/bin/python -m sft_lab.infer \
-  results/trl-branch-reproduction/adapter \
+  results/trl-branch-reference/adapter \
   --local-files-only \
   --prompt 'Give two practical tips for debugging an out-of-memory error during LLM training.'
 ```

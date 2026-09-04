@@ -8,7 +8,7 @@ fi
 
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 dataset_parquet_dir="${DATASET_PARQUET_DIR:-data/ultrachat_200k/data}"
-output_dir="${OUTPUT_DIR:-results/trl-branch-reproduction}"
+output_dir="${OUTPUT_DIR:-results/trl-branch-reference}"
 
 if [[ ! -d "$dataset_parquet_dir" ]]; then
     echo "Dataset directory not found: $dataset_parquet_dir" >&2
