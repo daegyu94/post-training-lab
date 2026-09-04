@@ -6,7 +6,7 @@
 
 ## Reference Run
 
-기준 실행 결과의 환경, configuration, 실행 명령, console output, metric, generation 비교, adapter reload 결과는 [docs/reproduced-result.md](docs/reproduced-result.md)에 기록되어 있습니다.
+기준 실행 결과의 환경, configuration, 실행 명령, console output, metric, generation 비교, adapter reload 결과는 [docs/reference-run.md](docs/reference-run.md)에 기록되어 있습니다.
 
 이 문서의 목적은 새 실험을 설계하는 것이 아니라, 기록된 configuration과 command를 동일하게 실행하여 결과를 다시 확인하는 것입니다.
 
@@ -44,7 +44,7 @@ DATASET_DIR=<dataset-root> ./scripts/setup.sh
 기록된 결과와 동일한 configuration으로 실행하려면 다음 command를 사용합니다.
 
 ```bash
-./scripts/run_reproduced.sh
+./scripts/run_reference.sh
 ```
 
 이 script는 다음 configuration을 사용합니다.
@@ -82,7 +82,7 @@ GPU와 dataset 경로를 바꾸려면 script를 수정하지 않고 environment 
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 DATASET_PARQUET_DIR=<dataset-parquet-dir> OUTPUT_DIR=<output-dir> \
-  ./scripts/run_reproduced.sh
+  ./scripts/run_reference.sh
 ```
 
 ## Output Files
@@ -116,7 +116,7 @@ summary.json은 Git에서 제외됩니다.
 .venv/bin/python -m json.tool results/trl-branch-reference/summary.json
 ```
 
-기록된 실행의 주요 결과는 [docs/reproduced-result.md](docs/reproduced-result.md)의 Metrics section에서 확인할 수 있습니다.
+기록된 실행의 주요 결과는 [docs/reference-run.md](docs/reference-run.md)의 Metrics section에서 확인할 수 있습니다.
 
 ## Reload the Adapter
 
@@ -144,5 +144,5 @@ QLoRA는 frozen 4-bit base weight에 LoRA parameter만 추가하여 학습합니
 
 ## References
 
-- [Reference Run](docs/reproduced-result.md)
+- [Reference Run](docs/reference-run.md)
 - [TRL SFTTrainer documentation](https://huggingface.co/docs/trl/sft_trainer)
