@@ -7,6 +7,7 @@ import json
 import math
 import os
 import platform
+import sys
 import time
 from contextlib import nullcontext
 from pathlib import Path
@@ -85,6 +86,26 @@ def _finite_perplexity(loss: float) -> float:
     return math.exp(loss) if loss < 20 else float("inf")
 
 
+_LEVEL_COLORS = {
+    "INFO": "\033[1;36m",
+    "WARNING": "\033[1;33m",
+    "ERROR": "\033[1;31m",
+}
+_RESET_COLOR = "\033[0m"
+
+
+def _log(level: str, message: str) -> None:
+    stream = sys.stderr if level == "ERROR" else sys.stdout
+    label = f"[{level}]"
+    if stream.isatty() and not os.environ.get("NO_COLOR"):
+        label = f"{_LEVEL_COLORS[level]}{label}{_RESET_COLOR}"
+    print(f"{label} {message}", file=stream, flush=True)
+
+
+def _log_stage(stage: str, detail: str) -> None:
+    _log("INFO", f"{stage}: {detail}")
+
+
 def main() -> None:
     args = parse_args()
     if not torch.cuda.is_available():
@@ -96,6 +117,10 @@ def main() -> None:
 
     set_seed(args.seed)
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    _log_stage(
+        "Stage 1/6",
+        f"Loading local dataset from {args.dataset_parquet_dir}",
+    )
     train_dataset, eval_dataset = load_ultrachat(
         args.dataset,
         args.train_samples,
@@ -104,6 +129,11 @@ def main() -> None:
         args.dataset_parquet_dir,
     )
 
+    _log_stage(
+        "Stage 1/6",
+        f"Dataset ready: train={len(train_dataset)}, evaluation={len(eval_dataset)}",
+    )
+    _log_stage("Stage 2/6", "Loading tokenizer and 4-bit Qwen base model")
     tokenizer = AutoTokenizer.from_pretrained(args.model, local_files_only=args.local_files_only)
     tokenizer.chat_template = QWEN_ASSISTANT_MASK_TEMPLATE
     tokenizer.pad_token = tokenizer.eos_token
@@ -119,7 +149,7 @@ def main() -> None:
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
         quantization_config=_quantization_config(),
-        torch_dtype=torch.bfloat16,
+        dtype=torch.bfloat16,
         device_map={"": 0},
         local_files_only=args.local_files_only,
     )
@@ -166,6 +196,7 @@ def main() -> None:
         peft_config=peft_config,
     )
 
+    _log_stage("Stage 3/6", "Evaluating the base model on held-out conversations")
     disable_adapter = getattr(trainer.model, "disable_adapter", None)
     adapter_context = disable_adapter() if disable_adapter else nullcontext()
     with adapter_context:
@@ -173,13 +204,16 @@ def main() -> None:
         base_generations = _generate(trainer.model, tokenizer, DEFAULT_PROMPTS)
 
     torch.cuda.reset_peak_memory_stats()
+    _log_stage("Stage 4/6", f"Training the QLoRA adapter for {args.max_steps} optimizer steps")
     started = time.perf_counter()
     train_result = trainer.train()
     train_seconds = time.perf_counter() - started
+    _log_stage("Stage 5/6", "Evaluating the tuned model and generating comparison responses")
     tuned_eval = trainer.evaluate(metric_key_prefix="tuned_eval")
     tuned_generations = _generate(trainer.model, tokenizer, DEFAULT_PROMPTS)
     peak_memory_gib = torch.cuda.max_memory_allocated() / 1024**3
 
+    _log_stage("Stage 6/6", f"Saving adapter, checkpoint, and summary under {args.output_dir}")
     adapter_dir = args.output_dir / "adapter"
     trainer.save_model(str(adapter_dir))
     tokenizer.save_pretrained(adapter_dir)
@@ -227,8 +261,13 @@ def main() -> None:
         json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
+    _log_stage("Complete", f"Summary written to {args.output_dir / 'summary.json'}")
     print(json.dumps(summary, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as error:
+        _log("ERROR", f"{type(error).__name__}: {error}")
+        raise
