@@ -1,168 +1,122 @@
-# Megatron Bridge Qwen2.5 SFT Lab
+# Megatron Bridge Qwen2.5 SFT Reproduced Result
 
-이 브랜치는 Megatron Bridge로 `Qwen/Qwen2.5-14B-Instruct`를 `HuggingFaceH4/ultrachat_200k`에 LoRA fine-tuning하는 SFT 예제만 포함합니다.
-UltraChat의 `train_sft`와 `test_sft`를 분리하고, assistant token에만 loss를 적용합니다.
+이 브랜치는 Megatron Bridge로 `Qwen/Qwen2.5-14B-Instruct`를 `HuggingFaceH4/ultrachat_200k`에 LoRA fine-tuning하고, 학습 전후의 held-out loss와 checkpoint 재로딩을 확인하는 reproduced result 실행 절차만 제공합니다.
 
-## 검증 범위
+UltraChat의 `train_sft`와 `test_sft`를 각각 학습·평가 데이터로 사용하며, assistant token에만 loss를 적용합니다.
 
-실제 학습 launcher는 `CUDA_VISIBLE_DEVICES`로 GPU 한 장만 노출합니다.
-학습 전 held-out loss, optimizer step, 학습 후 같은 held-out loss, native Megatron checkpoint의 새 프로세스 재로딩을 순서대로 검증합니다.
-TP와 DP는 실제 GPU를 점유하지 않고 rank topology만 시뮬레이션합니다.
+## 재현 범위
 
-현재 장비의 GPU는 장당 24GiB입니다.
-Megatron Bridge의 14B LoRA는 quantized base model을 사용하지 않으므로 이 장비의 단일 GPU에는 들어가지 않습니다.
-스크립트는 최소 40GiB를 보수적인 시작 조건으로 검사하지만, 통과가 학습 성공을 보장하지는 않습니다.
-공식 recipe가 대상으로 하는 H100 80GiB급 GPU에서 실행하는 것을 권장합니다.
+실행 스크립트는 다음 순서를 고정합니다.
 
-## 1. 환경 설치
+1. 실행 환경과 입력 경로를 preflight로 확인합니다.
+2. pretrained checkpoint를 새 프로세스에서 읽고 평가 데이터의 base loss를 측정합니다.
+3. `train_sft`로 LoRA adapter를 학습하고 native Megatron checkpoint를 저장합니다.
+4. 새 프로세스에서 base checkpoint와 저장된 adapter checkpoint를 다시 읽고 같은 평가 데이터의 tuned loss를 측정합니다.
+5. 두 평가 log를 비교해 `summary.json`을 생성합니다.
 
-Python 3.12 환경이 필요합니다.
+학습과 마지막 평가는 서로 다른 프로세스에서 실행되므로 checkpoint 저장과 재로딩도 함께 확인할 수 있습니다.
 
-```bash
+## 요구 환경
+
+- Python 3.12
+- BF16을 지원하는 GPU 한 장
+- 단일 GPU 기준 최소 40GiB GPU memory
+- Qwen checkpoint를 저장할 약 28GB 이상의 disk space
+- Hugging Face Hub와 Hugging Face Datasets에 접근 가능한 네트워크
+
+Megatron Bridge의 14B LoRA 실행은 quantized base model을 사용하지 않습니다. 따라서 40GiB 미만의 GPU에서는 실행 전에 preflight가 중단합니다.
+
+## 실행 방법
+
+### 환경 설치
+
+~~~bash
 ./scripts/setup.sh
-```
+~~~
 
-## 2. UltraChat 준비
+### UltraChat 데이터 준비
 
-기본값은 학습 32개와 평가 8개 대화입니다.
-두 subset은 각각 `train_sft`와 `test_sft`에서 가져오므로 서로 섞이지 않습니다.
+기본값은 `train_sft`에서 32개, `test_sft`에서 8개의 유효한 대화를 선택합니다. 생성된 JSONL 파일은 Git에 포함하지 않습니다.
 
-```bash
+~~~bash
 ./scripts/prepare_data.sh
-```
+~~~
 
-생성 파일은 `data/ultrachat_200k/training.jsonl`과 `validation.jsonl`이며 Git에 포함되지 않습니다.
+환경 변수로 샘플 수와 출력 경로를 변경할 수 있습니다.
 
-## 3. Qwen checkpoint 준비
+~~~bash
+TRAIN_SAMPLES=32 EVAL_SAMPLES=8 DATA_DIR=data/ultrachat_200k ./scripts/prepare_data.sh
+~~~
 
-다음 명령은 약 28GB의 BF16 model weight를 내려받으므로 여유 공간을 먼저 확인합니다.
+### Qwen checkpoint 준비
 
-```bash
+다음 명령은 `Qwen/Qwen2.5-14B-Instruct`의 BF16 checkpoint를 기본 경로에 내려받습니다.
+
+~~~bash
 ./scripts/download_model.sh
-```
+~~~
 
-이미 받은 Hugging Face checkpoint가 있으면 `MODEL_DIR`로 지정할 수 있습니다.
+이미 checkpoint가 있으면 `MODEL_DIR`로 경로를 지정할 수 있습니다.
 
-## 4. 단일 GPU smoke run
+~~~bash
+MODEL_DIR=<model-dir> ./scripts/download_model.sh
+~~~
 
-```bash
-CUDA_VISIBLE_DEVICES=0 ./scripts/run_smoke.sh
-```
+### Reproduced result 실행
 
-두 번째 물리 GPU를 쓰더라도 프로세스에는 그 GPU 한 장만 보입니다.
+프로세스에 GPU 한 장만 노출한 상태에서 전체 절차를 실행합니다.
 
-```bash
-CUDA_VISIBLE_DEVICES=1 ./scripts/run_smoke.sh
-```
+~~~bash
+CUDA_VISIBLE_DEVICES=0 ./scripts/run_reproduced_result.sh
+~~~
 
-## 실제 실행 흐름
+다른 GPU를 사용하려면 `CUDA_VISIBLE_DEVICES` 값만 변경합니다.
 
-`run_smoke.sh`는 다음 순서를 고정합니다.
+~~~bash
+CUDA_VISIBLE_DEVICES=<gpu-index> ./scripts/run_reproduced_result.sh
+~~~
 
-1. GPU가 정확히 한 장만 보이는지, memory와 model/data 파일이 준비됐는지 검사합니다.
-2. 새 프로세스에서 pretrained checkpoint를 읽고 `test_sft` loss를 측정합니다.
-3. 새 프로세스에서 `train_sft`로 LoRA adapter를 5 optimizer step 학습하고 native Megatron checkpoint를 저장합니다.
-4. 다시 새 프로세스를 시작해 base checkpoint와 저장된 adapter checkpoint를 불러오고 같은 `test_sft` loss를 측정합니다.
-5. 두 log의 `lm loss value`와 perplexity를 `summary.json`에 기록합니다.
+기본 실행 설정은 다음과 같습니다.
 
-성공 판정의 핵심은 `tuned_eval_loss < base_eval_loss`입니다.
-Step loss는 batch마다 달라 단조 감소하지 않아도 되지만 `nan`이나 무한대가 없어야 합니다.
-마지막 평가는 학습 프로세스와 분리되어 있으므로 checkpoint 재로딩도 함께 확인합니다.
+| 항목 | 기본값 |
+| --- | --- |
+| `MODEL_DIR` | `models/Qwen2.5-14B-Instruct` |
+| `DATA_DIR` | `data/ultrachat_200k` |
+| `OUTPUT_DIR` | `results/qwen2.5-14b-megatron-reproduced-result` |
+| `MAX_STEPS` | `5` |
+| `EVAL_ITERS` | `8` |
+| `MAX_LENGTH` | `512` |
+| `GLOBAL_BATCH_SIZE` | `8` |
+| `SEED` | `42` |
 
-## 결과 파일
+재현 조건을 바꾸지 않으려면 위 환경 변수를 지정하지 않고 실행합니다.
 
-```text
-results/qwen2.5-14b-megatron-smoke/
+## 결과 확인
+
+실행 결과는 다음 경로에 저장됩니다.
+
+~~~text
+results/qwen2.5-14b-megatron-reproduced-result/
 |-- base-eval.log
 |-- train.log
 |-- tuned-eval.log
 |-- checkpoints/
 `-- summary.json
-```
+~~~
 
-## TP/DP simulation
+`summary.json`에는 base와 tuned의 held-out loss 및 perplexity, loss 변화율, checkpoint 재로딩 확인 결과가 기록됩니다.
 
-다음 명령은 GPU를 초기화하지 않고 world size 2의 두 배치를 모두 출력합니다.
+핵심 비교 지표는 같은 평가 데이터에 대한 `tuned_eval_loss`와 `base_eval_loss`입니다. 일반적으로 `tuned_eval_loss < base_eval_loss`인지 확인하고, 각 log에 `nan`이나 무한대가 없는지도 함께 확인합니다.
 
-```bash
-./scripts/simulate_parallelism.sh
-```
+## 주요 구현
 
-TP 배치에서는 rank 0과 1의 `tensor_parallel_rank`가 다르고 `data_parallel_rank`는 같습니다.
-DP 배치에서는 `tensor_parallel_rank`가 같고 `data_parallel_rank`가 다릅니다.
-이는 process-group 산술 검증이며 NCCL 통신이나 처리량 검증은 아닙니다.
-
-## 이 장비에서 실제로 확인한 콘솔
-
-UltraChat subset 준비도 실제 공개 split을 대상으로 실행했습니다.
-
-```console
-$ ./scripts/prepare_data.sh
-[data] dataset=HuggingFaceH4/ultrachat_200k train_split=train_sft eval_split=test_sft
-[data] saved train=32 path=data/ultrachat_200k/training.jsonl
-[data] saved evaluation=8 path=data/ultrachat_200k/validation.jsonl
-[data] overlap=0
-```
-
-하드웨어 preflight는 GPU 한 장만 노출한 상태에서 실행했습니다.
-
-```console
-$ CUDA_VISIBLE_DEVICES=1 .venv/bin/python -m megatron_lab.preflight --hardware-only
-[preflight] CUDA_VISIBLE_DEVICES=1 visible_gpus=1
-[preflight] gpu=NVIDIA RTX PRO 4000 Blackwell total_memory_gib=23.42
-[blocked] Qwen2.5-14B Megatron LoRA requires at least 40GiB for this lab; found 23.42GiB
-```
-
-TP/DP simulation과 unit test도 실제로 실행한 결과입니다.
-
-```console
-$ ./scripts/simulate_parallelism.sh
-{
-  "tensor_parallel": {
-    "world_size": 2,
-    "tensor_parallel": 2,
-    "data_parallel": 1,
-    "ranks": [
-      {
-        "global_rank": 0,
-        "tensor_parallel_rank": 0,
-        "data_parallel_rank": 0
-      },
-      {
-        "global_rank": 1,
-        "tensor_parallel_rank": 1,
-        "data_parallel_rank": 0
-      }
-    ]
-  },
-  "data_parallel": {
-    "world_size": 2,
-    "tensor_parallel": 1,
-    "data_parallel": 2,
-    "ranks": [
-      {
-        "global_rank": 0,
-        "tensor_parallel_rank": 0,
-        "data_parallel_rank": 0
-      },
-      {
-        "global_rank": 1,
-        "tensor_parallel_rank": 0,
-        "data_parallel_rank": 1
-      }
-    ]
-  }
-}
-```
-
-```console
-$ .venv/bin/python -m pytest -q
-.........                                                                [100%]
-9 passed in 0.02s
-```
-
-현재 장비에서는 preflight가 memory 부족을 올바르게 차단했으므로 14B 학습 loss나 checkpoint 재로딩 성공을 기록하지 않습니다.
-실행하지 않은 수치를 예시 결과로 제시하지 않습니다.
+- `scripts/prepare_data.sh`: 공개 UltraChat split에서 재현 가능한 학습·평가 subset을 생성합니다.
+- `scripts/download_model.sh`: Hugging Face checkpoint를 준비합니다.
+- `scripts/run_reproduced_result.sh`: preflight, base 평가, 학습, checkpoint 재로딩 평가, 결과 비교를 순서대로 실행합니다.
+- `megatron_lab/preflight.py`: GPU memory, BF16 지원, package, model/data 경로를 확인합니다.
+- `megatron_lab/config.py`: Qwen2.5-14B LoRA와 UltraChat 데이터 구성을 생성합니다.
+- `megatron_lab/sft.py`: base 평가, train, tuned 평가 stage를 실행합니다.
+- `megatron_lab/compare.py`: 평가 log에서 loss를 추출해 `summary.json`을 생성합니다.
 
 ## 참고 자료
 
