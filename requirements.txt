@@ -1,6 +1,7 @@
 torch>=2.5
 transformers>=4.57,<5
 datasets>=5,<6
+huggingface_hub>=0.30,<2
 trl>=1.12,<2
 peft>=0.20,<1
 accelerate>=1.14,<2

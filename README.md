@@ -31,6 +31,16 @@
 .venv/bin/python -c "import torch, bitsandbytes; print(torch.cuda.get_device_name(0)); print(torch.cuda.is_bf16_supported())"
 ```
 
+## Dataset
+
+`setup.sh`는 의존성을 설치한 뒤 필요한 UltraChat SFT parquet split만 `data/ultrachat_200k/data`에 미리 내려받습니다. 이 경로는 Git에서 제외되며, 이후 smoke run은 dataset을 네트워크로 내려받지 않습니다.
+
+다른 디스크에 저장하려면 setup 시작 시 경로를 지정합니다.
+
+```bash
+DATASET_DIR=/mnt/datasets/ultrachat_200k ./scripts/setup.sh
+```
+
 ## Smoke Run
 
 ```bash
@@ -43,11 +53,7 @@
 TRAIN_SAMPLES=128 EVAL_SAMPLES=32 MAX_STEPS=20 OUTPUT_DIR=results/qwen2.5-14b-qlora ./scripts/run_smoke.sh
 ```
 
-Hub 연결 없이 이미 받은 parquet를 사용하려면 dataset snapshot의 `data` directory를 지정할 수 있습니다.
-
-```bash
-./scripts/run_smoke.sh --dataset-parquet-dir <ultrachat-snapshot>/data --local-files-only
-```
+`run_smoke.sh`는 기본 경로를 사용합니다. 다른 경로를 사용했다면 `DATASET_PARQUET_DIR=/mnt/datasets/ultrachat_200k/data ./scripts/run_smoke.sh`처럼 지정합니다.
 
 ## Outputs
 
