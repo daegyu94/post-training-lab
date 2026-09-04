@@ -1,6 +1,4 @@
 .venv/
-data/
-models/
 results/
 __pycache__/
 *.py[cod]
