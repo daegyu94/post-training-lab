@@ -25,6 +25,7 @@ from transformers import (
 )
 from trl import SFTConfig, SFTTrainer
 
+from run_summary import make_run_summary
 from sft_lab.data import QWEN_ASSISTANT_MASK_TEMPLATE, load_ultrachat
 
 
@@ -219,8 +220,9 @@ def main() -> None:
     tokenizer.save_pretrained(adapter_dir)
     base_loss = float(base_eval["base_eval_loss"])
     tuned_loss = float(tuned_eval["tuned_eval_loss"])
-    summary = {
-        "configuration": {
+    summary_path = args.output_dir / "summary.json"
+    summary = make_run_summary(
+        configuration={
             "model": args.model,
             "dataset": args.dataset,
             "train_samples": args.train_samples,
@@ -231,37 +233,57 @@ def main() -> None:
             "learning_rate": args.learning_rate,
             "effective_train_samples": len(trainer.train_dataset),
             "effective_eval_samples": len(trainer.eval_dataset),
+            "world_size": 1,
+            "tensor_parallel_size": 1,
+            "pipeline_parallel_size": 1,
+            "context_parallel_size": 1,
+            "data_parallel_size": 1,
+            "micro_batch_size": 1,
+            "global_batch_size": args.gradient_accumulation_steps,
             "seed": args.seed,
         },
-        "quality": {
+        environment={
+            "python": platform.python_version(),
+            "torch": torch.__version__,
+            "cuda": torch.version.cuda,
+            "gpu": torch.cuda.get_device_name(0),
+            "visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES", "not set"),
+            "framework": "trl",
+            "framework_version": trl.__version__,
+            "transformers": transformers.__version__,
+        },
+        quality={
             "base_eval_loss": base_loss,
             "tuned_eval_loss": tuned_loss,
             "loss_change_percent": 100 * (tuned_loss - base_loss) / base_loss,
             "base_perplexity": _finite_perplexity(base_loss),
             "tuned_perplexity": _finite_perplexity(tuned_loss),
         },
-        "performance": {
+        performance={
             "train_seconds": train_seconds,
             "steps_per_second": train_result.metrics.get("train_steps_per_second"),
             "samples_per_second": train_result.metrics.get("train_samples_per_second"),
             "peak_allocated_gpu_memory_gib": peak_memory_gib,
         },
-        "generations": {"base": base_generations, "tuned": tuned_generations},
-        "environment": {
-            "python": platform.python_version(),
-            "torch": torch.__version__,
-            "transformers": transformers.__version__,
-            "trl": trl.__version__,
-            "cuda": torch.version.cuda,
-            "gpu": torch.cuda.get_device_name(0),
-            "visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES", "not set"),
+        artifacts={
+            "adapter_dir": str(adapter_dir),
+            "checkpoint_dir": str(args.output_dir / "checkpoints"),
+            "summary_file": str(summary_path),
         },
-    }
-    (args.output_dir / "summary.json").write_text(
+        validation={
+            "held_out_loss_improved": tuned_loss < base_loss,
+            "adapter_saved": adapter_dir.is_dir(),
+            "generations": {
+                "base": base_generations,
+                "tuned": tuned_generations,
+            },
+        },
+    )
+    summary_path.write_text(
         json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
-    _log_stage("Complete", f"Summary written to {args.output_dir / 'summary.json'}")
+    _log_stage("Complete", f"Summary written to {summary_path}")
     print(json.dumps(summary, indent=2, ensure_ascii=False))
 
 

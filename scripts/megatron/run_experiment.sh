@@ -57,4 +57,5 @@ echo "[workflow] Stage 3/3: reloading and evaluating the LoRA checkpoint"
 "$venv_dir/bin/python" -m megatron_lab.compare \
   --base-log "$output_dir/base-eval.log" \
   --tuned-log "$output_dir/tuned-eval.log" \
-  --output "$output_dir/summary.json"
+  --output "$output_dir/summary.json" \
+  "${common_args[@]}"

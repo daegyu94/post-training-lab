@@ -29,7 +29,7 @@ CUDA_VISIBLE_DEVICES=<gpu-index> DATASET_PARQUET_DIR=<dataset-parquet-dir> OUTPU
   ./scripts/trl/run_experiment.sh
 ```
 
-실행이 끝난 뒤에는 `summary.json`에서 `tuned_eval_loss < base_eval_loss`인지, `adapter/`가 생성됐는지 확인합니다. 실제 실행 기록은 [TRL Run Record](trl-run-record.md)에 남겨 두었습니다.
+실행이 끝난 뒤에는 `summary.json`에서 `quality.tuned_eval_loss < quality.base_eval_loss`인지, `artifacts.adapter_dir`에 adapter가 생성됐는지 확인합니다. 실제 실행 기록은 [TRL Run Record](trl-run-record.md)에 남겨 두었습니다.
 
 ## Megatron Bridge Workflow
 
@@ -47,6 +47,8 @@ CUDA_VISIBLE_DEVICES=0 ./scripts/megatron/run_experiment.sh
 ## Verify the Results
 
 두 workflow 모두 `results/` 아래에 log와 `summary.json`을 만듭니다. 다음 항목을 확인하세요.
+
+두 `summary.json`은 모두 `schema_version: 1`과 `configuration`, `environment`, `quality`, `performance`, `artifacts`, `validation` section을 사용합니다. TRL은 측정한 training performance를 기록하고, 현재 Megatron workflow는 측정값을 추정하지 않고 빈 `performance` object를 기록합니다.
 
 | 항목 | 확인 기준 |
 | --- | --- |
