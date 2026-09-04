@@ -1,12 +1,12 @@
-# TRL QLoRA Reference Run
+# TRL QLoRA Experiment
 
-이 브랜치는 TRL을 사용해 `Qwen/Qwen2.5-14B-Instruct`를 `HuggingFaceH4/ultrachat_200k`의 대화 데이터로 NF4 QLoRA fine-tuning한 결과를 기준 실행하고 기록하기 위한 브랜치입니다.
+이 브랜치는 TRL을 사용해 `Qwen/Qwen2.5-14B-Instruct`를 `HuggingFaceH4/ultrachat_200k`의 대화 데이터로 NF4 QLoRA fine-tuning하는 실험을 수행하고, 그 결과를 기록하기 위한 브랜치입니다.
 
-기준 실행 과정은 local dataset과 cached model을 사용한 학습, 학습 전후 held-out evaluation, deterministic generation 비교, 저장한 PEFT adapter의 독립 프로세스 재로딩으로 구성됩니다.
+실험 과정은 local dataset과 cached model을 사용한 학습, 학습 전후 held-out evaluation, deterministic generation 비교, 저장한 PEFT adapter의 독립 프로세스 재로딩으로 구성됩니다.
 
-## Reference Run
+## Experiment Result
 
-기준 실행 결과의 환경, configuration, 실행 명령, console output, metric, generation 비교, adapter reload 결과는 [docs/reference-run.md](docs/reference-run.md)에 기록되어 있습니다.
+실험 결과의 환경, configuration, 실행 명령, console output, metric, generation 비교, adapter reload 결과는 [docs/experiment-result.md](docs/experiment-result.md)에 기록되어 있습니다.
 
 이 문서의 목적은 새 실험을 설계하는 것이 아니라, 기록된 configuration과 command를 동일하게 실행하여 결과를 다시 확인하는 것입니다.
 
@@ -23,7 +23,7 @@
 
 ## Setup
 
-의존성과 기준 실행에 사용하는 UltraChat parquet 파일을 준비합니다.
+의존성과 실험에 사용하는 UltraChat parquet 파일을 준비합니다.
 
 ```bash
 ./scripts/setup.sh
@@ -37,14 +37,14 @@ setup.sh는 Python virtual environment를 .venv에 만들고 requirements.txt의
 DATASET_DIR=<dataset-root> ./scripts/setup.sh
 ```
 
-기준 실행 command는 HF_HUB_OFFLINE=1, HF_DATASETS_OFFLINE=1, --local-files-only를 사용하므로 실행 전에 model과 dataset이 local cache 또는 지정한 local directory에 준비되어 있어야 합니다.
+실험 command는 HF_HUB_OFFLINE=1, HF_DATASETS_OFFLINE=1, --local-files-only를 사용하므로 실행 전에 model과 dataset이 local cache 또는 지정한 local directory에 준비되어 있어야 합니다.
 
-## Run the Reference Configuration
+## Run the Experiment
 
 기록된 결과와 동일한 configuration으로 실행하려면 다음 command를 사용합니다.
 
 ```bash
-./scripts/run_reference.sh
+./scripts/run_experiment.sh
 ```
 
 이 script는 다음 configuration을 사용합니다.
@@ -75,14 +75,14 @@ CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
   --max-steps 20 \
   --max-length 512 \
   --gradient-accumulation-steps 8 \
-  --output-dir results/trl-branch-reference
+  --output-dir results/trl-branch-experiment
 ```
 
 GPU와 dataset 경로를 바꾸려면 script를 수정하지 않고 environment variable을 지정할 수 있습니다.
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 DATASET_PARQUET_DIR=<dataset-parquet-dir> OUTPUT_DIR=<output-dir> \
-  ./scripts/run_reference.sh
+  ./scripts/run_experiment.sh
 ```
 
 ## Output Files
@@ -90,7 +90,7 @@ CUDA_VISIBLE_DEVICES=0 DATASET_PARQUET_DIR=<dataset-parquet-dir> OUTPUT_DIR=<out
 실행이 완료되면 다음 결과가 생성됩니다.
 
 ```text
-results/trl-branch-reference/
+results/trl-branch-experiment/
 |-- adapter/       PEFT adapter와 tokenizer
 |-- checkpoints/   Trainer checkpoint
 \-- summary.json   configuration, environment, quality, performance, generation
@@ -113,10 +113,10 @@ summary.json은 Git에서 제외됩니다.
 각 optimizer step의 loss는 서로 다른 training batch에서 계산되므로 학습 중 항상 감소할 필요는 없습니다. 최종 학습 효과는 동일한 held-out subset에서 측정한 base_eval_loss와 tuned_eval_loss를 비교하여 판단합니다.
 
 ```bash
-.venv/bin/python -m json.tool results/trl-branch-reference/summary.json
+.venv/bin/python -m json.tool results/trl-branch-experiment/summary.json
 ```
 
-기록된 실행의 주요 결과는 [docs/reference-run.md](docs/reference-run.md)의 Metrics section에서 확인할 수 있습니다.
+기록된 실행의 주요 결과는 [docs/experiment-result.md](docs/experiment-result.md)의 Metrics section에서 확인할 수 있습니다.
 
 ## Reload the Adapter
 
@@ -125,7 +125,7 @@ summary.json은 Git에서 제외됩니다.
 ```bash
 CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 \
   .venv/bin/python -m sft_lab.infer \
-  results/trl-branch-reference/adapter \
+  results/trl-branch-experiment/adapter \
   --local-files-only \
   --prompt 'Give two practical tips for debugging an out-of-memory error during LLM training.'
 ```
@@ -140,9 +140,9 @@ QLoRA는 frozen 4-bit base weight에 LoRA parameter만 추가하여 학습합니
 
 ## Limitations
 
-이 결과는 128개 training conversation, 15개 held-out conversation, 20 optimizer steps로 실행한 짧은 기준 실행입니다. held-out loss 감소와 adapter reload 성공은 구현된 학습 경로가 동작했음을 보여주지만, 일반적인 instruction-following 품질이나 benchmark 성능 향상을 의미하지는 않습니다.
+이 결과는 128개 training conversation, 15개 held-out conversation, 20 optimizer steps로 실행한 짧은 실험입니다. held-out loss 감소와 adapter reload 성공은 구현된 학습 경로가 동작했음을 보여주지만, 일반적인 instruction-following 품질이나 benchmark 성능 향상을 의미하지는 않습니다.
 
 ## References
 
-- [Reference Run](docs/reference-run.md)
+- [Experiment Result](docs/experiment-result.md)
 - [TRL SFTTrainer documentation](https://huggingface.co/docs/trl/sft_trainer)
