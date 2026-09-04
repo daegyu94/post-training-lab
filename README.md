@@ -75,7 +75,7 @@ CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
   --max-steps 20 \
   --max-length 512 \
   --gradient-accumulation-steps 8 \
-  --output-dir results/trl-branch-experiment
+    --output-dir results/qwen2.5-14b-qlora
 ```
 
 GPU와 dataset 경로를 바꾸려면 script를 수정하지 않고 environment variable을 지정할 수 있습니다.
@@ -90,7 +90,7 @@ CUDA_VISIBLE_DEVICES=0 DATASET_PARQUET_DIR=<dataset-parquet-dir> OUTPUT_DIR=<out
 실행이 완료되면 다음 결과가 생성됩니다.
 
 ```text
-results/trl-branch-experiment/
+results/qwen2.5-14b-qlora/
 |-- adapter/       PEFT adapter와 tokenizer
 |-- checkpoints/   Trainer checkpoint
 \-- summary.json   configuration, environment, quality, performance, generation
@@ -113,7 +113,7 @@ summary.json은 Git에서 제외됩니다.
 각 optimizer step의 loss는 서로 다른 training batch에서 계산되므로 학습 중 항상 감소할 필요는 없습니다. 최종 학습 효과는 동일한 held-out subset에서 측정한 base_eval_loss와 tuned_eval_loss를 비교하여 판단합니다.
 
 ```bash
-.venv/bin/python -m json.tool results/trl-branch-experiment/summary.json
+.venv/bin/python -m json.tool results/qwen2.5-14b-qlora/summary.json
 ```
 
 기록된 실행의 주요 결과는 [docs/experiment-result.md](docs/experiment-result.md)의 Metrics section에서 확인할 수 있습니다.
@@ -125,12 +125,20 @@ summary.json은 Git에서 제외됩니다.
 ```bash
 CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 \
   .venv/bin/python -m sft_lab.infer \
-  results/trl-branch-experiment/adapter \
+  results/qwen2.5-14b-qlora/adapter \
   --local-files-only \
   --prompt 'Give two practical tips for debugging an out-of-memory error during LLM training.'
 ```
 
 이 command가 오류 없이 실행되고 답변을 출력하면 adapter 저장·재로딩 경로가 동작한 것입니다.
+
+## Run the CPU Tests
+
+dataset validation과 assistant-mask template의 unit test는 GPU 없이 실행할 수 있습니다.
+
+```bash
+.venv/bin/python -m pytest -q
+```
 
 ## Implementation Notes
 

@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from datasets import Dataset, load_dataset
+if TYPE_CHECKING:
+    from datasets import Dataset
 
 
 QWEN_ASSISTANT_MASK_TEMPLATE = r"""
@@ -42,6 +43,8 @@ def validate_conversation(example: dict[str, Any]) -> bool:
 
 
 def _load_split(dataset_name: str, split: str, parquet_dir: Path | None) -> Dataset:
+    from datasets import load_dataset
+
     if parquet_dir is None:
         return load_dataset(dataset_name, split=split)
     files = sorted(parquet_dir.glob(f"{split}-*.parquet"))
