@@ -1,10 +1,10 @@
-# Megatron Bridge Qwen2.5 SFT Reproduced Result
+# Megatron Bridge Qwen2.5 SFT Experiment
 
-이 브랜치는 Megatron Bridge로 `Qwen/Qwen2.5-14B-Instruct`를 `HuggingFaceH4/ultrachat_200k`에 LoRA fine-tuning하고, 학습 전후의 held-out loss와 checkpoint 재로딩을 확인하는 reproduced result 실행 절차만 제공합니다.
+이 브랜치는 Megatron Bridge로 `Qwen/Qwen2.5-14B-Instruct`를 `HuggingFaceH4/ultrachat_200k`에 LoRA fine-tuning하고, 학습 전후의 held-out loss와 checkpoint 재로딩을 확인하는 SFT 실험 실행 절차만 제공합니다.
 
 UltraChat의 `train_sft`와 `test_sft`를 각각 학습·평가 데이터로 사용하며, assistant token에만 loss를 적용합니다.
 
-## 재현 범위
+## 실험 범위
 
 실행 스크립트는 다음 순서를 고정합니다.
 
@@ -62,18 +62,18 @@ TRAIN_SAMPLES=32 EVAL_SAMPLES=8 DATA_DIR=data/ultrachat_200k ./scripts/prepare_d
 MODEL_DIR=<model-dir> ./scripts/download_model.sh
 ~~~
 
-### Reproduced result 실행
+### SFT 실험 실행
 
-프로세스에 GPU 한 장만 노출한 상태에서 전체 절차를 실행합니다.
+프로세스에 GPU 한 장만 노출한 상태에서 전체 SFT 실험을 실행합니다.
 
 ~~~bash
-CUDA_VISIBLE_DEVICES=0 ./scripts/run_reproduced_result.sh
+CUDA_VISIBLE_DEVICES=0 ./scripts/run_experiment.sh
 ~~~
 
 다른 GPU를 사용하려면 `CUDA_VISIBLE_DEVICES` 값만 변경합니다.
 
 ~~~bash
-CUDA_VISIBLE_DEVICES=<gpu-index> ./scripts/run_reproduced_result.sh
+CUDA_VISIBLE_DEVICES=<gpu-index> ./scripts/run_experiment.sh
 ~~~
 
 기본 실행 설정은 다음과 같습니다.
@@ -82,21 +82,21 @@ CUDA_VISIBLE_DEVICES=<gpu-index> ./scripts/run_reproduced_result.sh
 | --- | --- |
 | `MODEL_DIR` | `models/Qwen2.5-14B-Instruct` |
 | `DATA_DIR` | `data/ultrachat_200k` |
-| `OUTPUT_DIR` | `results/qwen2.5-14b-megatron-reproduced-result` |
+| `OUTPUT_DIR` | `results/qwen2.5-14b-megatron-experiment` |
 | `MAX_STEPS` | `5` |
 | `EVAL_ITERS` | `8` |
 | `MAX_LENGTH` | `512` |
 | `GLOBAL_BATCH_SIZE` | `8` |
 | `SEED` | `42` |
 
-재현 조건을 바꾸지 않으려면 위 환경 변수를 지정하지 않고 실행합니다.
+실험 조건을 변경하지 않으려면 위 환경 변수를 지정하지 않고 실행합니다.
 
 ## 결과 확인
 
-실행 결과는 다음 경로에 저장됩니다.
+실험 결과는 다음 경로에 저장됩니다.
 
 ~~~text
-results/qwen2.5-14b-megatron-reproduced-result/
+results/qwen2.5-14b-megatron-experiment/
 |-- base-eval.log
 |-- train.log
 |-- tuned-eval.log
@@ -112,7 +112,7 @@ results/qwen2.5-14b-megatron-reproduced-result/
 
 - `scripts/prepare_data.sh`: 공개 UltraChat split에서 재현 가능한 학습·평가 subset을 생성합니다.
 - `scripts/download_model.sh`: Hugging Face checkpoint를 준비합니다.
-- `scripts/run_reproduced_result.sh`: preflight, base 평가, 학습, checkpoint 재로딩 평가, 결과 비교를 순서대로 실행합니다.
+- `scripts/run_experiment.sh`: preflight, base 평가, 학습, checkpoint 재로딩 평가, 결과 비교를 순서대로 실행합니다.
 - `megatron_lab/preflight.py`: GPU memory, BF16 지원, package, model/data 경로를 확인합니다.
 - `megatron_lab/config.py`: Qwen2.5-14B LoRA와 UltraChat 데이터 구성을 생성합니다.
 - `megatron_lab/sft.py`: base 평가, train, tuned 평가 stage를 실행합니다.
