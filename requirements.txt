@@ -1,0 +1,4 @@
+torch>=2.6
+megatron-core>=0.15,<0.16
+numpy<2
+pytest>=8,<10
