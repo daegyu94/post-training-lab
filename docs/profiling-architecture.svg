@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="690" viewBox="0 0 1200 690" role="img" aria-labelledby="title desc">
+  <title id="title">Distributed LLM post-training profiling architecture</title>
+  <desc id="desc">Compute nodes emit low-cost telemetry continuously and selected traces temporarily. Prometheus, Grafana, Tempo, and an artifact store correlate the results. Coverage gaps point to vendor diagnostic tools.</desc>
+  <style>
+    .title { font: 700 25px sans-serif; fill: #13243a; }
+    .label { font: 700 16px sans-serif; fill: #13243a; }
+    .text { font: 14px sans-serif; fill: #23354d; }
+    .small { font: 12px sans-serif; fill: #40546e; }
+    .box { stroke: #426b9e; stroke-width: 2; rx: 12; }
+    .compute { fill: #eaf2ff; }
+    .control { fill: #edf8f0; stroke: #477b57; }
+    .trace { fill: #fff4e5; stroke: #b77427; }
+    .gap { fill: #fcebed; stroke: #ad4f59; }
+    .line { stroke: #426b9e; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+    .dash { stroke: #b77427; stroke-width: 2; stroke-dasharray: 7 5; fill: none; marker-end: url(#orangeArrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#426b9e"/></marker>
+    <marker id="orangeArrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#b77427"/></marker>
+  </defs>
+
+  <text x="40" y="40" class="title">Distributed LLM Post-training Profiling Architecture</text>
+  <text x="40" y="66" class="small">Always-on metrics narrow the search; selected traces establish the cause.</text>
+
+  <rect x="45" y="115" width="300" height="275" class="box compute"/>
+  <text x="70" y="147" class="label">Compute node A</text>
+  <text x="70" y="179" class="text">Megatron ranks / verl roles</text>
+  <text x="70" y="204" class="text">PyTorch DDP process group</text>
+  <text x="70" y="244" class="text">Always on</text>
+  <text x="90" y="268" class="small">Node Exporter: CPU, memory, disk, NIC</text>
+  <text x="90" y="289" class="small">DCGM Exporter: GPU utilization, power, clock</text>
+  <text x="90" y="310" class="small">Framework: step, timer, queue, role metrics</text>
+  <text x="70" y="348" class="text">Selected diagnostic window</text>
+  <text x="90" y="372" class="small">PyTorch Profiler / Kineto trace</text>
+
+  <rect x="45" y="435" width="300" height="175" class="box compute"/>
+  <text x="70" y="467" class="label">Compute node B … N</text>
+  <text x="70" y="499" class="text">Same exporter and rank mapping</text>
+  <text x="70" y="530" class="small">NCCL Tests: fabric baseline</text>
+  <text x="70" y="551" class="small">fio: checkpoint/data storage baseline</text>
+  <text x="70" y="582" class="small">Only selected ranks write traces</text>
+
+  <rect x="455" y="115" width="285" height="175" class="box control"/>
+  <text x="480" y="147" class="label">Monitoring control plane</text>
+  <text x="480" y="179" class="text">Prometheus</text>
+  <text x="500" y="202" class="small">scrapes node, GPU, framework metrics</text>
+  <text x="480" y="234" class="text">Grafana</text>
+  <text x="500" y="257" class="small">compares node / GPU / role / run_id</text>
+
+  <rect x="455" y="350" width="285" height="160" class="box trace"/>
+  <text x="480" y="382" class="label">Trace and artifact plane</text>
+  <text x="480" y="414" class="text">Shared artifact store</text>
+  <text x="500" y="437" class="small">rank map, manifest, Kineto JSON</text>
+  <text x="480" y="470" class="text">Perfetto / HTA</text>
+  <text x="500" y="493" class="small">timeline, overlap, imbalance, idle</text>
+
+  <rect x="845" y="185" width="300" height="195" class="box gap"/>
+  <text x="870" y="217" class="label">Coverage gaps</text>
+  <text x="870" y="250" class="text">OSS stack cannot fully show:</text>
+  <text x="890" y="276" class="small">• CUDA / NCCL system-wide causality</text>
+  <text x="890" y="299" class="small">• kernel occupancy and stall counters</text>
+  <text x="890" y="322" class="small">• fabric internals or tool-service internals</text>
+  <text x="870" y="355" class="text">Short diagnostic only: Nsight Systems / Compute</text>
+
+  <path d="M345 245 H455" class="line"/>
+  <text x="365" y="230" class="small">metrics</text>
+  <path d="M345 515 H455" class="line"/>
+  <text x="365" y="500" class="small">baseline results</text>
+  <path d="M345 365 C405 365 405 415 455 415" class="dash"/>
+  <text x="350" y="402" class="small">bounded traces</text>
+  <path d="M740 430 H845" class="dash"/>
+  <text x="756" y="414" class="small">unresolved cause</text>
+
+  <text x="45" y="654" class="small">Correlation keys: run_id, job, node, global rank, local rank, framework role. Keep high-cardinality request or prompt data out of metric labels.</text>
+</svg>
