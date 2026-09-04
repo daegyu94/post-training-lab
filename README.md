@@ -6,9 +6,9 @@ SFT Lab은 LLM supervised fine-tuning(SFT)과 large-scale LLM post-training으�
 
 | Branch | 목적 | 시작점 |
 | --- | --- | --- |
-| `trl-qwen2.5-14b-ultrachat-qlora` | TRL 기반 QLoRA SFT를 실제 실행하고 held-out 평가·adapter 재로딩까지 확인 | 해당 브랜치의 `README.md` |
-| `megatron-lab` | Qwen2.5-7B와 Megatron Bridge를 사용한 LoRA SFT 실험, Megatron-LM/Megatron Core 병렬화 개념 실습 | 해당 브랜치의 `README.md` |
-| `large-scale-post-training` | TRL 기준 workflow와 Megatron-LM 계열 확장 경로를 함께 정리한 large-scale post-training baseline | 해당 브랜치의 `README.md` |
+| `qlora` | TRL 기반 QLoRA SFT를 실제 실행하고 held-out 평가·adapter 재로딩까지 확인 | 해당 브랜치의 `README.md` |
+| `megatron` | Qwen2.5-7B와 Megatron Bridge를 사용한 LoRA SFT 실험, Megatron-LM/Megatron Core 병렬화 개념 실습 | 해당 브랜치의 `README.md` |
+| `post-training` | TRL 기준 workflow와 Megatron-LM 계열 확장 경로를 함께 정리한 large-scale post-training baseline | 해당 브랜치의 `README.md` |
 | `profiling` | Megatron 또는 verl post-training workload의 GPU·host·network·storage resource profiling | 해당 브랜치의 `README.md` |
 
 원하는 실습 브랜치로 전환한 뒤, 그 브랜치의 `README.md`부터 진행하세요.
@@ -20,19 +20,10 @@ git switch <branch>
 
 ## Branch Relationship
 
-- `trl-qwen2.5-14b-ultrachat-qlora`는 SFT의 dataset, loss, adapter, evaluation 경로를 빠르게 검증하는 기준 실습입니다.
-- `megatron-lab`는 Megatron Bridge와 Megatron-LM/Megatron Core의 개념을 바탕으로, 더 큰 model과 분산 학습 환경으로 확장하기 위한 실습입니다.
-- `large-scale-post-training`는 두 framework를 경쟁 관계가 아닌 기준 검증과 scale-up의 연결 경로로 다룹니다.
+- `qlora`는 SFT의 dataset, loss, adapter, evaluation 경로를 빠르게 검증하는 기준 실습입니다.
+- `megatron`은 Megatron Bridge와 Megatron-LM/Megatron Core의 개념을 바탕으로, 더 큰 model과 분산 학습 환경으로 확장하기 위한 실습입니다.
+- `post-training`은 두 framework를 경쟁 관계가 아닌 기준 검증과 scale-up의 연결 경로로 다룹니다.
 - `profiling`은 실제 multi-GPU·multi-node 실행에서 병목을 관찰하고 원인을 좁히기 위한 공통 resource profiling 환경입니다.
-
-## Deprecated Branches
-
-아래 브랜치는 현재 실습 경로로 사용하지 않습니다. 과거 구현과 문서를 보존하기 위한 용도입니다.
-
-| Branch | 상태 |
-| --- | --- |
-| `deprecated/backup` | 개편 전 저장소 상태 보존 |
-| `deprecated/trl-llm-service-post-training` | 이전 TRL LLM service post-training 자료 보존 |
 
 ## Repository Policy
 
