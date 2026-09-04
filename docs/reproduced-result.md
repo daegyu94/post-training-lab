@@ -1,6 +1,6 @@
 # Reproduced Result
 
-이 문서는 이 브랜치의 code로 실제 실행한 Qwen2.5-14B-Instruct QLoRA 결과를 기록합니다. 실행 산출물 전체는 Git에서 제외하고, 재현에 필요한 command와 작은 summary만 남깁니다.
+이 문서는 이 브랜치에서 실행한 Qwen2.5-14B-Instruct QLoRA 결과를 기록합니다. 전체 산출물은 Git에서 제외하고 재현에 필요한 명령과 요약만 남깁니다.
 
 ## Environment
 
@@ -30,14 +30,7 @@
 | Optimizer steps | 20 |
 | Learning rate | `2e-4`, cosine schedule, warmup ratio 0.1 |
 
-## Dataset Terms
-
-- `train_sft`: 모델이 답변을 보고 파라미터를 조정하는 연습용 대화 묶음입니다.
-- `test_sft`: 학습에는 사용하지 않고, 학습 전후 결과를 비교하는 시험용 대화 묶음입니다.
-
-`test_sft`를 따로 두는 이유는 모델이 연습 문제만 외운 것인지, 학습에 쓰지 않은 대화에도 더 잘 답하는지 구분하기 위해서입니다.
-
-`scripts/setup.sh`로 준비한 로컬 dataset과 model cache를 재사용해 실행한 명령은 다음과 같습니다. `run_smoke.sh`는 이 dataset 옵션을 자동으로 전달합니다.
+재현에 사용한 명령은 다음과 같습니다.
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
@@ -65,7 +58,7 @@ CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
 Loading checkpoint shards: 100%|██████████| 8/8 [00:09<00:00, 1.23s/it]
 ~~~
 
-터미널에서는 대괄호 안의 [INFO]가 청록색, [WARNING]이 노란색, [ERROR]가 빨간색으로 표시됩니다. NO_COLOR를 설정하거나 출력을 파일로 보낼 때는 색상 코드 없이 출력됩니다. Stage 1/6은 local parquet를 읽는 단계이고, Stage 2/6은 Qwen base model의 8개 weight shard를 GPU에 올리는 단계입니다. 이 단계에서는 GPU memory가 크게 증가하지만 아직 학습은 시작하지 않았습니다.
+Stage 1/6에서는 local parquet를 읽고, Stage 2/6에서는 Qwen base model을 GPU에 불러옵니다.
 
 ### 2. Held-out Evaluation Before Training
 
@@ -121,19 +114,22 @@ Loading checkpoint shards: 100%|██████████| 8/8 [00:09<00:00
 | Micro-sample throughput | 1.007 samples/s |
 | Peak allocated GPU memory | 14.50GiB |
 
-`train_sft`의 첫 logged loss는 1.5410이었고 마지막 logged loss는 0.8363이었습니다. 개별 batch 난이도가 달라 중간 값은 단조 감소하지 않았지만, 별도 `test_sft` subset의 loss가 29.84% 감소해 adapter가 단순히 training batch를 통과한 것보다 강한 optimization 증거를 보였습니다.
+`train_sft`의 첫 번째 loss는 1.5410, 마지막 loss는 0.8363이었습니다. batch별 loss는 단조 감소하지 않았지만, 별도 `test_sft` subset의 loss가 29.84% 감소해 학습에 사용하지 않은 data에서도 optimization이 진행됐음을 확인했습니다.
 
-이 수치는 15개 held-out conversation만 사용한 짧은 run의 결과입니다. Qwen2.5-14B-Instruct 자체가 이미 instruction-tuned model이고 UltraChat과 비슷한 대화 분포에 익숙할 수 있으므로, 이를 일반적인 품질 향상이나 benchmark 점수로 해석해서는 안 됩니다.
+평가는 held-out conversation 15개만 사용했으므로 이 결과를 일반적인 품질 향상이나 benchmark 성능으로 해석할 수는 없습니다.
 
 ## Generation Check
 
-`Explain gradient accumulation in three concise bullet points.`에 대해 base와 tuned model 모두 세 항목을 생성했습니다. tuned model은 각 bullet을 더 짧게 끝냈고 96-token 한도 안에서 세 번째 항목까지 완결했습니다.
+학습 전후의 답변 형식을 비교하기 위해 두 모델에 같은 질문을 입력했습니다. 답변 길이는 최대 96 token으로 제한했습니다.
 
-`Give two practical tips for debugging an out-of-memory error during LLM training.`에 대해 base output은 두 번째 항목에 도달하기 전에 96-token 한도에서 잘렸습니다. tuned output은 `Reduce the batch size`와 `Use gradient checkpointing` 두 항목을 한도 안에서 완결했습니다. 두 예시는 형식 준수가 개선된 방향을 보이지만 정성적 예시 두 개이므로 품질 판단의 주 근거는 held-out loss입니다.
+- `Explain gradient accumulation in three concise bullet points.`는 gradient accumulation을 세 항목으로 설명하라는 질문입니다. 두 모델 모두 세 항목을 만들었지만, base model은 마지막 항목을 끝내기 전에 길이 제한에 도달했습니다. tuned model은 세 항목을 모두 끝까지 작성했습니다.
+- `Give two practical tips for debugging an out-of-memory error during LLM training.`은 GPU memory 부족 문제를 해결할 방법 두 가지를 묻는 질문입니다. base model은 두 번째 방법을 쓰기 전에 길이 제한에 도달했습니다. tuned model은 batch size 줄이기와 gradient checkpointing 사용하기를 모두 제시했습니다.
+
+이 두 결과에서는 tuned model이 요구된 항목 수에 맞춰 더 짧고 완결된 답변을 생성했습니다. 다만 질문이 두 개뿐이므로 일반적인 품질 향상을 입증하지는 않으며, 학습 효과는 위의 held-out loss를 기준으로 판단합니다.
 
 ## Reload Check
 
-학습 process를 종료한 뒤 저장된 adapter를 새 Python process에서 다시 적재했습니다.
+학습 프로그램을 종료한 뒤 새 Python 프로세스에서 원본 Qwen 모델과 저장한 adapter를 다시 불러와 결합했습니다. 다음 명령은 결합된 모델에 학습 때 사용한 질문을 다시 입력합니다.
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 \
@@ -143,4 +139,4 @@ CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 \
   --prompt 'Give two practical tips for debugging an out-of-memory error during LLM training.'
 ```
 
-명령은 exit code 0으로 끝났고 학습 직후와 같은 두 항목의 답을 생성했습니다. 따라서 결과는 memory에 남은 adapter에만 의존하지 않으며 저장·재로딩 경로까지 동작합니다.
+명령은 오류 없이 끝났고 학습 직후와 같은 내용의 답변을 생성했습니다. 이를 통해 저장한 adapter를 원본 모델에 다시 붙여 추론할 수 있음을 확인했습니다.
