@@ -6,7 +6,7 @@ SFT Lab은 LLM supervised fine-tuning(SFT)과 large-scale LLM post-training으�
 
 | Branch | 목적 | 시작점 |
 | --- | --- | --- |
-| `qlora` | TRL 기반 QLoRA SFT를 실제 실행하고 held-out 평가·adapter 재로딩까지 확인 | 해당 브랜치의 `README.md` |
+| `trl` | TRL 기반 QLoRA SFT를 실제 실행하고 held-out 평가·adapter 재로딩까지 확인 | 해당 브랜치의 `README.md` |
 | `megatron` | Qwen2.5-7B와 Megatron Bridge를 사용한 LoRA SFT 실험, Megatron-LM/Megatron Core 병렬화 개념 실습 | 해당 브랜치의 `README.md` |
 | `post-training` | TRL 기준 workflow와 Megatron-LM 계열 확장 경로를 함께 정리한 large-scale post-training baseline | 해당 브랜치의 `README.md` |
 | `profiling` | Megatron 또는 verl post-training workload의 GPU·host·network·storage resource profiling | 해당 브랜치의 `README.md` |
@@ -20,7 +20,7 @@ git switch <branch>
 
 ## Branch Relationship
 
-- `qlora`는 SFT의 dataset, loss, adapter, evaluation 경로를 빠르게 검증하는 기준 실습입니다.
+- `trl`은 SFT의 dataset, loss, adapter, evaluation 경로를 빠르게 검증하는 기준 실습입니다.
 - `megatron`은 Megatron Bridge와 Megatron-LM/Megatron Core의 개념을 바탕으로, 더 큰 model과 분산 학습 환경으로 확장하기 위한 실습입니다.
 - `post-training`은 두 framework를 경쟁 관계가 아닌 기준 검증과 scale-up의 연결 경로로 다룹니다.
 - `profiling`은 실제 multi-GPU·multi-node 실행에서 병목을 관찰하고 원인을 좁히기 위한 공통 resource profiling 환경입니다.
