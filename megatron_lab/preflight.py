@@ -1,4 +1,4 @@
-"""Fail early when the single-GPU Qwen2.5-14B run cannot start safely."""
+"""Fail early when the single-GPU Qwen2.5-7B run cannot start safely."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 
 
-MIN_MEMORY_GIB = 40.0
+MIN_MEMORY_GIB = 20.0
 
 
 def parse_args() -> argparse.Namespace:
@@ -45,7 +45,7 @@ def main() -> int:
         )
         if memory_gib < MIN_MEMORY_GIB:
             errors.append(
-                f"Qwen2.5-14B Megatron LoRA requires at least "
+                f"Qwen2.5-7B Megatron LoRA requires at least "
                 f"{MIN_MEMORY_GIB:.0f}GiB for this lab; found {memory_gib:.2f}GiB"
             )
 

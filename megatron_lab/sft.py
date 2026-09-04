@@ -1,4 +1,4 @@
-"""Run one stage of the Qwen2.5-14B Megatron Bridge SFT workflow."""
+"""Run one stage of the Qwen2.5-7B Megatron Bridge SFT workflow."""
 
 from __future__ import annotations
 

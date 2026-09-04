@@ -9,9 +9,9 @@ case "$CUDA_VISIBLE_DEVICES" in
     ;;
 esac
 
-model_dir="${MODEL_DIR:-models/Qwen2.5-14B-Instruct}"
+model_dir="${MODEL_DIR:-models/Qwen2.5-7B-Instruct}"
 data_dir="${DATA_DIR:-data/ultrachat_200k}"
-output_dir="${OUTPUT_DIR:-results/qwen2.5-14b-megatron-experiment}"
+output_dir="${OUTPUT_DIR:-results/qwen2.5-7b-megatron-experiment}"
 train_data="$data_dir/training.jsonl"
 eval_data="$data_dir/validation.jsonl"
 

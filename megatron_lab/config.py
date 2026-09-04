@@ -1,11 +1,11 @@
-"""Build the Qwen2.5-14B Megatron Bridge LoRA configuration."""
+"""Build the Qwen2.5-7B Megatron Bridge LoRA configuration."""
 
 from __future__ import annotations
 
 from argparse import Namespace
 
 
-MODEL_ID = "Qwen/Qwen2.5-14B-Instruct"
+MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
 DATASET_ID = "HuggingFaceH4/ultrachat_200k"
 
 
@@ -16,9 +16,9 @@ def build_config(args: Namespace):
         DirectHFSFTDatasetConfig,
         HFDatasetSourceConfig,
     )
-    from megatron.bridge.recipes.qwen import qwen25_14b_peft_config
+    from megatron.bridge.recipes.qwen import qwen25_7b_peft_config
 
-    cfg = qwen25_14b_peft_config(peft_scheme="lora")
+    cfg = qwen25_7b_peft_config(peft_scheme="lora")
     cfg.model = AutoBridge.from_hf_pretrained(
         str(args.model_dir)
     ).to_megatron_provider(load_weights=False)
