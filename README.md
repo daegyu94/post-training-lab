@@ -39,7 +39,7 @@ TRL과 Megatron-LM의 설치, 학습 명령, framework별 configuration과 실�
 | `main` | 프로젝트 목적과 활성 branch 안내 |
 | `trl` | TRL 기반 SFT/QLoRA 구현과 단일 노드 기준 실험 |
 | `megatron` | Megatron 기반 distributed SFT와 parallelism 검증 |
-| `post-training-system` | framework-independent production lifecycle과 serving integration |
+| `post-training` | framework-independent production lifecycle과 serving integration |
 | `profiling` | 공통 resource metric 수집, schema와 dashboard 연동 |
 
 Framework를 TRL에서 Megatron-LM으로 바꿔도 유효한 정책과 interface는 이 브랜치에 둡니다. 특정 Python API, CLI option, configuration 또는 checkpoint 형식에 의존하는 내용은 해당 framework 브랜치에 둡니다.
