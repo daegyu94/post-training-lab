@@ -8,7 +8,7 @@ SFT Lab은 LLM supervised fine-tuning(SFT), large-scale post-training과 resourc
 | --- | --- |
 | `trl` | TRL 기반 QLoRA SFT, held-out evaluation과 adapter 재로딩 검증 |
 | `megatron` | Qwen2.5-7B Megatron Bridge LoRA SFT와 Megatron parallelism 개념 실습 |
-| `post-training` | TRL baseline에서 Megatron 기반 large-scale post-training으로 확장하는 workflow |
+| `post-training` | framework-independent data lifecycle, checkpoint promotion, serving integration과 rollback |
 | `profiling` | Megatron·verl workload의 GPU, host, network와 storage resource profiling |
 
 원하는 실습 브랜치로 전환한 뒤, 그 브랜치의 `README.md`부터 진행하세요.
