@@ -1,5 +1,0 @@
-torch>=2.6
-megatron-bridge[recipes]==0.6.0
-datasets>=5,<6
-huggingface_hub>=0.30,<2
-pytest>=8,<10

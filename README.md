@@ -1,27 +1,49 @@
-# Large-Scale LLM Post-Training Lab
+# Post-Training System Integration
 
-이 저장소는 LLM post-training workflow를 작은 단일 GPU 검증에서 multi-GPU·multi-node 확장까지 단계적으로 확인하기 위한 실습 저장소입니다. TRL은 SFT의 입력·loss·adapter·평가 흐름을 빠르게 검증하는 기준 구현으로 사용하고, Megatron-LM 계열은 같은 workflow를 분산 학습과 대규모 모델·클러스터 환경으로 확장하는 구현으로 사용합니다.
+이 브랜치는 특정 training framework의 사용법이 아니라, 사내 LLM 서비스에서 수집한 데이터를 학습 가능한 형태로 준비하고, training backend가 생성한 checkpoint를 검증한 뒤 serving system에 안전하게 반영하는 framework-independent post-training lifecycle을 다룹니다.
 
-두 프레임워크는 경쟁하는 실습이 아닙니다. TRL로 post-training의 의미론과 end-to-end 경로를 먼저 확인한 뒤, Megatron-LM으로 parallelism, checkpoint, 통신, storage를 포함한 large-scale 실행 조건을 검증합니다.
-
-## Getting Started
-
-이 브랜치의 전체 목표와 확장 경로는 [docs/overview.md](docs/overview.md), 현재 실행 가능한 SFT workflow와 두 프레임워크의 역할은 [docs/step1.md](docs/step1.md)를 참고하세요.
-
-| 경로 | 역할 | 실행 시작점 |
-| --- | --- | --- |
-| `sft_lab/`, `scripts/trl/` | TRL 기반 QLoRA SFT의 단일 GPU 기준 실행 | `./scripts/trl/setup.sh`, `./scripts/trl/run_experiment.sh` |
-| `megatron_lab/`, `scripts/megatron/` | Megatron Bridge 기반 SFT와 checkpoint workflow 검증 | `./scripts/megatron/setup.sh`, `./scripts/megatron/prepare_data.sh`, `./scripts/megatron/run_experiment.sh` |
-| `requirements/` | 프레임워크별 독립 Python 의존성 | 각 setup script에서 설치 |
-
-각 workflow는 별도의 virtual environment를 사용해야 합니다. 기본값은 `.venv-trl`과 `.venv-megatron`이며, 같은 환경에 두 requirements를 함께 설치하지 마세요.
+TRL과 Megatron-LM의 설치, 학습 명령, framework별 configuration과 실행 결과는 각각 [`trl` branch](https://github.com/daegyu94/sft-lab/tree/trl)와 [`megatron` branch](https://github.com/daegyu94/sft-lab/tree/megatron)가 담당합니다. 이 브랜치는 두 backend를 복제하지 않고 공통 입력·출력 contract와 production integration만 정의합니다.
 
 ## Scope
 
-현재 포함된 실행은 Qwen2.5와 UltraChat을 사용해 dataset → tokenization → SFT → checkpoint/adapter 저장 → 새 프로세스 재로딩 → held-out evaluation 경로를 확인합니다. TRL 실행은 4-bit QLoRA로 24GiB GPU에서도 검증할 수 있게 구성되어 있으며, Megatron 실행은 native distributed backend로 옮기기 전의 Bridge workflow 검증을 제공합니다.
+이 브랜치가 다루는 범위는 다음과 같습니다.
 
-대규모 환경에서는 model size, GPU 수, parallelism 구성, checkpoint 형식, 데이터·storage·통신 경로를 실제 클러스터 조건에 맞춰 바꿔야 합니다. 작은 실행에서의 loss 변화나 처리량을 일반적인 모델 품질 또는 cluster-scale 성능으로 해석하면 안 됩니다.
+- LLM service trace와 benchmark 결과에서 training 및 evaluation candidate를 수집하는 과정
+- 개인정보, 보안 정보, 잘못된 응답을 제거하는 data curation과 dataset versioning
+- training backend에 독립적인 canonical dataset과 training request contract
+- TRL 또는 Megatron-LM backend 선택과 artifact handoff
+- checkpoint 등록, offline evaluation, compatibility validation과 promotion gate
+- canary deployment, serving traffic 전환, monitoring과 rollback
+- multi-node GPU, network, storage를 포함한 production architecture
 
-## Outputs
+다음 항목은 이 브랜치에서 다루지 않습니다.
 
-model weight, dataset cache, checkpoint, profiler trace처럼 큰 산출물은 Git에 저장하지 않습니다. 각 실행은 `results/` 아래에 summary와 log를 생성하며, 확인 방법은 [docs/step1.md](docs/step1.md)에 정리되어 있습니다. 실제 TRL 실행 기록은 [docs/trl-run-record.md](docs/trl-run-record.md)에서 확인할 수 있습니다.
+- TRL `SFTTrainer`, QLoRA, PEFT adapter의 상세 사용법
+- Megatron Core의 TP, PP, DP, CP 설정과 distributed training 명령
+- 특정 model과 GPU 환경에서 수행한 framework별 실행 기록
+- framework package 설치와 독립적인 smoke test
+
+## Documentation
+
+| Document | Description |
+| --- | --- |
+| [System Architecture](docs/architecture.md) | training system과 serving system을 분리하고 연결하는 전체 구조 |
+| [Data Lifecycle](docs/data-lifecycle.md) | trace 수집부터 canonical dataset, split, versioning까지의 공통 기준 |
+| [Checkpoint Lifecycle](docs/checkpoint-lifecycle.md) | checkpoint 등록, 평가, promotion, deployment와 rollback |
+| [Operations](docs/operations.md) | observability, failure handling, storage와 network 운영 기준 |
+
+## Branch Responsibilities
+
+| Branch | Primary responsibility |
+| --- | --- |
+| `main` | 프로젝트 목적과 활성 branch 안내 |
+| `trl` | TRL 기반 SFT/QLoRA 구현과 단일 노드 기준 실험 |
+| `megatron` | Megatron 기반 distributed SFT와 parallelism 검증 |
+| `post-training-system` | framework-independent production lifecycle과 serving integration |
+| `profiling` | 공통 resource metric 수집, schema와 dashboard 연동 |
+
+Framework를 TRL에서 Megatron-LM으로 바꿔도 유효한 정책과 interface는 이 브랜치에 둡니다. 특정 Python API, CLI option, configuration 또는 checkpoint 형식에 의존하는 내용은 해당 framework 브랜치에 둡니다.
+
+## Current Status
+
+이 브랜치는 production architecture와 interface contract를 정의하는 설계 기준입니다. 실제 사내 trace ingestion, model registry, evaluation service, deployment controller와 serving control plane은 환경별 구현이 필요합니다. 문서의 예시 값은 interface를 설명하기 위한 것이며 실제 운영 endpoint나 credential을 포함하지 않습니다.
