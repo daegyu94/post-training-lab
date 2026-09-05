@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    from datasets import Dataset
+from datasets import Dataset, load_dataset
 
 
 QWEN_ASSISTANT_MASK_TEMPLATE = r"""
@@ -43,14 +42,19 @@ def validate_conversation(example: dict[str, Any]) -> bool:
 
 
 def _load_split(dataset_name: str, split: str, parquet_dir: Path | None) -> Dataset:
-    from datasets import load_dataset
-
     if parquet_dir is None:
         return load_dataset(dataset_name, split=split)
     files = sorted(parquet_dir.glob(f"{split}-*.parquet"))
     if not files:
         raise FileNotFoundError(f"No {split}-*.parquet files under {parquet_dir}")
     return load_dataset("parquet", data_files={split: [str(path) for path in files]}, split=split)
+
+
+def _load_jsonl_split(dataset_dir: Path, filename: str, split: str) -> Dataset:
+    path = dataset_dir / filename
+    if not path.is_file():
+        raise FileNotFoundError(f"Missing {path}")
+    return load_dataset("json", data_files={split: str(path)}, split=split)
 
 
 def load_ultrachat(
@@ -63,6 +67,36 @@ def load_ultrachat(
     """Load deterministic, disjoint UltraChat SFT subsets."""
     train = _load_split(dataset_name, "train_sft", parquet_dir)
     evaluation = _load_split(dataset_name, "test_sft", parquet_dir)
+    train = train.select_columns(["messages"])
+    evaluation = evaluation.select_columns(["messages"])
+    train = train.filter(validate_conversation).shuffle(seed=seed)
+    evaluation = evaluation.filter(validate_conversation).shuffle(seed=seed)
+    if train_samples > len(train) or eval_samples > len(evaluation):
+        raise ValueError("Requested sample count exceeds the available validated split")
+    return train.select(range(train_samples)), evaluation.select(range(eval_samples))
+
+
+def load_sft_data(
+    dataset_name: str,
+    train_samples: int,
+    eval_samples: int,
+    seed: int,
+    parquet_dir: Path | None = None,
+    jsonl_dir: Path | None = None,
+) -> tuple[Dataset, Dataset]:
+    """Load either UltraChat parquet or prepared conversational JSONL."""
+    if parquet_dir is not None and jsonl_dir is not None:
+        raise ValueError("Use only one of parquet_dir and jsonl_dir")
+    if jsonl_dir is None:
+        return load_ultrachat(
+            dataset_name,
+            train_samples,
+            eval_samples,
+            seed,
+            parquet_dir,
+        )
+    train = _load_jsonl_split(jsonl_dir, "training.jsonl", "train")
+    evaluation = _load_jsonl_split(jsonl_dir, "validation.jsonl", "validation")
     train = train.select_columns(["messages"])
     evaluation = evaluation.select_columns(["messages"])
     train = train.filter(validate_conversation).shuffle(seed=seed)
