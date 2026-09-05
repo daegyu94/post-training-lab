@@ -17,6 +17,11 @@
 
 다이어그램의 도구별 관측 범위와 오픈소스만으로 확정할 수 없는 질문은 [tool 선택과 사각지대](docs/tooling.md)에 정리했습니다.
 
+## Public Dashboard Demo
+
+합성 데이터 기반의 profiling dashboard 데모는 [SFT Lab Observatory](https://daegyu94.github.io/sft-lab-observatory/)에서 확인할 수 있습니다. 실제 exporter, cluster, training run에는 연결하지 않으며, 실습과 profiling 구성은 이 브랜치에서 계속 제공합니다.
+
+
 ## Labs
 
 | Lab | Outcome |
