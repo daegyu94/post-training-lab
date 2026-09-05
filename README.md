@@ -11,7 +11,16 @@ SFT Lab은 LLM supervised fine-tuning(SFT), large-scale post-training과 resourc
 | `post-training` | framework-independent data lifecycle, checkpoint promotion, serving integration과 rollback |
 | `profiling` | Megatron·verl workload의 GPU, host, network와 storage resource profiling |
 
-원하는 실습 브랜치로 전환한 뒤, 그 브랜치의 `README.md`부터 진행하세요.
+브랜치 사이에 반드시 따라야 하는 순서는 없습니다. 목적에 맞는 브랜치를 선택하세요.
+
+- 단일 GPU에서 실행 가능한 SFT와 QLoRA workflow를 확인하려면 `trl`
+- Megatron 기반 model·dataset·checkpoint workflow와 parallelism 개념을 확인하려면 `megatron`
+- training backend와 무관한 data-to-production lifecycle을 설계하려면 `post-training`
+- distributed workload의 GPU, host, network와 storage 병목을 분석하려면 `profiling`
+
+`trl`과 `megatron`은 서로 다른 training backend를 다루는 독립 실습입니다. `post-training`은 두 backend가 production lifecycle에 연결될 때 필요한 공통 contract를 설명하며, 실행 가능한 training implementation은 포함하지 않습니다. `profiling`은 framework 실행 방법 대신 이미 실행 중인 Megatron 또는 verl workload를 관측하고 분석하는 방법에 집중합니다.
+
+선택한 실습 브랜치로 전환한 뒤, 해당 브랜치의 `README.md`부터 진행하세요.
 
 ```bash
 git fetch origin
