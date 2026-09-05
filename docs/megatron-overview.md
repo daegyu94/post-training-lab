@@ -1,4 +1,4 @@
-# Megatron-LM, Megatron Core, Megatron Bridge 개요
+# Megatron-LM, Megatron Core, and Megatron Bridge Overview
 
 이 저장소의 학습 코드는 Megatron Bridge를 통해 Megatron Core 기반 모델을 사용한다. 아래 구분을 먼저 잡으면 스크립트의 목적이 분명해진다.
 
@@ -6,7 +6,7 @@
 - [Megatron Core](https://docs.nvidia.com/megatron-core/developer-guide/latest/)는 Transformer 블록과 병렬화 전략을 조합하는 라이브러리다.
 - [Megatron Bridge](https://docs.nvidia.com/nemo/megatron-bridge/latest/)는 Hugging Face 체크포인트와 Megatron 형식 사이의 변환, 모델별 recipe, 학습 진입점을 제공하는 연결 계층이다. 이 실습의 Qwen2.5-7B LoRA 설정도 Bridge recipe를 사용한다.
 
-## 현재 실험의 위치
+## Experiment Positioning
 
 ~~~text
 Hugging Face Qwen2.5-7B checkpoint
@@ -18,7 +18,7 @@ Megatron Core model and parallelism settings
 
 실제 SFT 실행은 기본값으로 TP=1, PP=1, CP=1, DP=1인 단일 GPU 구성이다. 즉, 아래 실습은 분산 학습 성능이나 통신 동작을 검증하지 않는다.
 
-## 병렬화 용어
+## Parallelism Terminology
 
 | 방식 | 나누는 대상 | 주로 해결하는 문제 |
 | --- | --- | --- |
@@ -37,7 +37,7 @@ world_size = TP × PP × CP × DP
 
 실제 가능한 조합과 통신 방식은 모델, sequence length, GPU 메모리, 네트워크에 따라 달라진다. [Megatron Core 병렬화 문서](https://docs.nvidia.com/megatron-core/developer-guide/latest/api-guide/context_parallel.html)를 실제 설정의 기준으로 삼는다.
 
-## GPU 없는 개념 실습
+## CPU-Only Practice
 
 다음 명령은 GPU, CUDA, NCCL, torch.distributed를 초기화하지 않는다.
 
