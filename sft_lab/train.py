@@ -25,7 +25,7 @@ from transformers import (
 )
 from trl import SFTConfig, SFTTrainer
 
-from sft_lab.data import QWEN_ASSISTANT_MASK_TEMPLATE, load_ultrachat
+from sft_lab.data import QWEN_ASSISTANT_MASK_TEMPLATE, load_sft_data
 
 
 DEFAULT_PROMPTS = [
@@ -39,6 +39,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model", default="Qwen/Qwen2.5-14B-Instruct")
     parser.add_argument("--dataset", default="HuggingFaceH4/ultrachat_200k")
     parser.add_argument("--dataset-parquet-dir", type=Path)
+    parser.add_argument("--dataset-jsonl-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, default=Path("results/qwen2.5-14b-qlora"))
     parser.add_argument("--train-samples", type=int, default=128)
     parser.add_argument("--eval-samples", type=int, default=32)
@@ -119,14 +120,15 @@ def main() -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     _log_stage(
         "Stage 1/6",
-        f"Loading local dataset from {args.dataset_parquet_dir}",
+        f"Loading dataset from {args.dataset_jsonl_dir or args.dataset_parquet_dir or args.dataset}",
     )
-    train_dataset, eval_dataset = load_ultrachat(
+    train_dataset, eval_dataset = load_sft_data(
         args.dataset,
         args.train_samples,
         args.eval_samples,
         args.seed,
         args.dataset_parquet_dir,
+        args.dataset_jsonl_dir,
     )
 
     _log_stage(
@@ -223,6 +225,7 @@ def main() -> None:
         "configuration": {
             "model": args.model,
             "dataset": args.dataset,
+            "dataset_jsonl_dir": str(args.dataset_jsonl_dir) if args.dataset_jsonl_dir else None,
             "train_samples": args.train_samples,
             "eval_samples": args.eval_samples,
             "max_steps": args.max_steps,

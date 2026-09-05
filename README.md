@@ -39,6 +39,16 @@ DATASET_DIR=<dataset-root> ./scripts/setup.sh
 
 실험 command는 HF_HUB_OFFLINE=1, HF_DATASETS_OFFLINE=1, --local-files-only를 사용하므로 실행 전에 model과 dataset이 local cache 또는 지정한 local directory에 준비되어 있어야 합니다.
 
+## Prepare Internal Service Data
+
+향후 사내 LLM 서비스 trace와 benchmark에서 train, validation, test 데이터를 만드는 기준과 실습은 [사내 LLM 서비스 데이터 가이드](docs/internal-data-guide.md)를 참고하세요. 실습 converter는 승인된 synthetic trace만 선택하고, session 단위 split, 중복 prompt 제거, test 정답 분리, manifest 생성을 수행합니다.
+
+```bash
+./scripts/prepare_service_data.sh
+```
+
+생성한 conversational JSONL을 기존 TRL 학습 경로에 연결할 때는 `--dataset-jsonl-dir data/service-sft`를 지정합니다. Test의 `reference_answer`와 `grader`는 학습 입력에 포함되지 않습니다.
+
 ## Run the Experiment
 
 기록된 결과와 동일한 configuration으로 실행하려면 다음 command를 사용합니다.
@@ -145,4 +155,5 @@ QLoRA는 frozen 4-bit base weight에 LoRA parameter만 추가하여 학습합니
 ## References
 
 - [Experiment Result](docs/experiment-result.md)
+- [Internal Service Data Guide](docs/internal-data-guide.md)
 - [TRL SFTTrainer documentation](https://huggingface.co/docs/trl/sft_trainer)
