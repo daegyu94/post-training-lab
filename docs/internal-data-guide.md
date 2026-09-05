@@ -1,8 +1,8 @@
-# 사내 LLM 서비스 데이터로 SFT 데이터셋 만들기
+# Building SFT Datasets from Internal LLM Service Data
 
 이 문서는 사내 LLM 서비스의 trace와 benchmark를 TRL `SFTTrainer`가 읽을 수 있는 학습·검증 데이터로 바꾸고, 학습에 노출되지 않는 test set과 정답을 별도로 관리하는 기준을 설명합니다. 저장소의 예제는 synthetic trace만 사용하며 실제 사내 데이터는 포함하지 않습니다.
 
-## 먼저 구분해야 할 데이터
+## Dataset Roles
 
 | 구분 | 모델에 제공하는 내용 | 사용 목적 | 정답 노출 |
 | --- | --- | --- | --- |
@@ -12,7 +12,7 @@
 
 SFT의 target은 서비스가 과거에 생성한 응답 그 자체가 아니라, 같은 요청에 모델이 앞으로 생성하기를 원하는 응답이어야 합니다. 사용자 반응이 좋았다는 이유만으로 운영 응답을 정답으로 간주하지 말고, 전문가 검수·수정이나 실행 기반 검증을 거쳐야 합니다.
 
-## 데이터 원천과 정답을 만드는 방법
+## Data Sources and Ground Truth
 
 | 원천 | 학습 예제로 만드는 방법 | 적합한 정답 또는 검증 방식 |
 | --- | --- | --- |
@@ -25,7 +25,7 @@ SFT의 target은 서비스가 과거에 생성한 응답 그 자체가 아니라
 
 운영 모델의 원본 출력, thumbs-up만 있는 응답, 검수 상태를 알 수 없는 대화, secret·개인정보·고객 데이터가 남은 trace는 학습 target으로 사용하지 않습니다. 사용자 요청과 정답의 라이선스·보존 기간·학습 이용 동의도 데이터 반출 전에 확인해야 합니다.
 
-## 권장 수집 파이프라인
+## Recommended Collection Pipeline
 
 1. 서비스 logging 계층에서 `trace_id`, `session_id`, model version, prompt와 response, latency, feedback을 원본 보존 영역으로 수집합니다.
 2. 허용된 task와 기간만 선택하고 secret, credential, 개인정보, 고객 식별자, 내부 host 정보를 제거합니다.
@@ -35,7 +35,7 @@ SFT의 target은 서비스가 과거에 생성한 응답 그 자체가 아니라
 6. test의 reference와 grader는 학습자가 접근할 수 없는 별도 저장소에 고정하고, 학습 데이터와의 exact·semantic 중복을 검사합니다.
 7. dataset version, 원본 query 기준, 필터 수, 제외 사유, reviewer, source hash, split seed를 data card와 manifest에 기록합니다.
 
-## 이 브랜치의 입력 형식
+## Input Format
 
 변환 전 trace는 다음 최소 schema를 사용합니다.
 
@@ -60,7 +60,7 @@ SFT의 target은 서비스가 과거에 생성한 응답 그 자체가 아니라
 
 현재 Qwen assistant-only template과 실습 converter는 `system`, `user`, `assistant` role만 허용합니다. `tool` message와 구조화된 `tool_calls`가 있는 agent trace는 원본을 보존하되, 대상 모델의 chat template과 loss mask가 해당 구조를 지원하는지 검증한 전용 adapter를 만든 후 포함해야 합니다. 이를 일반 문자열로 임의 변환하면 serving 때의 형식과 학습 형식이 달라질 수 있습니다.
 
-## TRL 형식으로 변환하는 실습
+## TRL Conversion
 
 ```bash
 ./scripts/setup.sh
@@ -103,7 +103,7 @@ CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 \
 
 `manifest.json`에서 입력 파일 hash, split별 개수, 제외 사유를 확인합니다. 실제 데이터 pipeline에서는 승인 데이터가 갑자기 줄거나 특정 제외 사유가 늘면 build를 실패시키는 기준을 추가해야 합니다.
 
-## 운영 전 확인 항목
+## Pre-Deployment Checklist
 
 - target 응답이 원본 model output이 아니라 승인된 목표 동작인가
 - 개인정보, credential, 고객 데이터, 내부 주소가 제거되었는가
@@ -114,7 +114,7 @@ CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 \
 - task 분포, 언어, 길이, 안전성, 최신성이 실제 서비스 목표와 맞는가
 - dataset version과 model version으로 결과를 다시 추적할 수 있는가
 
-## 참고 자료
+## References
 
 - [TRL dataset formats](https://huggingface.co/docs/trl/dataset_formats)
 - [TRL SFTTrainer](https://huggingface.co/docs/trl/sft_trainer)
