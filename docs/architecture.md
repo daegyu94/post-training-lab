@@ -2,51 +2,110 @@
 
 ## Purpose
 
-post-training system은 live serving path와 training path를 분리해야 합니다. 사용자 요청을 처리하는 serving system이 training job의 장애나 자원 사용량에 직접 영향을 받지 않도록 구성하고, 검증을 통과한 immutable checkpoint만 명시적인 promotion 절차를 통해 serving system으로 전달합니다.
+post-training system은 사용자 요청을 처리하는 online serving path와, data preparation·training·evaluation을 수행하는 offline path를 분리합니다. training job이나 shared storage의 장애가 현재 serving revision에 직접 영향을 주지 않게 하고, 검증을 통과한 immutable artifact만 명시적인 publish와 promotion을 거쳐 전달하는 것이 목적입니다.
 
-## Components
+## Design Invariants
 
-| Component | Responsibility |
-| --- | --- |
-| Serving system | 사용자 요청 처리, trace와 feedback event 생성, deployed model revision 기록 |
-| Data pipeline | trace 정제, 보안 검사, 중복 제거, 품질 필터링과 dataset version 생성 |
-| Evaluation pipeline | 고정 benchmark, held-out dataset, safety test와 regression test 실행 |
-| Training control plane | dataset version과 backend를 선택하고 reproducible training request 생성 |
-| TRL backend | 빠른 SFT/QLoRA 기준 실험과 adapter artifact 생성 |
-| Megatron backend | multi-GPU·multi-node SFT와 distributed checkpoint 생성 |
-| Model registry | checkpoint, tokenizer, configuration, provenance와 evaluation result 보관 |
-| Deployment controller | compatibility validation, canary rollout, traffic promotion과 rollback |
-| Observability pipeline | data, training, storage, network, deployment와 serving metric 연결 |
+구현 방식과 사용하는 제품이 달라도 다음 조건은 유지합니다.
 
-## End-to-End Flow
+1. raw trace를 training backend가 직접 읽지 않습니다.
+2. dataset, base model, recipe와 artifact는 immutable revision으로 참조합니다.
+3. training 중인 checkpoint directory를 registry 또는 serving node에 노출하지 않습니다.
+4. evaluation evidence가 없는 candidate는 canary로 이동하지 않습니다.
+5. production traffic 전환과 rollback은 기록 가능한 deployment event로 수행합니다.
+6. 현재 production revision은 training, registry 또는 evaluation 장애가 발생해도 계속 serving할 수 있어야 합니다.
+
+## Logical Topology
 
 ```mermaid
 flowchart TD
-    A["Serving traces and benchmarks"] --> B["Curate and version dataset"]
-    B --> C["Create training request"]
-    C --> D{"Select backend"}
-    D --> E["TRL branch"]
-    D --> F["Megatron branch"]
-    E --> G["Register candidate artifact"]
-    F --> G
-    G --> H["Offline evaluation and validation"]
-    H --> I{"Promotion gate"}
-    I -->|Pass| J["Canary deploy and monitor"]
-    I -->|Fail| K["Reject with evidence"]
-    J -->|Healthy| L["Promote serving revision"]
-    J -->|Regression| M["Rollback"]
+    subgraph Online["Online serving plane"]
+        S["Serving system"] --> T["Trace and feedback events"]
+    end
+
+    subgraph Offline["Offline post-training plane"]
+        P["Data pipeline"] --> C["Training control plane"]
+        C --> B["TRL or Megatron backend"]
+        B --> E["Evaluation pipeline"]
+    end
+
+    subgraph Release["Artifact and release plane"]
+        R["Model registry"] --> D["Deployment controller"]
+        D --> V["Serving revision"]
+    end
+
+    T --> P
+    B --> R
+    E --> R
+    D --> S
 ```
 
-## System Boundaries
+화살표는 logical control 또는 artifact flow를 나타냅니다. 실제 구현에서는 trace storage, dataset storage와 model registry가 서로 다른 storage system일 수 있습니다.
 
-Training backend는 canonical dataset revision과 training request를 입력으로 받고 candidate artifact와 manifest를 출력합니다. backend 내부의 tokenization, parallelism, optimizer와 checkpoint writer는 framework branch의 책임입니다.
+## Components
 
-Model registry 이후 단계는 framework에 의존하지 않아야 합니다. deployment controller는 artifact manifest에 기록된 model architecture, tokenizer revision, tensor format, precision과 serving engine compatibility를 확인하고, 변환이 필요한 경우 원본과 변환본의 lineage를 모두 보존합니다.
+| Component | Input | Output | Responsibility |
+| --- | --- | --- | --- |
+| Serving system | serving revision, user request | response, trace, feedback | 요청 처리와 배포 revision 기록 |
+| Data pipeline | allowed raw events, benchmark source | dataset revision, manifest | 복원, redaction, 품질 검사, deduplication과 split |
+| Training control plane | dataset revision, base model, recipe | training request, run identity | 입력을 고정하고 backend job을 요청 |
+| TRL backend | canonical dataset adapter, request | PEFT adapter 또는 full artifact, summary | 빠른 SFT/QLoRA training |
+| Megatron backend | preprocessed dataset, request | checkpoint, summary | large-scale training backend. 현재 `megatron` branch 실습은 단일 GPU 기준 |
+| Evaluation pipeline | candidate, held-out data, suite revision | evaluation evidence | quality, safety, regression과 compatibility 검사 |
+| Model registry | complete artifact, manifest, evidence | immutable candidate revision | artifact와 lineage 보관, publish 상태 관리 |
+| Deployment controller | approved candidate, rollout policy | serving revision, deployment event | preflight, canary, promotion과 rollback |
+| Observability pipeline | stage metric, log, event | correlated dashboard and alert | 동일한 run과 revision 기준으로 상태 연결 |
 
-Serving system은 checkpoint path를 임의로 덮어쓰지 않습니다. 새로운 model revision을 별도 위치에 준비하고 health check가 끝난 뒤 traffic을 점진적으로 이동합니다. rollback은 이전 revision을 다시 선택하는 방식으로 수행합니다.
+TRL과 Megatron 내부의 tokenizer 적용, optimizer, parallelism과 checkpoint writer는 각 framework branch의 책임입니다. registry 이후의 evaluation, promotion과 deployment contract는 backend 종류에 의존하지 않아야 합니다.
+
+## End-to-End Control Flow
+
+```mermaid
+flowchart TD
+    A["Publish dataset revision"] --> B["Create training request"]
+    B --> C{"Select backend"}
+    C -->|TRL| D["Train adapter or model"]
+    C -->|Megatron| E["Run distributed training"]
+    D --> F["Upload complete artifact"]
+    E --> F
+    F --> G["Register candidate"]
+    G --> H["Evaluate and validate"]
+    H --> I{"Promotion decision"}
+    I -->|Reject| J["Retain evidence"]
+    I -->|Approve| K["Canary rollout"]
+    K -->|Healthy| L["Promote revision"]
+    K -->|Regression| M["Rollback and quarantine"]
+```
+
+`upload complete`와 `register candidate`를 분리하는 이유는 incomplete checkpoint가 discovery API나 deployment controller에 보이지 않게 하기 위해서입니다. 일반적으로 임시 위치에 모든 파일을 쓴 뒤 digest를 검증하고, registry metadata를 원자적으로 visible 상태로 전환합니다.
+
+## Boundary Contracts
+
+| Boundary | Required input | Required output | Must not happen |
+| --- | --- | --- | --- |
+| Data → Training | dataset revision, digest, schema version | adapter가 읽을 수 있는 validated input | floating path 또는 raw trace 직접 사용 |
+| Control plane → Backend | request ID, base model revision, recipe revision | run ID가 포함된 artifact와 summary | CLI command만 남기고 provenance 누락 |
+| Backend → Registry | complete files, manifest, per-file digest | immutable candidate revision | 쓰는 중인 directory 공개 |
+| Registry → Evaluation | candidate revision, tokenizer와 config | versioned evidence와 gate result | candidate 파일을 evaluation 중 수정 |
+| Registry → Deployment | approved revision, compatibility result | serving revision과 rollout event | production alias를 파일 복사 중 변경 |
+
+## Minimal Implementation Path
+
+처음부터 모든 component를 별도 service로 만들 필요는 없습니다. 한 host에서 시작하더라도 경계와 artifact는 분리해 두면 이후 확장할 수 있습니다.
+
+1. canonical JSONL과 dataset manifest를 immutable directory에 생성합니다.
+2. training request를 YAML 또는 JSON으로 저장하고 framework script를 실행합니다.
+3. training 결과의 `summary.json`, artifact와 digest 목록을 candidate directory에 모읍니다.
+4. 별도 process에서 load test와 offline evaluation을 실행해 evidence를 저장합니다.
+5. 사람이 승인한 candidate만 별도 serving directory에서 불러옵니다.
+6. serving revision과 이전 revision을 기록해 수동 rollback부터 검증합니다.
+
+PoC에서 directory와 script로 구현한 각 단계는 production에서 object storage, workflow orchestrator, model registry와 deployment controller로 바뀔 수 있습니다. 하지만 revision, digest, 상태 전이와 evidence contract는 그대로 유지합니다.
 
 ## Scaling Considerations
 
-PoC 환경에서는 하나의 host에서 data preparation, training과 evaluation을 순차 실행할 수 있습니다. 목표 환경에서는 training cluster, shared storage, model registry와 serving cluster를 분리하고 각 경계의 throughput과 failure domain을 측정해야 합니다.
+multi-node로 확장하면 model quality 외에 dataset read throughput, collective duration, GPU idle time, checkpoint save/load 시간, storage metadata 부하와 artifact transfer 시간이 critical path가 될 수 있습니다. 이 값은 [`profiling` branch](https://github.com/daegyu94/sft-lab/tree/profiling)의 metric contract를 사용해 같은 `run_id`와 phase로 연결합니다.
 
-1T급 model과 4노드 이상 GPU cluster로 확장할 때는 checkpoint 크기, distributed save/load 시간, optimizer state, network collective, dataset read throughput과 storage metadata 부하가 critical path에 포함됩니다. 따라서 model quality metric만이 아니라 training step time, checkpoint duration, effective storage throughput, network utilization과 recovery time을 같은 run identifier로 연결해야 합니다.
+training cluster와 serving cluster가 물리적으로 분리된 경우에는 artifact transfer 완료, digest validation과 registry publish를 하나의 release boundary로 취급합니다. serving node는 training storage를 직접 mount해 미완성 checkpoint를 읽지 않습니다.
+
+다음 단계: [Data Lifecycle](data-lifecycle.md)에서 첫 번째 contract인 dataset revision을 확인하세요.
