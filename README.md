@@ -16,12 +16,12 @@
 
 각 workflow는 별도의 virtual environment를 사용해야 합니다. 기본값은 `.venv-trl`과 `.venv-megatron`이며, 같은 환경에 두 requirements를 함께 설치하지 마세요.
 
-## Scope and Scale-up Boundary
+## Scope
 
 현재 포함된 실행은 Qwen2.5와 UltraChat을 사용해 dataset → tokenization → SFT → checkpoint/adapter 저장 → 새 프로세스 재로딩 → held-out evaluation 경로를 확인합니다. TRL 실행은 4-bit QLoRA로 24GiB GPU에서도 검증할 수 있게 구성되어 있으며, Megatron 실행은 native distributed backend로 옮기기 전의 Bridge workflow 검증을 제공합니다.
 
 대규모 환경에서는 model size, GPU 수, parallelism 구성, checkpoint 형식, 데이터·storage·통신 경로를 실제 클러스터 조건에 맞춰 바꿔야 합니다. 작은 실행에서의 loss 변화나 처리량을 일반적인 모델 품질 또는 cluster-scale 성능으로 해석하면 안 됩니다.
 
-## Outputs and Verification
+## Outputs
 
 model weight, dataset cache, checkpoint, profiler trace처럼 큰 산출물은 Git에 저장하지 않습니다. 각 실행은 `results/` 아래에 summary와 log를 생성하며, 확인 방법은 [docs/step1.md](docs/step1.md)에 정리되어 있습니다. 실제 TRL 실행 기록은 [docs/trl-run-record.md](docs/trl-run-record.md)에서 확인할 수 있습니다.
