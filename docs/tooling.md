@@ -7,6 +7,8 @@
 | Question | Tool | Collection mode | Boundary |
 | --- | --- | --- | --- |
 | 어느 node의 CPU, memory, NIC 또는 disk가 포화됐는가? | Prometheus Node Exporter | Always on | rank와 framework phase를 알지 못함 |
+| 어느 container 또는 cgroup이 host 자원을 사용했는가? | cAdvisor | When container isolation matters | framework phase와 GPU activity를 알지 못함 |
+| Storage→host→GPU와 GPU 간 전송이 어느 phase에 집중되는가? | Framework phase marker + exporter correlation | Always on summary | 정확한 copy/collective causality는 selected trace 필요 |
 | 어느 GPU가 idle, memory-bound 또는 throttled 상태인가? | NVIDIA DCGM Exporter | Always on | exporter는 OSS지만 NVIDIA driver/DCGM에 의존함 |
 | Ray actor가 pending/restarting되거나 object store가 spill하는가? | Ray metrics and Dashboard | Always on | verl의 rollout/training 의미는 별도 metric 필요 |
 | 여러 signal을 어떻게 저장하고 비교하는가? | Prometheus and Grafana | Always on | event causality와 kernel timeline은 제공하지 않음 |
@@ -30,6 +32,16 @@ Megatron timer와 `StragglerDetector`, verl rollout statistic, Ray actor state�
 ### 3. Selected diagnostic trace
 
 이상 rank와 step이 확인된 후 PyTorch Profiler/Kineto를 짧게 실행하고 HTA/Perfetto로 분석합니다. 기준 run과 trace run은 분리하며 capture rank, step, option과 tool version을 manifest에 기록합니다.
+
+## Metric Contract and Phase Correlation
+
+Canonical name, unit, scope, source와 collection policy는 [`config/metrics.json`](../config/metrics.json)에 정의합니다. [`config/metrics.schema.json`](../config/metrics.schema.json)은 JSON file의 구조를 검증하고 [Profiling metric contract](metric-schema.md)는 label, manifest field와 phase vocabulary의 사용 방법을 설명합니다.
+
+![phase별 data movement profiling 경로](data-movement-profiling.svg)
+
+Dataset/model loading, training input, forward/backward, optimizer, checkpoint와 evaluation을 같은 phase vocabulary로 기록합니다. 각 path에서 bytes와 duration을 얻을 수 있으면 effective bandwidth를 계산하고, NCCL Tests 또는 fio baseline 대비 workload utilization을 별도 derived metric으로 저장합니다.
+
+Local NVMe와 remote/shared storage는 동일한 `storage_read_bytes_per_second`만으로 구분하지 않습니다. Storage path type, filesystem, mount, cache state와 node topology는 run manifest에 기록하고, remote storage는 client disk/filesystem, storage network와 server 측 metric을 함께 봅니다. Client exporter만으로 backend contention이나 cache hit의 원인을 확정하지 않습니다.
 
 ## What Open Source Alone Cannot Fully Resolve
 

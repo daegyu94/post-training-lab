@@ -17,10 +17,16 @@
 
 다이어그램의 도구별 관측 범위와 오픈소스만으로 확정할 수 없는 질문은 [tool 선택과 사각지대](docs/tooling.md)에 정리했습니다.
 
+## Metric Contract and Data Movement
+
+![phase별 data movement profiling 경로](docs/data-movement-profiling.svg)
+
+Storage, host memory, GPU와 node 간 전송은 전체 run 평균만 보지 않고 workflow phase와 path별 bytes, duration, effective bandwidth로 구분합니다. Canonical metric은 [`config/metrics.json`](config/metrics.json)에 정의되어 있고, 파일 형식과 확장 규칙은 [Profiling metric contract](docs/metric-schema.md)에서 설명합니다.
+
+
 ## Public Dashboard Demo
 
 합성 데이터 기반의 profiling dashboard 데모는 [SFT Lab Observatory](https://daegyu94.github.io/sft-lab-observatory/)에서 확인할 수 있습니다. 실제 exporter, cluster, training run에는 연결하지 않으며, 실습과 profiling 구성은 이 브랜치에서 계속 제공합니다.
-
 
 ## Labs
 
@@ -60,7 +66,9 @@ Prometheus는 `http://<monitoring-host>:9090`, Grafana는 `http://<monitoring-ho
 - `examples/pytorch`: 선택 rank/step용 PyTorch Profiler helper와 DDP demo
 - `scripts/check_tools.sh`: 오픈소스 도구와 vendor fallback의 설치 여부 확인
 - `scripts/validate_observability.sh`: monitoring stack 실행과 validation orchestration
-- `config/metrics.json`: framework에 관계없는 metric vocabulary와 collection policy
+- `config/metrics.json`: framework에 관계없는 metric vocabulary, phase와 collection policy
+- `config/metrics.schema.json`: metric contract의 JSON Schema
+- `docs/metric-schema.md`: label, manifest field, phase와 data movement metric 작성 규칙
 - `profiling_lab/observability.py`: target, readiness, health와 query validation
 - `profiling_lab/schema.py`: metric schema validation
 - `run_summary.py`: framework 공통 summary schema
