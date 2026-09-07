@@ -104,7 +104,7 @@ PoC에서 directory와 script로 구현한 각 단계는 production에서 object
 
 ## Scaling Considerations
 
-multi-node로 확장하면 model quality 외에 dataset read throughput, collective duration, GPU idle time, checkpoint save/load 시간, storage metadata 부하와 artifact transfer 시간이 critical path가 될 수 있습니다. 이 값은 [`profiling` branch](https://github.com/daegyu94/sft-lab/tree/profiling)의 metric contract를 사용해 같은 `run_id`와 phase로 연결합니다.
+multi-node로 확장하면 model quality 외에 dataset read throughput, collective duration, GPU idle time, checkpoint save/load 시간, storage metadata 부하와 artifact transfer 시간이 critical path가 될 수 있습니다. 이 값은 [`profiling` branch](https://github.com/daegyu94/post-training-lab/tree/profiling)의 metric contract를 사용해 같은 `run_id`와 phase로 연결합니다.
 
 training cluster와 serving cluster가 물리적으로 분리된 경우에는 artifact transfer 완료, digest validation과 registry publish를 하나의 release boundary로 취급합니다. serving node는 training storage를 직접 mount해 미완성 checkpoint를 읽지 않습니다.
 

@@ -27,7 +27,7 @@ flowchart TD
 
 ## Observability
 
-metric vocabulary와 수집 방식은 [`profiling` branch](https://github.com/daegyu94/sft-lab/tree/profiling)의 schema를 사용하고, 이 브랜치에서는 lifecycle별 필수 signal을 정의합니다.
+metric vocabulary와 수집 방식은 [`profiling` branch](https://github.com/daegyu94/post-training-lab/tree/profiling)의 schema를 사용하고, 이 브랜치에서는 lifecycle별 필수 signal을 정의합니다.
 
 | Stage | Required signals | First question on failure |
 | --- | --- | --- |
