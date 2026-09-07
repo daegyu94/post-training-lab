@@ -26,7 +26,7 @@ Storage, host memory, GPU와 node 간 전송은 전체 run 평균만 보지 않�
 
 ## Public Dashboard Demo
 
-합성 데이터 기반의 profiling dashboard 데모는 [SFT Lab Observatory](https://daegyu94.github.io/sft-lab-observatory/)에서 확인할 수 있습니다. 실제 exporter, cluster, training run에는 연결하지 않으며, 실습과 profiling 구성은 이 브랜치에서 계속 제공합니다.
+합성 데이터 기반의 profiling dashboard 데모는 [Post-Training Lab Observatory](https://daegyu94.github.io/post-training-lab-observatory/)에서 확인할 수 있습니다. 실제 exporter, cluster, training run에는 연결하지 않으며, 실습과 profiling 구성은 이 브랜치에서 계속 제공합니다.
 
 ## Labs
 

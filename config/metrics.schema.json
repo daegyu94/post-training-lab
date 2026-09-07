@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/daegyu94/sft-lab/blob/profiling/config/metrics.schema.json",
-  "title": "SFT Lab profiling metric contract",
+  "$id": "https://github.com/daegyu94/post-training-lab/blob/profiling/config/metrics.schema.json",
+  "title": "Post-Training Lab profiling metric contract",
   "type": "object",
   "required": [
     "schema_version",
