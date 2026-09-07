@@ -18,8 +18,8 @@
 ## Setup
 
 ```bash
-git clone -b megatron https://github.com/daegyu94/sft-lab.git
-cd sft-lab
+git clone -b megatron https://github.com/daegyu94/post-training-lab.git
+cd post-training-lab
 ./scripts/setup.sh
 ```
 
@@ -134,4 +134,4 @@ model checkpoint나 GPU 없이 data selection, log parsing, parallel rank layout
 
 ## Limitations
 
-이 branch는 실제 multi-GPU·multi-node launcher, distributed checkpoint scale test, throughput benchmark를 제공하지 않습니다. 해당 확장 경로는 `post-training` branch에서 framework 역할과 다음 단계로 구분해 설명하며, cluster resource 분석은 `profiling` branch에서 다룹니다.
+이 branch는 실제 multi-GPU·multi-node launcher, distributed checkpoint scale test, throughput benchmark를 제공하지 않습니다. 학습 전후의 data·checkpoint·serving lifecycle은 `system-integration` branch에서 설계 문서로 설명하며, cluster resource 분석은 `profiling` branch에서 다룹니다.
