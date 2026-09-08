@@ -12,7 +12,7 @@ import sys
 import time
 from typing import Any
 
-from sft_lab.spark_config import SparkConfig, validate_config, model_snapshot_evidence
+from trl_lab.spark_config import SparkConfig, validate_config, model_snapshot_evidence
 
 
 def parse_args() -> argparse.Namespace:
@@ -274,7 +274,7 @@ def main() -> None:
         from datasets import Dataset
         from peft import LoraConfig, get_peft_model
         from trl import SFTConfig, SFTTrainer
-        from sft_lab.spark_data import load_prompt_completion_data
+        from trl_lab.spark_data import load_prompt_completion_data
 
         torch.manual_seed(args.seed)
         if not torch.cuda.is_available() or not torch.cuda.is_bf16_supported():

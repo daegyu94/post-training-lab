@@ -44,7 +44,7 @@ DATASET_DIR=<dataset-root> ./scripts/setup.sh
 
 ## Prepare Internal Service Data
 
-사내 데이터 준비는 [사내 LLM 서비스 데이터 가이드](internal-data-guide.md)를 참고하세요.
+사내 데이터 준비는 [사내 LLM 서비스 데이터 가이드](dataset-preparation.md#internal-service-data)를 참고하세요.
 실습 converter는 승인된 synthetic trace만 선택하고, session 단위 split, 중복 prompt 제거, test 정답 분리, manifest 생성을 수행합니다.
 
 ```bash
@@ -54,8 +54,8 @@ DATASET_DIR=<dataset-root> ./scripts/setup.sh
 생성한 conversational JSONL을 기존 TRL 학습 경로에 연결할 때는 `--dataset-jsonl-dir data/service-sft`를 지정합니다.
 Test의 `reference_answer`와 `grader`는 학습 입력에 포함되지 않습니다.
 
-UltraChat 외 공개 데이터 준비는 [public dataset guide](public-datasets.md)를 참고하세요.
-`sft_lab.train`에는 `--dataset <source-id>`와 `--dataset-jsonl-dir <prepared-dir>`를 함께 지정하여 summary에 source provenance를 남깁니다.
+UltraChat 외 공개 데이터 준비는 [public dataset guide](dataset-preparation.md#public-datasets)를 참고하세요.
+`trl_lab.train`에는 `--dataset <source-id>`와 `--dataset-jsonl-dir <prepared-dir>`를 함께 지정하여 summary에 source provenance를 남깁니다.
 
 ## Run the Experiment
 
@@ -85,7 +85,7 @@ script가 수행하는 실제 Python command는 다음과 같습니다.
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
-  .venv/bin/python -m sft_lab.train \
+  .venv/bin/python -m trl_lab.train \
   --dataset-parquet-dir data/ultrachat_200k/data \
   --local-files-only \
   --train-samples 128 \
@@ -146,7 +146,7 @@ summary.json은 Git에서 제외됩니다.
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 \
-  .venv/bin/python -m sft_lab.infer \
+  .venv/bin/python -m trl_lab.infer \
   results/qwen2.5-14b-qlora/adapter \
   --local-files-only \
   --prompt 'Give two practical tips for debugging an out-of-memory error during LLM training.'
@@ -165,7 +165,7 @@ dataset validation과 assistant-mask template의 unit test는 GPU 없이 실행�
 ## Implementation Notes
 
 Qwen의 기본 chat template만 사용하면 assistant-only loss를 위한 generation mask가 생성되지 않을 수 있습니다.
-`sft_lab.data.QWEN_ASSISTANT_MASK_TEMPLATE`은 assistant content와 `<|im_end|>`를 generation block으로 감싸며, `sft_lab.train`은 학습 시작 전에 실제 assistant mask가 생성되는지 확인합니다.
+`trl_lab.data.QWEN_ASSISTANT_MASK_TEMPLATE`은 assistant content와 `<|im_end|>`를 generation block으로 감싸며, `trl_lab.train`은 학습 시작 전에 실제 assistant mask가 생성되는지 확인합니다.
 
 QLoRA는 frozen 4-bit base weight에 LoRA parameter만 추가하여 학습합니다.
 따라서 이 결과에서 확인하는 adapter는 full model checkpoint가 아니라 원본 Qwen model과 결합해야 사용하는 PEFT adapter입니다.

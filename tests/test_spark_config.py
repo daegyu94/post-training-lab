@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from sft_lab.spark_config import (
+from trl_lab.spark_config import (
     SparkConfig,
     detect_model_family,
     estimate_optimizer_bytes,

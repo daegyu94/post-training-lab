@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from sft_lab.spark_data import load_prompt_completion_data, render_prompt_completion
+from trl_lab.spark_data import load_prompt_completion_data, render_prompt_completion
 
 
 class FakeTokenizer:

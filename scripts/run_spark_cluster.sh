@@ -11,7 +11,7 @@ model_id="${MODEL_ID:-Qwen/Qwen3-30B-A3B}"
 model_revision="${MODEL_REVISION:?set MODEL_REVISION to a 40-hex snapshot revision}"
 model_dir="${MODEL_DIR:-}"
 if [[ -z "$model_dir" ]]; then
-  model_dir="$($python_bin -m sft_lab.spark_config --resolve-model-id "$model_id" --revision "$model_revision")"
+  model_dir="$($python_bin -m trl_lab.spark_config --resolve-model-id "$model_id" --revision "$model_revision")"
 fi
 dataset_id="${DATASET_ID:-HuggingFaceH4/ultrachat_200k}"
 dataset_revision="${DATASET_REVISION:?set DATASET_REVISION to a 40-hex manifest revision}"
@@ -77,7 +77,7 @@ run_stage() {
     "$python_bin" -m torch.distributed.run \
       --nnodes "$nnodes" --nproc-per-node "$nproc_per_node" --node-rank "$NODE_RANK" \
       --master-addr "$MASTER_ADDR" --master-port "$master_port" \
-      -m sft_lab.spark_train "${common_args[@]}" --stage "$current_stage" "$@"
+      -m trl_lab.spark_train "${common_args[@]}" --stage "$current_stage" "$@"
 }
 
 if [[ "$stage" == all ]]; then

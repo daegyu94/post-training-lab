@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from sft_lab.prepare_service_data import prepare_dataset
+from trl_lab.prepare_service_data import prepare_dataset
 
 
 def record(trace_id: str, session_id: str, split: str = "train") -> dict:

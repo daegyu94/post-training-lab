@@ -25,7 +25,7 @@ from transformers import (
 )
 from trl import SFTConfig, SFTTrainer
 
-from sft_lab.data import QWEN_ASSISTANT_MASK_TEMPLATE, load_sft_data
+from trl_lab.data import QWEN_ASSISTANT_MASK_TEMPLATE, load_sft_data
 
 
 DEFAULT_PROMPTS = [

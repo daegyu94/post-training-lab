@@ -1,0 +1,554 @@
+2026-09-08T16:22:36+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928  4040847360 118560751616     2109440  7239766016 124479213568
+Swap:    17179865088    39878656 17139986432
+pid, process_name, used_gpu_memory [MiB]
+    PID    PPID   RSS COMMAND
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20692 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16700 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15596 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15400 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14104 /usr/sbin/cups-browsed
+      1       0 12808 /sbin/init splash
+   1408       1 12268 /usr/libexec/gnome-remote-desktop-daemon --system
+   1465       1 11152 /usr/libexec/udisks2/udisksd
+2026-09-08T16:22:36+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928  4045283328 118556315648     2109440  7239766016 124474777600
+Swap:    17179865088    39878656 17139986432
+pid, process_name, used_gpu_memory [MiB]
+    PID    PPID   RSS COMMAND
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20692 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16700 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15596 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15400 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14104 /usr/sbin/cups-browsed
+      1       0 12808 /sbin/init splash
+   1408       1 12268 /usr/libexec/gnome-remote-desktop-daemon --system
+   1465       1 11152 /usr/libexec/udisks2/udisksd
+2026-09-08T16:22:46+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 11456118784 104027766784    46358528 14402007040 117063942144
+Swap:    17179865088    39878656 17139986432
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 170 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 11789760 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 518820 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20692 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16700 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15596 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15400 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14104 /usr/sbin/cups-browsed
+      1       0 12808 /sbin/init splash
+2026-09-08T16:22:57+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 28459114496 68919525376    46358528 32507191296 100060946432
+Swap:    17179865088    39878656 17139986432
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 170 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 45738768 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 518820 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20692 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16700 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15596 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15400 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14104 /usr/sbin/cups-browsed
+      1       0 12808 /sbin/init splash
+2026-09-08T16:23:07+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 49834500096 28109795328    46358528 51941470208 78685560832
+Swap:    17179865088    39878656 17139986432
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 170 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 86539728 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 518820 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20692 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16716 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15596 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15400 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14108 /usr/sbin/cups-browsed
+      1       0 12808 /sbin/init splash
+2026-09-08T16:23:17+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 66295963648  1466888192    46354432 61976064000 62224097280
+Swap:    17179865088   112881664 17066983424
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 170 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 117218080 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 438836 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20692 /usr/libexec/fwupd/fwupd
+   2143       1 18280 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16716 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15524 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15400 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14108 /usr/sbin/cups-browsed
+      1       0 12808 /sbin/init splash
+2026-09-08T16:23:27+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 66851102720  1426657280    84647936 61482233856 61668958208
+Swap:    17179865088   113045504 17066819584
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 404 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 117648880 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 408688 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20676 /usr/libexec/fwupd/fwupd
+   2143       1 18276 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16716 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+ 994096       1 15384 /usr/sbin/NetworkManager --no-daemon
+1183445       1 15360 /snap/snapd/current/usr/lib/snapd/snapd
+1122980       1 14108 /usr/sbin/cups-browsed
+      1       0 12808 /sbin/init splash
+2026-09-08T16:23:37+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 68829675520  1483870208   241393664 60220981248 59690385408
+Swap:    17179865088  1240596480 15939268608
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 2998 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 116229104 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 168216 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18276 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16716 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15296 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15044 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14040 /usr/sbin/cups-browsed
+      1       0 12756 /sbin/init splash
+2026-09-08T16:23:47+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 65118695424  4504272896   241393664 60295143424 63401365504
+Swap:    17179865088  1409961984 15769903104
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 5376 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 107503112 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 168216 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18276 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16716 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15296 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15044 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14040 /usr/sbin/cups-browsed
+      1       0 12756 /sbin/init splash
+2026-09-08T16:23:57+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 66346209280  3401281536   241393664 60331991040 62173851648
+Swap:    17179865088   710463488 16469401600
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 6566 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 106772160 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 168216 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18276 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16736 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15324 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15044 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14040 /usr/sbin/cups-browsed
+      1       0 12756 /sbin/init splash
+2026-09-08T16:24:07+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 66284683264  3387199488   241393664 60405628928 62235377664
+Swap:    17179865088   710397952 16469467136
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 9328 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 99884392 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 168216 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18276 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16736 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15324 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15044 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14044 /usr/sbin/cups-browsed
+      1       0 12756 /sbin/init splash
+2026-09-08T16:24:17+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 66436169728  3124768768   241393664 60516556800 62083891200
+Swap:    17179865088   710393856 16469471232
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 12510 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 96830836 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 168216 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18288 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16736 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15324 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15044 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14044 /usr/sbin/cups-browsed
+      1       0 12756 /sbin/init splash
+2026-09-08T16:24:27+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 66506706944  2926370816   241397760 60644425728 62013353984
+Swap:    17179865088   710381568 16469483520
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 16078 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 89400668 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 168216 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18288 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16744 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14044 /usr/sbin/cups-browsed
+      1       0 12756 /sbin/init splash
+2026-09-08T16:24:37+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 66569887744  2788913152   241397760 60718694400 61950173184
+Swap:    17179865088   710373376 16469491712
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 18840 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 82830244 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 168216 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16768 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14048 /usr/sbin/cups-browsed
+      1       0 12756 /sbin/init splash
+2026-09-08T16:24:47+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 66574442496  3162148864   241393664 60799934464 61945618432
+Swap:    17179865088  1231142912 15948722176
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 22024 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 75379892 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 167464 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16768 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14052 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:24:57+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 65818218496  3551219712   241393664 60548673536 62701842432
+Swap:    17179865088  1424310272 15755554816
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 24786 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 68628280 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 166004 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16768 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14052 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:25:07+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 68665810944  1513873408   241393664 60356841472 59854249984
+Swap:    17179865088  1387212800 15792652288
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 27968 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 63701696 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 166004 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16768 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14052 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:25:17+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 68123107328  1982881792   241393664 60430536704 60396953600
+Swap:    17179865088  1335209984 15844655104
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 30730 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 60275856 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 166004 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16768 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14052 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:25:27+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 67204292608  2928447488   241393664 59785371648 61315768320
+Swap:    17179865088  1332436992 15847428096
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 33914 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 52989772 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 165812 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16788 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14052 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:25:37+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 66486054912  3875495936   241393664 59556552704 62034006016
+Swap:    17179865088  1311977472 15867887616
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 36676 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 45546292 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 165812 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16788 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14056 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:25:47+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 66635812864  3614781440   241393664 59667509248 61884248064
+Swap:    17179865088  1303080960 15876784128
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 39858 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 38563484 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 165812 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16788 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14056 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:25:57+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 66801225728  3641839616   241393664 59475038208 61718835200
+Swap:    17179865088  1298726912 15881138176
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 43426 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 31177620 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 165812 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16788 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14056 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:26:07+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 67560656896  3693539328   241393664 59282333696 60959404032
+Swap:    17179865088  1298558976 15881306112
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 46994 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 24095384 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 165812 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16804 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14056 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:26:17+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 70132191232  2092150784   241397760 58308001792 58387869696
+Swap:    17179865088  1298444288 15881420800
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 49772 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 23776252 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 165812 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16808 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14056 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:26:27+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 67215515648  5813334016   241397760 56889257984 61304545280
+Swap:    17179865088  1296265216 15883599872
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 52938 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 14879168 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 165812 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16808 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14056 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:26:37+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 67388104704  5541883904   241397760 56988119040 61131956224
+Swap:    17179865088  1276076032 15903789056
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 55738 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 8535384 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 165812 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16808 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14056 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:26:47+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 68001030144  4879835136   241397760 57037242368 60519030784
+Swap:    17179865088   799850496 16380014592
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 58078 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 6684640 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 165812 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16808 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14056 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:26:57+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 68442718208  3814531072   241397760 57660866560 60077342720
+Swap:    17179865088   717287424 16462577664
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 58672 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 1922800 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 165812 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16808 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14056 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:27:07+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928 71847743488  1687388160    52912128 56722616320 56672317440
+Swap:    17179865088   716996608 16462868480
+pid, process_name, used_gpu_memory [MiB]
+1206901, /home/spark/ptl-envs/trl/bin/python, 60766 MiB
+    PID    PPID   RSS COMMAND
+1206901 1206891 3157516 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+1206891 1206881 165812 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16808 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14056 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+2026-09-08T16:27:17+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928  4488847360 68837519360     2113536 56880574464 124031213568
+Swap:    17179865088   339554304 16840310784
+pid, process_name, used_gpu_memory [MiB]
+    PID    PPID   RSS COMMAND
+1206891 1206881 271772 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 0 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id Qwen/Qwen3-30B-A3B --model-dir /home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --model-revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-qwen30b-ddp-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend ddp --seed 42 --train-samples 4 --eval-samples 2 --stage train
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16808 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14056 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+   1408       1 12128 /usr/libexec/gnome-remote-desktop-daemon --system
+2026-09-08T16:27:19+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128520060928  4374364160 68952006656     2113536 56880566272 124145696768
+Swap:    17179865088    41189376 17138675712
+pid, process_name, used_gpu_memory [MiB]
+    PID    PPID   RSS COMMAND
+    644       1 24996 /sbin/multipathd -d -s
+  96633       1 20360 /usr/libexec/fwupd/fwupd
+   2143       1 18296 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    602       1 16808 /usr/lib/systemd/systemd-journald
+   1962       1 15600 /usr/bin/containerd
+1183445       1 15328 /snap/snapd/current/usr/lib/snapd/snapd
+ 994096       1 15056 /usr/sbin/NetworkManager --no-daemon
+1122980       1 14056 /usr/sbin/cups-browsed
+      1       0 12744 /sbin/init splash
+   1408       1 12128 /usr/libexec/gnome-remote-desktop-daemon --system
+   1465       1 11128 /usr/libexec/udisks2/udisksd

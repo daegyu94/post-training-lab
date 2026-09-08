@@ -16,12 +16,13 @@ DeepSpeed 설치 및 GPU runtime은 아직 검증하지 않았습니다.
 ## Scope and Status
 
 이 문서는 `spark1`, `spark2` DGX Spark GB10 두 노드에서 `Qwen/Qwen3-30B-A3B` 또는 `zai-org/GLM-4.7-Flash` local snapshot을 native BF16으로 준비하는 TRL 경로입니다.
-기존 single-GPU Qwen2.5-14B NF4 QLoRA `sft_lab.train`은 변경하지 않습니다.
+기존 single-GPU Qwen2.5-14B NF4 QLoRA `trl_lab.train`은 변경하지 않습니다.
 
 현재 구현은 같은 `SFTTrainer` 진입점에서 DDP, FSDP2, DeepSpeed ZeRO-2/3를 선택합니다.
 Transformers 5.12.1, TRL 1.12.0, Accelerate 1.14.0와 Torch 2.10.0+cu130 조합에서 소형 모델의 local, two-node DDP와 two-node FSDP2 경로를 실제 검증했습니다.
 Qwen3-30B-A3B와 GLM-4.7-Flash도 node-local snapshot을 사용한 two-node DDP LoRA 1-step integration을 통과했지만, 짧은 smoke를 장기 수렴·품질·성능 결과로 해석하지 않습니다.
-DeepSpeed는 configuration/launcher unit test만 통과한 구현 가정이고 30B FSDP2/DeepSpeed는 아직 미검증입니다.
+추가 실행에서 확인한 single-node·two-node, full·LoRA와 backend별 성공·실패는 [Training Verification](training-verification.md)에 기록합니다.
+아래의 기존 integration smoke와 구분해 확인하세요.
 
 ## Runtime boundary
 
@@ -36,7 +37,7 @@ FP32 AdamW moments라면 state는 약 240 GB입니다.
 Full mode는 `--optimizer sgd`(momentum 0, optimizer state 0 byte) 또는 `--optimizer adamw`를 명시적으로 선택합니다.
 SGD의 BF16 update numerics와 AdamW state dtype/peak physical memory는 실제 run metadata에서 확인해야 하며, 어떠한 optimizer도 full 30B가 맞는다고 보장하지 않습니다.
 DDP는 model replica를 rank마다 유지하고, FSDP2와 DeepSpeed ZeRO는 model/gradient/optimizer state 중 해당 stage가 담당하는 상태를 shard합니다.
-이 차이는 설정상의 의도이며 아직 Spark 30B fit evidence가 아닙니다.
+실제 Spark 30B fit과 학습 성공 여부는 model·finetuning mode·backend별 [검증 결과](training-verification.md)를 따릅니다.
 
 ## Data and model prerequisites
 
@@ -51,7 +52,7 @@ Model revision과 dataset revision은 모두 immutable 40-hex SHA여야 하고, 
 Model preflight는 revision 이름의 snapshot directory, safetensors index, index가 열거한 모든 non-empty shard와 `.incomplete` 부재를 model load 전에 각 노드에서 확인합니다.
 Manifest에 split SHA-256 또는 count가 있으면 local JSONL bytes와 line count를 검증합니다.
 Summary에는 local `config.json`과 weight index hash, indexed tensor/shard count, snapshot directory revision을 기록합니다.
-Canonical data preparation은 [public dataset guide](public-datasets.md)를 참고하세요.
+Canonical data preparation은 [public dataset guide](dataset-preparation.md#public-datasets)를 참고하세요.
 
 각 노드에서 동일하게 내려받는 예시는 다음과 같습니다.
 `hf download`가 출력하는 snapshot path는 node-local 경로이며 NFS에 복사할 필요가 없습니다.
@@ -85,7 +86,7 @@ Module discovery가 비어 있으면 model-name을 추측하지 않고 중단합
 `torchrun`은 rank와 rendezvous 환경을 만들고, 실제 model wrapping과 gradient synchronization/sharding은 Trainer가 생성한 Accelerate backend가 담당합니다.
 TRL의 [distributed training guide](https://huggingface.co/docs/trl/distributing_training), Transformers의 [FSDP2 guide](https://huggingface.co/docs/transformers/en/fsdp)와 [DeepSpeed guide](https://huggingface.co/docs/transformers/en/deepspeed)를 기준으로 구성했습니다.
 
-한 GPU local smoke는 `NNODES=1 NPROC_PER_NODE=1 NODE_RANK=0`과 `MASTER_ADDR=127.0.0.1`로 같은 launcher를 사용할 수 있고, 직접 `python -m sft_lab.spark_train`을 호출해도 됩니다.
+한 GPU local smoke는 `NNODES=1 NPROC_PER_NODE=1 NODE_RANK=0`과 `MASTER_ADDR=127.0.0.1`로 같은 launcher를 사용할 수 있고, 직접 `python -m trl_lab.spark_train`을 호출해도 됩니다.
 Qwen2.5 small feature model은 tokenizer/data/pipeline smoke에만 사용 가능하며 30B target evidence를 대체하지 않습니다.
 이는 multi-node evidence도 대체하지 않습니다.
 
@@ -111,7 +112,8 @@ Coding example은 `DATASET_ID=bigcode/self-oss-instruct-sc2-exec-filter-50k`, re
 DDP의 기본 `STAGE=all`은 `base`, `train`, `tuned`를 각각 새 process로 실행합니다.
 개별 `STAGE=base|train|tuned`도 지원합니다.
 `base`는 held-out eval, `train`은 LoRA adapter 또는 full model 저장, `tuned`는 별도 process에서 저장물을 읽어 eval하며, adapter reload 성공을 full optimizer resume 증거로 사용하지 않습니다.
-FSDP2와 DeepSpeed는 검증하지 않은 sharded export/reload를 성공한 것처럼 취급하지 않도록 현재 `STAGE=base|train`만 허용합니다.
+FSDP2와 DeepSpeed launcher는 현재 `STAGE=base|train`만 허용합니다.
+소형 FSDP2 checkpoint의 별도 export 후 DDP evaluation 재로딩은 [추가 검증 기록](training-verification.md)에 있으며, 동일 backend의 `STAGE=tuned`나 optimizer resume 지원을 의미하지 않습니다.
 Rank logs는 `RANK_LOG_DIR` 아래에 남고 summary는 rank 0만 기록합니다.
 
 ```bash
@@ -129,8 +131,8 @@ STAGE=tuned ALLOW_EXISTING_OUTPUT=true ./scripts/run_spark_cluster.sh
 | Backend | Configuration | State and boundary |
 | --- | --- | --- |
 | `ddp` | Trainer/Accelerate DDP, NCCL | 소형 모델 DP=2 actual smoke 완료; 각 rank에 model replica 유지 |
-| `fsdp2` | `fsdp=True`, config `version=2`, full reshard, transformer auto-wrap, CPU-RAM-efficient load, sharded state dict | 소형 full-parameter 2-node 1-step Spark smoke 완료; 30B runtime·export/reload 미검증 |
-| `deepspeed` | `SFTConfig.deepspeed`에 ZeRO-2/3 JSON 전달 | 구현·unit test 완료; DeepSpeed 0.19.6 설치 및 Spark GPU runtime 미검증 |
+| `fsdp2` | `fsdp=True`, config `version=2`, full reshard, transformer auto-wrap, CPU-RAM-efficient load, sharded state dict | 소형 full 및 Qwen3-30B LoRA 2-node smoke 완료; GLM LoRA는 state-dict 호환성 오류; 자세한 범위는 추가 검증 기록 참고 |
+| `deepspeed` | `SFTConfig.deepspeed`에 ZeRO-2/3 JSON 전달 | DeepSpeed 0.19.6 설치·소형 ZeRO-3 GPU run 완료; ZeRO-2는 NVML 오류; 30B 결과는 추가 검증 기록 참고 |
 
 DDP 기준 실습은 별도 backend 설정 없이 실행합니다.
 
@@ -144,6 +146,15 @@ Backend 자체의 차이를 비교하려면 먼저 `MODEL_ID`, `MODEL_REVISION`�
 세 run 모두 `FINETUNING_MODE=full`과 동일 optimizer를 사용합니다.
 앞선 30B 모델 설정을 유지한 채 아래 full-parameter 예시를 실행하지 마세요.
 30B full training의 메모리 적합성은 별도 검증 대상입니다.
+
+아래 full-parameter backend 비교 command는 먼저 소형 모델을 지정해 실행합니다.
+30B에는 같은 성공 범위를 가정하지 않고 [모델·모드별 실측 결과](training-verification.md)를 확인합니다.
+
+```bash
+export MODEL_ID=Qwen/Qwen2.5-0.5B-Instruct
+export MODEL_REVISION=7ae557604adf67be50417f59c2c2f167def9a775
+export MODEL_DIR=/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct
+```
 
 FSDP2는 Transformers 5.12.1의 `fsdp_config["version"]=2` API를 사용합니다.
 `SFTConfig`를 model load 전에 생성해 rank 0만 pretrained checkpoint를 읽는 초기화가 적용될 수 있게 하고, model을 수동으로 GPU에 옮기지 않습니다.

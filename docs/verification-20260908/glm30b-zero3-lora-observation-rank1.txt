@@ -1,0 +1,841 @@
+2026-09-08T16:52:09+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136  4268797952 124768821248     6909952   571260928 124249821184
+Swap:    17179865088   222294016 16957571072
+pid, process_name, used_gpu_memory [MiB]
+    PID    PPID   RSS COMMAND
+ 387744  387725 70388 /usr/bin/gnome-shell
+    643       1 23436 /sbin/multipathd -d -s
+ 382934       1 18220 /snap/snapd/current/usr/lib/snapd/snapd
+   1442       1 17996 /usr/lib/polkit-1/polkitd --no-debug
+   2229       1 14852 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    605       1 13992 /usr/lib/systemd/systemd-journald
+ 387693  387691 12888 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1979       1 11204 /usr/bin/containerd
+      1       0  9636 /sbin/init splash
+ 444385    3052  8952 sshd: spark [priv]
+   1531       1  8656 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:52:09+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136  4256960512 124780658688     6909952   571260928 124261658624
+Swap:    17179865088   222294016 16957571072
+pid, process_name, used_gpu_memory [MiB]
+    PID    PPID   RSS COMMAND
+ 387744  387725 70388 /usr/bin/gnome-shell
+    643       1 23436 /sbin/multipathd -d -s
+ 382934       1 18220 /snap/snapd/current/usr/lib/snapd/snapd
+   1442       1 17996 /usr/lib/polkit-1/polkitd --no-debug
+ 444562  444557 17592 /home/spark/ptl-envs/trl/bin/python -m trl_lab.spark_config --resolve-model-id zai-org/GLM-4.7-Flash --revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67
+   2229       1 14852 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    605       1 13992 /usr/lib/systemd/systemd-journald
+ 387693  387691 12888 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1979       1 11204 /usr/bin/containerd
+      1       0  9636 /sbin/init splash
+ 444385    3052  8952 sshd: spark [priv]
+2026-09-08T16:52:19+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136  5073813504 123401228288     6905856  1147953152 123444805632
+Swap:    17179865088   222285824 16957579264
+pid, process_name, used_gpu_memory [MiB]
+    PID    PPID   RSS COMMAND
+ 444576  444568 776416 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 518548 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 70328 /usr/bin/gnome-shell
+    643       1 23436 /sbin/multipathd -d -s
+ 382934       1 18220 /snap/snapd/current/usr/lib/snapd/snapd
+   1442       1 17996 /usr/lib/polkit-1/polkitd --no-debug
+   2229       1 14852 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+    605       1 13992 /usr/lib/systemd/systemd-journald
+ 387693  387691 12888 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1979       1 11204 /usr/bin/containerd
+      1       0  9636 /sbin/init splash
+2026-09-08T16:52:29+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 37761957888 90494107648   246185984  1609326592 90756661248
+Swap:    17179865088   222277632 16957587456
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 29744 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 1966216 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 518548 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 70328 /usr/bin/gnome-shell
+    643       1 23436 /sbin/multipathd -d -s
+   2229       1 20724 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+ 382934       1 18220 /snap/snapd/current/usr/lib/snapd/snapd
+   1442       1 17996 /usr/lib/polkit-1/polkitd --no-debug
+   1979       1 15292 /usr/bin/containerd
+    605       1 14120 /usr/lib/systemd/systemd-journald
+ 387693  387691 12888 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+      1       0  9636 /sbin/init splash
+2026-09-08T16:52:39+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 43569135616 77638029312   246185984  8658210816 84949483520
+Swap:    17179865088   222277632 16957587456
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 30350 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 11982124 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 518548 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 70328 /usr/bin/gnome-shell
+    643       1 23436 /sbin/multipathd -d -s
+   2229       1 20724 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+ 382934       1 18220 /snap/snapd/current/usr/lib/snapd/snapd
+   1442       1 17996 /usr/lib/polkit-1/polkitd --no-debug
+   1979       1 15292 /usr/bin/containerd
+    605       1 14120 /usr/lib/systemd/systemd-journald
+ 387693  387691 12888 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+      1       0  9636 /sbin/init splash
+2026-09-08T16:52:49+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 58758074368 49039089664   246185984 22068162560 69760544768
+Swap:    17179865088   222273536 16957591552
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 30350 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 39296944 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 518548 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 70820 /usr/bin/gnome-shell
+    643       1 23436 /sbin/multipathd -d -s
+   2229       1 20724 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+ 382934       1 18220 /snap/snapd/current/usr/lib/snapd/snapd
+   1442       1 17996 /usr/lib/polkit-1/polkitd --no-debug
+   1979       1 15292 /usr/bin/containerd
+    605       1 14120 /usr/lib/systemd/systemd-journald
+ 387693  387691 12888 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 10644 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:52:59+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 76078563328 14883594240   246185984 38903226368 52440055808
+Swap:    17179865088   222273536 16957591552
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 30350 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 74047044 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 518548 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 70796 /usr/bin/gnome-shell
+    643       1 23436 /sbin/multipathd -d -s
+   2229       1 20724 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+ 382934       1 18220 /snap/snapd/current/usr/lib/snapd/snapd
+   1442       1 17996 /usr/lib/polkit-1/polkitd --no-debug
+   1979       1 15292 /usr/bin/containerd
+    605       1 14120 /usr/lib/systemd/systemd-journald
+ 387693  387691 12888 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 10644 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:53:09+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 84822601728  1323978752   246185984 43714113536 43696017408
+Swap:    17179865088   226533376 16953331712
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 30350 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 88333028 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 450232 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 48636 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+   2229       1 16432 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1979       1 15128 /usr/bin/containerd
+    605       1 13496 /usr/lib/systemd/systemd-journald
+ 382934       1 13188 /snap/snapd/current/usr/lib/snapd/snapd
+ 387693  387691 11456 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 10576 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:53:19+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 88326959104  1802551296   246185984 39732568064 40191660032
+Swap:    17179865088   227041280 16952823808
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 30350 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 87037884 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 450232 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 53256 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+   2229       1 16496 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1979       1 15140 /usr/bin/containerd
+    605       1 13560 /usr/lib/systemd/systemd-journald
+ 382934       1 13188 /snap/snapd/current/usr/lib/snapd/snapd
+ 387693  387691 11456 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 10576 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:53:29+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 93023236096  1344237568   246181888 35745230848 35495383040
+Swap:    17179865088   616505344 16563359744
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 30350 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 87795564 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 162308 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 53256 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+   2229       1 16496 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1979       1 15140 /usr/bin/containerd
+ 382934       1 14704 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 13560 /usr/lib/systemd/systemd-journald
+   1531       1 11472 /usr/sbin/NetworkManager --no-daemon
+ 387693  387691 11456 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+2026-09-08T16:53:39+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90393227264  1293336576   242638848 38168961024 38125391872
+Swap:    17179865088  5342306304 11837558784
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 30350 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 87248264 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153932 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 48304 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+   2229       1 16496 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1979       1 15140 /usr/bin/containerd
+ 382934       1 14264 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 13556 /usr/lib/systemd/systemd-journald
+   1531       1 11472 /usr/sbin/NetworkManager --no-daemon
+ 387693  387691 11164 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+2026-09-08T16:53:49+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90834305024  1302872064   242638848 38170267648 37684314112
+Swap:    17179865088  6161723392 11018141696
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86450716 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 48040 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+   2229       1 16496 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1979       1 15140 /usr/bin/containerd
+ 382934       1 14152 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 13616 /usr/lib/systemd/systemd-journald
+   1531       1 11472 /usr/sbin/NetworkManager --no-daemon
+ 387693  387691 11148 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+2026-09-08T16:53:59+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90859520000  1275801600   242638848 38172135424 37659099136
+Swap:    17179865088  6160822272 11019042816
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86453028 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 48040 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+   2229       1 16496 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1979       1 15140 /usr/bin/containerd
+ 382934       1 14152 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 13616 /usr/lib/systemd/systemd-journald
+ 387693  387691 12696 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 11472 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:54:09+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90867589120  1255096320   242647040 38184775680 37651030016
+Swap:    17179865088  6160384000 11019481088
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86453952 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 60404 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+   2229       1 16496 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1979       1 15140 /usr/bin/containerd
+ 382934       1 14152 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 13616 /usr/lib/systemd/systemd-journald
+ 387693  387691 12696 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 11472 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:54:19+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90867998720  1253634048   242647040 38185828352 37650620416
+Swap:    17179865088  6159368192 11020496896
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86456776 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 60412 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+   2229       1 17340 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1979       1 15140 /usr/bin/containerd
+ 382934       1 14152 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 13616 /usr/lib/systemd/systemd-journald
+ 387693  387691 12696 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 11472 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:54:29+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90862862336  1255866368   242647040 38188933120 37655756800
+Swap:    17179865088  6158827520 11021037568
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86458348 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 60412 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19376 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+   1979       1 15204 /usr/bin/containerd
+ 382934       1 14152 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 13616 /usr/lib/systemd/systemd-journald
+ 387693  387691 12696 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 11472 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:54:39+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90873085952  1245433856   242647040 38188941312 37645533184
+Swap:    17179865088  6158151680 11021713408
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86460344 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 60412 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19376 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+   1979       1 15204 /usr/bin/containerd
+ 382934       1 14152 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 13616 /usr/lib/systemd/systemd-journald
+ 387693  387691 12696 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 11472 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:54:49+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90876207104  1237938176   242647040 38193315840 37642412032
+Swap:    17179865088  6157312000 11022553088
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86462036 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 66196 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19376 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+   1979       1 15204 /usr/bin/containerd
+ 382934       1 14152 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 13616 /usr/lib/systemd/systemd-journald
+ 387693  387691 12696 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 11472 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:54:59+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90889777152  1222770688   242647040 38194913280 37628841984
+Swap:    17179865088  6157008896 11022856192
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86462992 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 66232 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19568 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+   1979       1 15204 /usr/bin/containerd
+ 382934       1 14152 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 13616 /usr/lib/systemd/systemd-journald
+ 387693  387691 12696 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 11472 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:55:09+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90898444288  1212624896   242647040 38196543488 37620174848
+Swap:    17179865088  6156533760 11023331328
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86464276 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 66248 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19760 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+   1979       1 15204 /usr/bin/containerd
+ 382934       1 14152 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 13864 /usr/lib/systemd/systemd-journald
+ 387693  387691 12696 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 11472 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:55:19+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90895060992  1214046208   242647040 38198394880 37623558144
+Swap:    17179865088  6156029952 11023835136
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86465080 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 68180 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19760 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+   1979       1 15204 /usr/bin/containerd
+    605       1 15064 /usr/lib/systemd/systemd-journald
+ 382934       1 14152 /snap/snapd/current/usr/lib/snapd/snapd
+ 387693  387691 12696 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12176 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:55:30+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90898190336  1207357440   242647040 38202023936 37620428800
+Swap:    17179865088  6155542528 11024322560
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86466264 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 68180 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19760 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 15340 /snap/snapd/current/usr/lib/snapd/snapd
+   1979       1 15204 /usr/bin/containerd
+    605       1 15088 /usr/lib/systemd/systemd-journald
+ 387693  387691 12696 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12200 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:55:40+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90899046400  1206214656   242647040 38202183680 37619572736
+Swap:    17179865088  6155313152 11024551936
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86467316 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 68204 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19760 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 15340 /snap/snapd/current/usr/lib/snapd/snapd
+   1979       1 15204 /usr/bin/containerd
+    605       1 15088 /usr/lib/systemd/systemd-journald
+ 387693  387691 12696 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12200 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:55:50+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90904485888  1200750592   242647040 38202208256 37614133248
+Swap:    17179865088  6155173888 11024691200
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86468020 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 68204 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19760 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 15340 /snap/snapd/current/usr/lib/snapd/snapd
+   1979       1 15204 /usr/bin/containerd
+    605       1 15088 /usr/lib/systemd/systemd-journald
+ 387693  387691 12696 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12200 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:56:00+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90906898432  1194811392   242647040 38205829120 37611720704
+Swap:    17179865088  6154833920 11025031168
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86469152 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 68224 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19760 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 17012 /snap/snapd/current/usr/lib/snapd/snapd
+   1979       1 15204 /usr/bin/containerd
+    605       1 15088 /usr/lib/systemd/systemd-journald
+ 387693  387691 12696 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12200 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:56:10+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90912161792  1185067008   242647040 38210289664 37606457344
+Swap:    17179865088  6154235904 11025629184
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 86470052 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 74208 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19760 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 17012 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 15932 /usr/lib/systemd/systemd-journald
+   1979       1 15204 /usr/bin/containerd
+ 387693  387691 13208 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12200 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:56:20+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 88298246144  3797868544   242647040 38211321856 40220372992
+Swap:    17179865088  5844955136 11334909952
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31118 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 49410068 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 74092 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19760 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 17012 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 15932 /usr/lib/systemd/systemd-journald
+   1979       1 15204 /usr/bin/containerd
+ 387693  387691 13208 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12200 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:56:30+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 88586633216  3499286528   242647040 38221524992 39931985920
+Swap:    17179865088  5844041728 11335823360
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 31120 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 49656288 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 74092 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19760 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 17012 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 15932 /usr/lib/systemd/systemd-journald
+   1979       1 15204 /usr/bin/containerd
+ 387693  387691 13208 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12200 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:56:40+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 87398014976  4666585088   242651136 38242852864 41120604160
+Swap:    17179865088  5818998784 11360866304
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 29784 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 49830648 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 444568  444557 153136 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 74092 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19760 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 17012 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 15932 /usr/lib/systemd/systemd-journald
+   1979       1 15204 /usr/bin/containerd
+ 387693  387691 13208 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12200 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:56:50+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 90187780096  2499219456   244748288 37170536448 38330839040
+Swap:    17179865088  3814948864 13364916224
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 33292 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 49146660 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 74412 /usr/bin/gnome-shell
+ 444568  444557 30460 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19760 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17868 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 17012 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 15996 /usr/lib/systemd/systemd-journald
+   1979       1 15204 /usr/bin/containerd
+ 387693  387691 13208 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12200 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:57:00+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 126362755072  1557696512   244748288  1932943360  2155864064
+Swap:    17179865088  3814866944 13364998144
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 67388 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 49297460 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 74148 /usr/bin/gnome-shell
+ 444568  444557 27108 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+    643       1 23228 /sbin/multipathd -d -s
+   2229       1 19760 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17740 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 16796 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 16012 /usr/lib/systemd/systemd-journald
+   1979       1 15204 /usr/bin/containerd
+ 387693  387691 12696 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12072 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:57:10+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 127978438656  1151918080   217718784   603070464   540180480
+Swap:    17179865088  5774229504 11405635584
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 70846 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 47176844 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 67624 /usr/bin/gnome-shell
+    643       1 23228 /sbin/multipathd -d -s
+ 444568  444557 21176 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+   2229       1 19660 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17740 /usr/lib/polkit-1/polkitd --no-debug
+    605       1 16012 /usr/lib/systemd/systemd-journald
+   1979       1 15204 /usr/bin/containerd
+ 382934       1 13676 /snap/snapd/current/usr/lib/snapd/snapd
+ 387693  387691 12584 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12136 /usr/sbin/NetworkManager --no-daemon
+2026-09-08T16:57:20+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 127856721920  1277460480   215322624   593477632   661897216
+Swap:    17179865088 12099112960  5080752128
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 76990 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 40696208 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 53148 /usr/bin/gnome-shell
+    643       1 23132 /sbin/multipathd -d -s
+ 444568  444557 21100 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+   2229       1 19044 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17548 /usr/lib/polkit-1/polkitd --no-debug
+    605       1 16012 /usr/lib/systemd/systemd-journald
+   1979       1 15204 /usr/bin/containerd
+ 382934       1 13944 /snap/snapd/current/usr/lib/snapd/snapd
+   1531       1 12104 /usr/sbin/NetworkManager --no-daemon
+ 387693  387691 11968 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+2026-09-08T16:57:30+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 127486029824  1723940864   214589440   441270272  1032589312
+Swap:    17179865088 17179455488      409600
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 80930 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 35543728 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 36872 /usr/bin/gnome-shell
+    643       1 23068 /sbin/multipathd -d -s
+   1442       1 14416 /usr/lib/polkit-1/polkitd --no-debug
+ 387693  387691 11044 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1979       1 10960 /usr/bin/containerd
+ 382934       1  9564 /snap/snapd/current/usr/lib/snapd/snapd
+   2229       1  7696 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   4755       1  6264 /usr/libexec/fwupd/fwupd
+ 391013       1  5968 /usr/sbin/cups-browsed
+    605       1  5812 /usr/lib/systemd/systemd-journald
+2026-09-08T16:57:41+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 127274119168  1879478272   214601728   553455616  1244499968
+Swap:    17179865088 17169707008    10158080
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 81320 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 35572528 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 72552 /usr/bin/gnome-shell
+    643       1 23068 /sbin/multipathd -d -s
+   1442       1 14480 /usr/lib/polkit-1/polkitd --no-debug
+ 387693  387691 13088 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 11840 /usr/sbin/NetworkManager --no-daemon
+   1979       1 11548 /usr/bin/containerd
+    605       1 10936 /usr/lib/systemd/systemd-journald
+ 382934       1  9564 /snap/snapd/current/usr/lib/snapd/snapd
+   2229       1  8812 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+ 391013       1  8528 /usr/sbin/cups-browsed
+2026-09-08T16:57:51+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 127290433536  1862496256   214601728   554733568  1228185600
+Swap:    17179865088 17169092608    10772480
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 81320 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 35572528 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 72696 /usr/bin/gnome-shell
+    643       1 23068 /sbin/multipathd -d -s
+   1442       1 14480 /usr/lib/polkit-1/polkitd --no-debug
+ 387693  387691 13112 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 11840 /usr/sbin/NetworkManager --no-daemon
+   1979       1 11548 /usr/bin/containerd
+    605       1 10936 /usr/lib/systemd/systemd-journald
+ 382934       1  9564 /snap/snapd/current/usr/lib/snapd/snapd
+ 391013       1  9056 /usr/sbin/cups-browsed
+   2229       1  8812 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+2026-09-08T16:58:01+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 127300968448  1851011072   214601728   556642304  1217650688
+Swap:    17179865088 17169031168    10833920
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 81320 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 35572528 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 72848 /usr/bin/gnome-shell
+    643       1 23068 /sbin/multipathd -d -s
+   1442       1 14480 /usr/lib/polkit-1/polkitd --no-debug
+ 387693  387691 13112 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1979       1 12360 /usr/bin/containerd
+   1531       1 11840 /usr/sbin/NetworkManager --no-daemon
+    605       1 10936 /usr/lib/systemd/systemd-journald
+ 382934       1  9564 /snap/snapd/current/usr/lib/snapd/snapd
+ 391013       1  9056 /usr/sbin/cups-browsed
+   2229       1  8888 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+2026-09-08T16:58:11+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 127294930944  1856802816   214601728   557137920  1223688192
+Swap:    17179865088 17169031168    10833920
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 81320 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 35572528 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 72644 /usr/bin/gnome-shell
+    643       1 23068 /sbin/multipathd -d -s
+   1442       1 14480 /usr/lib/polkit-1/polkitd --no-debug
+ 387693  387691 13112 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1979       1 12360 /usr/bin/containerd
+   1531       1 11840 /usr/sbin/NetworkManager --no-daemon
+    605       1 10936 /usr/lib/systemd/systemd-journald
+ 382934       1  9564 /snap/snapd/current/usr/lib/snapd/snapd
+ 391013       1  9056 /usr/sbin/cups-browsed
+   2229       1  8888 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+2026-09-08T16:58:21+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 127306604544  1836793856   214601728   573927424  1212014592
+Swap:    17179865088 17168805888    11059200
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 81320 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 35572528 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 73004 /usr/bin/gnome-shell
+    643       1 23068 /sbin/multipathd -d -s
+   1979       1 15472 /usr/bin/containerd
+   1442       1 14480 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 13176 /snap/snapd/current/usr/lib/snapd/snapd
+ 387693  387691 13112 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 11840 /usr/sbin/NetworkManager --no-daemon
+    605       1 11684 /usr/lib/systemd/systemd-journald
+   2229       1 10648 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+ 391013       1  9056 /usr/sbin/cups-browsed
+2026-09-08T16:58:31+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 127314317312  1823879168   214601728   584302592  1204301824
+Swap:    17179865088 17164181504    15683584
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 81320 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 35572528 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 72972 /usr/bin/gnome-shell
+    643       1 23068 /sbin/multipathd -d -s
+   2229       1 19748 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1979       1 15472 /usr/bin/containerd
+   1442       1 14480 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 13880 /snap/snapd/current/usr/lib/snapd/snapd
+ 387693  387691 13112 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 11840 /usr/sbin/NetworkManager --no-daemon
+    605       1 11684 /usr/lib/systemd/systemd-journald
+ 391013       1  9060 /usr/sbin/cups-browsed
+2026-09-08T16:58:41+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 127314116608  1824030720   214601728   584310784  1204502528
+Swap:    17179865088 17164181504    15683584
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 81320 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 35572528 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 72972 /usr/bin/gnome-shell
+    643       1 23068 /sbin/multipathd -d -s
+   2229       1 19748 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1979       1 15472 /usr/bin/containerd
+   1442       1 14480 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 13880 /snap/snapd/current/usr/lib/snapd/snapd
+ 387693  387691 13112 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+    605       1 11940 /usr/lib/systemd/systemd-journald
+   1531       1 11840 /usr/sbin/NetworkManager --no-daemon
+ 391013       1  9060 /usr/sbin/cups-browsed
+2026-09-08T16:58:51+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 127317426176  1819627520   214601728   586498048  1201192960
+Swap:    17179865088 17164120064    15745024
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 81320 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 35572528 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 73120 /usr/bin/gnome-shell
+    643       1 23068 /sbin/multipathd -d -s
+   2229       1 19748 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1979       1 15472 /usr/bin/containerd
+   1442       1 14480 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 13880 /snap/snapd/current/usr/lib/snapd/snapd
+ 387693  387691 13112 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12132 /usr/sbin/NetworkManager --no-daemon
+    605       1 11940 /usr/lib/systemd/systemd-journald
+ 391013       1  9060 /usr/sbin/cups-browsed
+2026-09-08T16:59:01+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 127320764416  1816281088   214601728   586506240  1197854720
+Swap:    17179865088 17164115968    15749120
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 81320 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 35572528 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 72924 /usr/bin/gnome-shell
+    643       1 23068 /sbin/multipathd -d -s
+   2229       1 19748 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1979       1 15472 /usr/bin/containerd
+   1442       1 14480 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 13880 /snap/snapd/current/usr/lib/snapd/snapd
+ 387693  387691 13112 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12132 /usr/sbin/NetworkManager --no-daemon
+    605       1 11940 /usr/lib/systemd/systemd-journald
+ 391013       1  9060 /usr/sbin/cups-browsed
+2026-09-08T16:59:11+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 127329320960  1803722752   214601728   594518016  1189298176
+Swap:    17179865088 17163825152    16039936
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 81320 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 35577724 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 72832 /usr/bin/gnome-shell
+    643       1 23068 /sbin/multipathd -d -s
+   2229       1 19748 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1979       1 15472 /usr/bin/containerd
+   1442       1 14480 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 13880 /snap/snapd/current/usr/lib/snapd/snapd
+ 387693  387691 13112 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12132 /usr/sbin/NetworkManager --no-daemon
+    605       1 11940 /usr/lib/systemd/systemd-journald
+ 391013       1  9060 /usr/sbin/cups-browsed
+2026-09-08T16:59:21+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136 127322656768  1810382848   214601728   594526208  1195962368
+Swap:    17179865088 17163825152    16039936
+pid, process_name, used_gpu_memory [MiB]
+444576, /home/spark/ptl-envs/trl/bin/python, 81320 MiB
+    PID    PPID   RSS COMMAND
+ 444576  444568 35577724 /home/spark/ptl-envs/trl/bin/python -u -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 72832 /usr/bin/gnome-shell
+    643       1 23068 /sbin/multipathd -d -s
+   2229       1 19748 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1979       1 15472 /usr/bin/containerd
+   1442       1 14480 /usr/lib/polkit-1/polkitd --no-debug
+ 382934       1 13880 /snap/snapd/current/usr/lib/snapd/snapd
+ 387693  387691 13112 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12132 /usr/sbin/NetworkManager --no-daemon
+    605       1 11940 /usr/lib/systemd/systemd-journald
+ 391013       1  9060 /usr/sbin/cups-browsed
+2026-09-08T16:59:31+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136  4295176192 124816117760     6905856   430321664 124223442944
+Swap:    17179865088   525144064 16654721024
+pid, process_name, used_gpu_memory [MiB]
+    PID    PPID   RSS COMMAND
+ 444568  444557 85132 /home/spark/ptl-envs/trl/bin/python -m torch.distributed.run --nnodes 2 --nproc-per-node 1 --node-rank 1 --master-addr 12.201.48.11 --master-port 29641 -m trl_lab.spark_train --model-id zai-org/GLM-4.7-Flash --model-dir /home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 --model-revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67 --dataset-id HuggingFaceH4/no_robots --dataset-revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --data-dir /home/spark/shared/post-training-lab/data/public-smoke/no_robots --output-dir /home/spark/trl-verification-results/trl-verification-20260908-glm30b-zero3-lora --finetuning-mode lora --optimizer adamw --learning-rate 2e-5 --max-steps 1 --max-length 2048 --gradient-accumulation-steps 1 --distributed-backend deepspeed --seed 42 --train-samples 4 --eval-samples 2 --deepspeed-config configs/deepspeed-zero3.json --stage train
+ 387744  387725 73584 /usr/bin/gnome-shell
+    643       1 23068 /sbin/multipathd -d -s
+   2229       1 19748 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17924 /usr/lib/polkit-1/polkitd --no-debug
+   1979       1 15472 /usr/bin/containerd
+ 382934       1 13880 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 13656 /usr/lib/systemd/systemd-journald
+ 387693  387691 13112 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12196 /usr/sbin/NetworkManager --no-daemon
+      1       0  9636 /sbin/init splash
+2026-09-08T16:59:36+09:00
+               total        used        free      shared  buff/cache   available
+Mem:     128518619136  4262080512 124752650240     6905856   598941696 124256538624
+Swap:    17179865088   229625856 16950239232
+pid, process_name, used_gpu_memory [MiB]
+    PID    PPID   RSS COMMAND
+ 387744  387725 73580 /usr/bin/gnome-shell
+    643       1 23068 /sbin/multipathd -d -s
+   2229       1 19748 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+   1442       1 17924 /usr/lib/polkit-1/polkitd --no-debug
+   1979       1 15472 /usr/bin/containerd
+ 382934       1 13880 /snap/snapd/current/usr/lib/snapd/snapd
+    605       1 13656 /usr/lib/systemd/systemd-journald
+ 387693  387691 13112 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+   1531       1 12196 /usr/sbin/NetworkManager --no-daemon
+      1       0  9636 /sbin/init splash
+ 391013       1  9492 /usr/sbin/cups-browsed

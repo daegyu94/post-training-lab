@@ -1,0 +1,185 @@
+[workflow] stage=train rank=1/2 model=Qwen/Qwen2.5-0.5B-Instruct model_dir=/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct backend=deepspeed
+[workflow] running stage=train rank=1/2
+/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+    
+  queued_call()
+spark2:429912:429912 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+spark2:429912:429912 [0] NCCL INFO cudaDriverVersion 13000
+spark2:429912:429912 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark2:429912:429912 [0] NCCL INFO Bootstrap: Using enp1s0f0np0:12.201.48.13<0>
+spark2:429912:429912 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+spark2:429912:429912 [0] NCCL INFO Comm config Blocking set to 1
+spark2:429912:429912 [0] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+spark2:429912:429912 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark2:429912:429912 [0] NCCL INFO NCCL_IB_HCA set to rocep1s0f0
+spark2:429912:429912 [0] NCCL INFO NET/IB : Using [0]rocep1s0f0:1/RoCE [RO]; OOB enp1s0f0np0:12.201.48.13<0>
+spark2:429912:429912 [0] NCCL INFO Initialized NET plugin IB
+spark2:429912:429912 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:429912:429912 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:429912:429912 [0] NCCL INFO Using network IB
+spark2:429912:429912 [0] NCCL INFO ncclCommInitRankConfig comm 0x11725d30 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xf21f7a3e1d51dc5a - Init START
+spark2:429912:429912 [0] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+spark2:429912:429912 [0] NCCL INFO Bootstrap timings total 0.002360 (create 0.000024, send 0.001168, recv 0.000640, ring 0.000232, delay 0.000000)
+spark2:429912:429912 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:429912:429912 [0] NCCL INFO comm 0x11725d30 rank 1 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark2:429912:429912 [0] NCCL INFO Trees [0] -1/-1/-1->1->0 [1] -1/-1/-1->1->0 [2] -1/-1/-1->1->0 [3] -1/-1/-1->1->0 [4] 0/-1/-1->1->-1 [5] 0/-1/-1->1->-1 [6] 0/-1/-1->1->-1 [7] 0/-1/-1->1->-1
+spark2:429912:429912 [0] NCCL INFO P2P Chunksize set to 131072
+spark2:429912:429912 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+spark2:429912:429912 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:429912:429936 [0] NCCL INFO [Proxy Service] Device 0 CPU core 2
+spark2:429912:429937 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 0
+spark2:429912:429912 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+spark2:429912:429912 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark2:429912:429912 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark2:429912:429912 [0] NCCL INFO ncclCommInitRankConfig comm 0x11725d30 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xf21f7a3e1d51dc5a - Init COMPLETE
+spark2:429912:429912 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 1 nranks 2 total 0.27 (kernels 0.22, alloc 0.03, bootstrap 0.00, allgathers 0.01, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:   5%|4         | 14/290 [00:00<00:02, 126.94it/s]Loading weights:   9%|9         | 27/290 [00:00<00:02, 111.29it/s]Loading weights:  13%|#3        | 39/290 [00:00<00:03, 78.51it/s] Loading weights: 100%|##########| 290/290 [00:00<00:00, 638.83it/s]
+spark2:429912:429912 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429945 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 13
+spark2:429912:429912 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+Adding EOS to train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Adding EOS to train dataset: 100%|##########| 4/4 [00:00<00:00, 324.86 examples/s]
+Tokenizing train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Tokenizing train dataset: 100%|##########| 4/4 [00:00<00:00, 278.38 examples/s]
+Building labels for train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Building labels for train dataset: 100%|##########| 4/4 [00:00<00:00, 2824.92 examples/s]
+Truncating train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Truncating train dataset: 100%|##########| 4/4 [00:00<00:00, 3287.07 examples/s]
+Dropping fully masked examples from train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Dropping fully masked examples from train dataset: 100%|##########| 4/4 [00:00<00:00, 5618.63 examples/s]
+Adding EOS to eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Adding EOS to eval dataset: 100%|##########| 2/2 [00:00<00:00, 3327.49 examples/s]
+Tokenizing eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Tokenizing eval dataset: 100%|##########| 2/2 [00:00<00:00, 326.53 examples/s]
+Building labels for eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Building labels for eval dataset: 100%|##########| 2/2 [00:00<00:00, 1364.67 examples/s]
+Truncating eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Truncating eval dataset: 100%|##########| 2/2 [00:00<00:00, 1722.86 examples/s]
+Dropping fully masked examples from eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Dropping fully masked examples from eval dataset: 100%|##########| 2/2 [00:00<00:00, 2671.53 examples/s]
+[transformers] The tokenizer has new PAD/BOS/EOS tokens that differ from the model config and generation config. The model config and generation config were aligned accordingly, being updated with the tokenizer's values. Updated tokens: {'bos_token_id': None, 'pad_token_id': 151643}.
+spark2:429912:429912 [0] NCCL INFO Comm config Blocking set to 1
+spark2:429912:429912 [0] NCCL INFO Initialized NET plugin IB
+spark2:429912:429912 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:429912:429912 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:429912:429912 [0] NCCL INFO Using network IB
+spark2:429912:429912 [0] NCCL INFO ncclCommSplit comm 0x14fd1eb0 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 parent 0x11725d30 splitCount 1 color 2130503744 key 1- Init START
+spark2:429912:429912 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:429912:429912 [0] NCCL INFO comm 0x14fd1eb0 rank 1 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark2:429912:429912 [0] NCCL INFO Trees [0] -1/-1/-1->1->0 [1] -1/-1/-1->1->0 [2] -1/-1/-1->1->0 [3] -1/-1/-1->1->0 [4] 0/-1/-1->1->-1 [5] 0/-1/-1->1->-1 [6] 0/-1/-1->1->-1 [7] 0/-1/-1->1->-1
+spark2:429912:429912 [0] NCCL INFO P2P Chunksize set to 131072
+spark2:429912:429912 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:429912:429951 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 0
+spark2:429912:429950 [0] NCCL INFO [Proxy Service] Device 0 CPU core 14
+spark2:429912:429912 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark2:429912:429912 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark2:429912:429912 [0] NCCL INFO ncclCommSplit comm 0x14fd1eb0 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 parent 0x11725d30 splitCount 1 color 2130503744 key 1 - Init COMPLETE
+spark2:429912:429912 [0] NCCL INFO Init timings - ncclCommSplit: rank 1 nranks 2 total 0.01 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark2:429912:429912 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429952 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 14
+spark2:429912:429912 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:429912:429912 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+spark2:429912:429912 [0] NCCL INFO comm 0x14fd1eb0 rank 1 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark2:429912:429912 [0] NCCL INFO comm 0x11725d30 rank 1 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "<frozen runpy>", line 198, in _run_module_as_main
+[rank1]:   File "<frozen runpy>", line 88, in _run_code
+[rank1]:   File "/home/spark/trl-lab-verification/trl_lab/spark_train.py", line 359, in <module>
+[rank1]:     main()
+[rank1]:   File "/home/spark/trl-lab-verification/trl_lab/spark_train.py", line 315, in main
+[rank1]:     result = trainer.train()
+[rank1]:              ^^^^^^^^^^^^^^^
+[rank1]:   File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/transformers/trainer.py", line 1433, in train
+[rank1]:     return inner_training_loop(
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/transformers/trainer.py", line 1472, in _inner_training_loop
+[rank1]:     model, train_dataloader = self._prepare_for_training(max_steps, train_dataloader, resume_from_checkpoint)
+[rank1]:                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/transformers/trainer.py", line 1608, in _prepare_for_training
+[rank1]:     model, self.optimizer = self.accelerator.prepare(self.model, self.optimizer)
+[rank1]:                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/accelerate/accelerator.py", line 1549, in prepare
+[rank1]:     result = self._prepare_deepspeed(*args)
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/accelerate/accelerator.py", line 2439, in _prepare_deepspeed
+[rank1]:     engine, optimizer, _, lr_scheduler = ds_initialize(**kwargs)
+[rank1]:                                          ^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/deepspeed/__init__.py", line 229, in initialize
+[rank1]:     engine = DeepSpeedEngine(args=args,
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 497, in __init__
+[rank1]:     self._configure_optimizer(optimizer, model_parameters)
+[rank1]:   File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 2143, in _configure_optimizer
+[rank1]:     self.optimizer = self._configure_zero_optimizer(basic_optimizer)
+[rank1]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 2488, in _configure_zero_optimizer
+[rank1]:     optimizer = Stage1And2ZeroOptimizer(
+[rank1]:                 ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 402, in __init__
+[rank1]:     available_memory = accelerator.available_memory() if accelerator.is_available() else 0
+[rank1]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/deepspeed/accelerator/cuda_accelerator.py", line 198, in available_memory
+[rank1]:     info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/pynvml.py", line 3831, in nvmlDeviceGetMemoryInfo
+[rank1]:     _nvmlCheckReturn(ret)
+[rank1]:   File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/pynvml.py", line 1098, in _nvmlCheckReturn
+[rank1]:     raise NVMLError(ret)
+[rank1]: pynvml.NVMLError_NotSupported: Not Supported
+spark2:429912:429912 [0] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+E0908 15:55:32.292000 429901 torch/distributed/elastic/multiprocessing/api.py:984] failed (exitcode: 1) local_rank: 0 (pid: 429912) of binary: /home/spark/ptl-envs/trl/bin/python
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/run.py", line 995, in <module>
+    main()
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 362, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/run.py", line 991, in main
+    run(args)
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/run.py", line 982, in run
+    elastic_launch(
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 170, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 317, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+trl_lab.spark_train FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-09-08_15:55:32
+  host      : spark2
+  rank      : 1 (local_rank: 0)
+  exitcode  : 1 (pid: 429912)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

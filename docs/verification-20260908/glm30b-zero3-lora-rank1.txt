@@ -1,0 +1,313 @@
+[workflow] stage=train rank=1/2 model=zai-org/GLM-4.7-Flash model_dir=/home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 backend=deepspeed
+[workflow] running stage=train rank=1/2
+/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+    
+  queued_call()
+spark2:444576:444576 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+spark2:444576:444576 [0] NCCL INFO cudaDriverVersion 13000
+spark2:444576:444576 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark2:444576:444576 [0] NCCL INFO Bootstrap: Using enp1s0f0np0:12.201.48.13<0>
+spark2:444576:444576 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+spark2:444576:444576 [0] NCCL INFO Comm config Blocking set to 1
+spark2:444576:444576 [0] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+spark2:444576:444576 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark2:444576:444576 [0] NCCL INFO NCCL_IB_HCA set to rocep1s0f0
+spark2:444576:444576 [0] NCCL INFO NET/IB : Using [0]rocep1s0f0:1/RoCE [RO]; OOB enp1s0f0np0:12.201.48.13<0>
+spark2:444576:444576 [0] NCCL INFO Initialized NET plugin IB
+spark2:444576:444576 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:444576:444576 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:444576:444576 [0] NCCL INFO Using network IB
+spark2:444576:444576 [0] NCCL INFO ncclCommInitRankConfig comm 0x4d8b96c0 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x4c8b94578fb06c10 - Init START
+spark2:444576:444576 [0] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+spark2:444576:444576 [0] NCCL INFO Bootstrap timings total 0.007354 (create 0.000027, send 0.001053, recv 0.002788, ring 0.001854, delay 0.000000)
+spark2:444576:444576 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:444576:444576 [0] NCCL INFO comm 0x4d8b96c0 rank 1 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark2:444576:444576 [0] NCCL INFO Trees [0] -1/-1/-1->1->0 [1] -1/-1/-1->1->0 [2] -1/-1/-1->1->0 [3] -1/-1/-1->1->0 [4] 0/-1/-1->1->-1 [5] 0/-1/-1->1->-1 [6] 0/-1/-1->1->-1 [7] 0/-1/-1->1->-1
+spark2:444576:444576 [0] NCCL INFO P2P Chunksize set to 131072
+spark2:444576:444576 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+spark2:444576:444576 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:444576:444610 [0] NCCL INFO [Proxy Service] Device 0 CPU core 11
+spark2:444576:444611 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 10
+spark2:444576:444576 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+spark2:444576:444576 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark2:444576:444576 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark2:444576:444576 [0] NCCL INFO ncclCommInitRankConfig comm 0x4d8b96c0 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x4c8b94578fb06c10 - Init COMPLETE
+spark2:444576:444576 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 1 nranks 2 total 0.26 (kernels 0.22, alloc 0.02, bootstrap 0.01, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark2:444576:444576 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:444576:444614 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 8
+spark2:444576:444576 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:444576:444576 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+Adding EOS to train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Adding EOS to train dataset: 100%|##########| 4/4 [00:00<00:00, 446.98 examples/s]
+Tokenizing train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Tokenizing train dataset: 100%|##########| 4/4 [00:00<00:00, 138.68 examples/s]
+Building labels for train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Building labels for train dataset: 100%|##########| 4/4 [00:00<00:00, 2261.69 examples/s]
+Truncating train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Truncating train dataset: 100%|##########| 4/4 [00:00<00:00, 3209.72 examples/s]
+Dropping fully masked examples from train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Dropping fully masked examples from train dataset: 100%|##########| 4/4 [00:00<00:00, 5353.29 examples/s]
+Adding EOS to eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Adding EOS to eval dataset: 100%|##########| 2/2 [00:00<00:00, 3092.00 examples/s]
+Tokenizing eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Tokenizing eval dataset: 100%|##########| 2/2 [00:00<00:00, 178.37 examples/s]
+Building labels for eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Building labels for eval dataset: 100%|##########| 2/2 [00:00<00:00, 1270.04 examples/s]
+Truncating eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Truncating eval dataset: 100%|##########| 2/2 [00:00<00:00, 1628.86 examples/s]
+Dropping fully masked examples from eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Dropping fully masked examples from eval dataset: 100%|##########| 2/2 [00:00<00:00, 2699.91 examples/s]
+[transformers] The tokenizer has new PAD/BOS/EOS tokens that differ from the model config and generation config. The model config and generation config were aligned accordingly, being updated with the tokenizer's values. Updated tokens: {'eos_token_id': 154820, 'bos_token_id': None}.
+spark2:444576:444576 [0] NCCL INFO Comm config Blocking set to 1
+spark2:444576:444576 [0] NCCL INFO Initialized NET plugin IB
+spark2:444576:444576 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:444576:444576 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:444576:444576 [0] NCCL INFO Using network IB
+spark2:444576:444576 [0] NCCL INFO ncclCommSplit comm 0x5edaf140 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 parent 0x4d8b96c0 splitCount 1 color 2130503744 key 1- Init START
+spark2:444576:444576 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:444576:444576 [0] NCCL INFO comm 0x5edaf140 rank 1 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark2:444576:444576 [0] NCCL INFO Trees [0] -1/-1/-1->1->0 [1] -1/-1/-1->1->0 [2] -1/-1/-1->1->0 [3] -1/-1/-1->1->0 [4] 0/-1/-1->1->-1 [5] 0/-1/-1->1->-1 [6] 0/-1/-1->1->-1 [7] 0/-1/-1->1->-1
+spark2:444576:444576 [0] NCCL INFO P2P Chunksize set to 131072
+spark2:444576:444576 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:444576:444812 [0] NCCL INFO [Proxy Service] Device 0 CPU core 19
+spark2:444576:444813 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 17
+spark2:444576:444576 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark2:444576:444576 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark2:444576:444576 [0] NCCL INFO ncclCommSplit comm 0x5edaf140 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 parent 0x4d8b96c0 splitCount 1 color 2130503744 key 1 - Init COMPLETE
+spark2:444576:444576 [0] NCCL INFO Init timings - ncclCommSplit: rank 1 nranks 2 total 7.56 (kernels 0.09, alloc 0.04, bootstrap 0.01, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.01, rest 7.40)
+[rank1]:[W908 16:59:07.962307041 TCPStore.cpp:125] [c10d] recvValue failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Failed to recv, got 0 bytes. Connection was likely closed. Did the remote server shutdown or crash?
+Exception raised from recvBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:682 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65ef814 (0xf504cae9f814 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1c4 (0xf504caea7524 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:07.983416648 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Failed to recv, got 0 bytes. Connection was likely closed. Did the remote server shutdown or crash?
+[rank1]:[W908 16:59:08.984137644 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:08.985369105 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:09.985819156 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:09.987049752 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:10.987500332 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:10.988720672 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:11.989202340 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:11.990487480 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:12.990946828 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:12.992191744 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:13.992646452 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:13.993888248 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:14.994335532 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:14.995558928 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:15.996012131 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:15.997232663 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:16.997680747 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:16.998898479 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:17.999340995 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:17.000553319 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:18.000996954 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:18.002218223 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:19.002460978 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:19.003683958 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:20.004128009 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:20.005345981 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:21.005822529 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:21.007098181 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:22.007567337 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:22.008815517 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:23.009270769 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:23.010504357 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W908 16:59:24.010654696 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=41, addr=[spark2-roce]:41764, remote=[spark1-roce]:29641): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf504a83d5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x65eed3c (0xf504cae9ed3c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0xf504caea7504 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x378 (0xf504a92c9258 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe1ae0 (0xf5055d451ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x8582c (0xf5055f7a582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0xeba0c (0xf5055f80ba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank1]:[W908 16:59:24.011925852 ProcessGroupNCCL.cpp:1802] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+W0908 16:59:24.740000 444568 torch/distributed/elastic/agent/server/api.py:739] Received 15 death signal, shutting down workers
+W0908 16:59:24.912000 444568 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 444576 closing signal SIGTERM
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/run.py", line 995, in <module>
+    main()
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 362, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/run.py", line 991, in main
+    run(args)
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/run.py", line 982, in run
+    elastic_launch(
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 170, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 308, in launch_agent
+    result = agent.run()
+             ^^^^^^^^^^^
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/elastic/metrics/api.py", line 134, in wrapper
+    result = f(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/elastic/agent/server/api.py", line 731, in run
+    result = self._invoke_run(role)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/elastic/agent/server/api.py", line 908, in _invoke_run
+    time.sleep(monitor_interval)
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/api.py", line 86, in _terminate_process_handler
+    raise SignalException(f"Process {os.getpid()} got signal: {sigval}", sigval=sigval)
+torch.distributed.elastic.multiprocessing.api.SignalException: Process 444568 got signal: 15

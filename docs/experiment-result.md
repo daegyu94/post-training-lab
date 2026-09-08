@@ -1,5 +1,7 @@
 # Experiment Result
 
+이 문서의 실행 명령은 현재 패키지 이름 `trl_lab`에 맞췄으며, 아래 측정값은 기존 실행 기록입니다.
+
 이 문서는 이 브랜치에서 실행한 Qwen2.5-14B-Instruct QLoRA 결과를 기록합니다.
 전체 산출물은 Git에서 제외하고 실험에 필요한 명령과 요약만 남깁니다.
 
@@ -35,7 +37,7 @@
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
-  .venv/bin/python -m sft_lab.train \
+  .venv/bin/python -m trl_lab.train \
   --dataset-parquet-dir data/ultrachat_200k/data \
   --local-files-only \
   --train-samples 128 \
@@ -142,7 +144,7 @@ batch별 loss는 단조 감소하지 않았지만, 별도 `test_sft` subset의 l
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 \
-  .venv/bin/python -m sft_lab.infer \
+  .venv/bin/python -m trl_lab.infer \
   results/trl-branch-experiment/adapter \
   --local-files-only \
   --prompt 'Give two practical tips for debugging an out-of-memory error during LLM training.'

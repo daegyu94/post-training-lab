@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-.venv/bin/python -m sft_lab.prepare_service_data \
+.venv/bin/python -m trl_lab.prepare_service_data \
   --input "${TRACE_FILE:-examples/service-traces.jsonl}" \
   --output-dir "${DATA_DIR:-data/service-sft}" \
   --seed "${SEED:-42}" \

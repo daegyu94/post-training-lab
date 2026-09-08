@@ -17,7 +17,7 @@ if [[ ! -d "$dataset_parquet_dir" ]]; then
 fi
 
 HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
-    .venv/bin/python -m sft_lab.train \
+    .venv/bin/python -m trl_lab.train \
     --dataset-parquet-dir "$dataset_parquet_dir" \
     --local-files-only \
     --train-samples 128 \

@@ -1,4 +1,4 @@
-from sft_lab.data import QWEN_ASSISTANT_MASK_TEMPLATE, validate_conversation
+from trl_lab.data import QWEN_ASSISTANT_MASK_TEMPLATE, validate_conversation
 
 
 def test_template_marks_assistant_generation() -> None:

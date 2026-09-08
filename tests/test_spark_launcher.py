@@ -19,7 +19,7 @@ def test_launcher_uses_explicit_torchrun_and_forwards_topology(tmp_path: Path) -
     assert "torch.distributed.run" in call["argv"]
     assert "--standalone" not in call["argv"]
     assert call["rank"] == "1"
-    payload = call["argv"][call["argv"].index("sft_lab.spark_train") + 1 :]
+    payload = call["argv"][call["argv"].index("trl_lab.spark_train") + 1 :]
     assert payload.count("base") == 1
     assert payload[payload.index("--distributed-backend") + 1] == "ddp"
     assert payload[-2:] == ["--stage", "base"]
@@ -34,7 +34,7 @@ def test_launcher_resolves_default_node_local_hub_snapshot(tmp_path: Path) -> No
     fake.write_text(
         "#!/usr/bin/env python3\n"
         "import json, os, sys\n"
-        "if 'sft_lab.spark_config' in sys.argv:\n"
+        "if 'trl_lab.spark_config' in sys.argv:\n"
         "    print(os.environ['EXPECTED_SNAPSHOT'])\n"
         "else:\n"
         "    open(os.environ['CALLS'], 'a').write(json.dumps(sys.argv[1:]) + '\\n')\n",
@@ -67,7 +67,7 @@ def test_launcher_resolves_default_node_local_hub_snapshot(tmp_path: Path) -> No
         text=True,
     )
     call = json.loads(calls.read_text(encoding="utf-8").splitlines()[0])
-    payload = call[call.index("sft_lab.spark_train") + 1 :]
+    payload = call[call.index("trl_lab.spark_train") + 1 :]
     assert payload[payload.index("--model-dir") + 1] == str(snapshot)
 
 
@@ -117,8 +117,8 @@ def test_launcher_forwards_fsdp2_and_deepspeed_profiles(tmp_path: Path) -> None:
         text=True,
     )
     fsdp_call, deepspeed_call = [json.loads(line) for line in calls.read_text().splitlines()]
-    fsdp_payload = fsdp_call[fsdp_call.index("sft_lab.spark_train") + 1 :]
-    deepspeed_payload = deepspeed_call[deepspeed_call.index("sft_lab.spark_train") + 1 :]
+    fsdp_payload = fsdp_call[fsdp_call.index("trl_lab.spark_train") + 1 :]
+    deepspeed_payload = deepspeed_call[deepspeed_call.index("trl_lab.spark_train") + 1 :]
     assert fsdp_payload[fsdp_payload.index("--distributed-backend") + 1] == "fsdp2"
     assert "--deepspeed-config" not in fsdp_payload
     assert deepspeed_payload[deepspeed_payload.index("--distributed-backend") + 1] == "deepspeed"

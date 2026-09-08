@@ -7,7 +7,7 @@ import types
 
 import pytest
 
-import sft_lab.spark_train as spark_train
+import trl_lab.spark_train as spark_train
 
 
 def test_process_group_cleanup_runs_on_normal_and_exception_exit(monkeypatch) -> None:
@@ -199,7 +199,7 @@ def test_main_passes_cli_optimizer_and_sft_config_to_trainer(monkeypatch, tmp_pa
 
     monkeypatch.setattr(spark_train, "_load_model", load_model)
     monkeypatch.setattr(spark_train, "model_snapshot_evidence", lambda *_: {})
-    import sft_lab.spark_data as spark_data
+    import trl_lab.spark_data as spark_data
     monkeypatch.setattr(spark_data, "load_prompt_completion_data", lambda *_args: ([{"prompt": "p", "completion": "c"}], [{"prompt": "p", "completion": "c"}], {}))
 
     spark_train.main()

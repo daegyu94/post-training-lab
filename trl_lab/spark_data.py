@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from sft_lab.spark_config import validate_dataset_manifest
+from trl_lab.spark_config import validate_dataset_manifest
 
 
 def _text(value: Any, field: str) -> str:
