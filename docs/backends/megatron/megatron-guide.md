@@ -1,19 +1,108 @@
-# Megatron feature labs
+# Megatron 개념과 기능 실습 가이드
 
-이 문서는 [Setup2](spark-cluster.md) 환경에서 수행하는 분산 기능 A/B 실습과 기존 측정 기록을 설명합니다.
-30B MoE SFT integration과 feature 효과 측정은 별도의 실험으로 구분합니다.
-Feature 효과는 30B MoE LoRA run이 아니라 작은 dense full-parameter model에서 먼저 측정할 수 있으며, 결과 summary에는 `model_scope=small-dense-feature-model`을 남겨 30B evidence와 섞지 않습니다.
+이 가이드는 Megatron의 구성 요소와 병렬화 개념을 설명하고, Spark 두 노드에서 기능을 실습하는 방법과 기존 측정 결과를 정리합니다.
+처음 읽는다면 구성 요소와 CPU 실습부터, 실행 방법이나 결과를 찾는다면 아래 표에서 해당 항목으로 이동하세요.
+Spark 환경 준비와 30B 모델 실행 절차는 [Spark 실행 가이드](spark-cluster.md)에서 관리합니다.
 
-## At a glance
+문서의 shell 명령은 별도 안내가 없으면 `backends/megatron`에서 실행합니다.
+CPU 개념 실습은 controller에서 실행할 수 있으며, 실제 학습 명령은 Spark 노드에서 실행합니다.
+
+## 읽는 순서
 
 | 목적 | 이동할 곳 | 현재 기록의 범위 |
 | --- | --- | --- |
+| 구성 요소와 병렬화 이해 | [Stack 구성](#stack-overview), [병렬화 용어](#parallelism-terms) | 개념 설명 |
+| GPU 없이 개념 확인 | [CPU 실습](#cpu-only-concept-exercise) | 논리적 rank 배치만 확인 |
 | 실행할 기능 선택 | [실습 matrix](#matrix) | DCP, restart, overlap, recompute, sequence/expert parallel |
 | A/B 실행과 로그 수집 | [작은 dense workload](#small-dense-feature-workload) | 고정 variant와 rank별 metadata·timing 수집 scaffold |
 | 저장 후 같은 topology로 재개 | [DCP/restart](#measured-dcprestart-evidence) | 0.5B paired run; 선택된 tensor 4개 equality |
 | Sequence parallel 비교 | [Sequence parallel](#measured-sequence-parallel-candidate) | TE off/on 한 쌍; 안정적인 성능 결론 없음 |
 | DP=2에서 TP=2로 재개 | [Layout reshard](#layout-reshard) | fully-reshardable source로 제한된 integration 확인 |
 | 후속 기능 검토 | [설계 후보](#future-candidates) | dependency·구현·smoke 확인 전 screening 단계 |
+
+## Stack overview
+
+이 저장소의 학습 코드는 Megatron Bridge를 통해 Megatron Core 기반 모델을 사용합니다.
+아래 구분을 먼저 잡으면 스크립트의 목적이 분명해집니다.
+
+- [Megatron-LM](https://github.com/NVIDIA/Megatron-LM)은 대규모 Transformer 학습을 위한 참조 애플리케이션입니다. Megatron Core와 실행 스크립트를 함께 제공합니다.
+- [Megatron Core](https://docs.nvidia.com/megatron-core/developer-guide/latest/)는 Transformer 블록과 병렬화 전략을 조합하는 라이브러리입니다.
+- [Megatron Bridge](https://docs.nvidia.com/nemo/megatron-bridge/latest/)는 Hugging Face 체크포인트와 Megatron 형식 사이의 변환, 모델별 recipe, 학습 진입점을 제공하는 연결 계층입니다. 이 backend는 local Hugging Face snapshot에서 Bridge provider를 만들어 분산 학습 설정을 적용합니다.
+
+## How Setup2 Uses the Stack
+
+~~~text
+Local HF Snapshot (0.5B dense / 30B MoE)
+        |
+        v
+Megatron Bridge AutoBridge + ConfigContainer
+        |
+        v
+Megatron Core Distributed Model
+        |
+        +-------------------+
+        |                   |
+        v                   v
+      spark1              spark2
+~~~
+
+Setup2는 두 노드에서 실제 분산 process group을 사용합니다.
+작은 dense 모델의 DP=2를 시작점으로 TP=2와 checkpoint 재분할을 실습하고, MoE baseline은 EP=2로 확장합니다.
+실행 환경은 [Spark 실행 가이드](spark-cluster.md), 기능별 비교는 아래 [실습 matrix](#matrix)를 참고합니다.
+아래 CPU 개념 실습은 논리적 rank 배치만 보여 주며 분산 학습 성능이나 통신 동작을 검증하지 않습니다.
+
+## Parallelism Terms
+
+| 방식 | 나누는 대상 | 주로 해결하는 문제 |
+| --- | --- | --- |
+| TP (Tensor Parallelism) | 한 레이어의 텐서 연산 | 한 GPU에 레이어 연산/가중치를 모두 두기 어려운 경우 |
+| PP (Pipeline Parallelism) | 모델의 레이어 구간 | 모델 깊이를 여러 stage에 분할 |
+| DP (Data Parallelism) | 데이터 배치 | 같은 모델 복제본으로 처리량 확장 |
+| CP (Context Parallelism) | 한 샘플의 시퀀스 길이 | 긴 context의 activation 및 attention 메모리 부담 완화 |
+
+CP는 한 시퀀스의 token 구간을 CP rank에 나누어 둡니다.
+attention을 계산하려면 다른 구간의 key/value 정보도 필요하므로, 실제 구현에서는 CP group 내부의 통신이 필요합니다.
+따라서 CP는 단순히 배치를 나누는 DP와 다르며, 긴 context에 특히 의미가 있습니다.
+현재 Setup2 학습 경로는 CP=1을 사용하며, 아래 CPU 실습에서 CP>1의 논리적 배치를 살펴볼 수 있습니다.
+
+일반적인 논리적 관계는 다음과 같습니다.
+
+~~~text
+world_size = TP × PP × CP × DP
+~~~
+
+실제 가능한 조합과 통신 방식은 모델, sequence length, GPU 메모리, 네트워크에 따라 달라집니다.
+[Megatron Core 병렬화 문서](https://docs.nvidia.com/megatron-core/developer-guide/latest/api-guide/context_parallel.html)를 실제 설정의 기준으로 삼습니다.
+
+## CPU-only Concept Exercise
+
+다음 명령은 GPU, CUDA, NCCL, torch.distributed를 초기화하지 않습니다.
+
+~~~bash
+./scripts/run_megatron_practice.sh
+~~~
+
+이 스크립트는 두 작업을 합니다.
+
+1. Qwen2.5-7B LoRA Bridge recipe의 기본 병렬화 값을 참고용으로 출력합니다.
+   이는 CPU recipe inspection 예제이며 Setup2 실행 설정이 아닙니다.
+   체크포인트도 내려받지 않습니다.
+2. TP=2, PP=2, CP=2, DP=2, 총 16개 논리 rank의 group 배치를 JSON으로 출력합니다.
+
+직접 조합을 바꿔 보려면 다음과 같이 실행합니다.
+
+~~~bash
+WORLD_SIZE=16 TP_SIZE=2 PP_SIZE=2 CP_SIZE=2 ./scripts/simulate_parallelism.sh
+~~~
+
+출력되는 group은 개념 설명용입니다.
+실제 멀티 GPU 또는 멀티 노드 실행에는 launcher, process group 초기화, GPU 자원, 네트워크 설정이 별도로 필요합니다.
+
+## Spark 기능 실습
+
+아래 실습은 [Spark 두 노드](spark-cluster.md)에서 분산 기능을 켜고 끈 결과를 비교합니다(A/B 비교).
+30B MoE SFT integration과 feature 효과 측정은 별도의 실험으로 구분합니다.
+Feature 효과는 30B MoE LoRA run이 아니라 작은 dense full-parameter model에서 먼저 측정할 수 있으며, 결과 summary에는 `model_scope=small-dense-feature-model`을 남겨 30B evidence와 섞지 않습니다.
 
 ```text
 Setup2 + NCCL / host RoCE prerequisite smoke

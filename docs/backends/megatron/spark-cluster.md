@@ -187,4 +187,4 @@ Checkpoint path는 training resume와 adapter evaluation을 구분합니다.
 5. Rank logs, run metadata, topology, model·dataset revision과 실패 원인을 보관합니다.
 
 이 backend의 실행 경로는 Spark 두 노드 분산 학습을 중심으로 구성합니다.
-NCCL prerequisite와 두 30B model의 one-step train/eval/DCP evidence는 확보했으며, 더 긴 repeat와 checkpoint reload 결과가 생기면 이 문서와 [feature labs](megatron-feature-labs.md)의 범위를 함께 갱신합니다.
+NCCL prerequisite와 두 30B model의 one-step train/eval/DCP evidence는 확보했으며, 더 긴 repeat와 checkpoint reload 결과가 생기면 이 문서와 [Megatron 기능 실습 가이드](megatron-guide.md)의 범위를 함께 갱신합니다.

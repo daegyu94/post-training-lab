@@ -10,9 +10,9 @@ Megatron Bridge로 Setup2의 두 Spark 노드에서 분산 학습, checkpoint �
 
 | 순서 | 실습 | 확인할 내용 |
 | --- | --- | --- |
-| 1 | [0.5B dense workload](../../docs/backends/megatron/megatron-feature-labs.md#small-dense-feature-workload) | 두 노드 실행과 rank별 로그 |
-| 2 | [Checkpoint save/resume](../../docs/backends/megatron/megatron-feature-labs.md#measured-dcprestart-evidence), [DP→TP reshard](../../docs/backends/megatron/megatron-feature-labs.md#layout-reshard) | 저장·재개 correctness와 topology 변경의 제약 |
-| 3 | [Feature A/B](../../docs/backends/megatron/megatron-feature-labs.md#matrix) | overlap, recompute, sequence parallel 비교 |
+| 1 | [0.5B dense workload](../../docs/backends/megatron/megatron-guide.md#small-dense-feature-workload) | 두 노드 실행과 rank별 로그 |
+| 2 | [Checkpoint save/resume](../../docs/backends/megatron/megatron-guide.md#measured-dcprestart-evidence), [DP→TP reshard](../../docs/backends/megatron/megatron-guide.md#layout-reshard) | 저장·재개 correctness와 topology 변경의 제약 |
+| 3 | [Feature A/B](../../docs/backends/megatron/megatron-guide.md#matrix) | overlap, recompute, sequence parallel 비교 |
 | 4 | [30B MoE integration](../../docs/backends/megatron/spark-cluster.md#verified-30b-integration-smoke) | Qwen3/GLM EP=2 LoRA; 현재 검증은 1-step smoke 범위 |
 
 GPU 없이 시작하려면 아래 [CPU 개념 실습](#cpu-only-concept-exercise)으로 논리적 rank 배치를 먼저 살펴볼 수 있습니다.
@@ -55,7 +55,7 @@ Adapter reload 평가와 학습 상태 resume는 별도로 확인합니다.
 
 기존 [Setup2 검증 기록](../../docs/backends/megatron/spark-cluster.md#verified-30b-integration-smoke)은 두 30B 모델의 EP=2 LoRA **1-step** 학습·validation·sync DCP 저장을 다룹니다.
 Launcher 기본값인 **5-step 전체 workflow** 또는 30B checkpoint의 별도-process reload 완료를 의미하지 않습니다.
-소형 Qwen2.5-0.5B는 Setup2의 분산·checkpoint·feature A/B를 확인하는 보조 모델이며 상세 결과는 [feature labs](../../docs/backends/megatron/megatron-feature-labs.md)에 정리되어 있습니다.
+소형 Qwen2.5-0.5B는 Setup2의 분산·checkpoint·feature A/B를 확인하는 보조 모델이며 상세 결과는 [Megatron 기능 실습 가이드](../../docs/backends/megatron/megatron-guide.md)에 정리되어 있습니다.
 짧은 smoke와 작은 subset의 loss 변화는 장기 수렴, 일반적인 model quality 또는 안정적인 throughput 결과로 해석하지 않습니다.
 
 ## CPU-only Concept Exercise
@@ -68,7 +68,7 @@ GPU 초기화, checkpoint download, NCCL 통신 없이 Bridge recipe와 논리�
 
 기본 예제는 TP=2, PP=2, CP=2, DP=2인 16개 논리 rank를 출력합니다.
 실제 distributed process group을 만들지는 않습니다.
-자세한 내용은 [Megatron stack overview](../../docs/backends/megatron/megatron-overview.md)를 참고하세요.
+자세한 내용은 [Megatron 구성 요소와 병렬화 개념](../../docs/backends/megatron/megatron-guide.md#stack-overview)를 참고하세요.
 
 ## Repository Layout
 
