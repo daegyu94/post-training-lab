@@ -276,6 +276,8 @@ def remote_command(rank: dict[str, Any], backend: str, timeout: int, run_id: str
         + (f"if [ \"$remote_commit\" != {q(expected_commit)} ]; then echo 'remote commit mismatch' >&2; exit 2; fi; " if expected_commit != "unknown" else "")
         + "if [ -n \"$remote_dirty\" ]; then echo 'remote checkout is dirty' >&2; exit 2; fi; "
     )
+    # NFS directory/negative lookup caches can hide a peer claim for up to 60s.
+    claim_attempts = min(timeout, 70) * 10
     body = (
         f"set -eu; "
         f"if mkdir {q(rank['output'])} 2>/dev/null; then created_output=1; "
@@ -284,7 +286,7 @@ def remote_command(rank: dict[str, Any], backend: str, timeout: int, run_id: str
         f"if [ \"$created_output\" = 1 ]; then "
         f"mkdir {q(owner_dir)} || {{ echo 'cannot claim new remote output' >&2; exit 2; }}; "
         f"mkdir {q(session_claim)} || {{ echo 'cannot record remote session' >&2; exit 2; }}; "
-        f"else attempts=0; while [ ! -d {q(session_claim)} ] && [ \"$attempts\" -lt 50 ]; do attempts=$((attempts + 1)); sleep 0.1; done; "
+        f"else attempts=0; while [ ! -d {q(session_claim)} ] && [ \"$attempts\" -lt {claim_attempts} ]; do attempts=$((attempts + 1)); sleep 0.1; done; "
         f"if [ ! -d {q(session_claim)} ]; then echo 'refusing prior, incomplete, or concurrent remote output' >&2; exit 2; fi; fi; "
         f"if ! mkdir {q(rank_claim)} 2>/dev/null; then echo 'refusing duplicate rank claim' >&2; exit 2; fi; "
         f"if [ -e {q(cancel_file)} ]; then echo 'remote launch cancelled before start' >&2; exit 143; fi; "
