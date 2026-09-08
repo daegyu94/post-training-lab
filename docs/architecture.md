@@ -2,7 +2,8 @@
 
 ## Purpose
 
-post-training system은 사용자 요청을 처리하는 online serving path와, data preparation·training·evaluation을 수행하는 offline path를 분리합니다. training job이나 shared storage의 장애가 현재 serving revision에 직접 영향을 주지 않게 하고, 검증을 통과한 immutable artifact만 명시적인 publish와 promotion을 거쳐 전달하는 것이 목적입니다.
+post-training system은 사용자 요청을 처리하는 online serving path와, data preparation·training·evaluation을 수행하는 offline path를 분리합니다.
+training job이나 shared storage의 장애가 현재 serving revision에 직접 영향을 주지 않게 하고, 검증을 통과한 immutable artifact만 명시적인 publish와 promotion을 거쳐 전달하는 것이 목적입니다.
 
 ## Design Invariants
 
@@ -40,7 +41,8 @@ flowchart TD
     D --> S
 ```
 
-화살표는 logical control 또는 artifact flow를 나타냅니다. 실제 구현에서는 trace storage, dataset storage와 model registry가 서로 다른 storage system일 수 있습니다.
+화살표는 logical control 또는 artifact flow를 나타냅니다.
+실제 구현에서는 trace storage, dataset storage와 model registry가 서로 다른 storage system일 수 있습니다.
 
 ## Components
 
@@ -56,7 +58,8 @@ flowchart TD
 | Deployment controller | approved candidate, rollout policy | serving revision, deployment event | preflight, canary, promotion과 rollback |
 | Observability pipeline | stage metric, log, event | correlated dashboard and alert | 동일한 run과 revision 기준으로 상태 연결 |
 
-TRL과 Megatron 내부의 tokenizer 적용, optimizer, parallelism과 checkpoint writer는 각 framework branch의 책임입니다. registry 이후의 evaluation, promotion과 deployment contract는 backend 종류에 의존하지 않아야 합니다.
+TRL과 Megatron 내부의 tokenizer 적용, optimizer, parallelism과 checkpoint writer는 각 framework branch의 책임입니다.
+registry 이후의 evaluation, promotion과 deployment contract는 backend 종류에 의존하지 않아야 합니다.
 
 ## End-to-End Control Flow
 
@@ -77,7 +80,8 @@ flowchart TD
     K -->|Regression| M["Rollback and quarantine"]
 ```
 
-`upload complete`와 `register candidate`를 분리하는 이유는 incomplete checkpoint가 discovery API나 deployment controller에 보이지 않게 하기 위해서입니다. 일반적으로 임시 위치에 모든 파일을 쓴 뒤 digest를 검증하고, registry metadata를 원자적으로 visible 상태로 전환합니다.
+`upload complete`와 `register candidate`를 분리하는 이유는 incomplete checkpoint가 discovery API나 deployment controller에 보이지 않게 하기 위해서입니다.
+일반적으로 임시 위치에 모든 파일을 쓴 뒤 digest를 검증하고, registry metadata를 원자적으로 visible 상태로 전환합니다.
 
 ## Boundary Contracts
 
@@ -91,7 +95,8 @@ flowchart TD
 
 ## Minimal Implementation Path
 
-처음부터 모든 component를 별도 service로 만들 필요는 없습니다. 한 host에서 시작하더라도 경계와 artifact는 분리해 두면 이후 확장할 수 있습니다.
+처음부터 모든 component를 별도 service로 만들 필요는 없습니다.
+한 host에서 시작하더라도 경계와 artifact는 분리해 두면 이후 확장할 수 있습니다.
 
 1. canonical JSONL과 dataset manifest를 immutable directory에 생성합니다.
 2. training request를 YAML 또는 JSON으로 저장하고 framework script를 실행합니다.
@@ -100,12 +105,15 @@ flowchart TD
 5. 사람이 승인한 candidate만 별도 serving directory에서 불러옵니다.
 6. serving revision과 이전 revision을 기록해 수동 rollback부터 검증합니다.
 
-PoC에서 directory와 script로 구현한 각 단계는 production에서 object storage, workflow orchestrator, model registry와 deployment controller로 바뀔 수 있습니다. 하지만 revision, digest, 상태 전이와 evidence contract는 그대로 유지합니다.
+PoC에서 directory와 script로 구현한 각 단계는 production에서 object storage, workflow orchestrator, model registry와 deployment controller로 바뀔 수 있습니다.
+하지만 revision, digest, 상태 전이와 evidence contract는 그대로 유지합니다.
 
 ## Scaling Considerations
 
-multi-node로 확장하면 model quality 외에 dataset read throughput, collective duration, GPU idle time, checkpoint save/load 시간, storage metadata 부하와 artifact transfer 시간이 critical path가 될 수 있습니다. 이 값은 [`profiling` branch](https://github.com/daegyu94/post-training-lab/tree/profiling)의 metric contract를 사용해 같은 `run_id`와 phase로 연결합니다.
+multi-node로 확장하면 model quality 외에 dataset read throughput, collective duration, GPU idle time, checkpoint save/load 시간, storage metadata 부하와 artifact transfer 시간이 critical path가 될 수 있습니다.
+이 값은 [`profiling` branch](https://github.com/daegyu94/post-training-lab/tree/profiling)의 metric contract를 사용해 같은 `run_id`와 phase로 연결합니다.
 
-training cluster와 serving cluster가 물리적으로 분리된 경우에는 artifact transfer 완료, digest validation과 registry publish를 하나의 release boundary로 취급합니다. serving node는 training storage를 직접 mount해 미완성 checkpoint를 읽지 않습니다.
+training cluster와 serving cluster가 물리적으로 분리된 경우에는 artifact transfer 완료, digest validation과 registry publish를 하나의 release boundary로 취급합니다.
+serving node는 training storage를 직접 mount해 미완성 checkpoint를 읽지 않습니다.
 
 다음 단계: [Data Lifecycle](data-lifecycle.md)에서 첫 번째 contract인 dataset revision을 확인하세요.

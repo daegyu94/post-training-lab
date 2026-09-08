@@ -2,7 +2,8 @@
 
 ## Goal
 
-운영 단계에서는 “training job이 성공했다”는 신호 하나가 아니라 dataset publish, training, artifact registration, evaluation, deployment와 serving 상태를 연결해서 봅니다. 장애가 발생했을 때 영향을 받은 revision을 찾고, promotion을 멈추거나 이전 serving revision으로 되돌릴 수 있어야 합니다.
+운영 단계에서는 “training job이 성공했다”는 신호 하나가 아니라 dataset publish, training, artifact registration, evaluation, deployment와 serving 상태를 연결해서 봅니다.
+장애가 발생했을 때 영향을 받은 revision을 찾고, promotion을 멈추거나 이전 serving revision으로 되돌릴 수 있어야 합니다.
 
 ## Correlation Model
 
@@ -15,7 +16,8 @@ flowchart TD
     E --> F["deployment and rollback events"]
 ```
 
-모든 metric에 위 값을 전부 label로 넣는다는 뜻은 아닙니다. 각 system의 metadata에서 다음 identity로 이동할 수 있는 link를 보존하고, metric에는 cardinality가 통제된 `run_id`, phase와 revision만 사용합니다.
+모든 metric에 위 값을 전부 label로 넣는다는 뜻은 아닙니다.
+각 system의 metadata에서 다음 identity로 이동할 수 있는 link를 보존하고, metric에는 cardinality가 통제된 `run_id`, phase와 revision만 사용합니다.
 
 | Identity | Created by | Must link to |
 | --- | --- | --- |
@@ -38,7 +40,9 @@ metric vocabulary와 수집 방식은 [`profiling` branch](https://github.com/da
 | Deployment | candidate, replica state, rollout percentage, startup time | traffic 전환 전인가 후인가? |
 | Serving | serving revision, request·task success, latency, throughput, memory | candidate와 기존 revision의 차이인가? |
 
-raw prompt, response, credential와 user identifier는 metric label에 넣지 않습니다. 높은 cardinality는 metric system의 비용과 query 성능을 악화시키고, 민감 정보 노출 위험도 만듭니다. 상세 sample은 접근 제어된 artifact로 분리합니다.
+raw prompt, response, credential와 user identifier는 metric label에 넣지 않습니다.
+높은 cardinality는 metric system의 비용과 query 성능을 악화시키고, 민감 정보 노출 위험도 만듭니다.
+상세 sample은 접근 제어된 artifact로 분리합니다.
 
 ## Operational Sequence
 
@@ -67,11 +71,14 @@ raw prompt, response, credential와 user identifier는 metric label에 넣지 �
 
 ## Storage and Network
 
-large-scale training에서는 dataset read와 checkpoint I/O가 shared storage에 집중될 수 있습니다. checkpoint save가 training step과 겹치는지, 각 rank가 많은 small file을 생성하는지, metadata path와 data path가 어디에 있는지 기록합니다.
+large-scale training에서는 dataset read와 checkpoint I/O가 shared storage에 집중될 수 있습니다.
+checkpoint save가 training step과 겹치는지, 각 rank가 많은 small file을 생성하는지, metadata path와 data path가 어디에 있는지 기록합니다.
 
-multi-node run에서는 collective communication과 storage traffic이 같은 NIC 또는 fabric을 공유하는지도 확인합니다. network utilization 하나로 병목을 결론 내리지 않고 GPU idle time, collective duration, I/O queueing과 checkpoint phase를 같은 timeline에서 비교합니다.
+multi-node run에서는 collective communication과 storage traffic이 같은 NIC 또는 fabric을 공유하는지도 확인합니다.
+network utilization 하나로 병목을 결론 내리지 않고 GPU idle time, collective duration, I/O queueing과 checkpoint phase를 같은 timeline에서 비교합니다.
 
-training cluster와 serving cluster 사이의 artifact transfer는 명시적인 publish 단계로 관리합니다. upload 완료와 digest validation 이후에만 registry revision을 visible 상태로 바꾸며, serving node가 training 중인 checkpoint directory를 직접 읽지 않게 합니다.
+training cluster와 serving cluster 사이의 artifact transfer는 명시적인 publish 단계로 관리합니다.
+upload 완료와 digest validation 이후에만 registry revision을 visible 상태로 바꾸며, serving node가 training 중인 checkpoint directory를 직접 읽지 않게 합니다.
 
 ## Failure Handling
 
@@ -85,7 +92,8 @@ training cluster와 serving cluster 사이의 artifact transfer는 명시적인 
 | Serving regression | 이전 serving revision으로 rollback | rollout window, metric delta, rollback event |
 | Registry or storage outage | 현재 production 유지, promotion 중단 | outage interval, affected request와 retry status |
 
-자동 retry는 결과가 같은 idempotent 단계에만 적용합니다. dataset publish, registry alias 변경과 production traffic 전환처럼 상태를 변경하는 단계는 request identity, expected current revision과 compare-and-swap 조건을 사용해 중복 실행과 lost update를 막습니다.
+자동 retry는 결과가 같은 idempotent 단계에만 적용합니다.
+dataset publish, registry alias 변경과 production traffic 전환처럼 상태를 변경하는 단계는 request identity, expected current revision과 compare-and-swap 조건을 사용해 중복 실행과 lost update를 막습니다.
 
 ## Validation Checklist
 

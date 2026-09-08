@@ -2,7 +2,8 @@
 
 ## Goal
 
-data lifecycle의 결과는 “학습에 사용할 수 있을 것 같은 파일”이 아니라, 누가 어떤 source와 policy로 만들었는지 추적할 수 있는 **immutable dataset revision**입니다. training backend에는 raw trace가 아니라 검토와 검증이 끝난 revision만 전달합니다.
+data lifecycle의 결과는 “학습에 사용할 수 있을 것 같은 파일”이 아니라, 누가 어떤 source와 policy로 만들었는지 추적할 수 있는 **immutable dataset revision**입니다.
+training backend에는 raw trace가 아니라 검토와 검증이 끝난 revision만 전달합니다.
 
 ## Data Objects
 
@@ -28,13 +29,17 @@ flowchart TD
     H --> I["Backend-specific adapter"]
 ```
 
-각 단계는 입력보다 넓은 접근 권한을 자동으로 상속하지 않습니다. 특히 raw event와 reject evidence는 canonical dataset보다 강한 접근 제어와 별도의 retention policy가 필요할 수 있습니다.
+각 단계는 입력보다 넓은 접근 권한을 자동으로 상속하지 않습니다.
+특히 raw event와 reject evidence는 canonical dataset보다 강한 접근 제어와 별도의 retention policy가 필요할 수 있습니다.
 
 ## Data Sources
 
-candidate는 service trace, 명시적 사용자 feedback, offline benchmark, human-authored example과 domain expert review에서 수집할 수 있습니다. raw trace에 기존 model 응답이 있다는 사실만으로 그 응답이 정확하거나 SFT target으로 적합하다는 의미는 아닙니다.
+candidate는 service trace, 명시적 사용자 feedback, offline benchmark, human-authored example과 domain expert review에서 수집할 수 있습니다.
+raw trace에 기존 model 응답이 있다는 사실만으로 그 응답이 정확하거나 SFT target으로 적합하다는 의미는 아닙니다.
 
-source별로 collection policy, 사용 목적, retention class와 허용된 reviewer를 먼저 정합니다. 개인정보나 secret을 hash로 바꾸는 것만으로 익명화가 완료됐다고 간주하지 않습니다. 원문을 복원하거나 다른 dataset과 연결할 수 있는 값인지 별도로 검토해야 합니다.
+source별로 collection policy, 사용 목적, retention class와 허용된 reviewer를 먼저 정합니다.
+개인정보나 secret을 hash로 바꾸는 것만으로 익명화가 완료됐다고 간주하지 않습니다.
+원문을 복원하거나 다른 dataset과 연결할 수 있는 값인지 별도로 검토해야 합니다.
 
 ## Curation Pipeline
 
@@ -48,7 +53,8 @@ source별로 collection policy, 사용 목적, retention class와 허용된 revi
 | Split | 같은 identity group이 여러 split에 걸치지 않는가? | split policy, seed와 group key |
 | Publish | schema, count와 content digest가 검증됐는가? | immutable revision과 manifest |
 
-reject sample을 조용히 삭제하면 data quality 문제를 추적하기 어렵습니다. 학습 input과 분리된 제한 영역에 reject reason과 policy revision을 남기되, 불필요한 민감 원문은 보존하지 않습니다.
+reject sample을 조용히 삭제하면 data quality 문제를 추적하기 어렵습니다.
+학습 input과 분리된 제한 영역에 reject reason과 policy revision을 남기되, 불필요한 민감 원문은 보존하지 않습니다.
 
 ## Preventing Data Leakage
 
@@ -62,11 +68,13 @@ split은 message 단위의 무작위 분할보다 leakage를 막을 수 있는 s
 | Template-generated tasks | task family 또는 template ID | 문구만 다른 동일 task의 중복 |
 | Time-sensitive service traces | collection time window | 미래 evaluation data가 과거 training에 포함 |
 
-최종 test label과 grader는 training process가 읽을 수 없는 위치와 권한에 보관합니다. split key를 선택할 때는 불필요한 사용자 식별자를 dataset에 노출하지 않고도 동일 group을 안정적으로 묶을 수 있어야 합니다.
+최종 test label과 grader는 training process가 읽을 수 없는 위치와 권한에 보관합니다.
+split key를 선택할 때는 불필요한 사용자 식별자를 dataset에 노출하지 않고도 동일 group을 안정적으로 묶을 수 있어야 합니다.
 
 ## Canonical Record
 
-canonical schema는 tokenizer나 framework-specific binary format에 종속되지 않습니다. 아래는 필드 관계를 보여 주는 예시이며 실제 운영 schema는 별도로 versioning해야 합니다.
+canonical schema는 tokenizer나 framework-specific binary format에 종속되지 않습니다.
+아래는 필드 관계를 보여 주는 예시이며 실제 운영 schema는 별도로 versioning해야 합니다.
 
 ```json
 {
@@ -96,11 +104,14 @@ canonical schema는 tokenizer나 framework-specific binary format에 종속되�
 }
 ```
 
-`sample_id`는 revision 안에서 안정적으로 sample을 추적하기 위한 값이며 원본 사용자 ID를 그대로 사용하지 않습니다. `messages`의 마지막 assistant content는 기존 model의 원본 응답이 아니라 승인된 training target이어야 합니다. tool-using sample은 tool definition, call과 result가 consumer가 이해할 수 있는 contract로 함께 검증돼야 합니다.
+`sample_id`는 revision 안에서 안정적으로 sample을 추적하기 위한 값이며 원본 사용자 ID를 그대로 사용하지 않습니다.
+`messages`의 마지막 assistant content는 기존 model의 원본 응답이 아니라 승인된 training target이어야 합니다.
+tool-using sample은 tool definition, call과 result가 consumer가 이해할 수 있는 contract로 함께 검증돼야 합니다.
 
 ## Backend Adapters
 
-`trl` branch는 canonical record를 Hugging Face Dataset과 chat template 입력으로 변환하고, loss mask가 의도한 assistant token에만 적용되는지 검증합니다. `megatron` branch는 같은 record를 Megatron 전처리 형식으로 변환하고 tokenizer revision, sequence packing, data index와 distributed consumption 조건을 검증합니다.
+`trl` branch는 canonical record를 Hugging Face Dataset과 chat template 입력으로 변환하고, loss mask가 의도한 assistant token에만 적용되는지 검증합니다.
+`megatron` branch는 같은 record를 Megatron 전처리 형식으로 변환하고 tokenizer revision, sequence packing, data index와 distributed consumption 조건을 검증합니다.
 
 adapter는 다음 값을 보존해야 합니다.
 
@@ -110,7 +121,8 @@ adapter는 다음 값을 보존해야 합니다.
 - adapter code 또는 configuration revision
 - 변환 전후 record count와 reject reason
 
-backend dataset은 canonical dataset의 새로운 source가 아닙니다. adapter bug를 수정하면 canonical revision을 바꾸지 않고 새 adapter revision으로 다시 생성합니다.
+backend dataset은 canonical dataset의 새로운 source가 아닙니다.
+adapter bug를 수정하면 canonical revision을 바꾸지 않고 새 adapter revision으로 다시 생성합니다.
 
 ## Dataset Manifest
 
@@ -128,6 +140,8 @@ dataset revision에는 최소한 다음 정보가 필요합니다.
 | `content_digest` | record artifact의 무결성 확인 |
 | `created_at` | 생성 시각 |
 
-publish 전에 schema validation, split overlap 검사, sample ID uniqueness, record count와 digest를 자동 검사합니다. 하나라도 실패하면 revision을 visible 상태로 만들지 않습니다. 내용을 고칠 때는 기존 revision을 덮어쓰지 않고 새 revision을 생성합니다.
+publish 전에 schema validation, split overlap 검사, sample ID uniqueness, record count와 digest를 자동 검사합니다.
+하나라도 실패하면 revision을 visible 상태로 만들지 않습니다.
+내용을 고칠 때는 기존 revision을 덮어쓰지 않고 새 revision을 생성합니다.
 
 다음 단계: [Checkpoint Lifecycle](checkpoint-lifecycle.md)에서 이 dataset revision이 training request와 candidate artifact로 연결되는 방식을 확인하세요.

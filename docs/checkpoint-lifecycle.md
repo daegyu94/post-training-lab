@@ -2,7 +2,8 @@
 
 ## Goal
 
-training이 파일 저장에 성공한 시점과 model을 production에서 사용할 수 있는 시점은 다릅니다. 이 문서는 training request, checkpoint, registry candidate, evaluation evidence와 serving revision을 명시적인 상태로 분리해 accidental deployment를 막는 방법을 설명합니다.
+training이 파일 저장에 성공한 시점과 model을 production에서 사용할 수 있는 시점은 다릅니다.
+이 문서는 training request, checkpoint, registry candidate, evaluation evidence와 serving revision을 명시적인 상태로 분리해 accidental deployment를 막는 방법을 설명합니다.
 
 ## Artifact Vocabulary
 
@@ -15,7 +16,8 @@ training이 파일 저장에 성공한 시점과 model을 production에서 사�
 | Candidate | registry에 정상 등록됐지만 promotion 전인 immutable revision |
 | Serving revision | candidate와 serving configuration을 결합한 배포 단위 |
 
-checkpoint, adapter와 serving artifact를 모두 “model”이라고 부르면 load 조건과 rollback 대상을 혼동하기 쉽습니다. manifest의 artifact type을 명시하고, format conversion을 수행했다면 원본과 변환본의 lineage를 모두 보존합니다.
+checkpoint, adapter와 serving artifact를 모두 “model”이라고 부르면 load 조건과 rollback 대상을 혼동하기 쉽습니다.
+manifest의 artifact type을 명시하고, format conversion을 수행했다면 원본과 변환본의 lineage를 모두 보존합니다.
 
 ## State Transitions
 
@@ -32,11 +34,13 @@ flowchart TD
     I --> J["Previous revision active"]
 ```
 
-각 화살표는 event와 evidence를 남겨야 합니다. 파일 경로만 옮겨 상태를 표현하면 누가 어떤 기준으로 승인했는지와 어느 revision으로 rollback할지 알기 어렵습니다.
+각 화살표는 event와 evidence를 남겨야 합니다.
+파일 경로만 옮겨 상태를 표현하면 누가 어떤 기준으로 승인했는지와 어느 revision으로 rollback할지 알기 어렵습니다.
 
 ## Training Request
 
-training request는 backend command를 대신하는 것이 아니라, 실행 전에 공통 provenance를 고정하는 상위 contract입니다. 아래 값은 설명을 위한 가상 예시입니다.
+training request는 backend command를 대신하는 것이 아니라, 실행 전에 공통 provenance를 고정하는 상위 contract입니다.
+아래 값은 설명을 위한 가상 예시입니다.
 
 ```yaml
 request_id: run-20260901-001
@@ -56,11 +60,13 @@ output:
   registry_path: support-model/candidates/run-20260901-001
 ```
 
-TRL 또는 Megatron-LM의 상세 option은 backend-specific configuration artifact로 따로 저장합니다. 공통 request는 lineage와 결과 비교에 사용하고, 서로 의미가 다른 framework option을 억지로 하나의 schema로 합치지 않습니다.
+TRL 또는 Megatron-LM의 상세 option은 backend-specific configuration artifact로 따로 저장합니다.
+공통 request는 lineage와 결과 비교에 사용하고, 서로 의미가 다른 framework option을 억지로 하나의 schema로 합치지 않습니다.
 
 ## Relationship to `summary.json`
 
-`trl`, `megatron`과 `profiling` branch의 실행 결과는 `schema_version: 1`과 공통 top-level section을 가진 `summary.json`을 생성합니다. post-training system에서는 이를 training run의 evidence로 수집할 수 있습니다.
+`trl`, `megatron`과 `profiling` branch의 실행 결과는 `schema_version: 1`과 공통 top-level section을 가진 `summary.json`을 생성합니다.
+post-training system에서는 이를 training run의 evidence로 수집할 수 있습니다.
 
 | `summary.json` section | Lifecycle use |
 | --- | --- |
@@ -71,9 +77,12 @@ TRL 또는 Megatron-LM의 상세 option은 backend-specific configuration artifa
 | `artifacts` | checkpoint, adapter와 log 위치 확인 |
 | `validation` | checkpoint reload와 generation 검증 결과 확인 |
 
-`summary.json`만으로 production promotion을 승인하지는 않습니다. safety, task quality, serving compatibility와 canary 결과는 별도 evaluation·deployment evidence가 필요합니다. 반대로 request의 `request_id`와 결과의 run identity가 다르면 candidate 등록을 중단해야 합니다.
+`summary.json`만으로 production promotion을 승인하지는 않습니다.
+safety, task quality, serving compatibility와 canary 결과는 별도 evaluation·deployment evidence가 필요합니다.
+반대로 request의 `request_id`와 결과의 run identity가 다르면 candidate 등록을 중단해야 합니다.
 
-현재 공통 `summary.json` schema에는 `request_id` 또는 `run_id` 전용 top-level field가 없습니다. production integration은 registry metadata나 orchestration record에서 summary를 request와 명시적으로 묶어야 하며, output directory 이름만으로 관계를 추론해서는 안 됩니다.
+현재 공통 `summary.json` schema에는 `request_id` 또는 `run_id` 전용 top-level field가 없습니다.
+production integration은 registry metadata나 orchestration record에서 summary를 request와 명시적으로 묶어야 하며, output directory 이름만으로 관계를 추론해서는 안 됩니다.
 
 ## Artifact Manifest
 
@@ -92,7 +101,8 @@ candidate를 registry에 등록할 때 다음 항목을 함께 보관합니다.
 | Evaluation results | suite revision, quality, safety와 regression result |
 | Runtime compatibility | 검증한 serving engine, version과 load configuration |
 
-PEFT adapter를 등록할 때는 adapter만으로 완전한 serving artifact라고 표시하지 않습니다. 필요한 base model ID·revision, tokenizer와 merge 여부를 manifest에 기록해야 합니다.
+PEFT adapter를 등록할 때는 adapter만으로 완전한 serving artifact라고 표시하지 않습니다.
+필요한 base model ID·revision, tokenizer와 merge 여부를 manifest에 기록해야 합니다.
 
 ## Promotion Gates
 
@@ -119,7 +129,8 @@ threshold 값과 승인 주체는 service마다 다르지만, gate의 입력과 
 5. 기준을 만족하면 traffic을 단계적으로 확대하고 production alias를 원자적으로 갱신합니다.
 6. regression이 발생하면 alias를 이전 serving revision으로 되돌리고 candidate를 격리합니다.
 
-rollback은 이전 파일을 다시 복사하는 작업이 아니라, 이미 검증되고 보존된 serving revision을 다시 선택하는 작업이어야 합니다. 따라서 이전 artifact, serving configuration, evaluation evidence와 dependency를 retention 기간 동안 함께 유지합니다.
+rollback은 이전 파일을 다시 복사하는 작업이 아니라, 이미 검증되고 보존된 serving revision을 다시 선택하는 작업이어야 합니다.
+따라서 이전 artifact, serving configuration, evaluation evidence와 dependency를 retention 기간 동안 함께 유지합니다.
 
 ## Completion Criteria
 
