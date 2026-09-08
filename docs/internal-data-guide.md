@@ -2,6 +2,8 @@
 
 이 문서는 사내 LLM 서비스의 trace와 benchmark를 TRL `SFTTrainer`가 읽을 수 있는 학습·검증 데이터로 바꾸고, 학습에 노출되지 않는 test set과 정답을 별도로 관리하는 기준을 설명합니다. 저장소의 예제는 synthetic trace만 사용하며 실제 사내 데이터는 포함하지 않습니다.
 
+공개 dataset을 비교용으로 준비할 때는 [public SFT dataset guide](public-datasets.md)의 pinned revision, license와 canonical schema 기준을 함께 적용합니다.
+
 ## Dataset Roles
 
 | 구분 | 모델에 제공하는 내용 | 사용 목적 | 정답 노출 |

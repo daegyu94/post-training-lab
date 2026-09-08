@@ -49,6 +49,12 @@ DATASET_DIR=<dataset-root> ./scripts/setup.sh
 
 생성한 conversational JSONL을 기존 TRL 학습 경로에 연결할 때는 `--dataset-jsonl-dir data/service-sft`를 지정합니다. Test의 `reference_answer`와 `grader`는 학습 입력에 포함되지 않습니다.
 
+UltraChat 외 public source의 pinned schema adapter와 canonical JSONL command는 [public dataset guide](docs/public-datasets.md)를 참고하세요. `sft_lab.train`에는 `--dataset <source-id>`와 `--dataset-jsonl-dir <prepared-dir>`를 함께 지정하여 summary에 source provenance를 남깁니다.
+
+두 Spark GB10 노드에서 Qwen3-30B-A3B/GLM-4.7-Flash native BF16 경로와 DDP/FSDP2/DeepSpeed ZeRO-2/3 실습 구성을 준비하려면 [TRL Spark cluster guide](docs/spark-cluster.md)를 참고하세요. 소형 모델의 DDP와 FSDP2 경로, 두 30B model의 DDP LoRA one-step integration은 실제 검증했고 DeepSpeed와 30B sharded backend는 configuration 또는 planned 범위입니다. 짧은 run은 장기 수렴·품질·성능 evidence가 아닙니다.
+
+Spark 전용 dependency는 `requirements-spark.txt`에 고정되어 있고 BNB/NF4를 사용하지 않습니다. Dataset schema와 실제 `DATA_DIR`/`--dataset-jsonl-dir` 연결은 [public dataset guide](docs/public-datasets.md)를 함께 확인하세요.
+
 ## Run the Experiment
 
 기록된 결과와 동일한 configuration으로 실행하려면 다음 command를 사용합니다.
