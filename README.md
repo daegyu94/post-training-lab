@@ -1,6 +1,7 @@
 # Large-scale LLM Post-training Resource Profiling Lab
 
-이 저장소는 Megatron 또는 verl 기반 post-training workload를 멀티노드에서 실행할 때 resource bottleneck을 찾는 오픈소스 profiling 실습입니다. 특정 command의 부모 PID를 sampling하는 wrapper 대신, 실제 cluster의 node, GPU, network, storage, distributed rank와 agentic rollout을 같은 run으로 연결합니다.
+이 저장소는 Megatron 또는 verl 기반 post-training workload를 멀티노드에서 실행할 때 resource bottleneck을 찾는 오픈소스 profiling 실습입니다.
+특정 command의 부모 PID를 sampling하는 wrapper 대신, 실제 cluster의 node, GPU, network, storage, distributed rank와 agentic rollout을 같은 run으로 연결합니다.
 
 ## What You Will Build
 
@@ -21,11 +22,13 @@
 
 ![phase별 data movement profiling 경로](docs/data-movement-profiling.svg)
 
-Storage, host memory, GPU와 node 간 전송은 전체 run 평균만 보지 않고 workflow phase와 path별 bytes, duration, effective bandwidth로 구분합니다. Canonical metric은 [`config/metrics.json`](config/metrics.json)에 정의되어 있고, 파일 형식과 확장 규칙은 [Profiling metric contract](docs/metric-schema.md)에서 설명합니다.
+Storage, host memory, GPU와 node 간 전송은 전체 run 평균만 보지 않고 workflow phase와 path별 bytes, duration, effective bandwidth로 구분합니다.
+Canonical metric은 [`config/metrics.json`](config/metrics.json)에 정의되어 있고, 파일 형식과 확장 규칙은 [Profiling metric contract](docs/metric-schema.md)에서 설명합니다.
 
 ## Public Dashboard Demo
 
-합성 데이터 기반의 profiling dashboard 데모는 [Post-Training Lab Observatory](https://daegyu94.github.io/post-training-lab-observatory/)에서 확인할 수 있습니다. 실제 exporter, cluster, training run에는 연결하지 않으며, 실습과 profiling 구성은 이 브랜치에서 계속 제공합니다.
+합성 데이터 기반의 profiling dashboard 데모는 [Post-Training Lab Observatory](https://daegyu94.github.io/post-training-lab-observatory/)에서 확인할 수 있습니다.
+실제 exporter, cluster, training run에는 연결하지 않으며, 실습과 profiling 구성은 이 브랜치에서 계속 제공합니다.
 
 ## Labs
 
@@ -38,7 +41,8 @@ Storage, host memory, GPU와 node 간 전송은 전체 run 평균만 보지 않�
 | [05. Selected trace](docs/labs/05-selected-trace.md) | 이상 rank와 짧은 step window만 trace하고 HTA/Perfetto로 분석 |
 | [06. Distributed PyTorch profiling](docs/labs/06-distributed-pytorch.md) | 작은 DDP workload로 single-node에서 multi-node까지 profiler 흐름을 검증 |
 
-처음에는 Lab 01, 02와 Lab 06을 순서대로 실행합니다. 이후 실제 Megatron 또는 verl run에 맞는 Lab 03, 04를 적용하고, 이상이 발견된 경우에만 Lab 05로 들어갑니다.
+처음에는 Lab 01, 02와 Lab 06을 순서대로 실행합니다.
+이후 실제 Megatron 또는 verl run에 맞는 Lab 03, 04를 적용하고, 이상이 발견된 경우에만 Lab 05로 들어갑니다.
 
 ## Validate the Monitoring Stack
 
@@ -49,15 +53,20 @@ export GRAFANA_ADMIN_PASSWORD=<strong-password>
 ./scripts/validate_observability.sh
 ```
 
-script는 target file과 Compose configuration을 검사하고 Prometheus와 Grafana를 시작한 뒤 readiness, Grafana database health, Prometheus `up` query와 active target 상태를 확인합니다. 결과는 `artifacts/observability-validation/summary.json`에 공통 summary schema로 저장합니다.
+script는 target file과 Compose configuration을 검사하고 Prometheus와 Grafana를 시작한 뒤 readiness, Grafana database health, Prometheus `up` query와 active target 상태를 확인합니다.
+결과는 `artifacts/observability-validation/summary.json`에 공통 summary schema로 저장합니다.
 
-기본 실행은 monitoring control plane만 검증하므로 exporter target이 `DOWN`이어도 상태를 기록하고 실패로 처리하지 않습니다. 각 training node에 exporter를 배치한 뒤 모든 configured target까지 검증하려면 다음을 실행합니다.
+기본 실행은 monitoring control plane만 검증하므로 exporter target이 `DOWN`이어도 상태를 기록하고 실패로 처리하지 않습니다.
+각 training node에 exporter를 배치한 뒤 모든 configured target까지 검증하려면 다음을 실행합니다.
 
 ```bash
 REQUIRE_TARGETS_UP=1 ./scripts/validate_observability.sh
 ```
 
-Prometheus는 `http://<monitoring-host>:9090`, Grafana는 `http://<monitoring-host>:3000`에서 확인합니다. validation 후 service는 계속 실행됩니다. 종료하려면 `examples/observability`에서 `docker compose down`을 실행합니다. 이 Compose 예제는 monitoring control plane만 실행하며, exporter는 각 training node에서 별도로 배치해야 합니다.
+Prometheus는 `http://<monitoring-host>:9090`, Grafana는 `http://<monitoring-host>:3000`에서 확인합니다.
+validation 후 service는 계속 실행됩니다.
+종료하려면 `examples/observability`에서 `docker compose down`을 실행합니다.
+이 Compose 예제는 monitoring control plane만 실행하며, exporter는 각 training node에서 별도로 배치해야 합니다.
 
 ## Repository Scope
 
@@ -72,7 +81,8 @@ Prometheus는 `http://<monitoring-host>:9090`, Grafana는 `http://<monitoring-ho
 - `profiling_lab/schema.py`: metric schema validation
 - `run_summary.py`: framework 공통 summary schema
 
-이 저장소는 Megatron, verl, Ray 또는 exporter 자체를 재구현하지 않습니다. workload별 adapter는 framework가 이미 제공하는 timer와 metric을 재사용하고, 없는 semantic signal만 얇게 추가하는 것을 원칙으로 합니다.
+이 저장소는 Megatron, verl, Ray 또는 exporter 자체를 재구현하지 않습니다.
+workload별 adapter는 framework가 이미 제공하는 timer와 metric을 재사용하고, 없는 semantic signal만 얇게 추가하는 것을 원칙으로 합니다.
 
 ## Validate the Repository
 

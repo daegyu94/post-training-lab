@@ -2,9 +2,12 @@
 
 ## Goal
 
-한 번의 기준 run에서 cluster telemetry, rank별 step 시간과 PyTorch trace를 연결하는 최소 멀티 GPU 실습입니다. Megatron이나 verl을 아직 설치하지 않은 환경에서도 `torchrun`과 제공된 작은 DDP workload로 profiling 흐름을 검증할 수 있습니다. 실제 학습으로 바꿀 때도 관측 지점과 artifact 형식은 유지합니다.
+한 번의 기준 run에서 cluster telemetry, rank별 step 시간과 PyTorch trace를 연결하는 최소 멀티 GPU 실습입니다.
+Megatron이나 verl을 아직 설치하지 않은 환경에서도 `torchrun`과 제공된 작은 DDP workload로 profiling 흐름을 검증할 수 있습니다.
+실제 학습으로 바꿀 때도 관측 지점과 artifact 형식은 유지합니다.
 
-이 실습은 GPU가 있는 한 node에서 시작하고, 같은 command를 scheduler가 할당한 여러 node로 확장합니다. profiler는 선택한 rank와 짧은 step window에서만 켜므로 모든 rank를 장시간 capture하지 않습니다.
+이 실습은 GPU가 있는 한 node에서 시작하고, 같은 command를 scheduler가 할당한 여러 node로 확장합니다.
+profiler는 선택한 rank와 짧은 step window에서만 켜므로 모든 rank를 장시간 capture하지 않습니다.
 
 ## What This Lab Produces
 
@@ -17,7 +20,8 @@ artifacts/ddp-profile/<run-id>/
     └── rank-<selected-rank>/trace-0.json
 ```
 
-`trace-*.json`은 Perfetto와 HTA에서 열 수 있습니다. Node Exporter textfile collector를 설정했다면 같은 `run_id`로 host/GPU telemetry와 trace 시점을 비교할 수 있습니다.
+`trace-*.json`은 Perfetto와 HTA에서 열 수 있습니다.
+Node Exporter textfile collector를 설정했다면 같은 `run_id`로 host/GPU telemetry와 trace 시점을 비교할 수 있습니다.
 
 ## Prerequisites
 
@@ -27,7 +31,8 @@ artifacts/ddp-profile/<run-id>/
 - multi-node일 때 node 간 rendezvous port 접근 가능
 - 선택 사항: Lab 01에서 준비한 Node Exporter, DCGM Exporter, Prometheus
 
-PyTorch Profiler는 PyTorch에 포함되어 있으므로 별도 profiler package가 필요하지 않습니다. HTA는 trace 분석을 할 별도 environment에만 설치합니다.
+PyTorch Profiler는 PyTorch에 포함되어 있으므로 별도 profiler package가 필요하지 않습니다.
+HTA는 trace 분석을 할 별도 environment에만 설치합니다.
 
 ```bash
 python -m pip install HolisticTraceAnalysis
@@ -51,7 +56,8 @@ torchrun --standalone --nproc_per_node=2 \
   2>&1 | tee "$TRACE_OUTPUT_DIR/torchrun.log"
 ```
 
-이 예제는 작은 TransformerEncoder와 synthetic batch를 사용합니다. 모델 품질이나 throughput benchmark가 아니라 rank별 GPU work, DDP gradient synchronization, CPU submit gap을 볼 수 있도록 만든 관측용 workload입니다.
+이 예제는 작은 TransformerEncoder와 synthetic batch를 사용합니다.
+모델 품질이나 throughput benchmark가 아니라 rank별 GPU work, DDP gradient synchronization, CPU submit gap을 볼 수 있도록 만든 관측용 workload입니다.
 
 다음처럼 run의 조건을 함께 보존합니다.
 
@@ -66,7 +72,8 @@ torchrun --standalone --nproc_per_node=2 \
 
 ## Multi-node: Scheduler Allocation
 
-multi-node 실행은 scheduler가 각 node에 한 process group member를 시작하게 해야 합니다. 아래는 Slurm의 한 가지 형태이며, node당 GPU 수와 launcher option은 클러스터 정책에 맞게 바꿉니다.
+multi-node 실행은 scheduler가 각 node에 한 process group member를 시작하게 해야 합니다.
+아래는 Slurm의 한 가지 형태이며, node당 GPU 수와 launcher option은 클러스터 정책에 맞게 바꿉니다.
 
 ```bash
 export PYTHONPATH="$PWD"
@@ -86,13 +93,16 @@ srun --nodes=2 --ntasks-per-node=1 --gpus-per-task=8 \
       --trace-dir "$TRACE_OUTPUT_DIR/traces"
 ```
 
-공유 filesystem이 없다면 각 node의 local trace directory에 저장한 뒤, job 종료 전에 중앙 artifact store로 복사합니다. 전송 완료 전에는 trace를 삭제하지 않습니다. 노드 간 trace의 시간 정렬이 필요하므로 NTP/PTP 상태와 정확한 rank-to-node mapping도 manifest에 남깁니다.
+공유 filesystem이 없다면 각 node의 local trace directory에 저장한 뒤, job 종료 전에 중앙 artifact store로 복사합니다.
+전송 완료 전에는 trace를 삭제하지 않습니다.
+노드 간 trace의 시간 정렬이 필요하므로 NTP/PTP 상태와 정확한 rank-to-node mapping도 manifest에 남깁니다.
 
 ## Inspect the Result
 
 ### Perfetto
 
-브라우저에서 [Perfetto UI](https://ui.perfetto.dev/)를 열어 `trace-0.json`을 올립니다. 정상 rank와 느린 rank를 나란히 놓고 다음을 확인합니다.
+브라우저에서 [Perfetto UI](https://ui.perfetto.dev/)를 열어 `trace-0.json`을 올립니다.
+정상 rank와 느린 rank를 나란히 놓고 다음을 확인합니다.
 
 - `aten::` CPU operator와 CUDA kernel 사이에 긴 빈 구간이 있는가
 - `nccl:` 또는 `ncclKernel` 구간이 backward와 overlap되는가
@@ -110,7 +120,8 @@ analysis = TraceAnalysis(trace_dir="artifacts/ddp-profile/<run-id>/traces")
 print(analysis.get_temporal_breakdown())
 ```
 
-HTA의 결과는 trace가 같은 world size, rank naming, capture schedule을 사용했을 때만 비교합니다. 한 rank만 capture한 경우에는 HTA의 cross-rank 결론을 내리지 말고 Perfetto와 baseline telemetry를 함께 봅니다.
+HTA의 결과는 trace가 같은 world size, rank naming, capture schedule을 사용했을 때만 비교합니다.
+한 rank만 capture한 경우에는 HTA의 cross-rank 결론을 내리지 말고 Perfetto와 baseline telemetry를 함께 봅니다.
 
 ## Scale-up Decision Flow
 
@@ -122,4 +133,5 @@ HTA의 결과는 trace가 같은 world size, rank naming, capture schedule을 �
 
 ## Expected Result
 
-single-node에서는 rank별 DDP communication과 compute timeline을, multi-node에서는 node 0의 rank 0과 node 1의 rank 8 trace를 동일 run에서 비교할 수 있어야 합니다. trace를 통해 원인을 확정하지 못하면 `docs/tooling.md`의 coverage gap에 따라 Nsight Systems 또는 Nsight Compute가 필요한 질문인지 판단합니다.
+single-node에서는 rank별 DDP communication과 compute timeline을, multi-node에서는 node 0의 rank 0과 node 1의 rank 8 trace를 동일 run에서 비교할 수 있어야 합니다.
+trace를 통해 원인을 확정하지 못하면 `docs/tooling.md`의 coverage gap에 따라 Nsight Systems 또는 Nsight Compute가 필요한 질문인지 판단합니다.

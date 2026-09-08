@@ -2,7 +2,8 @@
 
 ## Goal
 
-상시 metric에서 확인한 이상 node/rank/role과 짧은 step window만 trace합니다. 전체 run과 모든 rank를 profile하여 기준 성능을 오염시키거나 shared storage를 trace로 포화시키지 않습니다.
+상시 metric에서 확인한 이상 node/rank/role과 짧은 step window만 trace합니다.
+전체 run과 모든 rank를 profile하여 기준 성능을 오염시키거나 shared storage를 trace로 포화시키지 않습니다.
 
 ## 1. Choose the Capture Set
 
@@ -14,7 +15,9 @@ capture 전에 다음을 manifest에 기록합니다.
 - PyTorch, Kineto, CUDA와 framework version
 - node clock synchronization 상태와 trace 저장 경로
 
-Megatron에서는 straggler rank 외에 같은 parallel group의 정상 rank를 하나 포함해야 비교가 가능합니다. pipeline 문제라면 각 PP stage 대표 rank를 선택합니다. verl은 가능하면 Lab 04의 built-in profiler를 사용하고 actor와 rollout을 별도로 선택합니다.
+Megatron에서는 straggler rank 외에 같은 parallel group의 정상 rank를 하나 포함해야 비교가 가능합니다.
+pipeline 문제라면 각 PP stage 대표 rank를 선택합니다.
+verl은 가능하면 Lab 04의 built-in profiler를 사용하고 actor와 rollout을 별도로 선택합니다.
 
 ## 2. Integrate the Helper in a PyTorch Loop
 
@@ -40,7 +43,8 @@ with selected_rank_profile(
         profiler.step()
 ```
 
-`profiler.step()`은 모든 loop iteration에서 호출해야 schedule이 진행됩니다. `record_shapes`, `profile_memory`와 `with_stack`은 파일 크기와 overhead가 커지므로 질문에 필요한 option만 켭니다.
+`profiler.step()`은 모든 loop iteration에서 호출해야 schedule이 진행됩니다.
+`record_shapes`, `profile_memory`와 `with_stack`은 파일 크기와 overhead가 커지므로 질문에 필요한 option만 켭니다.
 
 ## 3. Inspect an Individual Timeline
 
@@ -67,7 +71,8 @@ analysis = TraceAnalysis(trace_dir="artifacts/traces/run-123")
 print(analysis.get_temporal_breakdown())
 ```
 
-HTA로 compute/communication/idle breakdown, kernel duration distribution, rank imbalance와 communication overlap을 비교합니다. trace 파일명이 rank를 안정적으로 나타내고 모든 trace가 같은 capture window를 포함하는지 먼저 검증합니다.
+HTA로 compute/communication/idle breakdown, kernel duration distribution, rank imbalance와 communication overlap을 비교합니다.
+trace 파일명이 rank를 안정적으로 나타내고 모든 trace가 같은 capture window를 포함하는지 먼저 검증합니다.
 
 ## 5. Decide Whether a Vendor Tool Is Needed
 
@@ -77,8 +82,10 @@ HTA로 compute/communication/idle breakdown, kernel duration distribution, rank 
 - 특정 kernel의 occupancy, memory throughput 또는 stall 원인을 알아야 하는가?
 - framework 밖의 native thread/process와 GPU activity를 함께 정렬해야 하는가?
 
-첫 번째와 세 번째에는 Nsight Systems, 두 번째에는 Nsight Compute가 보통 필요합니다. 해당 결과는 오픈소스 상시 stack과 분리된 diagnostic artifact로 보존합니다.
+첫 번째와 세 번째에는 Nsight Systems, 두 번째에는 Nsight Compute가 보통 필요합니다.
+해당 결과는 오픈소스 상시 stack과 분리된 diagnostic artifact로 보존합니다.
 
 ## Expected Result
 
-trace에서 확인한 원인이 Prometheus의 시간대, framework timer와 rank placement에 연결되어야 합니다. trace 하나만 보고 결론을 내리지 않고 변경 후 profiler를 끈 baseline run에서 throughput과 품질 개선을 다시 확인합니다.
+trace에서 확인한 원인이 Prometheus의 시간대, framework timer와 rank placement에 연결되어야 합니다.
+trace 하나만 보고 결론을 내리지 않고 변경 후 profiler를 끈 baseline run에서 throughput과 품질 개선을 다시 확인합니다.

@@ -23,25 +23,32 @@
 
 ### 1. Always-on telemetry
 
-Node Exporter, DCGM Exporter, Ray/vLLM/verl metric을 Prometheus가 수집하고 Grafana에서 `run_id`, node, GPU와 role별로 비교합니다. 이 계층은 regression, imbalance와 이상 시점을 찾는 데 사용하며 profiler를 켜지 않은 기준 성능을 보존합니다.
+Node Exporter, DCGM Exporter, Ray/vLLM/verl metric을 Prometheus가 수집하고 Grafana에서 `run_id`, node, GPU와 role별로 비교합니다.
+이 계층은 regression, imbalance와 이상 시점을 찾는 데 사용하며 profiler를 켜지 않은 기준 성능을 보존합니다.
 
 ### 2. Framework semantics
 
-Megatron timer와 `StragglerDetector`, verl rollout statistic, Ray actor state와 application metric을 사용해 GPU idle이 data wait, collective, pipeline bubble, rollout queue, reward computation 또는 tool wait 중 무엇 때문인지 분류합니다. exporter만으로는 이 의미를 알 수 없으므로 framework adapter가 반드시 필요합니다.
+Megatron timer와 `StragglerDetector`, verl rollout statistic, Ray actor state와 application metric을 사용해 GPU idle이 data wait, collective, pipeline bubble, rollout queue, reward computation 또는 tool wait 중 무엇 때문인지 분류합니다.
+exporter만으로는 이 의미를 알 수 없으므로 framework adapter가 반드시 필요합니다.
 
 ### 3. Selected diagnostic trace
 
-이상 rank와 step이 확인된 후 PyTorch Profiler/Kineto를 짧게 실행하고 HTA/Perfetto로 분석합니다. 기준 run과 trace run은 분리하며 capture rank, step, option과 tool version을 manifest에 기록합니다.
+이상 rank와 step이 확인된 후 PyTorch Profiler/Kineto를 짧게 실행하고 HTA/Perfetto로 분석합니다.
+기준 run과 trace run은 분리하며 capture rank, step, option과 tool version을 manifest에 기록합니다.
 
 ## Metric Contract and Phase Correlation
 
-Canonical name, unit, scope, source와 collection policy는 [`config/metrics.json`](../config/metrics.json)에 정의합니다. [`config/metrics.schema.json`](../config/metrics.schema.json)은 JSON file의 구조를 검증하고 [Profiling metric contract](metric-schema.md)는 label, manifest field와 phase vocabulary의 사용 방법을 설명합니다.
+Canonical name, unit, scope, source와 collection policy는 [`config/metrics.json`](../config/metrics.json)에 정의합니다.
+[`config/metrics.schema.json`](../config/metrics.schema.json)은 JSON file의 구조를 검증하고 [Profiling metric contract](metric-schema.md)는 label, manifest field와 phase vocabulary의 사용 방법을 설명합니다.
 
 ![phase별 data movement profiling 경로](data-movement-profiling.svg)
 
-Dataset/model loading, training input, forward/backward, optimizer, checkpoint와 evaluation을 같은 phase vocabulary로 기록합니다. 각 path에서 bytes와 duration을 얻을 수 있으면 effective bandwidth를 계산하고, NCCL Tests 또는 fio baseline 대비 workload utilization을 별도 derived metric으로 저장합니다.
+Dataset/model loading, training input, forward/backward, optimizer, checkpoint와 evaluation을 같은 phase vocabulary로 기록합니다.
+각 path에서 bytes와 duration을 얻을 수 있으면 effective bandwidth를 계산하고, NCCL Tests 또는 fio baseline 대비 workload utilization을 별도 derived metric으로 저장합니다.
 
-Local NVMe와 remote/shared storage는 동일한 `storage_read_bytes_per_second`만으로 구분하지 않습니다. Storage path type, filesystem, mount, cache state와 node topology는 run manifest에 기록하고, remote storage는 client disk/filesystem, storage network와 server 측 metric을 함께 봅니다. Client exporter만으로 backend contention이나 cache hit의 원인을 확정하지 않습니다.
+Local NVMe와 remote/shared storage는 동일한 `storage_read_bytes_per_second`만으로 구분하지 않습니다.
+Storage path type, filesystem, mount, cache state와 node topology는 run manifest에 기록하고, remote storage는 client disk/filesystem, storage network와 server 측 metric을 함께 봅니다.
+Client exporter만으로 backend contention이나 cache hit의 원인을 확정하지 않습니다.
 
 ## What Open Source Alone Cannot Fully Resolve
 
@@ -54,11 +61,14 @@ Local NVMe와 remote/shared storage는 동일한 `storage_read_bytes_per_second`
 | Agent quality/performance trade-off | resource profiler는 reward와 output quality를 판단하지 못함 | 같은 run comparison에 reward, evaluation과 policy-quality gate 포함 |
 | Tool/environment 내부 지연 | verl/Ray는 외부 service의 세부 대기 원인을 모를 수 있음 | OpenTelemetry span을 agent, tool gateway와 environment에 전파 |
 
-vendor tool은 상시 stack의 필수 요소로 두지 않습니다. 오픈소스 metric과 trace로 원인을 좁힌 뒤, 더 낮은 계층의 증거가 필요한 짧은 diagnostic run에서만 사용합니다.
+vendor tool은 상시 stack의 필수 요소로 두지 않습니다.
+오픈소스 metric과 trace로 원인을 좁힌 뒤, 더 낮은 계층의 증거가 필요한 짧은 diagnostic run에서만 사용합니다.
 
 ## Run Identity and Cardinality
 
-Prometheus label에는 `run_id`, `cluster`, `job`, `node`, `gpu`, `framework`, `role`처럼 검색에 자주 쓰이고 cardinality가 제한된 값만 둡니다. Git commit, image digest, dataset/checkpoint URI, rank map과 profiler option은 manifest에 보존합니다. request ID, prompt, tool argument와 timestamp를 metric label로 만들지 말고, 개별 episode 분석이 필요하면 sampled OpenTelemetry trace attribute로 저장합니다.
+Prometheus label에는 `run_id`, `cluster`, `job`, `node`, `gpu`, `framework`, `role`처럼 검색에 자주 쓰이고 cardinality가 제한된 값만 둡니다.
+Git commit, image digest, dataset/checkpoint URI, rank map과 profiler option은 manifest에 보존합니다.
+request ID, prompt, tool argument와 timestamp를 metric label로 만들지 말고, 개별 episode 분석이 필요하면 sampled OpenTelemetry trace attribute로 저장합니다.
 
 ## References
 

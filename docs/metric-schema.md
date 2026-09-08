@@ -1,6 +1,7 @@
 # Profiling Metric Contract
 
-이 문서는 post-training workload와 exporter가 같은 이름, 단위, scope로 metric을 기록하도록 하는 공통 계약을 설명합니다. 실제 source of truth는 [`config/metrics.json`](../config/metrics.json)이며 [`config/metrics.schema.json`](../config/metrics.schema.json)은 파일 형식을 검증하는 JSON Schema입니다.
+이 문서는 post-training workload와 exporter가 같은 이름, 단위, scope로 metric을 기록하도록 하는 공통 계약을 설명합니다.
+실제 source of truth는 [`config/metrics.json`](../config/metrics.json)이며 [`config/metrics.schema.json`](../config/metrics.schema.json)은 파일 형식을 검증하는 JSON Schema입니다.
 
 ## Contract Files
 
@@ -10,7 +11,8 @@
 | `config/metrics.schema.json` | metric object의 필수 field, category와 naming rule을 정의하는 JSON Schema |
 | `profiling_lab/schema.py` | 별도 dependency 없이 repository test와 script에서 수행하는 runtime validation |
 
-`metrics.json`의 `schema_version`은 소비자가 이해하는 계약 version입니다. 기존 metric의 의미나 단위를 바꾸는 호환성 파괴 변경이 있을 때만 version을 올리고, 새 metric을 추가하는 변경은 같은 version에서 수행합니다.
+`metrics.json`의 `schema_version`은 소비자가 이해하는 계약 version입니다.
+기존 metric의 의미나 단위를 바꾸는 호환성 파괴 변경이 있을 때만 version을 올리고, 새 metric을 추가하는 변경은 같은 version에서 수행합니다.
 
 ## Metric Entry
 
@@ -36,13 +38,16 @@
 | `source` | exporter, framework timer, selected trace, manifest 또는 derived summary |
 | `policy` | always-on, workload-specific, baseline 또는 diagnostic 수집 조건 |
 
-Exporter의 원본 metric name은 version에 따라 달라질 수 있으므로 adapter가 canonical name으로 변환합니다. Derived metric은 원본 값을 덮어쓰지 않으며 계산에 사용한 window와 source metric을 summary에 함께 기록합니다.
+Exporter의 원본 metric name은 version에 따라 달라질 수 있으므로 adapter가 canonical name으로 변환합니다.
+Derived metric은 원본 값을 덮어쓰지 않으며 계산에 사용한 window와 source metric을 summary에 함께 기록합니다.
 
 ## Labels and Manifest Fields
 
-`recommended_labels`는 run 비교와 drill-down에 필요한 bounded-cardinality dimension입니다. `run_id`, `cluster`, `job`, `node`, `gpu`, `framework`, `role`, `phase`, `device`, `interface`, `operation`, `parallel_group`만 metric label 후보로 사용합니다.
+`recommended_labels`는 run 비교와 drill-down에 필요한 bounded-cardinality dimension입니다.
+`run_id`, `cluster`, `job`, `node`, `gpu`, `framework`, `role`, `phase`, `device`, `interface`, `operation`, `parallel_group`만 metric label 후보로 사용합니다.
 
-Commit, image digest, model/dataset/checkpoint URI, complete rank map, profiler option, precision, batch/sequence configuration, storage path type, filesystem, cache state와 node topology는 `manifest_only_fields`에 기록합니다. Prompt, request ID, timestamp와 trace ID처럼 계속 늘어나는 값은 Prometheus label로 사용하지 않습니다.
+Commit, image digest, model/dataset/checkpoint URI, complete rank map, profiler option, precision, batch/sequence configuration, storage path type, filesystem, cache state와 node topology는 `manifest_only_fields`에 기록합니다.
+Prompt, request ID, timestamp와 trace ID처럼 계속 늘어나는 값은 Prometheus label로 사용하지 않습니다.
 
 ## Workflow Phases
 
@@ -60,7 +65,8 @@ Commit, image digest, model/dataset/checkpoint URI, complete rank map, profiler 
 | `evaluation` | inference compute, input transfer와 idle time |
 | `rollout`, `tool_interaction`, `reward`, `weight_sync` | agentic RL의 generation, external wait, reward/evaluation과 policy distribution |
 
-Phase marker에는 최소한 `run_id`, `phase`, 시작/종료 시각과 성공 여부를 기록합니다. Bytes와 duration을 모두 얻을 수 있으면 `data_movement_effective_bandwidth_bytes_per_second`를 계산하고, 동일 path의 NCCL Tests 또는 fio baseline과 비교해 utilization ratio를 만듭니다.
+Phase marker에는 최소한 `run_id`, `phase`, 시작/종료 시각과 성공 여부를 기록합니다.
+Bytes와 duration을 모두 얻을 수 있으면 `data_movement_effective_bandwidth_bytes_per_second`를 계산하고, 동일 path의 NCCL Tests 또는 fio baseline과 비교해 utilization ratio를 만듭니다.
 
 ## Data Movement Paths
 
@@ -72,7 +78,8 @@ Phase marker에는 최소한 `run_id`, `phase`, 시작/종료 시각과 성공 �
 | GPU node ↔ GPU node | NIC/InfiniBand counter와 communication timer | NCCL Tests multi-node baseline, GPUDirect RDMA 확인 |
 | GPU/host → checkpoint storage | checkpoint timer, storage throughput와 volume | fio checkpoint pattern, writer/rank coordination trace |
 
-Node Exporter와 DCGM만으로는 bytes가 어떤 framework phase나 rank에서 발생했는지 알 수 없습니다. Framework phase marker와 rank map을 같은 `run_id`로 연결하고, 원인이 남을 때만 selected trace를 수집합니다.
+Node Exporter와 DCGM만으로는 bytes가 어떤 framework phase나 rank에서 발생했는지 알 수 없습니다.
+Framework phase marker와 rank map을 같은 `run_id`로 연결하고, 원인이 남을 때만 selected trace를 수집합니다.
 
 ## Validate the Contract
 
