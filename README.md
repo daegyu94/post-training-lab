@@ -1,185 +1,88 @@
-# TRL QLoRA Experiment
+# TRL Post-Training Lab
 
-이 브랜치는 TRL을 사용해 `Qwen/Qwen2.5-14B-Instruct`를 `HuggingFaceH4/ultrachat_200k`의 대화 데이터로 NF4 QLoRA fine-tuning하는 실험을 수행하고, 그 결과를 기록하기 위한 브랜치입니다.
+이 브랜치는 TRL 기반 SFT의 데이터 준비, 학습, 평가와 checkpoint·adapter 저장을 실습합니다.
+Single-GPU QLoRA부터 두 노드의 BF16 LoRA 및 full-parameter 학습 경로까지 다룹니다.
+Python과 기본적인 LLM 학습 개념을 아는 개발자가 사용할 장비와 학습 목적에 맞는 setup을 선택하도록 구성했습니다.
+현재 학습 구현은 SFT이며, DPO와 RL trainer는 포함하지 않습니다.
 
-실험 과정은 local dataset과 cached model을 사용한 학습, 학습 전후 held-out evaluation, deterministic generation 비교, 저장한 PEFT adapter의 독립 프로세스 재로딩으로 구성됩니다.
+## Choose a Setup
 
-## Experiment Result
+Setup 1과 Setup 2는 독립적인 실행 경로이며 순서대로 수행할 필요가 없습니다.
 
-실험 결과의 환경, configuration, 실행 명령, console output, metric, generation 비교, adapter reload 결과는 [docs/experiment-result.md](docs/experiment-result.md)에 기록되어 있습니다.
-
-이 문서의 목적은 새 실험을 설계하는 것이 아니라, 기록된 configuration과 command를 동일하게 실행하여 결과를 다시 확인하는 것입니다.
-
-## Requirements
-
-- Linux와 NVIDIA CUDA GPU
-- 약 18GiB 이상의 사용 가능한 GPU memory
-- Python 3.10 이상
-- Python virtual environment를 생성할 수 있는 환경
-- `Qwen/Qwen2.5-14B-Instruct` model cache
-- `HuggingFaceH4/ultrachat_200k` dataset을 다운로드할 수 있는 Hugging Face Hub 연결
-
-검증한 구성은 NVIDIA RTX PRO 4000 Blackwell 24GiB GPU 한 장, BF16 compute, sequence length 512, micro batch 1입니다.
-
-## Setup
-
-의존성과 실험에 사용하는 UltraChat parquet 파일을 준비합니다.
-
-```bash
-./scripts/setup.sh
-```
-
-setup.sh는 Python virtual environment를 .venv에 만들고 requirements.txt의 의존성을 설치한 뒤 data/ultrachat_200k/data에 train_sft와 test_sft parquet split을 저장합니다.
-
-다른 위치에 dataset을 저장하려면 다음처럼 실행합니다.
-
-```bash
-DATASET_DIR=<dataset-root> ./scripts/setup.sh
-```
-
-실험 command는 HF_HUB_OFFLINE=1, HF_DATASETS_OFFLINE=1, --local-files-only를 사용하므로 실행 전에 model과 dataset이 local cache 또는 지정한 local directory에 준비되어 있어야 합니다.
-
-## Prepare Internal Service Data
-
-향후 사내 LLM 서비스 trace와 benchmark에서 train, validation, test 데이터를 만드는 기준과 실습은 [사내 LLM 서비스 데이터 가이드](docs/internal-data-guide.md)를 참고하세요.
-실습 converter는 승인된 synthetic trace만 선택하고, session 단위 split, 중복 prompt 제거, test 정답 분리, manifest 생성을 수행합니다.
-
-```bash
-./scripts/prepare_service_data.sh
-```
-
-생성한 conversational JSONL을 기존 TRL 학습 경로에 연결할 때는 `--dataset-jsonl-dir data/service-sft`를 지정합니다.
-Test의 `reference_answer`와 `grader`는 학습 입력에 포함되지 않습니다.
-
-UltraChat 외 public source의 pinned schema adapter와 canonical JSONL command는 [public dataset guide](docs/public-datasets.md)를 참고하세요.
-`sft_lab.train`에는 `--dataset <source-id>`와 `--dataset-jsonl-dir <prepared-dir>`를 함께 지정하여 summary에 source provenance를 남깁니다.
-
-두 Spark GB10 노드에서 Qwen3-30B-A3B/GLM-4.7-Flash native BF16 경로와 DDP/FSDP2/DeepSpeed ZeRO-2/3 실습 구성을 준비하려면 [TRL Spark cluster guide](docs/spark-cluster.md)를 참고하세요.
-소형 모델의 DDP와 FSDP2 경로, 두 30B model의 DDP LoRA one-step integration은 실제 검증했고 DeepSpeed와 30B sharded backend는 configuration 또는 planned 범위입니다.
-짧은 run은 장기 수렴·품질·성능 evidence가 아닙니다.
-
-Spark 전용 dependency는 `requirements-spark.txt`에 고정되어 있고 BNB/NF4를 사용하지 않습니다.
-Dataset schema와 실제 `DATA_DIR`/`--dataset-jsonl-dir` 연결은 [public dataset guide](docs/public-datasets.md)를 함께 확인하세요.
-
-## Run the Experiment
-
-기록된 결과와 동일한 configuration으로 실행하려면 다음 command를 사용합니다.
-
-```bash
-./scripts/run_experiment.sh
-```
-
-이 script는 다음 configuration을 사용합니다.
-
-| Item | Value |
-| --- | --- |
-| Model | `Qwen/Qwen2.5-14B-Instruct` |
-| Dataset | `HuggingFaceH4/ultrachat_200k` |
-| Train subset | 128 conversations |
-| Evaluation subset | 16 requests, validation 후 최대 15 conversations |
-| Quantization | NF4 4-bit, double quantization, BF16 compute |
-| LoRA | rank 16, alpha 32, dropout 0.05 |
-| Sequence length | 512 |
-| Effective batch | 8 |
-| Optimizer steps | 20 |
-| Learning rate | `2e-4` |
-| Seed | 42 |
-
-script가 수행하는 실제 Python command는 다음과 같습니다.
-
-```bash
-CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
-  .venv/bin/python -m sft_lab.train \
-  --dataset-parquet-dir data/ultrachat_200k/data \
-  --local-files-only \
-  --train-samples 128 \
-  --eval-samples 16 \
-  --max-steps 20 \
-  --max-length 512 \
-  --gradient-accumulation-steps 8 \
-    --output-dir results/qwen2.5-14b-qlora
-```
-
-GPU와 dataset 경로를 바꾸려면 script를 수정하지 않고 environment variable을 지정할 수 있습니다.
-
-```bash
-CUDA_VISIBLE_DEVICES=0 DATASET_PARQUET_DIR=<dataset-parquet-dir> OUTPUT_DIR=<output-dir> \
-  ./scripts/run_experiment.sh
-```
-
-## Output Files
-
-실행이 완료되면 다음 결과가 생성됩니다.
-
-```text
-results/qwen2.5-14b-qlora/
-|-- adapter/       PEFT adapter와 tokenizer
-|-- checkpoints/   Trainer checkpoint
-\-- summary.json   configuration, environment, quality, performance, generation
-```
-
-summary.json은 Git에서 제외됩니다.
-
-모든 새 실행의 `summary.json`은 `schema_version: 1`과 `configuration`, `environment`, `quality`, `performance`, `artifacts`, `validation` section을 사용합니다.
-학습 전후 generation은 `validation.generations`에 저장됩니다.
-
-## Verify the Result
-
-학습 전후의 핵심 결과는 다음 항목으로 확인합니다.
-
-| Signal | Check | Meaning |
+| 항목 | Setup 1 | Setup 2 |
 | --- | --- | --- |
-| Held-out loss | `quality.tuned_eval_loss < quality.base_eval_loss` | 같은 held-out assistant token에서 loss가 낮아졌는지 확인합니다. |
-| Loss change | `quality.loss_change_percent < 0` | 학습 전후 held-out loss의 상대 변화를 확인합니다. |
-| Perplexity | `quality.tuned_perplexity < quality.base_perplexity` | loss를 지수 변환한 보조 지표입니다. |
-| Training log | `loss`와 `grad_norm`이 finite인지 확인 | 학습 과정의 수치 안정성을 확인합니다. |
-| Adapter output | `adapter/`가 생성되었는지 확인 | PEFT adapter 저장이 완료되었는지 확인합니다. |
+| 장비 | RTX PRO 4000 Blackwell 24 GiB 한 장 | DGX Spark GB10 두 노드, 노드당 GPU 한 개 |
+| 주요 모델 | Qwen2.5-14B-Instruct | Qwen3-30B-A3B, GLM-4.7-Flash |
+| 기본 학습 | NF4 4-bit QLoRA, BF16 compute | Native BF16 LoRA, two-node DDP |
+| 추가 학습 범위 | 저장한 adapter의 독립 process inference | Full-parameter 학습, FSDP2·DeepSpeed backend 실습 |
+| 진입점 | `sft_lab.train` | `sft_lab.spark_train` |
+| Launcher | `scripts/run_experiment.sh` | `scripts/run_spark_cluster.sh` |
+| 의존성 | `requirements.txt` | `requirements-spark.txt`, ARM64/CUDA 호환 환경 필요 |
+| 데이터 입력 | UltraChat parquet 또는 conversational JSONL | Revision·manifest를 갖춘 canonical JSONL |
+| 상세 안내 | [Setup 1 가이드](docs/setup1.md) | [Setup 2 가이드](docs/spark-cluster.md) |
 
-각 optimizer step의 loss는 서로 다른 training batch에서 계산되므로 학습 중 항상 감소할 필요는 없습니다.
-최종 학습 효과는 동일한 held-out subset에서 측정한 base_eval_loss와 tuned_eval_loss를 비교하여 판단합니다.
+모델, 정밀도, 데이터와 학습 조건이 다르므로 두 setup의 결과를 직접적인 성능 비교로 해석하지 않습니다.
+공통 hardware 범위는 [main의 PoC setup guide](https://github.com/daegyu94/post-training-lab/blob/main/docs/poc-setups.md)에서 관리합니다.
+
+## Setup 1: Single-GPU QLoRA
+
+한 GPU에서 QLoRA 학습과 adapter 저장·재로딩 흐름을 익히는 경로입니다.
+`scripts/setup.sh`로 `.venv`와 UltraChat parquet을 준비하고, 모델 cache까지 준비한 뒤 `scripts/run_experiment.sh`를 실행합니다.
+학습 전후 held-out 평가와 generation 비교 결과는 `results/qwen2.5-14b-qlora/summary.json`에, 학습한 adapter는 같은 디렉터리의 `adapter/`에 저장됩니다.
+
+[Setup 1 가이드](docs/setup1.md)에서 설치 → 데이터·모델 준비 → 실행 → 결과 확인 → adapter 재로딩 순서로 진행하세요.
+[실험 기록](docs/experiment-result.md)은 128개 training conversation, 15개 held-out conversation과 20 optimizer steps를 사용합니다.
+이 짧은 실험의 loss 변화는 일반적인 모델 품질 향상을 입증하지 않습니다.
+
+## Setup 2: Two-Node Spark SFT
+
+두 Spark 노드에서 분산 SFT를 실행하고 finite loss, optimizer step, rank별 정상 종료와 저장 결과를 확인하는 경로입니다.
+Controller는 실행을 조율하고 실제 학습은 `spark1`, `spark2`에서 수행합니다.
+각 노드에 ARM64/CUDA 호환 Python 환경과 같은 revision의 모델 snapshot을 준비합니다.
+모델 weight는 node-local cache에 두고, 공유 데이터와 결과는 Spark 노드에서 접근하는 NFS 경로를 사용합니다.
+
+[Setup 2 가이드](docs/spark-cluster.md)에서 runtime·통신 확인 → 모델·데이터 준비 → 두 노드 실행 → 결과 확인 순서로 진행하세요.
+Setup 1용 `scripts/setup.sh`는 `requirements.txt`를 설치하므로 Spark 환경 준비를 대신하지 않습니다.
+DDP의 기본 workflow는 `base`, `train`, `tuned`를 각각 새 process로 실행하고 `summary-<stage>.json`과 rank logs를 남깁니다.
+FSDP2와 DeepSpeed는 현재 `base` 또는 `train` stage만 지원합니다.
+
+### Training Modes and Verification
+
+`FINETUNING_MODE=lora|full`로 학습 대상을, `DISTRIBUTED_BACKEND=ddp|fsdp2|deepspeed`로 분산 방식을 선택합니다.
+Full mode에서는 `OPTIMIZER=sgd|adamw`를 선택할 수 있으며 메모리 예산을 먼저 확인해야 합니다.
+아래는 기존 문서의 실행 기록이며, 지원 옵션 전체가 모든 모델에서 검증됐다는 뜻은 아닙니다.
+
+| 구성 | 기록된 검증 범위 |
+| --- | --- |
+| Qwen3/GLM 30B DDP LoRA | Two-node 1-step 학습, finite loss, sampled parameter update, adapter 저장 |
+| Qwen2.5-0.5B DDP LoRA | Two-node 2-step 학습 및 별도 process adapter reload 평가 |
+| 소형 모델 full-parameter FSDP2 | Two-node 1-step 학습과 sharded checkpoint 저장; reload 미검증 |
+| DeepSpeed ZeRO-2/3 | Configuration·launcher unit test; Spark GPU runtime 미검증 |
+| 30B full-parameter 및 30B sharded backend | 메모리 적합성과 학습 runtime 미검증 |
+
+짧은 integration 결과를 장기 수렴, 품질 또는 throughput 결과로 해석하지 않습니다.
+정확한 조건과 수치는 [Setup 2 실행 기록](docs/spark-cluster.md#verified-integration-smoke)을 참고하세요.
+
+## Dataset Guides
+
+[공개 데이터 가이드](docs/public-datasets.md)는 No Robots, Self-OSS, xLAM 등의 schema 변환과 revision·manifest를 설명합니다.
+[사내 데이터 가이드](docs/internal-data-guide.md)는 승인된 service trace의 정제, split과 test 정답 분리를 설명합니다.
+학습에 전달하는 옵션은 Setup 1의 `--dataset-jsonl-dir`, Setup 2의 `DATA_DIR`입니다.
+
+## Repository Layout and Tests
+
+| 경로 | 역할 |
+| --- | --- |
+| `sft_lab/train.py`, `sft_lab/infer.py` | Setup 1 학습과 adapter inference |
+| `sft_lab/spark_train.py`, `sft_lab/spark_config.py` | Setup 2 학습과 설정·snapshot 검사 |
+| `scripts/` | 설치, 데이터 준비와 실행 launcher |
+| `configs/` | DeepSpeed ZeRO 설정 |
+| `tests/` | 데이터, 설정과 launcher 검증 |
+
+선택한 setup의 환경을 활성화한 뒤 저장소 루트에서 CPU unit test를 실행합니다.
 
 ```bash
-.venv/bin/python -m json.tool results/qwen2.5-14b-qlora/summary.json
+python -m pytest -q
 ```
 
-기록된 실행의 주요 결과는 [docs/experiment-result.md](docs/experiment-result.md)의 Metrics section에서 확인할 수 있습니다.
-
-## Reload the Adapter
-
-학습 프로그램이 종료된 뒤 저장한 adapter를 새 Python 프로세스에서 다시 불러와 inference할 수 있습니다.
-
-```bash
-CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 \
-  .venv/bin/python -m sft_lab.infer \
-  results/qwen2.5-14b-qlora/adapter \
-  --local-files-only \
-  --prompt 'Give two practical tips for debugging an out-of-memory error during LLM training.'
-```
-
-이 command가 오류 없이 실행되고 답변을 출력하면 adapter 저장·재로딩 경로가 동작한 것입니다.
-
-## Run the CPU Tests
-
-dataset validation과 assistant-mask template의 unit test는 GPU 없이 실행할 수 있습니다.
-
-```bash
-.venv/bin/python -m pytest -q
-```
-
-## Implementation Notes
-
-Qwen의 기본 chat template만 사용하면 assistant-only loss를 위한 generation mask가 생성되지 않을 수 있습니다.
-`sft_lab.data.QWEN_ASSISTANT_MASK_TEMPLATE`은 assistant content와 `<|im_end|>`를 generation block으로 감싸며, `sft_lab.train`은 학습 시작 전에 실제 assistant mask가 생성되는지 확인합니다.
-
-QLoRA는 frozen 4-bit base weight에 LoRA parameter만 추가하여 학습합니다.
-따라서 이 결과에서 확인하는 adapter는 full model checkpoint가 아니라 원본 Qwen model과 결합해야 사용하는 PEFT adapter입니다.
-
-## Limitations
-
-이 결과는 128개 training conversation, 15개 held-out conversation, 20 optimizer steps로 실행한 짧은 실험입니다.
-held-out loss 감소와 adapter reload 성공은 구현된 학습 경로가 동작했음을 보여주지만, 일반적인 instruction-following 품질이나 benchmark 성능 향상을 의미하지는 않습니다.
-
-## References
-
-- [Experiment Result](docs/experiment-result.md)
-- [TRL SFTTrainer documentation](https://huggingface.co/docs/trl/sft_trainer)
+Model weight, dataset cache, checkpoint와 큰 실행 산출물은 Git에 저장하지 않습니다.

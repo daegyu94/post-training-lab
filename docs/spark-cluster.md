@@ -1,4 +1,19 @@
-# TRL Spark 30B path
+# Setup 2: Two-Node Spark SFT
+
+전체 구성은 [Setup 선택 안내](../README.md)를 참고하세요.
+아래 명령은 각 Spark 노드의 `trl` 저장소 루트에서 실행하며, controller는 원격 실행 조율에 사용합니다.
+
+## Software Prerequisites
+
+각 노드에 ARM64와 CUDA를 지원하는 Python 환경을 준비하고 `requirements-spark.txt`의 버전 구성을 확인합니다.
+Setup 1용 `scripts/setup.sh`는 Spark 전용 설치 스크립트가 아닙니다.
+검증 기록의 Torch는 `2.10.0+cu130`이며, requirements의 버전 pin만으로 같은 CUDA build가 설치된다고 가정하지 않습니다.
+사용할 환경의 Python 경로를 `PYTHON`으로 지정하고 GPU kernel 및 두 노드 NCCL 통신을 확인한 뒤 학습을 시작합니다.
+아래 `<spark-python>`은 각 노드에 준비한 환경의 Python 실행 파일로 바꿉니다.
+`hf download`도 해당 환경에서 실행합니다.
+DeepSpeed 설치 및 GPU runtime은 아직 검증하지 않았습니다.
+
+## Scope and Status
 
 이 문서는 `spark1`, `spark2` DGX Spark GB10 두 노드에서 `Qwen/Qwen3-30B-A3B` 또는 `zai-org/GLM-4.7-Flash` local snapshot을 native BF16으로 준비하는 TRL 경로입니다.
 기존 single-GPU Qwen2.5-14B NF4 QLoRA `sft_lab.train`은 변경하지 않습니다.
@@ -46,8 +61,11 @@ hf download Qwen/Qwen3-30B-A3B --revision ad44e777bcd18fa416d9da3bd8f70d33ebb85d
 hf download zai-org/GLM-4.7-Flash --revision 7dd20894a642a0aa287e9827cb1a1f7f91386b67
 ```
 
+두 노드가 같은 NFS checkout을 사용한다면 아래 데이터 준비는 한 노드에서 한 번 실행합니다.
+별도 checkout이라면 생성된 JSONL과 manifest를 두 노드에 동일하게 준비합니다.
+
 ```bash
-./scripts/prepare_public_data.sh --preset ultrachat --output-dir data/setup2-ultrachat --revision 8049631c405ae6576f93f445c6b8166f76f5505a --train-count 128 --eval-count 16 --seed 42
+PYTHON='<spark-python>' ./scripts/prepare_public_data.sh --preset no_robots --output-dir data/setup2-no-robots --revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --train-count 8 --eval-count 2 --seed 42
 ```
 
 Canonical row는 원본 messages를 보존하지만 training collator는 마지막 assistant를 제외한 native prompt를 `apply_chat_template(add_generation_prompt=True, enable_thinking=False)`로 렌더링하고 final assistant content와 tokenizer EOS를 completion으로 붙입니다.
@@ -72,13 +90,15 @@ Qwen2.5 small feature model은 tokenizer/data/pipeline smoke에만 사용 가능
 이는 multi-node evidence도 대체하지 않습니다.
 
 ```bash
-export MASTER_ADDR=<spark1-data-address> MASTER_PORT=29500
+export MASTER_ADDR='<spark1-data-address>' MASTER_PORT=29500
 export NNODES=2 NPROC_PER_NODE=1 NODE_RANK=0  # spark2에서는 1
 export MODEL_ID=Qwen/Qwen3-30B-A3B
 export MODEL_REVISION=ad44e777bcd18fa416d9da3bd8f70d33ebb85d39
 export DATASET_ID=HuggingFaceH4/no_robots DATASET_REVISION=e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b
-export DATA_DIR=/home/spark/shared/post-training-lab/data/public-smoke/no_robots
-export MAX_LENGTH=2048 PYTHON=/home/spark/ptl-envs/trl/bin/python
+export DATA_DIR="$PWD/data/setup2-no-robots"
+export MAX_LENGTH=2048 PYTHON='<spark-python>'
+export MAX_STEPS=1 GRADIENT_ACCUMULATION_STEPS=1
+export OUTPUT_DIR=results/setup2-qwen3-ddp
 ./scripts/run_spark_cluster.sh
 ```
 
@@ -95,6 +115,7 @@ FSDP2와 DeepSpeed는 검증하지 않은 sharded export/reload를 성공한 것
 Rank logs는 `RANK_LOG_DIR` 아래에 남고 summary는 rank 0만 기록합니다.
 
 ```bash
+export OUTPUT_DIR=results/setup2-qwen3-ddp-staged
 STAGE=base ./scripts/run_spark_cluster.sh
 STAGE=train MAX_STEPS=5 FINETUNING_MODE=lora ./scripts/run_spark_cluster.sh
 STAGE=tuned ALLOW_EXISTING_OUTPUT=true ./scripts/run_spark_cluster.sh
@@ -118,8 +139,11 @@ DISTRIBUTED_BACKEND=ddp STAGE=train \
   OUTPUT_DIR=results/trl-ddp ./scripts/run_spark_cluster.sh
 ```
 
-Backend 자체의 차이를 LoRA에 의존하지 않고 비교하려면 작은 local causal-LM snapshot으로 세 run 모두 `FINETUNING_MODE=full`과 동일 optimizer를 사용합니다.
-30B DDP full training은 각 rank가 model replica를 유지하므로 memory fit을 가정하지 않으며, 먼저 작은 모델로 execution path를 확인한 뒤 FSDP2/ZeRO의 30B 가능성을 별도 측정합니다.
+Backend 자체의 차이를 비교하려면 먼저 `MODEL_ID`, `MODEL_REVISION`을 아래 실행 기록의 Qwen2.5-0.5B 모델로 바꾸고 각 노드에 해당 snapshot을 준비합니다.
+`MODEL_DIR`을 명시했다면 해당 경로도 함께 바꿉니다.
+세 run 모두 `FINETUNING_MODE=full`과 동일 optimizer를 사용합니다.
+앞선 30B 모델 설정을 유지한 채 아래 full-parameter 예시를 실행하지 마세요.
+30B full training의 메모리 적합성은 별도 검증 대상입니다.
 
 FSDP2는 Transformers 5.12.1의 `fsdp_config["version"]=2` API를 사용합니다.
 `SFTConfig`를 model load 전에 생성해 rank 0만 pretrained checkpoint를 읽는 초기화가 적용될 수 있게 하고, model을 수동으로 GPU에 옮기지 않습니다.
