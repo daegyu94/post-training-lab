@@ -1,6 +1,7 @@
 # Building SFT Datasets from Internal LLM Service Data
 
-이 문서는 사내 LLM 서비스의 trace와 benchmark를 TRL `SFTTrainer`가 읽을 수 있는 학습·검증 데이터로 바꾸고, 학습에 노출되지 않는 test set과 정답을 별도로 관리하는 기준을 설명합니다. 저장소의 예제는 synthetic trace만 사용하며 실제 사내 데이터는 포함하지 않습니다.
+이 문서는 사내 LLM 서비스의 trace와 benchmark를 TRL `SFTTrainer`가 읽을 수 있는 학습·검증 데이터로 바꾸고, 학습에 노출되지 않는 test set과 정답을 별도로 관리하는 기준을 설명합니다.
+저장소의 예제는 synthetic trace만 사용하며 실제 사내 데이터는 포함하지 않습니다.
 
 공개 dataset을 비교용으로 준비할 때는 [public SFT dataset guide](public-datasets.md)의 pinned revision, license와 canonical schema 기준을 함께 적용합니다.
 
@@ -12,7 +13,8 @@
 | Validation | prompt와 검수된 assistant 응답 | held-out loss와 설정 비교 | 학습에는 미사용, 반복 실험에는 노출 |
 | Test | prompt, 별도 보관한 reference answer와 grader | 최종 품질 평가 | 학습·튜닝 과정에 미노출 |
 
-SFT의 target은 서비스가 과거에 생성한 응답 그 자체가 아니라, 같은 요청에 모델이 앞으로 생성하기를 원하는 응답이어야 합니다. 사용자 반응이 좋았다는 이유만으로 운영 응답을 정답으로 간주하지 말고, 전문가 검수·수정이나 실행 기반 검증을 거쳐야 합니다.
+SFT의 target은 서비스가 과거에 생성한 응답 그 자체가 아니라, 같은 요청에 모델이 앞으로 생성하기를 원하는 응답이어야 합니다.
+사용자 반응이 좋았다는 이유만으로 운영 응답을 정답으로 간주하지 말고, 전문가 검수·수정이나 실행 기반 검증을 거쳐야 합니다.
 
 ## Data Sources and Ground Truth
 
@@ -25,7 +27,8 @@ SFT의 target은 서비스가 과거에 생성한 응답 그 자체가 아니라
 | 사내 문서 | 사용 권한과 최신성을 확인한 뒤 실제 질문·응답 예제로 재구성 | 근거 문서와 전문가 승인 |
 | synthetic data | 부족한 유형을 생성하되 실제 업무 분포를 반영하고 사람이 최종 검수 | 전문가 승인 또는 실행 검증 |
 
-운영 모델의 원본 출력, thumbs-up만 있는 응답, 검수 상태를 알 수 없는 대화, secret·개인정보·고객 데이터가 남은 trace는 학습 target으로 사용하지 않습니다. 사용자 요청과 정답의 라이선스·보존 기간·학습 이용 동의도 데이터 반출 전에 확인해야 합니다.
+운영 모델의 원본 출력, thumbs-up만 있는 응답, 검수 상태를 알 수 없는 대화, secret·개인정보·고객 데이터가 남은 trace는 학습 target으로 사용하지 않습니다.
+사용자 요청과 정답의 라이선스·보존 기간·학습 이용 동의도 데이터 반출 전에 확인해야 합니다.
 
 ## Recommended Collection Pipeline
 
@@ -58,9 +61,13 @@ SFT의 target은 서비스가 과거에 생성한 응답 그 자체가 아니라
 }
 ```
 
-`split`을 생략하면 converter가 `session_id`의 stable hash와 seed로 split을 결정합니다. 운영 데이터에서는 split manifest를 먼저 승인한 뒤 `split`을 명시하는 방식을 권장합니다. 같은 session을 여러 split에 지정하면 converter가 중단됩니다.
+`split`을 생략하면 converter가 `session_id`의 stable hash와 seed로 split을 결정합니다.
+운영 데이터에서는 split manifest를 먼저 승인한 뒤 `split`을 명시하는 방식을 권장합니다.
+같은 session을 여러 split에 지정하면 converter가 중단됩니다.
 
-현재 Qwen assistant-only template과 실습 converter는 `system`, `user`, `assistant` role만 허용합니다. `tool` message와 구조화된 `tool_calls`가 있는 agent trace는 원본을 보존하되, 대상 모델의 chat template과 loss mask가 해당 구조를 지원하는지 검증한 전용 adapter를 만든 후 포함해야 합니다. 이를 일반 문자열로 임의 변환하면 serving 때의 형식과 학습 형식이 달라질 수 있습니다.
+현재 Qwen assistant-only template과 실습 converter는 `system`, `user`, `assistant` role만 허용합니다.
+`tool` message와 구조화된 `tool_calls`가 있는 agent trace는 원본을 보존하되, 대상 모델의 chat template과 loss mask가 해당 구조를 지원하는지 검증한 전용 adapter를 만든 후 포함해야 합니다.
+이를 일반 문자열로 임의 변환하면 serving 때의 형식과 학습 형식이 달라질 수 있습니다.
 
 ## TRL Conversion
 
@@ -69,7 +76,8 @@ SFT의 target은 서비스가 과거에 생성한 응답 그 자체가 아니라
 ./scripts/prepare_service_data.sh
 ```
 
-기본 입력은 `examples/service-traces.jsonl`, 출력은 `data/service-sft`입니다. 예제에는 train 2개, validation 1개, test 1개와 승인되지 않아 제외되는 trace 1개가 들어 있습니다.
+기본 입력은 `examples/service-traces.jsonl`, 출력은 `data/service-sft`입니다.
+예제에는 train 2개, validation 1개, test 1개와 승인되지 않아 제외되는 trace 1개가 들어 있습니다.
 
 ```text
 data/service-sft/
@@ -79,9 +87,12 @@ data/service-sft/
 └── manifest.json
 ```
 
-`training.jsonl`과 `validation.jsonl`은 TRL conversational format인 `messages`를 포함합니다. `SFTTrainer`는 이 브랜치의 `assistant_only_loss=True` 설정과 Qwen chat template을 사용해 assistant token에만 loss를 계산합니다.
+`training.jsonl`과 `validation.jsonl`은 TRL conversational format인 `messages`를 포함합니다.
+`SFTTrainer`는 이 브랜치의 `assistant_only_loss=True` 설정과 Qwen chat template을 사용해 assistant token에만 loss를 계산합니다.
 
-`test.jsonl`은 마지막 assistant 응답을 prompt에서 제거하고 `reference_answer`로 분리합니다. 이 파일은 `SFTTrainer`에 전달하지 않습니다. `grader`는 `exact_match`, `required_phrases`, schema validator, executable test, human rubric처럼 task에 맞는 평가기로 연결하기 위한 metadata입니다.
+`test.jsonl`은 마지막 assistant 응답을 prompt에서 제거하고 `reference_answer`로 분리합니다.
+이 파일은 `SFTTrainer`에 전달하지 않습니다.
+`grader`는 `exact_match`, `required_phrases`, schema validator, executable test, human rubric처럼 task에 맞는 평가기로 연결하기 위한 metadata입니다.
 
 실제 trace와 출력 위치는 환경 변수로 바꿀 수 있습니다.
 
@@ -103,7 +114,8 @@ CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 \
   --output-dir results/service-data-practice
 ```
 
-`manifest.json`에서 입력 파일 hash, split별 개수, 제외 사유를 확인합니다. 실제 데이터 pipeline에서는 승인 데이터가 갑자기 줄거나 특정 제외 사유가 늘면 build를 실패시키는 기준을 추가해야 합니다.
+`manifest.json`에서 입력 파일 hash, split별 개수, 제외 사유를 확인합니다.
+실제 데이터 pipeline에서는 승인 데이터가 갑자기 줄거나 특정 제외 사유가 늘면 build를 실패시키는 기준을 추가해야 합니다.
 
 ## Pre-Deployment Checklist
 

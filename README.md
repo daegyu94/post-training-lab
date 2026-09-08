@@ -41,19 +41,25 @@ DATASET_DIR=<dataset-root> ./scripts/setup.sh
 
 ## Prepare Internal Service Data
 
-향후 사내 LLM 서비스 trace와 benchmark에서 train, validation, test 데이터를 만드는 기준과 실습은 [사내 LLM 서비스 데이터 가이드](docs/internal-data-guide.md)를 참고하세요. 실습 converter는 승인된 synthetic trace만 선택하고, session 단위 split, 중복 prompt 제거, test 정답 분리, manifest 생성을 수행합니다.
+향후 사내 LLM 서비스 trace와 benchmark에서 train, validation, test 데이터를 만드는 기준과 실습은 [사내 LLM 서비스 데이터 가이드](docs/internal-data-guide.md)를 참고하세요.
+실습 converter는 승인된 synthetic trace만 선택하고, session 단위 split, 중복 prompt 제거, test 정답 분리, manifest 생성을 수행합니다.
 
 ```bash
 ./scripts/prepare_service_data.sh
 ```
 
-생성한 conversational JSONL을 기존 TRL 학습 경로에 연결할 때는 `--dataset-jsonl-dir data/service-sft`를 지정합니다. Test의 `reference_answer`와 `grader`는 학습 입력에 포함되지 않습니다.
+생성한 conversational JSONL을 기존 TRL 학습 경로에 연결할 때는 `--dataset-jsonl-dir data/service-sft`를 지정합니다.
+Test의 `reference_answer`와 `grader`는 학습 입력에 포함되지 않습니다.
 
-UltraChat 외 public source의 pinned schema adapter와 canonical JSONL command는 [public dataset guide](docs/public-datasets.md)를 참고하세요. `sft_lab.train`에는 `--dataset <source-id>`와 `--dataset-jsonl-dir <prepared-dir>`를 함께 지정하여 summary에 source provenance를 남깁니다.
+UltraChat 외 public source의 pinned schema adapter와 canonical JSONL command는 [public dataset guide](docs/public-datasets.md)를 참고하세요.
+`sft_lab.train`에는 `--dataset <source-id>`와 `--dataset-jsonl-dir <prepared-dir>`를 함께 지정하여 summary에 source provenance를 남깁니다.
 
-두 Spark GB10 노드에서 Qwen3-30B-A3B/GLM-4.7-Flash native BF16 경로와 DDP/FSDP2/DeepSpeed ZeRO-2/3 실습 구성을 준비하려면 [TRL Spark cluster guide](docs/spark-cluster.md)를 참고하세요. 소형 모델의 DDP와 FSDP2 경로, 두 30B model의 DDP LoRA one-step integration은 실제 검증했고 DeepSpeed와 30B sharded backend는 configuration 또는 planned 범위입니다. 짧은 run은 장기 수렴·품질·성능 evidence가 아닙니다.
+두 Spark GB10 노드에서 Qwen3-30B-A3B/GLM-4.7-Flash native BF16 경로와 DDP/FSDP2/DeepSpeed ZeRO-2/3 실습 구성을 준비하려면 [TRL Spark cluster guide](docs/spark-cluster.md)를 참고하세요.
+소형 모델의 DDP와 FSDP2 경로, 두 30B model의 DDP LoRA one-step integration은 실제 검증했고 DeepSpeed와 30B sharded backend는 configuration 또는 planned 범위입니다.
+짧은 run은 장기 수렴·품질·성능 evidence가 아닙니다.
 
-Spark 전용 dependency는 `requirements-spark.txt`에 고정되어 있고 BNB/NF4를 사용하지 않습니다. Dataset schema와 실제 `DATA_DIR`/`--dataset-jsonl-dir` 연결은 [public dataset guide](docs/public-datasets.md)를 함께 확인하세요.
+Spark 전용 dependency는 `requirements-spark.txt`에 고정되어 있고 BNB/NF4를 사용하지 않습니다.
+Dataset schema와 실제 `DATA_DIR`/`--dataset-jsonl-dir` 연결은 [public dataset guide](docs/public-datasets.md)를 함께 확인하세요.
 
 ## Run the Experiment
 
@@ -114,7 +120,8 @@ results/qwen2.5-14b-qlora/
 
 summary.json은 Git에서 제외됩니다.
 
-모든 새 실행의 `summary.json`은 `schema_version: 1`과 `configuration`, `environment`, `quality`, `performance`, `artifacts`, `validation` section을 사용합니다. 학습 전후 generation은 `validation.generations`에 저장됩니다.
+모든 새 실행의 `summary.json`은 `schema_version: 1`과 `configuration`, `environment`, `quality`, `performance`, `artifacts`, `validation` section을 사용합니다.
+학습 전후 generation은 `validation.generations`에 저장됩니다.
 
 ## Verify the Result
 
@@ -128,7 +135,8 @@ summary.json은 Git에서 제외됩니다.
 | Training log | `loss`와 `grad_norm`이 finite인지 확인 | 학습 과정의 수치 안정성을 확인합니다. |
 | Adapter output | `adapter/`가 생성되었는지 확인 | PEFT adapter 저장이 완료되었는지 확인합니다. |
 
-각 optimizer step의 loss는 서로 다른 training batch에서 계산되므로 학습 중 항상 감소할 필요는 없습니다. 최종 학습 효과는 동일한 held-out subset에서 측정한 base_eval_loss와 tuned_eval_loss를 비교하여 판단합니다.
+각 optimizer step의 loss는 서로 다른 training batch에서 계산되므로 학습 중 항상 감소할 필요는 없습니다.
+최종 학습 효과는 동일한 held-out subset에서 측정한 base_eval_loss와 tuned_eval_loss를 비교하여 판단합니다.
 
 ```bash
 .venv/bin/python -m json.tool results/qwen2.5-14b-qlora/summary.json
@@ -160,13 +168,16 @@ dataset validation과 assistant-mask template의 unit test는 GPU 없이 실행�
 
 ## Implementation Notes
 
-Qwen의 기본 chat template만 사용하면 assistant-only loss를 위한 generation mask가 생성되지 않을 수 있습니다. `sft_lab.data.QWEN_ASSISTANT_MASK_TEMPLATE`은 assistant content와 `<|im_end|>`를 generation block으로 감싸며, `sft_lab.train`은 학습 시작 전에 실제 assistant mask가 생성되는지 확인합니다.
+Qwen의 기본 chat template만 사용하면 assistant-only loss를 위한 generation mask가 생성되지 않을 수 있습니다.
+`sft_lab.data.QWEN_ASSISTANT_MASK_TEMPLATE`은 assistant content와 `<|im_end|>`를 generation block으로 감싸며, `sft_lab.train`은 학습 시작 전에 실제 assistant mask가 생성되는지 확인합니다.
 
-QLoRA는 frozen 4-bit base weight에 LoRA parameter만 추가하여 학습합니다. 따라서 이 결과에서 확인하는 adapter는 full model checkpoint가 아니라 원본 Qwen model과 결합해야 사용하는 PEFT adapter입니다.
+QLoRA는 frozen 4-bit base weight에 LoRA parameter만 추가하여 학습합니다.
+따라서 이 결과에서 확인하는 adapter는 full model checkpoint가 아니라 원본 Qwen model과 결합해야 사용하는 PEFT adapter입니다.
 
 ## Limitations
 
-이 결과는 128개 training conversation, 15개 held-out conversation, 20 optimizer steps로 실행한 짧은 실험입니다. held-out loss 감소와 adapter reload 성공은 구현된 학습 경로가 동작했음을 보여주지만, 일반적인 instruction-following 품질이나 benchmark 성능 향상을 의미하지는 않습니다.
+이 결과는 128개 training conversation, 15개 held-out conversation, 20 optimizer steps로 실행한 짧은 실험입니다.
+held-out loss 감소와 adapter reload 성공은 구현된 학습 경로가 동작했음을 보여주지만, 일반적인 instruction-following 품질이나 benchmark 성능 향상을 의미하지는 않습니다.
 
 ## References
 
