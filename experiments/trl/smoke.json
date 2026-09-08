@@ -1,0 +1,23 @@
+{
+  "backend": "trl",
+  "setup": "spark",
+  "nnodes": 2,
+  "nproc_per_node": 1,
+  "env": {
+    "MODEL_ID": "Qwen/Qwen2.5-0.5B-Instruct",
+    "MODEL_REVISION": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "DATASET_ID": "HuggingFaceH4/ultrachat_200k",
+    "DATASET_REVISION": "8049631c405ae6576f93f445c6b8166f76f5505a",
+    "DISTRIBUTED_BACKEND": "ddp",
+    "FINETUNING_MODE": "lora",
+    "OPTIMIZER": "adamw",
+    "MAX_STEPS": 1,
+    "MAX_LENGTH": 2048,
+    "TRAIN_SAMPLES": 4,
+    "EVAL_SAMPLES": 2,
+    "GRADIENT_ACCUMULATION_STEPS": 1,
+    "LEARNING_RATE": "2e-5",
+    "SEED": 42,
+    "STAGE": "all"
+  }
+}
