@@ -2,8 +2,11 @@
 
 ## Goal
 
-실제 training과 같은 node allocation에서 collective network와 checkpoint storage의 정상 범위를 먼저 측정합니다.
-이후 application 성능이 낮을 때 framework 문제와 infrastructure 문제를 구분할 비교 기준을 만듭니다.
+학습을 실행하기 전에 같은 노드와 저장소에서 통신·I/O의 기준 성능(baseline)을 측정합니다.
+이후 학습이 느려졌을 때 하드웨어·네트워크 문제인지 학습 코드의 문제인지 구분하는 비교 기준으로 사용합니다.
+
+이 문서의 명령과 Python 예제는 `observability` 디렉터리를 작업 디렉터리로 사용합니다.
+실제 GPU 연산은 Spark 노드에서 실행하고, 다른 클러스터용 예시는 해당 환경에 맞춰 적용합니다.
 
 ## 1. NCCL All-reduce Baseline
 
@@ -15,7 +18,7 @@ export NCCL_TEST_BINARY=/opt/nccl-tests/build/all_reduce_perf
 export HOSTS=node-a,node-b
 export GPUS_PER_NODE=8
 export OUTPUT_DIR=artifacts/nccl-2nodes-16gpus
-../../../observability/scripts/run_nccl_baseline.sh
+./scripts/run_nccl_baseline.sh
 ```
 
 보존할 값은 message size별 latency, `algbw`, `busbw`, NCCL/CUDA/driver version, NIC와 GPU topology입니다.
@@ -38,7 +41,7 @@ export FIO_DIRECTORY=/path/on/filesystem-under-test
 export FIO_SIZE=16G
 export FIO_RUNTIME=60
 export OUTPUT_DIR=artifacts/fio-node-a
-../../../observability/scripts/run_fio_baseline.sh
+./scripts/run_fio_baseline.sh
 ```
 
 스크립트는 read test와 재검증을 위해 `profiling-lab-checkpoint.bin`을 자동 삭제하지 않습니다.

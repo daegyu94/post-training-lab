@@ -1,12 +1,12 @@
 # TRL Post-Training Lab
 
 이 backend는 TRL 기반 SFT의 데이터 준비, 학습, 평가와 checkpoint·adapter 저장을 실습합니다.
-Single-GPU QLoRA부터 두 노드의 BF16 LoRA 및 full-parameter 학습 경로까지 다룹니다.
+LoRA는 작은 추가 가중치만 학습하고, QLoRA는 원본 모델을 양자화해 메모리를 더 줄이는 방법입니다.
+모든 가중치를 학습하는 full SFT와 함께, 한 GPU 또는 Spark 두 노드에서의 실행 경로를 다룹니다.
 현재 학습 구현은 SFT이며, DPO와 RL trainer는 포함하지 않습니다.
 Python 패키지 `trl_lab`은 데이터 준비, 학습과 inference 진입점을 제공합니다.
 
-공통 하드웨어 구성과 Setup 1·2 소개는 [Spark 설정](../../docs/setups/spark.md)에서 확인하세요.
-
+현재 기본 환경의 노드·경로 설정은 [Spark 설정](../../docs/setups/spark.md)에서 확인하세요.
 데이터 선택·정제, 변환 명령과 학습 연결은 [SFT 데이터 준비 가이드](../../docs/datasets/README.md)를 참고하세요.
 
 현재 공통 실행기의 기본 setup은 [Spark](../../docs/getting-started.md)입니다.
@@ -40,6 +40,7 @@ FSDP2와 DeepSpeed는 현재 `base` 또는 `train` stage만 지원합니다.
 Full mode에서는 `OPTIMIZER=sgd|adamw`를 선택할 수 있으며 메모리 예산을 먼저 확인해야 합니다.
 아래는 실제 실행한 구성별 결과이며, 지원 옵션 전체가 모든 모델에서 동작한다는 뜻은 아닙니다.
 두 30B 모델에 공통으로 검증된 학습 경로는 DDP LoRA입니다.
+DDP는 각 GPU에 모델 복제본을 두고 데이터를 나눠 처리하며, FSDP2·ZeRO는 학습 상태를 여러 GPU에 나눠 저장하는 방식입니다.
 
 | 구성 | 기록된 검증 범위 |
 | --- | --- |

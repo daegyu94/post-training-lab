@@ -1,8 +1,7 @@
 # Experiment Result
 
-이 문서의 실행 명령은 현재 패키지 이름 `trl_lab`에 맞췄으며, 아래 측정값은 기존 실행 기록입니다.
-
 이 문서는 통합 전 TRL 실습에서 실행한 Qwen2.5-14B-Instruct QLoRA 결과를 기록합니다.
+명령의 패키지 이름은 현재의 `trl_lab`에 맞췄지만, 측정값은 당시 실행 결과를 그대로 보존했습니다.
 전체 산출물은 Git에서 제외하고 실험에 필요한 명령과 요약만 남깁니다.
 
 ## Environment
@@ -104,7 +103,8 @@ Stage 1/6에서는 local parquet를 읽고, Stage 2/6에서는 Qwen base model�
 }
 ~~~
 
-마지막 JSON object는 <code>summary.json</code>에도 저장됩니다. <code>tuned_eval_loss</code>가 <code>base_eval_loss</code>보다 낮고 변화율이 음수이므로, 학습에 쓰지 않은 이 15개 대화에서는 adapter 적용 뒤 예측이 개선됐다고 해석합니다.
+마지막 JSON object는 <code>summary.json</code>에도 저장됩니다.
+<code>tuned_eval_loss</code>가 <code>base_eval_loss</code>보다 낮고 변화율이 음수이므로, 학습에 쓰지 않은 이 15개 대화에서는 adapter 적용 뒤 예측이 개선됐다고 해석합니다.
 
 ## Metrics
 

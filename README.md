@@ -1,6 +1,7 @@
 # Post-Training Lab
 
-Post-Training Lab은 LLM post-training을 데이터 준비, 학습, 평가와 resource profiling까지 연결해 실습하는 저장소입니다.
+Post-Training Lab은 이미 학습된 LLM을 특정 작업에 맞게 추가 학습하는 post-training 실습 저장소입니다.
+데이터 준비부터 학습·평가, 실행 중 자원 사용량 측정까지 따라갈 수 있습니다.
 실행 코드는 backend 디렉터리에, 공통 데이터 기준은 `docs/datasets`에 모읍니다.
 기본 분산 실행 환경은 `spark1`, `spark2` 두 노드이며 실제 workload는 Spark 노드에서 수행합니다.
 
@@ -32,13 +33,12 @@ Post-Training Lab은 LLM post-training을 데이터 준비, 학습, 평가와 re
 TRL과 Megatron의 Spark 실행 문서에는 실제로 검증된 범위와 실패 조건을 구분해 기록합니다.
 Observability는 GPU나 exporter 없이 실행할 수 있는 CPU 검증과 실제 Spark 수집 경로를 함께 제공합니다.
 
-각 backend의 실행 명령은 해당 backend 디렉터리를 current working directory로 가정합니다.
+각 backend 문서의 명령은 해당 backend 디렉터리에서 실행합니다.
 예를 들어 TRL 명령은 `cd backends/trl` 뒤 실행하고, Megatron 명령은 `cd backends/megatron` 뒤 실행합니다.
 
 ## Dataset Guides
 
 [SFT 데이터 준비 가이드](docs/datasets/README.md)에서 공개·사내 데이터 선택, 변환 명령, TRL·Megatron 학습 연결과 검증 기준을 함께 설명합니다.
-
 
 ## Repository Layout
 

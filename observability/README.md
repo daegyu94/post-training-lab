@@ -1,27 +1,33 @@
 # Large-scale LLM Post-training Resource Profiling Lab
 
-이 저장소는 Megatron 또는 verl 기반 post-training workload를 멀티노드에서 실행할 때 resource bottleneck을 찾는 오픈소스 profiling 실습입니다.
-특정 command의 부모 PID를 sampling하는 wrapper 대신, 실제 cluster의 node, GPU, network, storage, distributed rank와 agentic rollout을 같은 run으로 연결합니다.
+이 디렉터리는 여러 노드에서 학습할 때 어느 자원 때문에 실행이 느려지는지 찾는 profiling 실습을 제공합니다.
+먼저 노드·GPU·네트워크·저장소의 사용량을 보고, 필요한 경우 개별 학습 프로세스(rank)의 상세 실행 기록(trace)을 확인합니다.
+같은 `run_id`로 자원 지표와 학습 기록을 연결합니다.
 
 ## Start Here
+
+Spark에서는 [Spark 실습 가이드](../docs/observability/spark-cluster.md)를 먼저 따르세요.
+아래 Lab 순서는 다른 클러스터에도 적용할 수 있는 일반적인 관측 절차입니다.
 
 처음에는 **01 → 02 → 06** 순서로 telemetry, hardware baseline, 작은 DDP trace를 익힙니다.
 그다음 실제 workload에 따라 **03 (Megatron)** 또는 **04 (verl)**를 선택하고, 더 자세한 증거가 필요할 때 **05 (selected trace)**를 적용합니다.
 Lab 번호는 문서 식별자이며 실행 순서와는 다릅니다.
 
 ```bash
-git clone -b profiling https://github.com/daegyu94/post-training-lab.git
-cd post-training-lab
+git clone -b main https://github.com/daegyu94/post-training-lab.git
+cd post-training-lab/observability
 ./scripts/setup.sh
 . .venv/bin/activate
-python -m pytest -q
+python -m pytest -q ../tests/observability
 ```
 
 `setup.sh`는 CPU 검증용 environment와 pytest만 설치합니다.
 Docker/Compose, exporter, CUDA용 PyTorch, NCCL Tests, fio와 framework는 각 실습의 실행 호스트에 별도로 준비합니다.
-아래 명령은 `observability` 디렉터리를 current working directory로 가정합니다.
+
+이 문서의 명령은 `observability` 디렉터리에서 실행합니다.
 Spark cluster에서는 controller가 실행을 조율하고 실제 DDP·LLM 연산은 `spark1`, `spark2`에서 수행합니다.
 공유 저장소 경로는 controller에서 `/home/daegyu/shared/post-training-lab`, Spark 노드에서 `/home/spark/shared/post-training-lab`입니다.
+
 Lab 06의 2-GPU 및 Slurm 예제는 일반적인 구성 예시이므로 실제 GPU 수와 launcher에 맞춰 적용합니다.
 
 ## What Is Included
@@ -109,7 +115,7 @@ validation 후 service는 계속 실행됩니다.
 - `scripts/validate_observability.sh`: monitoring stack 실행과 validation orchestration
 - `config/metrics.json`: framework에 관계없는 metric vocabulary, phase와 collection policy
 - `config/metrics.schema.json`: metric contract의 JSON Schema
-- `docs/metric-schema.md`: label, manifest field, phase와 data movement metric 작성 규칙
+- [Metric 작성 규칙](../docs/observability/metric-schema.md): label, 실행 명세서, 단계별 데이터 전송 지표 설명
 - `profiling_lab/observability.py`: target, readiness, health와 query validation
 - `profiling_lab/schema.py`: metric schema validation
 - `run_summary.py`: framework 공통 summary schema
@@ -122,6 +128,6 @@ workload별 adapter는 framework가 이미 제공하는 timer와 metric을 재�
 GPU나 exporter 없이 Python helper, metric schema, shell script syntax를 확인할 수 있습니다.
 
 ```bash
-.venv/bin/python -m pytest -q
+.venv/bin/python -m pytest -q ../tests/observability
 for script in scripts/*.sh; do bash -n "$script" || exit; done
 ```

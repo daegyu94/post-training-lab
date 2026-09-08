@@ -2,13 +2,17 @@
 
 ## Goal
 
-작은 DDP workload로 선택한 rank의 PyTorch trace 생성을 확인하는 실습입니다.
+이 실습은 작은 DDP 예제로 선택한 학습 프로세스(rank)의 상세 trace를 만드는 방법을 확인합니다.
+DDP는 각 GPU에 같은 모델을 두고 서로 다른 데이터를 처리한 뒤 gradient를 동기화하는 방식입니다.
 기준 run과 capture run을 분리하며, 이 예제는 rank별 step 시간이나 tokens/s를 집계하지 않습니다.
 Megatron이나 verl을 아직 설치하지 않은 환경에서도 `torchrun`과 제공된 작은 DDP workload로 profiling 흐름을 검증할 수 있습니다.
 실제 학습으로 바꿀 때도 관측 지점과 artifact 형식은 유지합니다.
 
 이 실습은 GPU가 있는 한 node에서 시작하고, 같은 command를 scheduler가 할당한 여러 node로 확장합니다.
 profiler는 선택한 rank와 짧은 step window에서만 켜므로 모든 rank를 장시간 capture하지 않습니다.
+
+이 문서의 명령과 Python 예제는 `observability` 디렉터리를 작업 디렉터리로 사용합니다.
+실제 GPU 연산은 Spark 노드에서 실행하고, 다른 클러스터용 예시는 해당 환경에 맞춰 적용합니다.
 
 ## What This Lab Produces
 
@@ -30,7 +34,7 @@ DDP 예제는 Node Exporter textfile metric을 작성하지 않습니다.
 
 - CUDA를 사용할 수 있는 PyTorch environment
 - 한 node에서 GPU 두 장 이상 또는 여러 node에 걸친 scheduler allocation
-- repository root가 `PYTHONPATH`에 포함된 shell
+- `observability` 디렉터리가 `PYTHONPATH`에 포함된 shell
 - multi-node일 때 node 간 rendezvous port 접근 가능
 - 선택 사항: Lab 01에서 준비한 Node Exporter, DCGM Exporter, Prometheus
 
@@ -55,7 +59,7 @@ export TRACE_OUTPUT_DIR="artifacts/ddp-profile/$PROFILE_RUN_ID"
 mkdir -p "$TRACE_OUTPUT_DIR"
 
 torchrun --standalone --nproc_per_node=2 \
-  ../../../observability/examples/pytorch/ddp_profile_demo.py \
+  examples/pytorch/ddp_profile_demo.py \
   --steps 16 \
   --profile-ranks 0,1 \
   --trace-dir "$TRACE_OUTPUT_DIR/traces" \
@@ -96,7 +100,7 @@ srun --nodes=2 --ntasks-per-node=1 --gpus-per-task=8 bash -c '
     --node_rank="$SLURM_NODEID" \
     --master_addr="$MASTER_ADDR" \
     --master_port=29500 \
-    ../../../observability/examples/pytorch/ddp_profile_demo.py \
+    examples/pytorch/ddp_profile_demo.py \
       --steps 24 \
       --profile-ranks 0,8 \
       --trace-dir "$TRACE_OUTPUT_DIR/traces"

@@ -1,12 +1,14 @@
 # Megatron Bridge Post-Training Lab
 
-Megatron Bridge로 Setup2의 두 Spark 노드에서 분산 학습, checkpoint 저장·재개와 parallelism을 실습하는 backend입니다.
+이 backend에서는 Megatron Bridge를 사용해 Spark 두 노드에서 분산 학습을 실습합니다.
+학습을 여러 GPU에 나누는 방법(parallelism)과 학습 상태를 저장하고 다시 시작하는 방법(checkpoint 저장·재개)을 다룹니다.
 단일 GPU post-training 입문은 [TRL backend](../../backends/trl/README.md), 공통 하드웨어 구성은 [Spark 설정](../../docs/setups/spark.md)를 참고하세요.
 
 ## Start Here
 
 먼저 [Setup2 guide](../../docs/backends/megatron/spark-cluster.md)에서 노드별 환경과 NCCL 통신, pinned model/data 준비 방법을 확인합니다.
-이후 작은 dense 모델에서 분산 기능을 익히고 30B MoE integration으로 확장합니다.
+먼저 0.5B dense 모델로 분산 기능을 익히고, 이후 30B MoE 모델의 실행을 확인합니다.
+Dense 모델은 각 토큰에 전체 레이어를 사용하고, MoE 모델은 여러 expert 중 선택한 일부를 사용합니다.
 
 | 순서 | 실습 | 확인할 내용 |
 | --- | --- | --- |
@@ -19,7 +21,8 @@ GPU 없이 시작하려면 아래 [CPU 개념 실습](#cpu-only-concept-exercise
 
 ## Workflow and Validation Scope
 
-Setup2 launcher의 기본 흐름은 base held-out evaluation → LoRA 학습과 checkpoint 저장 → 별도 process에서 tuned evaluation입니다.
+기본 실행기는 학습 전 평가, LoRA 학습·저장, 저장물을 다시 불러온 평가를 순서대로 수행합니다.
+아래 그림의 `base`와 `tuned`는 각각 학습 전 모델과 학습 후 모델의 평가 단계입니다.
 
 ```text
 Model + Prepared Dataset
@@ -97,5 +100,5 @@ model checkpoint나 GPU 없이 data selection, log parsing, parallel rank layout
 
 - [공통 Dataset Guides](../../README.md#dataset-guides): 공개·사내 데이터 기준
 - [Megatron 데이터 준비](../../docs/datasets/README.md#training): 변환 명령과 학습 연결 제약
-- `system-integration` branch: data·checkpoint·serving lifecycle 설계
-- `profiling` branch: cluster resource 분석
+- [System integration 설계](../../docs/design/system-integration/README.md): 데이터 준비부터 모델 배포까지의 흐름
+- [Observability 실습](../../observability/README.md): 클러스터 자원 사용량 분석

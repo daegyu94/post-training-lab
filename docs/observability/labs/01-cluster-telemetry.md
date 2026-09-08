@@ -2,8 +2,13 @@
 
 ## Goal
 
-모든 training node의 host와 NVIDIA GPU metric을 중앙 Prometheus가 수집하고, 제공된 Grafana dashboard에서 node/GPU imbalance를 확인합니다.
+이 실습에서는 모든 학습 노드의 CPU·메모리·GPU 사용량을 한 화면에서 비교합니다.
+Exporter가 노드의 지표를 제공하면 Prometheus가 주기적으로 수집하고 Grafana가 시각화합니다.
+노드나 GPU 사이에 사용량이 크게 다른지 먼저 확인하세요.
 이 단계에는 training code 수정이나 profiler 활성화가 필요하지 않습니다.
+
+이 문서의 명령과 Python 예제는 `observability` 디렉터리를 작업 디렉터리로 사용합니다.
+실제 GPU 연산은 Spark 노드에서 실행하고, 다른 클러스터용 예시는 해당 환경에 맞춰 적용합니다.
 
 ## Prerequisites
 
@@ -63,8 +68,8 @@ allocation이 바뀔 때마다 static file을 손으로 관리하기보다 Slurm
 ## 3. Start Prometheus and Grafana
 
 ```bash
-export GRAFANA_ADMIN_PASSWORD=<strong-password>
-REQUIRE_TARGETS_UP=1 ../../../observability/scripts/validate_observability.sh
+export GRAFANA_ADMIN_PASSWORD='<strong-password>'
+REQUIRE_TARGETS_UP=1 ./scripts/validate_observability.sh
 ```
 
 script가 성공하면 target file, Compose configuration, Prometheus와 Grafana health, 기본 Prometheus query와 모든 configured target을 확인한 것입니다.

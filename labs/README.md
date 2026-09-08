@@ -1,7 +1,8 @@
 # Lab Catalog and Extension Guide
 
 현재 실행 가능한 실습과 설계 문서의 시작점은 [프로젝트 안내](../README.md#learning-paths)에서 관리합니다.
-이 디렉터리는 공통 실습 작성 기준과 아직 구현되지 않은 확장 계획을 담습니다.
+이 디렉터리는 새 실습을 작성할 때 사용할 기준과 아직 구현되지 않은 확장 계획을 담습니다.
+기존 실습을 실행하려면 프로젝트 안내에서 시작하고, 새 실습을 추가하려면 아래 템플릿과 완료 기준을 따르세요.
 
 ## Ownership
 
@@ -13,9 +14,12 @@
 | `observability/` | metric vocabulary, 수집 도구와 resource profiling 실습 |
 | Observatory `docs/labs` | 합성 데이터 관측과 run 비교 실습 |
 
-새 실습은 [템플릿](template/README.md)을 `docs/experiments/`에 복사해 작성합니다.
-학습 조건은 `experiments/<backend>/`, 환경 준비는 `setups/<setup>/`에 추가하고 backend 학습 코드는 재사용합니다.
-작업은 `feat/...`, `fix/...`, `docs/...` 단기 브랜치에서 진행한 뒤 `main`에 병합합니다.
+새 실습은 다음 순서로 추가합니다.
+
+1. `feat/...`, `fix/...`, `docs/...` 단기 브랜치에서 작업을 시작합니다.
+2. [템플릿](template/README.md)을 `docs/experiments/`에 복사해 목표와 실행 절차를 작성합니다.
+3. 학습 조건은 `experiments/<backend>/`, 환경 준비는 `setups/<setup>/`에 추가하고 backend 학습 코드는 재사용합니다.
+4. 아래 완료 기준으로 검증한 뒤 `main`에 병합합니다.
 
 ## Planned Exercises
 

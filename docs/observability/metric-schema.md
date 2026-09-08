@@ -1,6 +1,7 @@
 # Profiling Metric Contract
 
-이 문서는 post-training workload와 exporter가 같은 이름, 단위, scope로 metric을 기록하도록 하는 공통 계약을 설명합니다.
+같은 지표를 서로 다른 이름이나 단위로 기록하면 실행 결과를 비교하기 어렵습니다.
+이 문서는 학습 코드와 자원 수집 도구가 지표의 이름·단위·측정 범위(scope)를 맞추는 규칙을 설명합니다.
 실제 source of truth는 [`config/metrics.json`](../../observability/config/metrics.json)이며 [`config/metrics.schema.json`](../../observability/config/metrics.schema.json)은 파일 형식을 검증하는 JSON Schema입니다.
 
 ## Contract Files
@@ -16,7 +17,8 @@
 
 ## Metric Entry
 
-각 metric은 다음 여섯 field를 가집니다.
+지표를 추가할 때는 무엇을 어디서 어떤 단위로 측정했는지 함께 정의합니다.
+아래 예시는 전송량을 시간으로 나눈 유효 대역폭이며, 각 metric은 다음 여섯 field를 가집니다.
 
 ```json
 {
@@ -45,7 +47,9 @@ Derived metric은 원본 값을 덮어쓰지 않으며 계산에 사용한 windo
 
 ## Labels and Manifest Fields
 
-`recommended_labels`는 run 비교와 drill-down에 필요한 bounded-cardinality dimension입니다.
+`recommended_labels`는 실행 결과를 필터링하고 비교할 때 사용하는 분류 기준입니다.
+예를 들어 `node`로 특정 노드를 고르고 `phase`로 학습 단계만 볼 수 있습니다.
+값의 종류가 제한된 항목을 사용해야 시계열 수가 과도하게 늘어나지 않습니다.
 `run_id`, `cluster`, `job`, `node`, `gpu`, `framework`, `role`, `phase`, `device`, `interface`, `operation`, `parallel_group`을 공통 후보로 사용합니다.
 Megatron hook의 `rank`, `local_rank`, `tp_rank`, `pp_rank`, `dp_rank`, `timer`는 allocation과 timer 목록으로 범위를 제한하는 예제 확장입니다.
 
@@ -86,10 +90,11 @@ Framework phase marker와 rank map을 같은 `run_id`로 연결하고, 원인이
 
 ## Validate the Contract
 
-Repository root에서 다음 명령으로 JSON syntax, vocabulary, category, required field와 중복 metric name을 확인합니다.
+관측 도구의 Python 환경을 활성화한 뒤 저장소 루트에서 지표 정의를 검사합니다.
+다음 명령은 JSON 문법, 허용된 이름·분류, 필수 필드와 중복 지표 이름을 확인합니다.
 
 ```bash
-.venv/bin/python -m pytest -q tests/test_schema.py
+python -m pytest -q tests/observability/test_schema.py
 ```
 
 새 metric을 추가할 때는 exporter 또는 framework에서 실제로 얻을 수 있는 source를 먼저 확인하고, canonical unit과 scope를 결정한 뒤 `metrics.json`, adapter, summary와 dashboard를 같은 변경에서 갱신합니다.

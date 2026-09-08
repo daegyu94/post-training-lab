@@ -2,8 +2,9 @@
 
 ## Goal
 
-training이 파일 저장에 성공한 시점과 model을 production에서 사용할 수 있는 시점은 다릅니다.
-이 문서는 training request, checkpoint, registry candidate, evaluation evidence와 serving revision을 명시적인 상태로 분리해 accidental deployment를 막는 방법을 설명합니다.
+학습 결과를 저장한 뒤에는 다시 읽기, 품질 평가, 서비스 호환성 검사를 거쳐 배포해야 합니다.
+이 문서는 저장한 checkpoint가 검증된 배포 버전이 되는 과정을 설명합니다.
+학습 요청, 등록 후보, 평가 결과와 서비스 버전을 구분해 검증 전 결과물이 배포되지 않도록 설계합니다.
 
 ## Artifact Vocabulary
 
@@ -54,7 +55,7 @@ TRL 또는 Megatron-LM의 상세 option은 backend-specific configuration artifa
 
 ## Relationship to `summary.json`
 
-`trl`, `megatron`과 `profiling` branch의 실행 결과는 `schema_version: 1`과 공통 top-level section을 가진 `summary.json`을 생성합니다.
+TRL·Megatron backend와 관측 도구의 실행 결과는 `schema_version: 1`과 공통 top-level section을 가진 `summary.json`을 생성합니다.
 post-training system에서는 이를 training run의 evidence로 수집할 수 있습니다.
 
 | `summary.json` section | Lifecycle use |
@@ -96,6 +97,9 @@ PEFT adapter를 등록할 때는 adapter만으로 완전한 serving artifact라�
 
 ## Atomic Publish
 
+파일 전체의 검증이 끝난 순간에만 다른 시스템에서 결과물을 찾을 수 있게 합니다.
+이를 원자적 공개(atomic publish)라고 하며, 업로드 도중의 불완전한 파일을 읽는 일을 막습니다.
+
 모든 파일을 임시 위치에 업로드한 뒤 manifest의 file inventory와 size·digest를 검증합니다.
 검증이 끝나면 registry metadata를 원자적으로 visible 상태로 전환해 immutable candidate를 등록합니다.
 training 중인 directory나 업로드 중인 파일은 discovery API에 노출하지 않습니다.
@@ -120,6 +124,9 @@ threshold 값과 승인 주체는 service마다 다르지만, gate의 입력과 
 짧은 subset에서 loss가 감소했다는 사실은 training path 검증에는 유용하지만 production 품질, safety와 task 성공률을 대신하지 않습니다.
 
 ## Deployment and Rollback
+
+새 버전은 적은 트래픽으로 먼저 확인하는 canary 배포부터 시작합니다.
+문제가 생기면 보존해 둔 이전 버전을 다시 선택하는 rollback으로 복구합니다.
 
 1. approved candidate를 현재 production과 다른 immutable location에 준비합니다.
 2. artifact load, tokenizer, health endpoint와 representative inference를 preflight에서 검사합니다.

@@ -3,9 +3,12 @@
 이 가이드의 명령은 `backends/trl` 디렉터리에서 실행합니다.
 전체 구성은 [PoC Setups](../../../README.md#poc-setups)를, 두 Spark 노드 실행은 [Setup 2](spark-cluster.md)를 참고하세요.
 
-이 기존 실습은 TRL을 사용해 `Qwen/Qwen2.5-14B-Instruct`를 `HuggingFaceH4/ultrachat_200k`의 대화 데이터로 NF4 QLoRA fine-tuning하는 실험을 수행하고, 그 결과를 기록합니다.
+이 가이드는 RTX GPU 한 장에서 실행한 Qwen2.5-14B QLoRA 실험을 재현하는 절차입니다.
+QLoRA는 원본 모델을 4-bit로 줄여 읽고 작은 추가 가중치(adapter)를 학습하는 방법이며, 여기서는 NF4 양자화를 사용합니다.
+학습 데이터는 `HuggingFaceH4/ultrachat_200k`의 대화입니다.
 
-실험 과정은 local dataset과 cached model을 사용한 학습, 학습 전후 held-out evaluation, deterministic generation 비교, 저장한 PEFT adapter의 독립 프로세스 재로딩으로 구성됩니다.
+로컬에 준비한 모델과 데이터로 학습한 뒤, 학습에 쓰지 않은 데이터의 loss와 같은 질문에 대한 생성 응답을 비교합니다.
+마지막으로 새 프로세스에서 저장한 adapter를 읽어 추론할 수 있는지 확인합니다.
 
 ## Experiment Result
 
@@ -32,7 +35,8 @@
 ./scripts/setup.sh
 ```
 
-setup.sh는 Python virtual environment를 .venv에 만들고 requirements.txt의 의존성을 설치한 뒤 data/ultrachat_200k/data에 train_sft와 test_sft parquet split을 저장합니다.
+`setup.sh`는 `.venv`에 Python 환경을 만들고 `requirements.txt`의 의존성을 설치합니다.
+이후 `data/ultrachat_200k/data`에 `train_sft`와 `test_sft` parquet 파일을 저장합니다.
 
 다른 위치에 dataset을 저장하려면 다음처럼 실행합니다.
 
@@ -172,7 +176,8 @@ QLoRA는 frozen 4-bit base weight에 LoRA parameter만 추가하여 학습합니
 
 ## Limitations
 
-이 결과는 128개 training conversation, 15개 held-out conversation, 20 optimizer steps로 실행한 짧은 실험입니다. held-out loss 감소와 adapter reload 성공은 구현된 학습 경로가 동작했음을 보여주지만, 일반적인 instruction-following 품질이나 benchmark 성능 향상을 의미하지는 않습니다.
+이 결과는 128개 training conversation, 15개 held-out conversation, 20 optimizer steps로 실행한 짧은 실험입니다.
+held-out loss 감소와 adapter reload 성공은 구현된 학습 경로가 동작했음을 보여주지만, 일반적인 instruction-following 품질이나 benchmark 성능 향상을 의미하지는 않습니다.
 
 ## References
 

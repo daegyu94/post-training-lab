@@ -1,7 +1,11 @@
 # Spark Repeated Measurements
 
+This record reports the short Spark measurement plan, with two measured repeats per variant.
+Read the timing ranges as observations of this fixed small-model workload, not general speedup claims.
+
 Commit: `862624156b0f55504de64d66a7e1a0cebcf9a3b3`.
 The retained overlap-mbs-1 cell ran at ecd1e50; all remaining cells ran at the commit above.
+
 Actual budget: 16 optimizer steps, two measured repeats per variant, first four within-run steps excluded.
 Each variant also has a separate four-step warmup.
 The measured order is A/B followed by B/A for each cell.
@@ -25,13 +29,17 @@ The measured order is A/B followed by B/A for each cell.
 | checkpoint-interval-32 | sync | 2 | 396.350–404.450 | 6.584 | 152.914–187.618 | 124.426–125.020 | 0.000–0.000 |
 | checkpoint-interval-32 | async | 2 | 403.250–403.800 | 6.584 | 149.839–188.121 | 60.630–61.114 | 61.149–62.099 |
 
+## Reading the measurements
+
 Checkpoint cell names retain the default intervals 16/32; this execution used effective intervals 4/8, recorded in the per-run configs.
 All other comparisons save once at their final step.
 Whole-run time includes remote launch/claim waiting, model setup, training, checkpoint work, evaluation and teardown.
+
 Memory is the maximum CUDA allocator peak across ranks over the full train stage, including model/optimizer setup and evaluation; it is not total device memory.
+
 Save and blocking-finalization events are accumulated per rank and then maximized across ranks.
 The installed Bridge pauses its native interval timer around checkpoint save calls; background async contention can still affect training steps.
-They are host call times, including possible synchronization and filesystem waiting, not isolated disk bandwidth or crash durability.
+These checkpoint measurements are host call times, including possible synchronization and filesystem waiting, not isolated disk bandwidth or crash durability.
 
 ## Evidence
 

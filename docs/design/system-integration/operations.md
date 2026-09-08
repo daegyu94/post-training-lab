@@ -2,12 +2,13 @@
 
 ## Goal
 
-운영 단계에서는 “training job이 성공했다”는 신호 하나가 아니라 dataset publish, training, artifact registration, evaluation, deployment와 serving 상태를 연결해서 봅니다.
+운영에서는 데이터 발행부터 학습·결과물 등록·평가·배포까지 같은 실행의 상태를 연결해 봅니다.
 장애가 발생했을 때 영향을 받은 revision을 찾고, promotion을 멈추거나 이전 serving revision으로 되돌릴 수 있어야 합니다.
 
 ## Correlation Model
 
-dataset부터 deployment까지의 연결은 아래 identity를 기준으로 보존합니다.
+각 단계에 식별자를 부여하고 다음 단계의 기록에서 앞 단계로 돌아갈 수 있게 연결합니다.
+예를 들어 배포된 모델의 serving revision에서 학습 run을 찾고, 그 run이 사용한 dataset revision까지 추적할 수 있어야 합니다.
 각 system의 metadata에서 다음 identity로 이동할 수 있는 link를 보존하고, metric label은 phase처럼 값의 범위가 제한된 항목을 우선 사용합니다.
 `run_id`와 revision은 수집 범위·보존 기간으로 cardinality를 제한할 수 있을 때만 label로 사용하고, 나머지 연결은 metadata와 log에 둡니다.
 
@@ -82,8 +83,10 @@ training cluster와 serving cluster 사이에서는 artifact transfer duration, 
 | Serving regression | 이전 serving revision으로 rollback | rollout window, metric delta, rollback event |
 | Registry or storage outage | 현재 production 유지, promotion 중단 | outage interval, affected request와 retry status |
 
-자동 retry는 결과가 같은 idempotent 단계에만 적용합니다.
-dataset publish, registry alias 변경과 production traffic 전환처럼 상태를 변경하는 단계는 request identity, expected current revision과 compare-and-swap 조건을 사용해 중복 실행과 lost update를 막습니다.
+자동 재시도는 여러 번 실행해도 결과가 같은 단계에만 적용합니다.
+이 성질을 멱등성(idempotency)이라고 합니다.
+데이터 발행, registry alias 변경, 서비스 트래픽 전환은 요청 식별자와 예상 현재 버전을 먼저 확인합니다.
+현재 버전이 예상과 같을 때만 바꾸는 compare-and-swap 조건으로 중복 실행과 다른 변경의 덮어쓰기를 막습니다.
 
 ## Validation Checklist
 
@@ -97,4 +100,4 @@ dataset publish, registry alias 변경과 production traffic 전환처럼 상태
 - metric, log와 event의 timestamp가 동기화돼 있고 같은 phase를 비교할 수 있습니다.
 - 개인정보와 secret이 dataset, log, metric 또는 artifact metadata에 포함되지 않습니다.
 
-전체 문서 안내는 [branch README](README.md)에서 확인할 수 있습니다.
+전체 문서 안내는 [설계 문서 안내](README.md)에서 확인할 수 있습니다.

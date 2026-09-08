@@ -2,8 +2,12 @@
 
 ## Goal
 
-상시 metric에서 확인한 이상 node/rank/role과 짧은 step window만 trace합니다.
-전체 run과 모든 rank를 profile하여 기준 성능을 오염시키거나 shared storage를 trace로 포화시키지 않습니다.
+상시 지표로 느린 노드나 rank를 찾았다면 그 구간의 상세 trace를 수집합니다.
+Trace에는 연산·통신의 실행 순서가 담겨 있어 대기 원인을 더 자세히 볼 수 있습니다.
+수집 비용과 파일 크기를 줄이기 위해 비교할 rank와 짧은 step 구간을 먼저 고릅니다.
+
+이 문서의 명령과 Python 예제는 `observability` 디렉터리를 작업 디렉터리로 사용합니다.
+실제 GPU 연산은 Spark 노드에서 실행하고, 다른 클러스터용 예시는 해당 환경에 맞춰 적용합니다.
 
 ## 1. Choose the Capture Set
 

@@ -1,6 +1,8 @@
 # Runner Architecture
 
-The repository separates machine setup, experiment intent and backend code.
+The runner combines a machine setup file with an experiment file, then invokes the selected backend.
+This separation lets a new environment reuse the existing training code.
+The diagram shows where validation happens and how work reaches the Spark nodes.
 
 ```text
 setups/spark/local.json       experiments/<backend>/*.json
@@ -20,20 +22,26 @@ Setup files contain hosts, checkout locations, Python interpreters, model direct
 Experiment files contain the backend, Spark topology and training environment.
 The runner joins these inputs only at execution time, keeping model and learning options out of machine setup.
 
-Before execution it checks the backend/setup match, node count, one GPU process per node, immutable revisions, backend environment names, stage support and Megatron parallelism and batch divisibility.
+Before execution, the runner checks whether the requested combination is supported.
+It validates the backend and setup, node count, one GPU process per node, fixed revisions, environment variable names and training stages.
+For Megatron, it also checks that the parallelism and batch sizes divide correctly.
 
 The controller starts rank processes concurrently with `ssh` in `BatchMode`.
 Each remote command changes to `backends/<backend>`, exports the selected node environment and invokes that backend's existing launcher.
 Megatron sources `scripts/spark_runtime_env.sh` before launch.
 
-Every remote run gets a deterministic run-specific output directory and pidfile.
+Each run has its own output directory and a file identifying its processes (pidfile).
 The launcher is wrapped with `timeout --signal=TERM --kill-after=30s`.
 If a rank fails, the controller asks only the remaining run-specific pid groups to terminate, then waits for the SSH processes before writing final statuses.
-No broad process kill is used.
+This cleanup targets only the processes belonging to that run.
 
+The run manifest makes the execution traceable.
 `manifest.json` records the backend, run ID, setup and experiment SHA-256 hashes, controller commit, per-rank host, command, log path and exit status.
 
 ## Support and Evidence
+
+Use the table to distinguish accepted settings from paths that have actually run on GPUs.
+A successful small-model run applies to that recorded configuration, not every model using the same backend.
 
 | Backend / setup | Implementation | Evidence boundary |
 | --- | --- | --- |

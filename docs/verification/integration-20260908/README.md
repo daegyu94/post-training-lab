@@ -1,6 +1,7 @@
 # Unified Layout Verification
 
-이 기록은 backend 디렉터리 이동 후 Spark에서 실제 실행한 검증입니다.
+이 기록은 디렉터리 통합 후 기존 실행 경로가 유지되는지 Spark에서 확인한 결과입니다.
+아래 표에서 실행 구성과 완료 범위를 먼저 확인하고, 실패 원인과 해석상의 한계는 뒤쪽 절에서 확인하세요.
 통합 전 30B 결과는 [TRL 기록](../../backends/trl/training-verification.md)과 [Megatron 기록](../../backends/megatron/spark-cluster.md)에 보존하며 이번 결과와 구분합니다.
 
 ## Layout Regression
@@ -43,6 +44,9 @@ ARM64 Transformer Engine wheel과 userspace library 설정은 [Spark backend 가
 GPU memory peak는 학습 process의 CUDA allocator 계측과 별도로 다룹니다.
 
 ## Interpretation
+
+이 문서의 성공 표시는 명시한 단계가 실행됐다는 뜻입니다.
+예를 들어 checkpoint 저장·재로딩 성공만으로 중단 없는 학습과의 수치 일치나 장애 후 복구까지 입증하지는 않습니다.
 
 성능 측정, optimizer resume correctness와 checkpoint durability는 서로 다른 검증입니다.
 `save` timing은 synchronous 저장 호출 또는 asynchronous enqueue 호출의 host 시간입니다.

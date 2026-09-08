@@ -2,8 +2,12 @@
 
 ## Goal
 
-verl/Ray cluster에서 rollout 생산, trainer 소비, actor/critic/reference/reward role과 tool/environment wait를 분리합니다.
-평균 GPU utilization만 보는 대신 비동기 pipeline의 backpressure와 critical path를 찾습니다.
+이 실습은 verl/Ray에서 응답 생성, 학습, 보상 계산과 도구 대기를 나눠 관측합니다.
+Rollout은 학습에 쓸 응답을 생성하는 과정이고, trainer는 생성된 데이터를 소비해 모델을 학습합니다.
+생성과 학습 중 어느 쪽이 느려 대기열이 쌓이는지(backpressure), 전체 실행 시간을 결정하는 경로가 무엇인지(critical path) 확인합니다.
+
+이 문서의 명령과 Python 예제는 `observability` 디렉터리를 작업 디렉터리로 사용합니다.
+실제 GPU 연산은 Spark 노드에서 실행하고, 다른 클러스터용 예시는 해당 환경에 맞춰 적용합니다.
 
 ## 1. Start With Ray and Rollout Metrics
 

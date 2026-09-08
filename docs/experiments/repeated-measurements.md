@@ -1,35 +1,40 @@
 # Repeated Megatron measurements
 
-`experiments/benchmarks.py` drives the bounded Megatron feature matrix through `experiments/run.py`.
+Use `experiments/benchmarks.py` to compare Megatron settings under the same model, data and training conditions.
+It runs each comparison through `experiments/run.py` and saves the configuration, logs and measurements.
+The default is a dry run: remote training starts only with `--execute`.
 
-The driver is dry-run by default and requires an explicit `--execute` before it starts remote training.
+## Choose the measurement budget
 
-The default plan uses 64 training steps, four measured repeats, eight within-run warmup steps, and checkpoint intervals 16 and 32.
-The interval values in cell names identify the default plan; CLI overrides change the effective values recorded in each run configuration.
+The default plan is intended for repeated measurements; the shorter configuration checks that the plan can run at a lower cost.
+A cell is one comparison condition, such as overlap at micro-batch size 1.
+Each cell has variants, such as overlap off and on.
 
-The short validation configuration is `--steps 16 --repeats 2 --within-run-warmup 4 --checkpoint-intervals 4 8`.
+| Setting | Default plan | Short validation plan |
+| --- | --- | --- |
+| Optimizer steps per measured run | 64 | 16 |
+| Measured repeats per variant | 4 | 2 |
+| Initial steps excluded within each run | 8 | 4 |
+| Checkpoint intervals | 16 and 32 | 4 and 8 |
 
-The eight factorial cells cover overlap at micro-batches 1 and 2, recompute at lengths 2048 and 4096, sequence parallelism at both lengths with TP2, and sync or async checkpointing at intervals 16 and 32.
+Cell names retain the default interval values even when CLI options change them.
+Use the effective values saved in each run configuration when interpreting results.
 
-Warmup records, failed records, and records after a variant's first failure are excluded from summaries.
+## What the plan compares
 
-Each run gets a unique output basename containing the benchmark output name, cell, variant, and run index, so a remote runner claim cannot be silently reused.
+The eight cells compare overlap at micro-batches 1 and 2, recompute at sequence lengths 2048 and 4096, sequence parallelism at both lengths with TP=2, and sync/async checkpointing at two save intervals.
+The plan fixes Qwen 0.5B and `HuggingFaceH4/no_robots` revisions, seed 42, BF16 full fine-tuning, global batch size 4 and the Megatron train stage.
 
-The output directory contains the expanded plan, an incremental `records.jsonl`, per-run runner manifests and logs, raw measurement JSONL, checksums, and a final manifest.
+Length comparisons set `PAD_TO_MAX_LENGTH=true` to make the tensors actually reach 2048 or 4096 tokens.
+Changing only a truncation limit would not change the tensor width for short examples.
+Megatron SFT leaves padding disabled by default; direct runs can opt in with `--pad-to-max-length`.
 
-Measurement summaries report descriptive steady-step timings, wall time, peak CUDA allocation and reservation, and cumulative checkpoint event time.
+## Inspect and execute
 
-Checkpoint event seconds are summed within each rank and the maximum rank total is reported separately for save-call enqueue work and blocking finalization.
-
-Native Megatron iteration logs are accepted only when every requested step is present, finite, non-skipped, and accompanied by a successful runner exit.
-
-The plan compares pinned Qwen 0.5B and `HuggingFaceH4/no_robots` data with seed 42, BF16 full fine-tuning, global batch size 4, and Megatron train stage.
-
-Multi-node checkpoint reload requires the participating nodes to use the same shared `output_root`.
-
-The records provide timing and finite loss or gradient evidence; they do not claim a quality improvement or a speedup.
-
-Example dry run:
+1. Prepare the Spark setup file as described in the [getting-started guide](../getting-started.md).
+   Keep local paths and host names in the gitignored setup file.
+   Multi-node checkpoint reload requires the same shared `output_root` on participating nodes.
+2. Inspect the expanded plan from the repository root:
 
 ```bash
 python experiments/benchmarks.py \
@@ -37,7 +42,7 @@ python experiments/benchmarks.py \
   --output results/benchmarks-dry-run
 ```
 
-Example execution with the short smoke budget:
+3. Run the short validation configuration when the plan and node paths are ready:
 
 ```bash
 python experiments/benchmarks.py \
@@ -47,10 +52,22 @@ python experiments/benchmarks.py \
   --checkpoint-intervals 4 8 --execute
 ```
 
-The setup file may contain local absolute paths and host names and should remain gitignored.
+Each run gets a unique output name containing the benchmark name, cell, variant and run index.
+This prevents a new run from reusing another run's claimed output directory.
 
-The recompute and sequence length cells set `PAD_TO_MAX_LENGTH=true` so their 2048 and 4096 settings change tensor width instead of only truncating examples.
+## Read the output
 
-Megatron SFT keeps padding disabled by default and accepts `--pad-to-max-length` for explicit opt-in.
+The output directory contains the expanded plan, incremental `records.jsonl`, per-run manifests and logs, raw measurement JSONL, checksums and a final manifest.
+Use the manifests to connect each measurement to its settings and source commit.
+Warmup runs, failed runs and runs after a variant's first failure are excluded from summaries.
 
-The [integration measurement record](../verification/integration-20260908/benchmarks/README.md) contains the executed short plan, raw logs, and the selective-recompute configuration failure.
+A measured run is accepted only if every requested step is present, loss and gradient values are finite, no steps were skipped, and the runner exits successfully.
+The summaries describe steady-step timing, whole-run time and peak CUDA allocated/reserved memory.
+They do not establish model quality or a general speedup.
+
+Checkpoint timing is reported separately from training-step timing.
+Event seconds are summed within each rank, then the maximum rank total is reported for save-call enqueue work and blocking finalization separately.
+These timings do not establish that a checkpoint survives a crash.
+
+The [integration measurement record](../verification/integration-20260908/benchmarks/README.md) contains the executed short plan and raw logs.
+It also records the selective-recompute configuration failure, so that comparison is not complete.

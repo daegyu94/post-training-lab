@@ -1,6 +1,8 @@
 # Tooling and Coverage Gaps
 
-오픈소스 stack의 역할은 모든 것을 한 도구로 측정하는 것이 아니라 저비용 metric으로 병목 범위를 좁히고, 필요한 구간만 고비용 trace로 확인하는 것입니다.
+먼저 상시 수집하는 자원 지표(metric)로 느린 노드와 시간대를 찾고, 해당 구간의 상세 실행 기록(trace)으로 원인을 확인합니다.
+Metric은 시간별 사용량과 지연을 비교하기 좋고, trace는 연산·통신의 실행 순서를 보여줍니다.
+아래 표에서 알고 싶은 질문에 맞는 도구를 선택하세요.
 
 ## Recommended Open-source Stack
 
@@ -30,8 +32,9 @@ Exporter target의 `run_id`는 allocation을 연결하는 label이며 해당 run
 
 ### 2. Framework semantics
 
-Megatron timer와 `StragglerDetector`, verl rollout statistic, Ray actor state와 application metric을 사용해 GPU idle이 data wait, collective, pipeline bubble, rollout queue, reward computation 또는 tool wait 중 무엇 때문인지 분류합니다.
-exporter만으로는 이 의미를 알 수 없으므로 framework adapter가 반드시 필요합니다.
+학습 framework의 지표를 사용해 GPU가 쉬는 이유를 분류합니다.
+Megatron timer와 `StragglerDetector`, verl의 rollout 통계, Ray actor 상태를 함께 보면 데이터·통신·생성·보상 계산·도구 호출 중 어디서 기다리는지 좁힐 수 있습니다.
+노드 사용량을 수집하는 exporter만으로는 이 구분이 어려워 framework와 연결하는 adapter가 필요합니다.
 
 ### 3. Selected diagnostic trace
 
@@ -68,6 +71,8 @@ vendor tool은 상시 stack의 필수 요소로 두지 않습니다.
 
 ## Run Identity and Cardinality
 
+Label 값의 종류가 계속 늘어나면 시계열 수와 저장 비용도 늘어납니다.
+이 값의 가짓수를 cardinality라고 부릅니다.
 Prometheus label에는 `run_id`, `cluster`, `job`, `node`, `gpu`, `framework`, `role`처럼 검색에 자주 쓰이고 cardinality가 제한된 값만 둡니다.
 Git commit, image digest, dataset/checkpoint URI, rank map과 profiler option은 manifest에 보존합니다.
 request ID, prompt, tool argument와 timestamp를 metric label로 만들지 말고, 개별 episode 분석이 필요하면 sampled OpenTelemetry trace attribute로 저장합니다.

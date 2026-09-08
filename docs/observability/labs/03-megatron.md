@@ -2,8 +2,14 @@
 
 ## Goal
 
+이 실습은 Megatron 학습에서 느린 프로세스(rank)와 학습 단계를 찾는 방법을 설명합니다.
+Rank는 분산 작업에 참여하는 프로세스의 번호이고, straggler는 다른 rank보다 반복해서 늦는 프로세스입니다.
+
 기존 Megatron launch command는 그대로 사용하면서 cluster telemetry와 Megatron이 이미 계산하는 timer/straggler 값을 같은 run으로 연결합니다.
 parent launcher PID가 아니라 node, GPU, rank와 parallel group의 분포를 분석합니다.
+
+이 문서의 명령과 Python 예제는 `observability` 디렉터리를 작업 디렉터리로 사용합니다.
+실제 GPU 연산은 Spark 노드에서 실행하고, 다른 클러스터용 예시는 해당 환경에 맞춰 적용합니다.
 
 ## 1. Record the Parallel Topology
 
@@ -33,7 +39,8 @@ topology는 Prometheus label만 믿지 말고 완전한 rank map을 artifact로�
 --straggler-minmax-count <N>
 ```
 
-`timing-log-option=minmax`는 rank spread를 낮은 비용으로 보여주고 `all`은 진단 시점에만 사용합니다. `--log-straggler`는 지원되는 Megatron-LM 경로에서 GPU timing과 rank별 차이를 찾는 데 사용합니다.
+`timing-log-option=minmax`는 rank spread를 낮은 비용으로 보여주고 `all`은 진단 시점에만 사용합니다.
+`--log-straggler`는 지원되는 Megatron-LM 경로에서 GPU timing과 rank별 차이를 찾는 데 사용합니다.
 version과 training integration에 따라 option이 달라질 수 있으므로 실제 binary의 argument 목록을 manifest에 함께 보존합니다.
 
 ## 3. Export Selected Metrics to Prometheus
@@ -65,7 +72,7 @@ export_megatron_step(
 )
 ```
 
-예제 import path는 repository root가 `PYTHONPATH`에 있는 실습 환경을 가정합니다.
+예제 import path는 `observability` 디렉터리가 `PYTHONPATH`에 있는 실습 환경을 가정합니다.
 production에서는 helper를 training image의 package에 포함합니다.
 stale metric을 피하려면 job epilogue에서 현재 run의 정확한 rank 파일만 제거하거나 별도 directory를 allocation마다 mount합니다.
 

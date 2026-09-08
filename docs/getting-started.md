@@ -1,9 +1,11 @@
 # Getting Started
 
+Start by preparing a Spark setup file, then inspect an experiment before running it.
+The controller coordinates the run; the Spark nodes perform the training.
+By default, the runner prints a plan and only contacts the nodes when you add `--execute`.
+
 The controller needs Python 3.10+ and OpenSSH.
 Use `python3` in the examples if the controller has no `python` command.
-The controller runner validates a bounded experiment and prints its plan by default.
-It only contacts Spark nodes when `--execute` is supplied.
 
 ## Configure the Spark setup
 
@@ -13,10 +15,13 @@ Copy the setup example to an ignored local file and replace every placeholder wi
 cp setups/spark/local.example.json setups/spark/local.json
 ```
 
-The setup names the two nodes, the unified checkout, the backend specific Python interpreters, node local model snapshots, prepared data and output roots.
+The setup file describes where each node runs the experiment and finds its inputs.
+It lists the checkout, backend-specific Python interpreters, local model snapshots, prepared data and output directories.
 Create each node’s `output_root` before launching and install each backend in its own Python environment using its [TRL](backends/trl/spark-cluster.md) or [Megatron](backends/megatron/spark-cluster.md) guide.
 Keep the remote checkout clean and at the same commit as the controller.
-Model and dataset revisions live in the experiment file and must be immutable 40-hex revisions.
+
+Model and dataset revisions belong in the experiment file.
+Use immutable 40-character hexadecimal commit IDs so another run can load the same versions.
 
 ## Inspect and run an experiment
 
@@ -48,6 +53,9 @@ The output directory contains `manifest.json` and one `rank-<n>.log` per node.
 An existing controller output directory or node output for the same run ID is refused so a completed run cannot be silently overwritten.
 
 ## Presets
+
+Choose the preset that matches the backend and node count you want to check.
+These short runs check that the execution path works; they do not measure model quality.
 
 - `experiments/trl/smoke.json` runs the two-node DDP LoRA smoke.
 - `experiments/trl/single-node-smoke.json` runs the same TRL code with one node.

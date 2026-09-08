@@ -2,8 +2,9 @@
 
 ## Purpose
 
-post-training system은 사용자 요청을 처리하는 online serving path와, data preparation·training·evaluation을 수행하는 offline path를 분리합니다.
-training job이나 shared storage의 장애가 현재 serving revision에 직접 영향을 주지 않게 하고, 검증을 통과한 immutable artifact만 명시적인 publish와 promotion을 거쳐 전달하는 것이 목적입니다.
+학습 작업에 장애가 나더라도 현재 서비스는 계속 응답할 수 있어야 합니다.
+이를 위해 사용자 요청을 처리하는 online serving 경로와 데이터 준비·학습·평가를 수행하는 offline 경로를 분리합니다.
+검증을 통과한 고정 버전의 결과물만 등록(publish)하고, 별도 승인 절차를 거쳐 서비스에 반영(promotion)합니다.
 
 ## Design Invariants
 
@@ -31,16 +32,19 @@ training job이나 shared storage의 장애가 현재 serving revision에 직접
 | Data pipeline | allowed raw events, benchmark source | dataset revision, manifest | 복원, redaction, 품질 검사, deduplication과 split |
 | Training control plane | dataset revision, base model, recipe | training request, run identity | 입력을 고정하고 backend job을 요청 |
 | TRL backend | canonical dataset adapter, request | PEFT adapter 또는 full artifact, summary | 빠른 SFT/QLoRA training |
-| Megatron backend | preprocessed dataset, request | checkpoint, summary | large-scale training backend. 현재 `megatron` branch 실습은 단일 GPU 기준 |
+| Megatron backend | preprocessed dataset, request | checkpoint, summary | 분산 학습과 checkpoint 생성; 현재 구현은 Spark backend 가이드 참고 |
 | Evaluation pipeline | candidate, held-out data, suite revision | evaluation evidence | quality, safety, regression과 compatibility 검사 |
 | Model registry | complete artifact, manifest, evidence | immutable candidate revision | artifact와 lineage 보관, publish 상태 관리 |
 | Deployment controller | approved candidate, rollout policy | serving revision, deployment event | preflight, canary, promotion과 rollback |
 | Observability pipeline | stage metric, log, event | correlated dashboard and alert | 동일한 run과 revision 기준으로 상태 연결 |
 
-TRL과 Megatron 내부의 tokenizer 적용, optimizer, parallelism과 checkpoint writer는 각 framework branch의 책임입니다.
+TRL과 Megatron 내부의 tokenizer 적용, optimizer, parallelism과 checkpoint writer는 각 backend의 책임입니다.
 registry 이후의 evaluation, promotion과 deployment contract는 backend 종류에 의존하지 않아야 합니다.
 
 ## Boundary Contracts
+
+각 단계는 다음 단계가 입력을 검증할 수 있도록 버전과 출처를 함께 전달합니다.
+예를 들어 학습 결과를 등록할 때는 파일 경로만 넘기지 않고 전체 파일 목록과 해시도 전달합니다.
 
 | Boundary | Required input | Required output | Must not happen |
 | --- | --- | --- | --- |

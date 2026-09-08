@@ -23,7 +23,8 @@ CPU 개념 실습은 controller에서 실행할 수 있으며, 실제 학습 명
 ## Stack overview
 
 이 저장소의 학습 코드는 Megatron Bridge를 통해 Megatron Core 기반 모델을 사용합니다.
-아래 구분을 먼저 잡으면 스크립트의 목적이 분명해집니다.
+Megatron-LM은 참조 학습 애플리케이션, Core는 모델·병렬화 라이브러리, Bridge는 모델 변환과 학습 설정을 연결하는 계층입니다.
+이 저장소에서 스크립트를 읽을 때는 Bridge가 설정을 만들고 Core가 분산 모델을 실행한다고 이해하면 됩니다.
 
 - [Megatron-LM](https://github.com/NVIDIA/Megatron-LM)은 대규모 Transformer 학습을 위한 참조 애플리케이션입니다. Megatron Core와 실행 스크립트를 함께 제공합니다.
 - [Megatron Core](https://docs.nvidia.com/megatron-core/developer-guide/latest/)는 Transformer 블록과 병렬화 전략을 조합하는 라이브러리입니다.
@@ -52,6 +53,9 @@ Setup2는 두 노드에서 실제 분산 process group을 사용합니다.
 아래 CPU 개념 실습은 논리적 rank 배치만 보여 주며 분산 학습 성능이나 통신 동작을 검증하지 않습니다.
 
 ## Parallelism Terms
+
+병렬화는 여러 GPU에 무엇을 나눌지 정하는 방법입니다.
+예를 들어 DP는 같은 모델에 서로 다른 데이터를 주고, TP는 한 레이어의 계산 자체를 나눕니다.
 
 | 방식 | 나누는 대상 | 주로 해결하는 문제 |
 | --- | --- | --- |
@@ -100,9 +104,11 @@ WORLD_SIZE=16 TP_SIZE=2 PP_SIZE=2 CP_SIZE=2 ./scripts/simulate_parallelism.sh
 
 ## Spark 기능 실습
 
-아래 실습은 [Spark 두 노드](spark-cluster.md)에서 분산 기능을 켜고 끈 결과를 비교합니다(A/B 비교).
+아래 실습은 [Spark 두 노드](spark-cluster.md)에서 한 가지 설정만 바꿔 결과를 비교합니다(A/B 비교).
+예를 들어 gradient 통신과 계산을 겹치는 overlap을 끈 실행과 켠 실행의 시간을 비교합니다.
 30B MoE SFT integration과 feature 효과 측정은 별도의 실험으로 구분합니다.
-Feature 효과는 30B MoE LoRA run이 아니라 작은 dense full-parameter model에서 먼저 측정할 수 있으며, 결과 summary에는 `model_scope=small-dense-feature-model`을 남겨 30B evidence와 섞지 않습니다.
+기능 효과는 먼저 작은 dense 모델의 full SFT에서 측정합니다.
+결과에는 `model_scope=small-dense-feature-model`을 남겨 30B MoE LoRA 실행 기록과 구분합니다.
 
 ```text
 Setup2 + NCCL / host RoCE prerequisite smoke
@@ -138,6 +144,10 @@ Record Observations + Validation Limits
 통합 후 반복 측정의 실행 설정과 결과는 [공통 측정 가이드](../../experiments/repeated-measurements.md)와 [통합 검증 기록](../../verification/integration-20260908/README.md)에서 관리합니다.
 
 ## Matrix
+
+비교할 기능을 고른 뒤 표의 모델·병렬화 조건을 함께 맞춥니다.
+Recompute는 중간 계산값을 다시 계산해 메모리를 줄이는 방식이고, sequence parallel은 시퀀스 방향으로 일부 연산과 데이터를 나누는 방식입니다.
+분산 checkpoint(DCP)는 여러 rank의 학습 상태를 저장합니다.
 
 | Feature | Variants | Topology or requirement |
 | --- | --- | --- |
@@ -175,6 +185,9 @@ export FEATURE_MODEL_REVISION=7ae557604adf67be50417f59c2c2f167def9a775
 검증된 Transformer Engine은 `2.18.0` ARM64 source build이며 optional NCCL EP는 `NVTE_WITH_NCCL_EP=0`으로 제외했습니다.
 
 ### A/B runs and timing
+
+처음 실행할 때의 초기화 비용을 비교에서 빼기 위해 준비 실행(warmup)을 따로 수행합니다.
+측정 실행 안에서도 첫 몇 step을 제외하고 나머지 구간의 시간을 비교합니다.
 
 `run_feature_lab.sh`는 각 variant에 대해 warmup 1회와 measured repeats를 수행하고, 기본 sequence length 2048 및 동일한 seed·micro/global batch·precision을 전달합니다.
 각 run은 실제 `run_spark_cluster.sh`를 거치므로 rank logs와 summary를 남깁니다.
@@ -295,6 +308,10 @@ Optimizer state는 저장하지 않았고, 첫 2 step을 warmup으로 제외했�
 
 ## Layout reshard
 
+Layout reshard는 checkpoint를 저장할 때와 다른 병렬 배치로 학습 상태를 다시 나누는 작업입니다.
+여기서는 DP=2로 저장한 상태를 TP=2로 읽는 경우를 확인합니다.
+Optimizer 저장 형식에 따라 가능 여부가 달라집니다.
+
 | Source optimizer format | DP=2 → TP=2 결과 | 경계 |
 | --- | --- | --- |
 | Default `dp_reshardable` | training 전 양 rank exit 1 | TP/PP 변경을 지원하지 않음; fully parallel save만으로 해결되지 않음 |
@@ -309,8 +326,10 @@ Optimizer state는 저장하지 않았고, 첫 2 step을 warmup으로 제외했�
 
 `--dist-ckpt-optim-fully-reshardable`은 `fully_parallel_save`와 다른 옵션입니다.
 기본값 `false`는 일반적인 `dp_reshardable` optimizer format을 사용하며, 빠른 저장 경로와 TP/PP reshard 불가라는 현재 관측 경계를 보존합니다.
+
 `true`는 distributed optimizer를 요구하고, 새 source를 만드는 `train` stage에서는 optimizer state 저장도 요구합니다.
 공유 launcher는 항상 `base` 다음 `train`을 실행하므로 이 flag와 `SAVE_OPTIMIZER=false`를 함께 주면 fail-fast합니다.
+
 Direct `sft --stage resume`에서는 source optimizer state를 읽기만 하는 실험을 위해 save optimizer를 끌 수 있지만, 실제 reshard 결과가 검증되었다는 뜻은 아닙니다.
 Fully reshardable format은 일반적으로 더 느리고 저장 비용·시간이 달라질 수 있으므로 sync/async 결과와 섞어 해석하지 않습니다.
 
@@ -382,6 +401,9 @@ DGX Spark의 GPUDirect RDMA는 지원되지 않으므로 NCCL의 `GDR 0`과 host
 `ib_write_bw`의 단일 64 KiB host result와 NCCL correctness를 feature speedup 또는 GPU-to-GPU bandwidth로 일반화하지 않습니다.
 
 ## Future candidates
+
+아래 항목은 후속 실습 후보이며 현재 실행 가능한 기능 목록이 아닙니다.
+후보를 추가하려면 설치된 라이브러리, 모델 구조와 GPU 지원 여부를 확인하고 작은 실행으로 먼저 검증해야 합니다.
 
 공개 [Megatron-LM release 목록](https://github.com/NVIDIA/Megatron-LM/releases)과 [Megatron Core 최신 문서](https://docs.nvidia.com/megatron-core/developer-guide/latest/)를 함께 확인합니다.
 이 환경의 설치 stack은 Megatron Core `0.19.0`이며, 공개 release와 최신 문서의 version은 검증 시점에 각각 확인합니다.

@@ -1,5 +1,9 @@
 # Setup 2: Two-Node Spark SFT
 
+이 가이드는 Spark 두 노드에서 TRL SFT를 준비하고 실행하는 절차입니다.
+처음에는 아래 환경과 데이터 준비를 마친 뒤 DDP LoRA 경로를 확인하세요.
+FSDP2·DeepSpeed 비교와 기존 측정 결과는 뒤쪽 절에서 다룹니다.
+
 전체 구성은 [PoC Setups](../../../README.md#poc-setups)를 참고하세요.
 아래 명령은 각 Spark 노드의 `backends/trl` 디렉터리에서 실행하며, controller는 원격 실행 조율에 사용합니다.
 
@@ -8,10 +12,13 @@
 각 노드에 ARM64와 CUDA를 지원하는 Python 환경을 준비하고 `requirements-spark.txt`의 버전 구성을 확인합니다.
 Setup 1용 `scripts/setup.sh`는 Spark 전용 설치 스크립트가 아닙니다.
 검증 기록의 Torch는 `2.10.0+cu130`이며, requirements의 버전 pin만으로 같은 CUDA build가 설치된다고 가정하지 않습니다.
+
 사용할 환경의 Python 경로를 `PYTHON`으로 지정하고 GPU kernel 및 두 노드 NCCL 통신을 확인한 뒤 학습을 시작합니다.
 아래 `<spark-python>`은 각 노드에 준비한 환경의 Python 실행 파일로 바꿉니다.
 `hf download`도 해당 환경에서 실행합니다.
-DeepSpeed 설치 및 GPU runtime은 아직 검증하지 않았습니다.
+
+DeepSpeed 설치와 GPU 실행의 구성별 결과는 [추가 검증 기록](training-verification.md)을 확인하세요.
+소형 ZeRO-3 실행은 성공했지만 ZeRO-2와 30B 구성에는 실패가 기록되어 있습니다.
 
 ## Scope and Status
 
@@ -26,10 +33,16 @@ Qwen3-30B-A3B와 GLM-4.7-Flash도 node-local snapshot을 사용한 two-node DDP 
 
 ## Runtime boundary
 
-두 Spark 노드의 GB10과 약 119 GiB physical memory, RoCE link와 NCCL allreduce/alltoall smoke는 별도로 확인했지만 GPUDirect RDMA는 GB10 platform limitation이라 사용할 수 없고, model training throughput이나 convergence evidence는 아닙니다.
+각 Spark 노드는 GB10과 약 119 GiB의 물리 메모리를 가지며, 두 노드의 메모리가 자동으로 합쳐지지는 않습니다.
+RoCE 연결과 NCCL allreduce/alltoall 통신은 짧은 실행으로 확인했습니다.
+이 통신 검사는 모델의 학습 속도나 수렴을 검증한 결과와 구분합니다.
+
+검증한 GB10 환경에서는 GPUDirect RDMA를 사용할 수 없어 host 메모리를 거치는 통신 경로를 사용합니다.
 NVIDIA의 [DGX Spark porting guide](https://docs.nvidia.com/dgx/dgx-spark-porting-guide/porting/cuda.html)는 host-pinned `cudaHostAlloc` buffer와 `ib_reg_mr` registration을 권장하며, 검증된 NCCL NET/IB host-staging 경로는 이 제한과 일치합니다.
 driver나 configuration으로 GDR을 enable하려는 조치는 필요하지 않습니다.
-각 노드의 memory는 자동 single pool이 아니며 native BF16 full 30B는 parameter 약 60 GB와 full gradient 약 60 GB를 사용합니다.
+
+30B full SFT의 메모리는 가중치뿐 아니라 gradient와 optimizer 상태까지 합쳐 계산해야 합니다.
+Native BF16에서는 parameter 약 60 GB와 full gradient 약 60 GB가 필요합니다.
 AdamW가 BF16 moment 두 개를 만들면 optimizer state는 약 120 GB(4 bytes/parameter)이고 세 성분 합은 약 240 GB입니다.
 이는 activation, temporary buffer, CUDA allocator reserve, 분산 shard를 제외한 단순 global byte estimate이며 fit claim이 아닙니다.
 FP32 AdamW moments라면 state는 약 240 GB입니다.
@@ -49,8 +62,10 @@ Launcher는 `MODEL_DIR`을 생략하면 model ID와 immutable revision으로 현
 
 Model snapshot의 `config.json`은 `qwen3_moe` 또는 `glm4_moe_lite`여야 하며 command의 model ID와 family가 불일치하면 중단합니다.
 Model revision과 dataset revision은 모두 immutable 40-hex SHA여야 하고, public adapter가 만든 `manifest.json`의 dataset ID/revision과 일치해야 합니다.
+
 Model preflight는 revision 이름의 snapshot directory, safetensors index, index가 열거한 모든 non-empty shard와 `.incomplete` 부재를 model load 전에 각 노드에서 확인합니다.
 Manifest에 split SHA-256 또는 count가 있으면 local JSONL bytes와 line count를 검증합니다.
+
 Summary에는 local `config.json`과 weight index hash, indexed tensor/shard count, snapshot directory revision을 기록합니다.
 Canonical data preparation은 [public dataset guide](../../datasets/README.md#public-data)를 참고하세요.
 
@@ -69,11 +84,13 @@ hf download zai-org/GLM-4.7-Flash --revision 7dd20894a642a0aa287e9827cb1a1f7f913
 PYTHON='<spark-python>' ./scripts/prepare_public_data.sh --preset no_robots --output-dir data/setup2-no-robots --revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --train-count 8 --eval-count 2 --seed 42
 ```
 
-Canonical row는 원본 messages를 보존하지만 training collator는 마지막 assistant를 제외한 native prompt를 `apply_chat_template(add_generation_prompt=True, enable_thinking=False)`로 렌더링하고 final assistant content와 tokenizer EOS를 completion으로 붙입니다.
+학습 입력은 요청과 마지막 assistant 응답을 나눠 구성합니다.
+원본 `messages`는 보존하고, batch를 만드는 collator는 마지막 assistant를 제외한 native prompt를 `apply_chat_template(add_generation_prompt=True, enable_thinking=False)`로 렌더링하고 final assistant content와 tokenizer EOS를 completion으로 붙입니다.
 Qwen template을 GLM에 덧씌우지 않으며, prompt token IDs가 prompt+completion token IDs의 정확한 prefix이고 EOS가 마지막 supervised token인지 확인합니다.
 completion-only loss의 supervised token이 0이거나 `max_length`를 넘으면 조용히 truncate하지 않고 fail-fast합니다.
 Unknown role과 final assistant tool/function call도 fail-fast합니다.
 
+LoRA가 학습할 모듈은 모델에서 실제로 찾은 attention 모듈로 제한합니다.
 LoRA는 Qwen의 실제 `q_proj/k_proj/v_proj/o_proj` leaf modules와 GLM MLA의 `q_a_proj/q_b_proj/kv_a_proj_with_mqa/kv_b_proj/o_proj` 중 snapshot에 실제 존재하는 attention modules만 선택합니다.
 Module discovery가 비어 있으면 model-name을 추측하지 않고 중단합니다.
 
@@ -112,6 +129,7 @@ Coding example은 `DATASET_ID=bigcode/self-oss-instruct-sc2-exec-filter-50k`, re
 DDP의 기본 `STAGE=all`은 `base`, `train`, `tuned`를 각각 새 process로 실행합니다.
 개별 `STAGE=base|train|tuned`도 지원합니다.
 `base`는 held-out eval, `train`은 LoRA adapter 또는 full model 저장, `tuned`는 별도 process에서 저장물을 읽어 eval하며, adapter reload 성공을 full optimizer resume 증거로 사용하지 않습니다.
+
 FSDP2와 DeepSpeed launcher는 현재 `STAGE=base|train`만 허용합니다.
 소형 FSDP2 checkpoint의 별도 export 후 DDP evaluation 재로딩은 [추가 검증 기록](training-verification.md)에 있으며, 동일 backend의 `STAGE=tuned`나 optimizer resume 지원을 의미하지 않습니다.
 Rank logs는 `RANK_LOG_DIR` 아래에 남고 summary는 rank 0만 기록합니다.

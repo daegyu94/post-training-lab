@@ -1,8 +1,8 @@
 # System Integration
 
-이 디렉터리는 Post-Training Lab의 공통 lifecycle 설계 문서입니다.
-이 문서는 학습 전의 데이터 준비부터 학습 후 checkpoint의 production 반영까지를 연결하는 **system integration guide**입니다.
-TRL과 Megatron-LM 중 어느 backend를 사용하더라도 유지해야 하는 공통 contract, 검증 단계와 운영 원칙을 설명합니다.
+이 디렉터리는 데이터 준비부터 학습 결과의 서비스 배포까지 연결하는 시스템 설계 문서입니다.
+전체 흐름을 lifecycle, 단계 사이에서 지켜야 할 입력·출력 규칙을 contract라고 부릅니다.
+TRL과 Megatron 중 어느 backend를 쓰더라도 유지해야 하는 검증 단계와 운영 원칙을 설명합니다.
 
 학습 framework 실습은 [TRL](../../../backends/trl/README.md) 또는 [Megatron](../../../backends/megatron/README.md) 가이드를 따릅니다.
 이 설계 디렉터리에는 설치 script, 학습 command와 실행 가능한 reference implementation이 없습니다.

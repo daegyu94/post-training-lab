@@ -1,9 +1,11 @@
 # Repository Integration
 
-Backend별 장기 브랜치의 코드를 하나의 main으로 통합하고 Spark 환경과 실험 조건을 분리합니다.
+이 문서는 backend별 장기 브랜치를 `main`으로 통합한 구조와 기존 작업의 보존 위치를 안내합니다.
+환경 설정은 `setups/`, 학습 조건은 `experiments/`에서 관리하므로 환경을 추가할 때 학습 코드를 복제하지 않아도 됩니다.
 기존 작업의 보존 커밋은 [preserved-branches.json](preserved-branches.json)에 기록합니다.
 `archive/pre-unify-20260908/<branch>` 태그는 미커밋 작업을 포함한 보존 상태이며, `<branch>-head`는 통합 전 원래 커밋입니다.
 모든 보존 태그를 remote에 push한 뒤 기존 브랜치를 정리합니다.
+
 데이터·모델 cache와 대형 runtime 산출물은 Git에 추가하지 않고 원래 위치에 보존합니다.
 
 ## Boundaries
@@ -20,6 +22,7 @@ Backend별 장기 브랜치의 코드를 하나의 main으로 통합하고 Spark
 Megatron RTX Setup1 전용 코드는 복원하지 않습니다.
 Spark 단일 노드 실행은 topology 옵션으로 다루며 backend·parallelism 조합의 제약을 먼저 검사합니다.
 구조 이동과 실행 기능 추가를 별도 커밋으로 보존합니다.
+
 과거 실험 로그의 수치·원래 경로는 기록 그대로 유지하며 구조 이동 후 재검증 결과와 구분합니다.
 성능 비교, checkpoint 재개 correctness와 durability는 각각 별도 검증입니다.
 

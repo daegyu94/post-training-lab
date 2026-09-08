@@ -2,8 +2,12 @@
 
 ## Goal
 
-data lifecycle의 결과는 “학습에 사용할 수 있을 것 같은 파일”이 아니라, 누가 어떤 source와 policy로 만들었는지 추적할 수 있는 **immutable dataset revision**입니다.
-training backend에는 raw trace가 아니라 검토와 검증이 끝난 revision만 전달합니다.
+데이터 준비의 목표는 출처와 검수 기준을 추적할 수 있는 고정 버전의 학습 데이터를 만드는 것입니다.
+이 문서에서는 발행한 뒤 내용을 덮어쓰지 않는 버전을 **immutable dataset revision**이라고 부릅니다.
+학습 backend에는 검토와 검증이 끝난 버전만 전달합니다.
+
+이 문서는 운영 시스템의 설계 기준입니다.
+현재 저장소에서 파일을 변환하는 방법은 [SFT 데이터 준비 가이드](../../datasets/README.md)를 따르세요.
 
 ## Data Objects
 
@@ -24,7 +28,7 @@ training backend에는 raw trace가 아니라 검토와 검증이 끝난 revisio
 
 ## Data Sources
 
-candidate는 service trace, 명시적 사용자 feedback, offline benchmark, human-authored example과 domain expert review에서 수집할 수 있습니다.
+학습 후보는 서비스 대화 기록, 사용자 피드백, 업무 benchmark, 사람이 작성한 예제와 전문가 검수 결과에서 수집합니다.
 raw trace에 기존 model 응답이 있다는 사실만으로 그 응답이 정확하거나 SFT target으로 적합하다는 의미는 아닙니다.
 
 source별로 collection policy, 사용 목적, retention class와 허용된 reviewer를 먼저 정합니다.
@@ -48,7 +52,9 @@ reject sample을 조용히 삭제하면 data quality 문제를 추적하기 어�
 
 ## Preventing Data Leakage
 
-split은 message 단위의 무작위 분할보다 leakage를 막을 수 있는 stable identity를 사용합니다.
+같은 대화나 문서의 예제가 학습과 평가에 동시에 들어가지 않도록 먼저 묶은 뒤 분할합니다.
+이런 중복 때문에 평가가 부풀려지는 현상을 데이터 누출(leakage)이라고 합니다.
+묶음의 기준은 데이터 출처에 따라 선택합니다.
 
 | Source pattern | Recommended grouping key | Leakage being prevented |
 | --- | --- | --- |
@@ -63,7 +69,7 @@ split key를 선택할 때는 불필요한 사용자 식별자를 dataset에 노
 
 ## Canonical Record
 
-canonical schema는 tokenizer나 framework-specific binary format에 종속되지 않습니다.
+공통 데이터 형식(canonical schema)은 특정 tokenizer나 학습 framework에 종속되지 않도록 설계합니다.
 아래는 필드 관계를 보여 주는 예시이며 실제 운영 schema는 별도로 versioning해야 합니다.
 
 ```json
@@ -120,8 +126,8 @@ publish 전에 schema validation, split overlap 검사, sample ID uniqueness, re
 
 ## Backend Adapters
 
-`trl` branch는 canonical record를 Hugging Face Dataset과 chat template 입력으로 변환하고, loss mask가 의도한 assistant token에만 적용되는지 검증합니다.
-`megatron` branch는 같은 record를 Megatron 전처리 형식으로 변환하고 tokenizer revision, sequence packing, data index와 distributed consumption 조건을 검증합니다.
+TRL backend는 canonical record를 Hugging Face Dataset과 chat template 입력으로 변환하고, loss mask가 의도한 assistant token에만 적용되는지 검증합니다.
+Megatron backend는 같은 record를 Megatron 전처리 형식으로 변환하고 tokenizer revision, sequence packing, data index와 distributed consumption 조건을 검증합니다.
 
 adapter는 다음 값을 보존해야 합니다.
 

@@ -42,7 +42,8 @@ Test의 정답과 평가 기준은 학습·튜닝 과정에서 사용하지 않�
 
 ### 1. 목적에 맞는 데이터 선택
 
-`preset`은 원본 데이터의 서로 다른 필드 이름을 위의 대화 형식으로 바꾸는 변환 규칙입니다.
+먼저 일반 대화, 코드 작성, JSON 응답 중 학습하려는 작업을 고릅니다.
+`preset`은 선택한 원본 데이터의 서로 다른 필드 이름을 공통 대화 형식으로 바꾸는 변환 규칙입니다.
 현재 다음 네 가지를 지원합니다.
 
 | Preset | 담긴 내용 | 원본 데이터 | 기록된 라이선스 |
@@ -57,6 +58,7 @@ XLAM은 접근 승인을 받은 Hugging Face 계정이 필요할 수 있으며, 
 
 변환 시 UltraChat과 No Robots는 기존 `messages`를 사용합니다.
 Self-OSS는 `instruction`을 요청으로, `response`를 응답으로 사용합니다(`prompt` 필드는 데이터 생성용 지시이므로 사용하지 않음).
+
 XLAM은 도구 목록을 `system`, 질문을 `user`, 정답 JSON을 `assistant`에 넣습니다.
 따라서 XLAM 변환은 **JSON 응답을 학습하는 용도**이며 실제 도구 실행이나 agent 학습을 구현하지 않습니다.
 잘못된 도구·정답 JSON은 변환 오류로 처리합니다.
@@ -96,6 +98,7 @@ cd backends/trl
 UltraChat의 `train_sft`, 나머지 데이터의 `train`에서 가져오며, XLAM은 `dataset` 구성을 사용합니다.
 No Robots의 공식 test는 가져오지 않고 train의 일부를 validation으로 남깁니다.
 Branch나 tag를 revision으로 주면 실제 commit SHA로 해석해 기록합니다.
+이렇게 기록한 버전을 사용하면 원본 데이터가 나중에 바뀌어도 같은 입력을 다시 준비할 수 있습니다.
 
 출력 디렉터리의 `manifest.json`에서 원본 ID·버전, 변환 규칙, seed, 읽은 범위, 생성 개수와 파일 해시를 확인하세요.
 파일 생성 성공은 학습 성공을 의미하지 않습니다.
@@ -151,7 +154,9 @@ Branch나 tag를 revision으로 주면 실제 commit SHA로 해석해 기록합�
 `split`에는 `train`, `validation`, `test` 중 하나를 지정합니다.
 생략하면 `session_id`와 seed로 분할하며, 같은 세션을 서로 다른 split으로 지정하면 중단됩니다.
 실제 데이터는 분할을 미리 검토하고 명시하는 편이 좋습니다.
+
 현재 변환기는 `system`, `user`, `assistant` 메시지만 지원합니다.
+도구 호출 기록은 아래 [지원하지 않는 입력](#현재-지원하지-않는-입력)을 확인하세요.
 
 ### 3. 변환 결과 확인
 
