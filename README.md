@@ -38,8 +38,3 @@ git switch trl
 ```
 
 각 실습 브랜치는 다른 실습 브랜치의 파일을 전제로 하지 않습니다.
-
-## Add an Exercise
-
-[실습 목록과 확장 기준](labs/README.md)에서 다음 실습의 범위와 구현 위치를 정하고, [실습 템플릿](labs/template/README.md)에 따라 command, 예상 결과, 검증 자료와 정리 방법을 기록합니다.
-공통 안내는 `main`, backend별 구현은 해당 브랜치, dashboard 관측 실습은 Observatory에 둡니다.
