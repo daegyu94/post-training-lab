@@ -1,104 +1,20 @@
 # Megatron Bridge Post-Training Lab
 
-이 backend에서는 Megatron Bridge를 사용해 Spark 두 노드에서 분산 학습을 실습합니다.
-학습을 여러 GPU에 나누는 방법(parallelism)과 학습 상태를 저장하고 다시 시작하는 방법(checkpoint 저장·재개)을 다룹니다.
-단일 GPU post-training 입문은 [TRL backend](../../backends/trl/README.md), 공통 하드웨어 구성은 [Spark 설정](../../docs/setups/spark.md)를 참고하세요.
+Megatron backend는 Megatron Bridge recipe를 사용한 Spark 분산 SFT와 checkpoint workflow를 제공합니다.
+주요 학습 대상은 full parameter SFT이며 LoRA와 parallelism feature도 설정으로 다룹니다.
 
-## Start Here
-
-먼저 [Setup2 guide](../../docs/backends/megatron/spark-cluster.md)에서 노드별 환경과 NCCL 통신, pinned model/data 준비 방법을 확인합니다.
-먼저 0.5B dense 모델로 분산 기능을 익히고, 이후 30B MoE 모델의 실행을 확인합니다.
-Dense 모델은 각 토큰에 전체 레이어를 사용하고, MoE 모델은 여러 expert 중 선택한 일부를 사용합니다.
-
-| 순서 | 실습 | 확인할 내용 |
-| --- | --- | --- |
-| 1 | [0.5B dense workload](../../docs/backends/megatron/megatron-guide.md#small-dense-feature-workload) | 두 노드 실행과 rank별 로그 |
-| 2 | [Checkpoint save/resume](../../docs/backends/megatron/megatron-guide.md#measured-dcprestart-evidence), [DP→TP reshard](../../docs/backends/megatron/megatron-guide.md#layout-reshard) | 저장·재개 correctness와 topology 변경의 제약 |
-| 3 | [Feature A/B](../../docs/backends/megatron/megatron-guide.md#matrix) | overlap, recompute, sequence parallel 비교 |
-| 4 | [30B MoE integration](../../docs/backends/megatron/spark-cluster.md#verified-30b-integration-smoke) | Qwen3/GLM EP=2 LoRA; 현재 검증은 1-step smoke 범위 |
-
-GPU 없이 시작하려면 아래 [CPU 개념 실습](#cpu-only-concept-exercise)으로 논리적 rank 배치를 먼저 살펴볼 수 있습니다.
-
-## Workflow and Validation Scope
-
-기본 실행기는 학습 전 평가, LoRA 학습·저장, 저장물을 다시 불러온 평가를 순서대로 수행합니다.
-아래 그림의 `base`와 `tuned`는 각각 학습 전 모델과 학습 후 모델의 평가 단계입니다.
+실제 실행 방법과 제한은 [Megatron backend guide](../../docs/backends/megatron.md)에 모읍니다.
+공통 runner와 setup은 [Getting Started](../../docs/getting-started.md)에서 확인합니다.
 
 ```text
-Model + Prepared Dataset
-          |
-          v
-Base Held-out Evaluation
-          |
-          v
-LoRA Training + Checkpoint Save
-          |
-          +---------------------------------+
-          |                                 |
-          | Default                         | Setup2: optional
-          |                                 v
-          |                       Resume Training
-          |                       (optimizer + scheduler)
-          |                                 |
-          |                                 v
-          |                       Save Updated Checkpoint
-          |                                 |
-          +<--------------------------------+
-          |
-          v
-Tuned Evaluation (new process)
-          |
-          v
-Compare Base / Tuned -> summary.json
+megatron_lab/config.py          model provider configuration
+megatron_lab/sft.py             base/train/resume/tuned entry point
+megatron_lab/cluster.py         topology validation
+megatron_lab/feature_lab.py     feature measurement harness
+megatron_lab/parallelism.py     CPU-only rank layout simulation
+scripts/                        setup, data and launchers
 ```
-
-Setup2는 `RESUME_AFTER_TRAIN=true`와 `RESUME_MAX_STEPS`로 optimizer·scheduler state를 읽는 학습 재개 단계를 추가할 수 있습니다.
-Adapter reload 평가와 학습 상태 resume는 별도로 확인합니다.
-그림은 launcher의 실행 순서이며, 각 모델에서 전체 경로의 검증이 완료되었다는 뜻은 아닙니다.
-
-기존 [Setup2 검증 기록](../../docs/backends/megatron/spark-cluster.md#verified-30b-integration-smoke)은 두 30B 모델의 EP=2 LoRA **1-step** 학습·validation·sync DCP 저장을 다룹니다.
-Launcher 기본값인 **5-step 전체 workflow** 또는 30B checkpoint의 별도-process reload 완료를 의미하지 않습니다.
-소형 Qwen2.5-0.5B는 Setup2의 분산·checkpoint·feature A/B를 확인하는 보조 모델이며 상세 결과는 [Megatron 기능 실습 가이드](../../docs/backends/megatron/megatron-guide.md)에 정리되어 있습니다.
-짧은 smoke와 작은 subset의 loss 변화는 장기 수렴, 일반적인 model quality 또는 안정적인 throughput 결과로 해석하지 않습니다.
-
-## CPU-only Concept Exercise
-
-GPU 초기화, checkpoint download, NCCL 통신 없이 Bridge recipe와 논리적 parallel rank group을 살펴볼 수 있습니다.
 
 ```bash
-./scripts/run_megatron_practice.sh
+python -m pytest -q
 ```
-
-기본 예제는 TP=2, PP=2, CP=2, DP=2인 16개 논리 rank를 출력합니다.
-실제 distributed process group을 만들지는 않습니다.
-자세한 내용은 [Megatron 구성 요소와 병렬화 개념](../../docs/backends/megatron/megatron-guide.md#stack-overview)를 참고하세요.
-
-## Repository Layout
-
-- `megatron_lab/config.py`: 0.5B dense 및 Qwen3/GLM Setup2 provider 설정
-- `megatron_lab/sft.py`: base, train, resume, tuned stage 진입점
-- `megatron_lab/cluster.py`: explicit torchrun topology와 dense/expert DP 검증
-- `megatron_lab/feature_lab.py`: feature variant와 warmup 제외 timing summary
-- `megatron_lab/prepare_data.py`: deterministic UltraChat subset 준비
-- `megatron_lab/compare.py`: base와 reloaded-checkpoint loss 비교
-- `megatron_lab/inspect_recipe.py`: GPU 초기화 없는 recipe 요약
-- `megatron_lab/parallelism.py`: TP/PP/CP/DP rank group simulation
-- `run_summary.py`: framework 공통 summary schema
-- `scripts/run_spark_cluster.sh`: explicit two-node setup2 launcher
-- `scripts/run_feature_lab.sh`: small dense model feature A/B harness
-- `tests/`: data, log parsing, rank layout의 CPU unit tests
-
-## Run the CPU Tests
-
-model checkpoint나 GPU 없이 data selection, log parsing, parallel rank layout을 검증합니다.
-
-```bash
-.venv/bin/python -m pytest -q
-```
-
-## Related Guides
-
-- [공통 Dataset Guides](../../README.md#dataset-guides): 공개·사내 데이터 기준
-- [Megatron 데이터 준비](../../docs/datasets/README.md#training): 변환 명령과 학습 연결 제약
-- [System integration 설계](../../docs/design/system-integration/README.md): 데이터 준비부터 모델 배포까지의 흐름
-- [Observability 실습](../../observability/README.md): 클러스터 자원 사용량 분석

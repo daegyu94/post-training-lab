@@ -1,56 +1,44 @@
-# Runner Architecture
+# Architecture
 
-The runner combines a machine setup file with an experiment file, then invokes the selected backend.
-This separation lets a new environment reuse the existing training code.
-The diagram shows where validation happens and how work reaches the Spark nodes.
+Post-Training Lab은 machine setup과 experiment configuration을 분리한 원격 실행 구조입니다.
+Setup은 어디에서 실행할지를 정의하고 experiment는 무엇을 실행할지를 정의합니다.
 
-```text
-setups/spark/local.json       experiments/<backend>/*.json
-          |                              |
-          +------------+-----------------+
-                       v
-              experiments/run.py
-                       |
-          +------------+-----------------+
-          |                              |
-     dry-run plan                 one SSH process per rank
-                                         |
-                              backends/<backend>/scripts/
+```mermaid
+flowchart TD
+    S["setups/spark/local.json"] --> R["experiments/run.py"]
+    E["experiments/<backend>/*.json"] --> R
+    R --> V["validation and plan"]
+    R -->|--execute| SSH["SSH per rank"]
+    SSH --> L["backend launcher"]
+    L --> O["manifest, logs, summary"]
 ```
 
-Setup files contain hosts, checkout locations, Python interpreters, model directories, data directories, output roots and hardware environment variables.
-Experiment files contain the backend, Spark topology and training environment.
-The runner joins these inputs only at execution time, keeping model and learning options out of machine setup.
+## Configuration 책임
 
-Before execution, the runner checks whether the requested combination is supported.
-It validates the backend and setup, node count, one GPU process per node, fixed revisions, environment variable names and training stages.
-For Megatron, it also checks that the parallelism and batch sizes divide correctly.
-
-The controller starts rank processes concurrently with `ssh` in `BatchMode`.
-Each remote command changes to `backends/<backend>`, exports the selected node environment and invokes that backend's existing launcher.
-Megatron sources `scripts/spark_runtime_env.sh` before launch.
-
-Each run has its own output directory and a file identifying its processes (pidfile).
-The launcher is wrapped with `timeout --signal=TERM --kill-after=30s`.
-If a rank fails, the controller asks only the remaining run-specific pid groups to terminate, then waits for the SSH processes before writing final statuses.
-This cleanup targets only the processes belonging to that run.
-
-The run manifest makes the execution traceable.
-`manifest.json` records the backend, run ID, setup and experiment SHA-256 hashes, controller commit, per-rank host, command, log path and exit status.
-
-## Support and Evidence
-
-Use the table to distinguish accepted settings from paths that have actually run on GPUs.
-A successful small-model run applies to that recorded configuration, not every model using the same backend.
-
-| Backend / setup | Implementation | Evidence boundary |
+| 파일 | 관리하는 값 | 관리하지 않는 값 |
 | --- | --- | --- |
-| TRL / Spark, one or two nodes, DDP | shared launcher with topology settings | 0.5B LoRA two-node layout regression and single-node common runner smoke passed |
-| TRL / Spark, FSDP2 or DeepSpeed | base/train stages; tuned/all rejected | [earlier configuration results](backends/trl/training-verification.md), including failures; no blanket runtime support claim |
-| Megatron / Spark, TP/PP/EP compatible with world size | base/train/tuned and optional resume workflow | 0.5B full SFT two-node save/reload and 2 → 3 step common runner resume smoke passed |
-| Megatron feature variants | explicit experiment candidates | 0.5B overlap, full recompute, sequence parallel and checkpoint repeats recorded; selective rejected by current configuration; resume equivalence and durability remain separate |
-| Other setups | no common runner adapter yet | rejected before launch |
-| Legacy TRL RTX workflow | source and historical guide retained | outside this integration's Spark revalidation scope |
+| setups/spark/local.json | host, checkout, Python, model path, data path, output root, hardware env | learning rate, model revision, batch size |
+| experiments/<backend>/*.json | backend, node 수, immutable revision, training env | host, SSH path, runner-owned variables |
+| backend launcher | stage 순서와 backend CLI 매핑 | 다른 backend의 설정 |
 
-Actual commits, settings and results are in the [integration verification record](verification/integration-20260908/README.md).
-An accepted configuration is not itself a completed GPU experiment.
+Runner가 소유하는 environment는 NODE_RANK, PYTHON, OUTPUT_DIR, NNODES, NPROC_PER_NODE, MASTER_ADDR, MASTER_PORT, MODEL_DIR, DATA_DIR입니다.
+Experiment에서 이 값을 override하면 validation error가 발생합니다.
+
+## Runner의 검증 범위
+
+Runner는 backend가 trl 또는 megatron인지 확인합니다.
+Setup은 Spark이고 node 수는 1 또는 2여야 하며 nproc_per_node는 1이어야 합니다.
+Model과 dataset revision은 40자리 hexadecimal SHA여야 합니다.
+TRL은 distributed backend와 stage 조합을 검사합니다.
+Megatron은 TP*PP, PP*EP, MICRO_BATCH_SIZE*DP에 대한 world size와 global batch divisibility를 검사합니다.
+
+Dry-run은 remote file availability를 검사하지 않습니다.
+실제 실행에서는 remote checkout의 commit과 dirty 상태를 확인하고 각 rank의 output을 독립적으로 claim합니다.
+기존 output은 덮어쓰지 않으며, 한 rank가 실패하면 같은 run의 남은 process만 정리합니다.
+
+## Output contract
+
+experiments/run.py는 controller output에 manifest.json을 씁니다.
+Manifest에는 setup과 experiment의 SHA-256, controller commit, rank별 host·command·log·exit status가 포함됩니다.
+Backend summary는 backend가 생성하며 TRL과 Megatron의 형식이 완전히 같다고 가정하지 않습니다.
+반복 측정 output은 [Experiments](experiments.md)의 별도 manifest와 records를 사용합니다.

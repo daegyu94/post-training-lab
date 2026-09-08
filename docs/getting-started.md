@@ -1,31 +1,55 @@
 # Getting Started
 
-Start by preparing a Spark setup file, then inspect an experiment before running it.
-The controller coordinates the run; the Spark nodes perform the training.
-By default, the runner prints a plan and only contacts the nodes when you add `--execute`.
+이 문서는 controller에서 Spark backend를 처음 실행하는 최소 경로를 설명합니다.
+Controller는 설정을 검증하고 SSH로 원격 launcher를 시작합니다.
+실제 학습 process는 설정한 Spark node에서 실행됩니다.
 
-The controller needs Python 3.10+ and OpenSSH.
-Use `python3` in the examples if the controller has no `python` command.
+## 사전 조건
 
-## Configure the Spark setup
+Controller에는 Python 3.10 이상과 OpenSSH client가 필요합니다.
+각 Spark node에는 같은 commit의 repository checkout, backend별 Python 환경, 모델 snapshot과 dataset directory가 필요합니다.
+Runner는 GPU당 process 하나만 지원하며 setup과 experiment는 한 개 또는 두 개 node를 사용할 수 있습니다.
 
-Copy the setup example to an ignored local file and replace every placeholder with the paths from the target nodes.
+TRL Spark 환경은 backends/trl/requirements-spark.txt를 사용합니다.
+Megatron Spark 환경은 backends/megatron/requirements-spark.txt를 사용하며 CUDA Torch를 먼저 준비해야 합니다.
+실제 버전 제약은 각 requirements 파일을 확인합니다.
+
+## Setup 파일 만들기
+
+Repository root에서 예제 setup을 복사합니다.
 
 ```bash
 cp setups/spark/local.example.json setups/spark/local.json
 ```
 
-The setup file describes where each node runs the experiment and finds its inputs.
-It lists the checkout, backend-specific Python interpreters, local model snapshots, prepared data and output directories.
-Create each node’s `output_root` before launching and install each backend in its own Python environment using its [TRL](backends/trl/spark-cluster.md) or [Megatron](backends/megatron/spark-cluster.md) guide.
-Keep the remote checkout clean and at the same commit as the controller.
+local.json에는 node별 실제 경로와 host를 입력합니다.
+이 파일은 Git에 추가하지 않도록 ignore 설정되어 있습니다.
 
-Model and dataset revisions belong in the experiment file.
-Use immutable 40-character hexadecimal commit IDs so another run can load the same versions.
+| 필드 | 의미 |
+| --- | --- |
+| master_addr, master_port | distributed rendezvous 주소 |
+| nodes[].host | SSH host |
+| nodes[].checkout | 해당 node의 repository checkout |
+| nodes[].python.trl, nodes[].python.megatron | backend별 Python executable |
+| nodes[].model_dirs | MODEL_ID별 node-local model snapshot |
+| nodes[].data_dir | prepared JSONL이 보이는 경로 |
+| nodes[].output_root | run별 output directory의 부모 경로 |
+| env | NCCL*, OMP*, HF_* 같은 hardware/runtime 변수 |
 
-## Inspect and run an experiment
+두 node를 사용할 때 checkout은 같은 commit이어야 합니다.
+모델 snapshot은 참여하는 모든 node에 있어야 합니다.
+Checkpoint를 공유해서 재로딩할 때는 두 node에서 같은 output_root를 가리켜야 합니다.
 
-Run from the repository root.
+## 데이터와 모델 준비
+
+학습 데이터는 [Datasets](datasets.md)의 backend별 명령으로 준비합니다.
+Experiment의 MODEL_REVISION과 DATASET_REVISION에는 40자리 immutable commit SHA를 사용합니다.
+Setup file의 model_dirs key는 experiment의 MODEL_ID와 정확히 일치해야 합니다.
+
+## Dry-run 실행
+
+다음 명령은 node에 접속하지 않고 setup과 experiment를 검증하고 plan을 출력합니다.
+Output directory가 이미 존재하면 runner는 덮어쓰지 않고 실패합니다.
 
 ```bash
 python experiments/run.py \
@@ -35,10 +59,13 @@ python experiments/run.py \
   --output artifacts/runs/trl-smoke
 ```
 
-This dry-run validates topology, backend settings and path mappings, then prints the controller commit and both configuration hashes.
-It does not check remote file availability.
-After reviewing the plan, add `--execute` to run the selected backend launcher.
-The default remote timeout is 900 seconds; use `--timeout` to select another positive duration.
+실행 전 plan에서 backend, node 수, remote output path와 environment를 확인합니다.
+--backend 값은 experiment의 backend와 같아야 합니다.
+
+## 원격 실행
+
+Dry-run 결과를 확인한 뒤 같은 명령에 --execute를 추가합니다.
+기본 timeout은 900초이며 양의 정수 --timeout으로 바꿀 수 있습니다.
 
 ```bash
 python experiments/run.py \
@@ -49,19 +76,24 @@ python experiments/run.py \
   --execute
 ```
 
-The output directory contains `manifest.json` and one `rank-<n>.log` per node.
-An existing controller output directory or node output for the same run ID is refused so a completed run cannot be silently overwritten.
+Controller output에는 manifest.json과 rank별 rank-<n>.log가 생성됩니다.
+Manifest에는 설정 hash, controller commit, host, remote command, exit status와 remote checkout 상태가 기록됩니다.
 
-## Presets
+## 사용할 preset
 
-Choose the preset that matches the backend and node count you want to check.
-These short runs check that the execution path works; they do not measure model quality.
+| 파일 | 용도 |
+| --- | --- |
+| experiments/trl/single-node-smoke.json | TRL one-node DDP LoRA smoke |
+| experiments/trl/smoke.json | TRL two-node DDP LoRA smoke |
+| experiments/megatron/smoke.json | Megatron two-node full SFT smoke |
+| experiments/megatron/resume-smoke.json | Megatron checkpoint load와 resumed step smoke |
 
-- `experiments/trl/smoke.json` runs the two-node DDP LoRA smoke.
-- `experiments/trl/single-node-smoke.json` runs the same TRL code with one node.
-- `experiments/megatron/smoke.json` runs the two-node full-parameter Megatron smoke.
-- `experiments/megatron/resume-smoke.json` adds checkpoint reload and one resumed optimizer step.
+Smoke는 실행 경로와 수치 안정성을 확인하는 짧은 실행입니다.
+Smoke 결과만으로 모델 품질, 장기 수렴 또는 일반적인 throughput을 주장하지 않습니다.
 
-For repeated feature comparisons, use the [measurement guide](experiments/repeated-measurements.md).
+## 실패 시 확인할 항목
 
-The runner does not replace backend launchers or claim GPU verification when a run has only been dry-run or partially completed.
+먼저 manifest.json의 controller_commit, rank별 status와 log를 확인합니다.
+Remote checkout이 dirty이거나 controller와 commit이 다르면 runner가 시작을 거부합니다.
+모델 snapshot, dataset manifest, output 권한과 SSH BatchMode 접속도 확인합니다.
+Megatron은 world size, TP/PP/EP와 batch size의 나눗셈 조건을 추가로 검사합니다.
