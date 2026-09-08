@@ -1,0 +1,39 @@
+{
+  "setup": "spark",
+  "master_addr": "spark1",
+  "master_port": 29670,
+  "env": {
+    "NCCL_DEBUG": "WARN",
+    "OMP_NUM_THREADS": "4"
+  },
+  "nodes": [
+    {
+      "host": "spark1",
+      "checkout": "/path/to/post-training-unified",
+      "python": {
+        "trl": "/path/to/trl-python",
+        "megatron": "/path/to/megatron-python"
+      },
+      "env": {},
+      "model_dirs": {
+        "Qwen/Qwen2.5-0.5B-Instruct": "/path/to/Qwen2.5-0.5B-Instruct"
+      },
+      "data_dir": "/path/to/shared-prepared-data",
+      "output_root": "/path/to/shared-run-results"
+    },
+    {
+      "host": "spark2",
+      "checkout": "/path/to/post-training-unified",
+      "python": {
+        "trl": "/path/to/trl-python",
+        "megatron": "/path/to/megatron-python"
+      },
+      "env": {},
+      "model_dirs": {
+        "Qwen/Qwen2.5-0.5B-Instruct": "/path/to/Qwen2.5-0.5B-Instruct"
+      },
+      "data_dir": "/path/to/shared-prepared-data",
+      "output_root": "/path/to/shared-run-results"
+    }
+  ]
+}

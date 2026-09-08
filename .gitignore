@@ -10,3 +10,5 @@ setups/spark/*.local.json
 models/
 artifacts/
 setups/**/local*.json
+
+!setups/**/local.example.json
