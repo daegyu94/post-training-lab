@@ -1,7 +1,24 @@
-# Spark-cluster setup2
+# Setup2: Two-Node Spark Cluster
 
 이 문서는 `spark1`과 `spark2` 두 NVIDIA DGX Spark GB10 노드에서 Megatron Bridge setup2를 bring-up하기 위한 경로입니다.
 두 노드의 shared repository는 controller의 `/home/daegyu/shared/post-training-lab`가 Spark 노드에서 `/home/spark/shared/post-training-lab`로 보이는 NFS 경로를 사용합니다.
+
+Setup2는 두 노드가 하나의 distributed job에 참여하며 launcher가 `--setup spark-cluster`를 전달합니다.
+선택 기준은 [README](../README.md), 단일 GPU 절차는 [Setup1 guide](single-gpu.md)를 참고하세요.
+
+## Execution order
+
+1. Controller에서 코드를 준비하고 `ssh spark@spark1`과 `ssh spark@spark2`로 각 노드에 접속합니다.
+2. 각 노드의 `/home/spark/shared/post-training-lab`에서 ARM64 Python/CUDA 환경과 NCCL 통신을 확인합니다.
+3. 같은 pinned model snapshot을 각 노드의 local cache에 준비합니다.
+4. 공유 NFS에 dataset을 한 번 준비합니다. 두 노드는 같은 dataset과 manifest를 읽습니다.
+5. 두 SSH 세션에서 같은 launcher 설정을 사용하고 `NODE_RANK`를 각각 0과 1로 지정해 실행합니다.
+6. Rank별 log, metadata와 `summary.json`을 확인합니다.
+
+`run_spark_cluster.sh`는 다른 노드에 SSH 접속해 process를 시작하지 않습니다.
+두 노드의 launcher를 모두 시작해야 rendezvous가 완료됩니다.
+Setup1용 `scripts/setup.sh`는 `requirements.txt`를 설치하므로 Setup2의 ARM64 환경 준비를 대체하지 않습니다.
+아래 software prerequisites부터 확인한 뒤 model/data preparation과 launch 예시를 따르세요.
 
 ## Scope and status
 
@@ -116,7 +133,7 @@ Dataset manifest에는 split, seed `42`, count와 prompt IDs가 남습니다.
 실행 전 각 노드에서 `PYTHON`을 선택하고 위 runtime helper를 source합니다.
 
 ```bash
-export MASTER_ADDR=<spark1-data-address>
+export MASTER_ADDR="<spark1-data-address>"
 export MASTER_PORT=29500
 export NNODES=2
 export NPROC_PER_NODE=1
@@ -132,7 +149,10 @@ export MAX_LENGTH=2048
 ./scripts/run_spark_cluster.sh
 ```
 
-GLM run은 `MODEL_ID`와 `MODEL_REVISION`을 GLM snapshot으로 바꿉니다.
+GLM run은 양 노드에서 `MODEL_ID=zai-org/GLM-4.7-Flash`, `MODEL_REVISION=7dd20894a642a0aa287e9827cb1a1f7f91386b67`로 바꿉니다.
+기본 no_robots 데이터로 실행할 수 있으며, 위 Self-OSS smoke를 재현하려면 dataset과 학습 설정도 해당 기록에 맞춰 지정합니다.
+기본 output은 각각 `results/setup2-Qwen3-30B-A3B`, `results/setup2-GLM-4.7-Flash`입니다.
+완료된 output을 재사용하면 launcher가 중단하므로 반복 실행 시 양 노드에 동일한 새 `OUTPUT_DIR`를 지정합니다.
 `MODEL_DIR`를 생략하면 각 노드의 기본 HF cache에서 pinned snapshot을 해석하며, 비표준 local snapshot을 사용할 때만 명시합니다.
 Launcher는 `torchrun --nnodes --node-rank --master-addr --master-port`를 사용하며 `--standalone`을 사용하지 않습니다.
 각 rank의 stage log는 `results/.../logs/rank-<global-rank>-<stage>.log`에 기록되고, `summary.json`은 global rank 0만 씁니다.

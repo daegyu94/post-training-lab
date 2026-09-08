@@ -7,7 +7,7 @@
 - [Megatron Core](https://docs.nvidia.com/megatron-core/developer-guide/latest/)는 Transformer 블록과 병렬화 전략을 조합하는 라이브러리다.
 - [Megatron Bridge](https://docs.nvidia.com/nemo/megatron-bridge/latest/)는 Hugging Face 체크포인트와 Megatron 형식 사이의 변환, 모델별 recipe, 학습 진입점을 제공하는 연결 계층이다. 이 실습의 Qwen2.5-7B LoRA 설정도 Bridge recipe를 사용한다.
 
-## How This Experiment Uses the Stack
+## How Setup1 Uses the Stack
 
 ~~~text
 Hugging Face Qwen2.5-7B checkpoint
@@ -17,8 +17,10 @@ Megatron Bridge recipe (LoRA)
 Megatron Core model and parallelism settings
 ~~~
 
-실제 SFT 실행은 기본값으로 TP=1, PP=1, CP=1, DP=1인 단일 GPU 구성이다.
-즉, 아래 실습은 분산 학습 성능이나 통신 동작을 검증하지 않는다.
+Setup1의 SFT는 TP=1, PP=1, CP=1, DP=1인 단일 GPU 구성이다.
+Setup2는 두 노드에서 실제 분산 process group을 사용하며 MoE baseline은 EP=2이다.
+각 실행 경로는 [Setup1 guide](single-gpu.md)와 [Setup2 guide](spark-cluster.md)를 참고한다.
+아래 CPU 개념 실습은 논리적 rank 배치만 보여 주며 분산 학습 성능이나 통신 동작을 검증하지 않는다.
 
 ## Parallelism Terms
 
