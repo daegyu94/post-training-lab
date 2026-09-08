@@ -1,4 +1,4 @@
-"""Run one stage of the Qwen2.5-7B Megatron Bridge SFT workflow."""
+"""Run one stage of the Spark-cluster Megatron Bridge workflow."""
 
 from __future__ import annotations
 
@@ -11,9 +11,7 @@ from pathlib import Path
 from megatron_lab.cluster import topology_from_environment
 from megatron_lab.config import (
     DATASET_ID,
-    MODEL_ID,
     build_cluster_config,
-    build_config,
     select_transformer_impl,
 )
 from megatron_lab.model_cache import require_immutable_revision, validate_snapshot
@@ -34,11 +32,11 @@ def positive_int(value: str) -> int:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--stage", choices=("base", "train", "resume", "tuned"), required=True)
-    parser.add_argument("--setup", choices=("single", "spark-cluster"), default="single")
-    parser.add_argument("--model-id")
+    parser.add_argument("--setup", choices=("spark-cluster",), default="spark-cluster")
+    parser.add_argument("--model-id", required=True)
     parser.add_argument("--dataset-id", default=DATASET_ID)
-    parser.add_argument("--model-revision")
-    parser.add_argument("--dataset-revision")
+    parser.add_argument("--model-revision", required=True)
+    parser.add_argument("--dataset-revision", required=True)
     parser.add_argument("--model-dir", type=Path, required=True)
     parser.add_argument("--train-data", type=Path, required=True)
     parser.add_argument("--eval-data", type=Path, required=True)
@@ -109,7 +107,7 @@ class _Tee:
 
 def configure_rank_log(args: argparse.Namespace) -> None:
     log_dir = os.environ.get("RANK_LOG_DIR")
-    if args.setup != "spark-cluster" or not log_dir:
+    if not log_dir:
         return
     path = Path(log_dir)
     path.mkdir(parents=True, exist_ok=True)
@@ -126,14 +124,10 @@ def write_run_metadata(args: argparse.Namespace, spec: object, topology: object)
     if rank() != 0:
         return
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    input_train_split = (
-        Path(args.train_data).name if args.setup == "spark-cluster" else "train_sft"
-    )
-    input_eval_split = (
-        Path(args.eval_data).name if args.setup == "spark-cluster" else "test_sft"
-    )
+    input_train_split = Path(args.train_data).name
+    input_eval_split = Path(args.eval_data).name
     load_checkpoint = None
-    if args.setup == "spark-cluster" and args.stage in {"resume", "tuned"}:
+    if args.stage in {"resume", "tuned"}:
         load_checkpoint = str(
             getattr(args, "load_checkpoint", None)
             or (args.output_dir / "checkpoints")
@@ -142,17 +136,16 @@ def write_run_metadata(args: argparse.Namespace, spec: object, topology: object)
     selected_transformer_impl = select_transformer_impl(
         model_spec,
         getattr(args, "transformer_impl", "auto"),
-        setup=args.setup,
     )
     metadata = {
         "setup": args.setup,
         "stage": args.stage,
-        "model_id": args.model_id or getattr(spec, "model_id", None) or MODEL_ID,
-        "model_revision": args.model_revision or "not-pinned-single-gpu",
+        "model_id": args.model_id,
+        "model_revision": args.model_revision,
         "model_type": getattr(spec, "model_type", None),
         "model_snapshot": getattr(args, "model_snapshot", None),
         "dataset": args.dataset_id or DATASET_ID,
-        "dataset_revision": args.dataset_revision or "not-pinned-single-gpu",
+        "dataset_revision": args.dataset_revision,
         "train_split": input_train_split,
         "eval_split": input_eval_split,
         "input_files": {
@@ -189,83 +182,47 @@ def write_run_metadata(args: argparse.Namespace, spec: object, topology: object)
 
 
 def main() -> None:
+    args = parse_args()
+    configure_rank_log(args)
+    try:
+        require_immutable_revision(args.model_revision, name="model revision")
+        require_immutable_revision(args.dataset_revision, name="dataset revision")
+        args.model_snapshot = validate_snapshot(args.model_dir, args.model_revision)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    topology = topology_from_environment(
+        tp=args.tp,
+        pp=args.pp,
+        ep=args.ep,
+        micro_batch_size=args.micro_batch_size,
+        global_batch_size=args.global_batch_size,
+    )
+    args.topology = topology
+    config, spec = build_cluster_config(args)
+    write_run_metadata(args, spec, topology)
+    print(
+        f"[stage] rank={rank()} model={args.model_id} "
+        f"model_type={spec.model_type} dataset={args.dataset_id} "
+        f"model_revision={args.model_revision} dataset_revision={args.dataset_revision}",
+        flush=True,
+    )
+    print(
+        f"[stage] world_size={topology.world_size} tp={topology.tensor_parallel_size} "
+        f"pp={topology.pipeline_parallel_size} ep={topology.expert_parallel_size} "
+        f"dp={topology.data_parallel_size} gbs={topology.global_batch_size}",
+        flush=True,
+    )
+    if spec.family == "glm4_moe_lite":
+        print(
+            "[boundary] setup2 uses native final-assistant prompt/completion "
+            "preprocessing; token prefix, EOS, and non-empty supervision "
+            "were checked during config preparation",
+            flush=True,
+        )
+
     from megatron.bridge.training.finetune import finetune
     from megatron.bridge.training.gpt_step import forward_step
 
-    args = parse_args()
-    if args.setup != "spark-cluster" and args.load_checkpoint is not None:
-        raise SystemExit("--load-checkpoint is valid only for setup2")
-    configure_rank_log(args)
-    if args.setup == "spark-cluster":
-        if not args.model_id:
-            raise SystemExit("--model-id is required for --setup spark-cluster")
-        if not args.model_revision or not args.dataset_revision:
-            raise SystemExit(
-                "--model-revision and --dataset-revision are required for "
-                "--setup spark-cluster"
-            )
-        try:
-            require_immutable_revision(args.model_revision, name="model revision")
-            require_immutable_revision(args.dataset_revision, name="dataset revision")
-            args.model_snapshot = validate_snapshot(args.model_dir, args.model_revision)
-        except ValueError as exc:
-            raise SystemExit(str(exc)) from exc
-        topology = topology_from_environment(
-            tp=args.tp,
-            pp=args.pp,
-            ep=args.ep,
-            micro_batch_size=args.micro_batch_size,
-            global_batch_size=args.global_batch_size,
-        )
-        args.topology = topology
-        config, spec = build_cluster_config(args)
-        write_run_metadata(args, spec, topology)
-        print(
-            f"[stage] rank={rank()} model={args.model_id} "
-            f"model_type={spec.model_type} dataset={args.dataset_id} "
-            f"model_revision={args.model_revision} dataset_revision={args.dataset_revision}",
-            flush=True,
-        )
-        print(
-            f"[stage] world_size={topology.world_size} tp={topology.tensor_parallel_size} "
-            f"pp={topology.pipeline_parallel_size} ep={topology.expert_parallel_size} "
-            f"dp={topology.data_parallel_size} gbs={topology.global_batch_size}",
-            flush=True,
-        )
-        if spec.family == "glm4_moe_lite":
-            print(
-                "[boundary] setup2 uses native final-assistant prompt/completion "
-                "preprocessing; token prefix, EOS, and non-empty supervision "
-                "were checked during config preparation",
-                flush=True,
-            )
-        finetune(config=config, forward_step_func=forward_step)
-        return
-
-    from types import SimpleNamespace
-
-    topology = SimpleNamespace(
-        micro_batch_size=1,
-        global_batch_size=args.global_batch_size,
-        as_dict=lambda: {
-            "world_size": 1,
-            "tensor_parallel_size": 1,
-            "pipeline_parallel_size": 1,
-            "expert_parallel_size": 1,
-            "data_parallel_size": 1,
-        },
-    )
-    write_run_metadata(args, SimpleNamespace(model_id=MODEL_ID, model_type="qwen2"), topology)
-    print(
-        f"[stage] name={args.stage} model={MODEL_ID} dataset={args.dataset_id}",
-        flush=True,
-    )
-    print(
-        f"[stage] world_size=1 tensor_parallel=1 data_parallel=1 "
-        f"max_length={args.max_length}",
-        flush=True,
-    )
-    config = build_config(args)
     finetune(config=config, forward_step_func=forward_step)
 
 

@@ -110,8 +110,6 @@ def test_transformer_backend_defaults_and_explicit_constraints() -> None:
         select_transformer_impl(glm, "local")
     with pytest.raises(ValueError, match="sequence parallel requires"):
         select_transformer_impl(qwen, "local", sequence_parallel=True)
-    with pytest.raises(ValueError, match="only configurable"):
-        select_transformer_impl(qwen, "local", setup="single")
 
 
 def test_fully_reshardable_checkpoint_options_are_explicit_and_stage_scoped() -> None:
@@ -134,9 +132,6 @@ def test_fully_reshardable_checkpoint_options_are_explicit_and_stage_scoped() ->
 
     base.stage = "resume"
     validate_reshardable_checkpoint_options(base)
-    base.setup = "single"
-    with pytest.raises(ValueError, match="only configurable"):
-        validate_reshardable_checkpoint_options(base)
 
     defaults = Namespace(
         setup="spark-cluster",

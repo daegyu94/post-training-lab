@@ -4,7 +4,7 @@
 두 노드의 shared repository는 controller의 `/home/daegyu/shared/post-training-lab`가 Spark 노드에서 `/home/spark/shared/post-training-lab`로 보이는 NFS 경로를 사용합니다.
 
 Setup2는 두 노드가 하나의 distributed job에 참여하며 launcher가 `--setup spark-cluster`를 전달합니다.
-공통 구성은 [main의 PoC Setups](https://github.com/daegyu94/post-training-lab/blob/main/README.md#poc-setups), 단일 GPU 절차는 [Setup1 guide](single-gpu.md)를 참고하세요.
+공통 구성은 [main의 PoC Setups](https://github.com/daegyu94/post-training-lab/blob/main/README.md#poc-setups)를 참고하세요.
 
 ## Execution order
 
@@ -17,7 +17,7 @@ Setup2는 두 노드가 하나의 distributed job에 참여하며 launcher가 `-
 
 `run_spark_cluster.sh`는 다른 노드에 SSH 접속해 process를 시작하지 않습니다.
 두 노드의 launcher를 모두 시작해야 rendezvous가 완료됩니다.
-Setup1용 `scripts/setup.sh`는 `requirements.txt`를 설치하므로 Setup2의 ARM64 환경 준비를 대체하지 않습니다.
+`scripts/setup.sh`는 일반 Python 의존성 설치 도구이며, Setup2의 ARM64 CUDA·Transformer Engine 환경 준비를 대체하지 않습니다.
 아래 software prerequisites부터 확인한 뒤 model/data preparation과 launch 예시를 따르세요.
 
 ## Scope and status
@@ -113,7 +113,7 @@ Launcher는 `HF_HOME`, `XDG_CACHE_HOME`, `~/.cache/huggingface` 순서로 node-l
 
 기본 smoke dataset은 `HuggingFaceH4/no_robots`의 `train` split이며 revision `e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b`를 pin합니다.
 Preparation은 source test split을 읽지 않고 train에서 deterministic validation holdout을 만들며, 생성한 `training.jsonl`, `validation.jsonl`, `manifest.json`을 함께 보관합니다.
-UltraChat, Self-OSS와 xLAM 변환은 [public dataset guide](public-datasets.md)를 따릅니다.
+UltraChat, Self-OSS와 xLAM 변환은 [public dataset guide](dataset-preparation.md#public-datasets)를 따릅니다.
 
 ```bash
 cd /home/spark/shared/post-training-lab
@@ -183,5 +183,5 @@ Checkpoint path는 training resume와 adapter evaluation을 구분합니다.
 4. Base held-out evaluation → 5-step LoRA train → checkpoint/adapter reload → 같은 held-out evaluation 순서로 실행합니다.
 5. Rank logs, run metadata, topology, model·dataset revision과 실패 원인을 보관합니다.
 
-현재 저장소의 Megatron implementation은 setup1 Qwen2.5-7B single-GPU 결과를 보존하면서 setup2 경로를 추가했습니다.
+이 브랜치의 실행 경로는 Setup2 두 노드 분산 학습을 중심으로 구성합니다.
 NCCL prerequisite와 두 30B model의 one-step train/eval/DCP evidence는 확보했으며, 더 긴 repeat와 checkpoint reload 결과가 생기면 이 문서와 [feature labs](megatron-feature-labs.md)의 범위를 함께 갱신합니다.

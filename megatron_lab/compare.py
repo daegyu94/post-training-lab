@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 
 from megatron_lab.cluster import ClusterTopology
-from megatron_lab.config import DATASET_ID, MODEL_ID
+from megatron_lab.config import DATASET_ID
 from run_summary import make_run_summary
 
 
@@ -49,7 +49,7 @@ def main() -> None:
     parser.add_argument("--train-data", type=Path, required=True)
     parser.add_argument("--eval-data", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--model-id", default=MODEL_ID)
+    parser.add_argument("--model-id", required=True)
     parser.add_argument("--dataset-id", default=DATASET_ID)
     parser.add_argument("--model-revision", default="unknown")
     parser.add_argument("--dataset-revision", default="unknown")
