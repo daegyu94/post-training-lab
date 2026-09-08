@@ -6,9 +6,10 @@ set -euo pipefail
 output_dir="${OUTPUT_DIR:-artifacts/fio-baseline}"
 export FIO_RUNTIME="${FIO_RUNTIME:-60}"
 export FIO_SIZE="${FIO_SIZE:-16G}"
+export FIO_IOENGINE="${FIO_IOENGINE:-libaio}"
 mkdir -p "$output_dir" "$FIO_DIRECTORY"
 
-fio examples/baselines/checkpoint.fio \
+"${FIO_BINARY:-fio}" examples/baselines/checkpoint.fio \
   --output-format=json \
   --output="$output_dir/checkpoint.json"
 
