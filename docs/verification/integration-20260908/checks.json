@@ -1,0 +1,26 @@
+{
+  "commit": "ecd1e50",
+  "cpu": {
+    "host": "spark1",
+    "passed": 173,
+    "log": "cpu-tests.txt"
+  },
+  "static": {
+    "python_compileall": "passed",
+    "bash_n_scripts": 23,
+    "tracked_markdown_missing_local_targets": 0
+  },
+  "preservation_check": {
+    "main": "all preserved blobs match source worktree",
+    "trl": "all preserved blobs match source worktree",
+    "megatron": "all preserved blobs match source worktree",
+    "profiling": "all preserved blobs match source worktree"
+  },
+  "scope": "CPU/static checks and preserved file identity; independent of GPU benchmark results",
+  "padding_followup": {
+    "commit": "8626241",
+    "host": "spark1",
+    "cpu_passed": 176,
+    "log": "cpu-tests-padding.txt"
+  }
+}

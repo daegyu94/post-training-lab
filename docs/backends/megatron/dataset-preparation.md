@@ -7,7 +7,7 @@
 
 [공개 데이터 기준](../../datasets/public-datasets.md)을 적용한 뒤 아래 명령으로 준비합니다.
 
-Megatron branch:
+Megatron backend:
 
 ```bash
 ./scripts/prepare_public_data.sh --preset no_robots --output-dir data/public/no_robots --revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --train-count 32 --eval-count 8 --seed 42
@@ -47,7 +47,7 @@ data/service-sft/
 └── manifest.json
 ```
 
-`training.jsonl`과 `validation.jsonl`은 이 브랜치의 `DirectHFSFTDatasetConfig`가 Hugging Face `json` loader로 읽는 `messages` column을 포함합니다.
+`training.jsonl`과 `validation.jsonl`은 이 backend의 `DirectHFSFTDatasetConfig`가 Hugging Face `json` loader로 읽는 `messages` column을 포함합니다.
 Setup2 학습 전처리는 native chat template으로 마지막 assistant 응답을 prompt/completion으로 분리하고, `PromptCompletionSFTPreprocessingConfig(loss_mode="completion")`로 completion token에 loss를 계산합니다.
 
 `test.jsonl`은 마지막 assistant 응답을 prompt에서 제거하고 `reference_answer`로 분리합니다.
@@ -70,11 +70,11 @@ TRACE_FILE=<reviewed-traces.jsonl> DATA_DIR=<prepared-data-dir> \
 
 ## Scaling Considerations
 
-작은 JSONL은 이 브랜치의 기능 확인에 적합합니다.
+작은 JSONL은 이 backend의 기능 확인에 적합합니다.
 데이터가 커지면 version별 immutable shard, node-local cache, worker별 deterministic sharding, offline packing을 고려합니다.
 sequence length 분포와 truncation 비율을 먼저 측정한 뒤 packing을 적용하고, packed artifact가 어떤 원본 dataset version과 tokenizer에서 생성되었는지 함께 기록해야 합니다.
 
-Megatron Bridge의 data API는 version에 따라 바뀔 수 있으므로 현재 고정한 `megatron-bridge==0.6.0`의 `DirectHFSFTDatasetConfig`를 이 브랜치의 source of truth로 사용합니다.
+Megatron Bridge의 data API는 version에 따라 바뀔 수 있으므로 현재 고정한 `megatron-bridge==0.6.0`의 `DirectHFSFTDatasetConfig`를 이 backend의 source of truth로 사용합니다.
 다른 version에서 `GPTSFTDatasetConfig`나 prompt-completion `input`/`output` 형식을 사용할 때는 recipe와 preprocessing config를 함께 변경하고 smoke test를 다시 수행해야 합니다.
 
 ## References

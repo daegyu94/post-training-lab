@@ -1,0 +1,20 @@
+{"event": "finalize_async_saves", "seconds": 3.3760443329811096e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 3.007706254720688e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 2.2239983081817627e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 2.5760382413864136e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 2.352055162191391e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 2.5117769837379456e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 2.5597400963306427e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 2.639833837747574e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 2.33575701713562e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 2.5760382413864136e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 2.400018274784088e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 2.400018274784088e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 2.432148903608322e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 2.032145857810974e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 2.8801150619983673e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "finalize_async_saves", "seconds": 2.5443732738494873e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
+{"event": "save", "seconds": 63.56623838189989, "success": true, "stage": "train"}
+{"event": "finalize_async_saves", "seconds": 5.16790896654129e-06, "success": true, "stage": "train", "blocking": true, "terminate": true}
+{"event": "finalize_async_saves", "seconds": 3.3760443329811096e-06, "success": true, "stage": "train", "blocking": true, "terminate": true}
+{"event": "stage", "stage": "train", "success": true, "seconds": 86.02403260720894, "peak_cuda_allocated_bytes": 5541570560, "peak_cuda_reserved_bytes": 6375342080}

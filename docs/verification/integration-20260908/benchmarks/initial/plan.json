@@ -1,0 +1,216 @@
+{
+  "backend": "megatron",
+  "base_experiment": "experiments/megatron/smoke.json",
+  "cells": [
+    {
+      "name": "overlap-mbs-1",
+      "variants": [
+        {
+          "env": {
+            "MICRO_BATCH_SIZE": 1,
+            "OVERLAP_GRAD_REDUCE": false
+          },
+          "name": "off"
+        },
+        {
+          "env": {
+            "MICRO_BATCH_SIZE": 1,
+            "OVERLAP_GRAD_REDUCE": true
+          },
+          "name": "on"
+        }
+      ],
+      "varying": [
+        "OVERLAP_GRAD_REDUCE"
+      ]
+    },
+    {
+      "name": "overlap-mbs-2",
+      "variants": [
+        {
+          "env": {
+            "MICRO_BATCH_SIZE": 2,
+            "OVERLAP_GRAD_REDUCE": false
+          },
+          "name": "off"
+        },
+        {
+          "env": {
+            "MICRO_BATCH_SIZE": 2,
+            "OVERLAP_GRAD_REDUCE": true
+          },
+          "name": "on"
+        }
+      ],
+      "varying": [
+        "OVERLAP_GRAD_REDUCE"
+      ]
+    },
+    {
+      "name": "recompute-length-2048",
+      "variants": [
+        {
+          "env": {
+            "MAX_LENGTH": 2048,
+            "RECOMPUTE": "full"
+          },
+          "name": "full"
+        },
+        {
+          "env": {
+            "MAX_LENGTH": 2048,
+            "RECOMPUTE": "selective"
+          },
+          "name": "selective"
+        }
+      ],
+      "varying": [
+        "RECOMPUTE"
+      ]
+    },
+    {
+      "name": "recompute-length-4096",
+      "variants": [
+        {
+          "env": {
+            "MAX_LENGTH": 4096,
+            "RECOMPUTE": "full"
+          },
+          "name": "full"
+        },
+        {
+          "env": {
+            "MAX_LENGTH": 4096,
+            "RECOMPUTE": "selective"
+          },
+          "name": "selective"
+        }
+      ],
+      "varying": [
+        "RECOMPUTE"
+      ]
+    },
+    {
+      "name": "sequence-parallel-length-2048",
+      "variants": [
+        {
+          "env": {
+            "MAX_LENGTH": 2048,
+            "SEQUENCE_PARALLEL": false,
+            "TP": 2,
+            "TRANSFORMER_IMPL": "transformer_engine"
+          },
+          "name": "off"
+        },
+        {
+          "env": {
+            "MAX_LENGTH": 2048,
+            "SEQUENCE_PARALLEL": true,
+            "TP": 2,
+            "TRANSFORMER_IMPL": "transformer_engine"
+          },
+          "name": "on"
+        }
+      ],
+      "varying": [
+        "SEQUENCE_PARALLEL"
+      ]
+    },
+    {
+      "name": "sequence-parallel-length-4096",
+      "variants": [
+        {
+          "env": {
+            "MAX_LENGTH": 4096,
+            "SEQUENCE_PARALLEL": false,
+            "TP": 2,
+            "TRANSFORMER_IMPL": "transformer_engine"
+          },
+          "name": "off"
+        },
+        {
+          "env": {
+            "MAX_LENGTH": 4096,
+            "SEQUENCE_PARALLEL": true,
+            "TP": 2,
+            "TRANSFORMER_IMPL": "transformer_engine"
+          },
+          "name": "on"
+        }
+      ],
+      "varying": [
+        "SEQUENCE_PARALLEL"
+      ]
+    },
+    {
+      "name": "checkpoint-interval-16",
+      "variants": [
+        {
+          "env": {
+            "CHECKPOINT_MODE": "sync",
+            "SAVE_INTERVAL": 4
+          },
+          "name": "sync"
+        },
+        {
+          "env": {
+            "CHECKPOINT_MODE": "async",
+            "SAVE_INTERVAL": 4
+          },
+          "name": "async"
+        }
+      ],
+      "varying": [
+        "CHECKPOINT_MODE"
+      ]
+    },
+    {
+      "name": "checkpoint-interval-32",
+      "variants": [
+        {
+          "env": {
+            "CHECKPOINT_MODE": "sync",
+            "SAVE_INTERVAL": 8
+          },
+          "name": "sync"
+        },
+        {
+          "env": {
+            "CHECKPOINT_MODE": "async",
+            "SAVE_INTERVAL": 8
+          },
+          "name": "async"
+        }
+      ],
+      "varying": [
+        "CHECKPOINT_MODE"
+      ]
+    }
+  ],
+  "common_env": {
+    "DATASET_ID": "HuggingFaceH4/no_robots",
+    "DATASET_REVISION": "e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b",
+    "EP": 1,
+    "FINETUNING_MODE": "full",
+    "GLOBAL_BATCH_SIZE": 4,
+    "MAX_LENGTH": 2048,
+    "MEASURE_TIMING": true,
+    "MICRO_BATCH_SIZE": 1,
+    "MODEL_ID": "Qwen/Qwen2.5-0.5B-Instruct",
+    "MODEL_REVISION": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "PP": 1,
+    "SEED": 42,
+    "STAGE": "train",
+    "TP": 1
+  },
+  "defaults": {
+    "checkpoint_intervals": [
+      16,
+      32
+    ],
+    "repeats": 4,
+    "steps": 64,
+    "within_run_warmup": 8
+  },
+  "setup": "spark"
+}

@@ -7,15 +7,15 @@
 
 | Location | Responsibility |
 | --- | --- |
-| `main/labs` | 실습 목록, 준비 상태와 공통 템플릿 |
-| `trl` / `megatron` | backend별 dataset 변환, 학습, 평가와 artifact 생성 |
-| `system-integration` | framework-independent contract와 promotion·rollback 설계 |
-| `profiling` | metric vocabulary, 수집 도구와 resource profiling 실습 |
+| `labs/` | 실습 목록, 준비 상태와 공통 템플릿 |
+| `backends/trl/` / `backends/megatron/` | backend별 dataset 변환, 학습, 평가와 artifact 생성 |
+| `docs/design/system-integration/` | framework-independent contract와 promotion·rollback 설계 |
+| `observability/` | metric vocabulary, 수집 도구와 resource profiling 실습 |
 | Observatory `docs/labs` | 합성 데이터 관측과 run 비교 실습 |
 
-새 실습은 [템플릿](template/README.md)을 해당 구현 브랜치의 문서 디렉터리에 복사해 작성합니다.
-동일 backend와 환경을 사용하면 기존 브랜치에 추가하고, 설치 환경이나 실행 lifecycle이 독립적일 때 별도 브랜치를 고려합니다.
-계획만으로 빈 framework 브랜치를 만들지 않습니다.
+새 실습은 [템플릿](template/README.md)을 `docs/experiments/`에 복사해 작성합니다.
+학습 조건은 `experiments/<backend>/`, 환경 준비는 `setups/<setup>/`에 추가하고 backend 학습 코드는 재사용합니다.
+작업은 `feat/...`, `fix/...`, `docs/...` 단기 브랜치에서 진행한 뒤 `main`에 병합합니다.
 
 ## Planned Exercises
 
@@ -35,7 +35,7 @@
 
 학습 실습의 작은 결과 summary에는 run ID, model·dataset revision, recipe, seed, hardware, 실행 시간과 metric 단위를 기록합니다.
 원본 데이터와 큰 artifact는 저장하지 않습니다.
-공통 metric 정의는 [`profiling`의 metric contract](../docs/observability/metric-schema.md)를 참조합니다.
+공통 metric 정의는 [`observability/`의 metric contract](../docs/observability/metric-schema.md)를 참조합니다.
 
 새 실습의 실행 command와 실패 경로를 검증한 뒤 프로젝트 안내에 entry point와 검증 범위를 등록합니다.
 실행하지 못한 환경은 명시하고, 예정된 기능을 실행 가능한 것으로 표시하지 않습니다.

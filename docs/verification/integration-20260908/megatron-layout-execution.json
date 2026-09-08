@@ -1,0 +1,41 @@
+{
+  "rank_exit_codes": [
+    0,
+    0
+  ],
+  "elapsed_seconds": 116.16780352592468,
+  "configuration": {
+    "MODEL_ID": "Qwen/Qwen2.5-0.5B-Instruct",
+    "MODEL_REVISION": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "MODEL_DIR": "/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct",
+    "DATASET_ID": "HuggingFaceH4/no_robots",
+    "DATASET_REVISION": "e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b",
+    "DATA_DIR": "/home/spark/shared/post-training-lab/data/public-smoke/no_robots",
+    "OUTPUT_DIR": "/home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908",
+    "PYTHON": "/home/spark/ptl-envs/megatron/bin/python",
+    "NNODES": "2",
+    "NPROC_PER_NODE": "1",
+    "MASTER_ADDR": "12.201.48.11",
+    "MASTER_PORT": "29661",
+    "TP": "1",
+    "PP": "1",
+    "EP": "1",
+    "MEASURE_TIMING": "true",
+    "FINETUNING_MODE": "full",
+    "MAX_STEPS": "2",
+    "SCHEDULE_STEPS": "2",
+    "SAVE_INTERVAL": "2",
+    "EVAL_ITERS": "1",
+    "MAX_LENGTH": "2048",
+    "GLOBAL_BATCH_SIZE": "2",
+    "MICRO_BATCH_SIZE": "1",
+    "HF_HUB_OFFLINE": "1",
+    "HF_DATASETS_OFFLINE": "1",
+    "TOKENIZERS_PARALLELISM": "false",
+    "OMP_NUM_THREADS": "4",
+    "NCCL_SOCKET_IFNAME": "enp1s0f0np0",
+    "NCCL_IB_HCA": "rocep1s0f0",
+    "NCCL_DEBUG": "INFO"
+  },
+  "source_commit": "e8e04b8"
+}

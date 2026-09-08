@@ -37,10 +37,10 @@ No broad process kill is used.
 
 | Backend / setup | Implementation | Evidence boundary |
 | --- | --- | --- |
-| TRL / Spark, one or two nodes, DDP | shared launcher with topology settings | 0.5B LoRA two-node layout regression passed; runner-specific results are recorded separately |
+| TRL / Spark, one or two nodes, DDP | shared launcher with topology settings | 0.5B LoRA two-node layout regression and single-node common runner smoke passed |
 | TRL / Spark, FSDP2 or DeepSpeed | base/train stages; tuned/all rejected | [earlier configuration results](backends/trl/training-verification.md), including failures; no blanket runtime support claim |
-| Megatron / Spark, TP/PP/EP compatible with world size | base/train/tuned and optional resume workflow | 0.5B full SFT two-node save/reload layout regression passed |
-| Megatron feature variants | explicit experiment candidates | repeated performance, resume correctness and durability are separate checks |
+| Megatron / Spark, TP/PP/EP compatible with world size | base/train/tuned and optional resume workflow | 0.5B full SFT two-node save/reload and 2 → 3 step common runner resume smoke passed |
+| Megatron feature variants | explicit experiment candidates | 0.5B overlap, full recompute, sequence parallel and checkpoint repeats recorded; selective rejected by current configuration; resume equivalence and durability remain separate |
 | Other setups | no common runner adapter yet | rejected before launch |
 | Legacy TRL RTX workflow | source and historical guide retained | outside this integration's Spark revalidation scope |
 

@@ -22,3 +22,6 @@ Spark 단일 노드 실행은 topology 옵션으로 다루며 backend·paralleli
 구조 이동과 실행 기능 추가를 별도 커밋으로 보존합니다.
 과거 실험 로그의 수치·원래 경로는 기록 그대로 유지하며 구조 이동 후 재검증 결과와 구분합니다.
 성능 비교, checkpoint 재개 correctness와 durability는 각각 별도 검증입니다.
+
+별도 Megatron review worktree의 미커밋 문서도 `archive/pre-unify-20260908/worktree-megatron-review-changes`에 보존했습니다.
+나머지 detached worktree의 기준 커밋은 같은 prefix의 `worktree-*` 태그에 보존했습니다.

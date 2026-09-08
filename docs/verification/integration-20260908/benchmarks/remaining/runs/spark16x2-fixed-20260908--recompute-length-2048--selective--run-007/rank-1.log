@@ -1,0 +1,104 @@
+[runner] remote_commit=862624156b0f55504de64d66a7e1a0cebcf9a3b3
+[runner] remote_dirty=
+[spark-runtime] python=/home/spark/ptl-envs/megatron/bin/python
+[spark-runtime] python_site=/home/spark/ptl-envs/megatron/lib/python3.12/site-packages
+[spark-runtime] libext=.cpython-312-aarch64-linux-gnu.so nvte_nccl_ep=0
+{
+  "context_parallel_size": 1,
+  "data_parallel_size": 2,
+  "expert_data_parallel_size": 2,
+  "expert_parallel_size": 1,
+  "expert_tensor_parallel_size": 1,
+  "global_batch_size": 4,
+  "gradient_accumulation_steps": 2,
+  "micro_batch_size": 1,
+  "model_parallel_size": 1,
+  "nnodes": 2,
+  "node_rank": 1,
+  "nproc_per_node": 1,
+  "pipeline_parallel_size": 1,
+  "tensor_parallel_size": 1,
+  "world_size": 2
+}
+[workflow] stage=train node_rank=1
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/backends.py:34: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/gpt/gpt_layer_specs.py:74: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/gpt/heterogeneous/heterogeneous_layer_specs.py:68: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+    
+  queued_call()
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/vision/vit_layer_specs.py:31: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+INFO:megatron.bridge.models.gemma.gemma2_provider:Gemma2: PyTorch FlexAttention available — softcap+SWA fused via Triton score_mod.
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/mimo/config/base_configs.py:12: UserWarning: MimoModelConfig is experimental and still under active development. The API may change without notice in future releases.
+  class MimoModelConfig:
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[stage] rank=1 model=Qwen/Qwen2.5-0.5B-Instruct model_type=qwen2 dataset=HuggingFaceH4/no_robots model_revision=7ae557604adf67be50417f59c2c2f167def9a775 dataset_revision=e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b
+[stage] world_size=2 tp=1 pp=1 ep=1 dp=2 gbs=4
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/spark/post-training-unified/backends/megatron/megatron_lab/sft.py", line 244, in <module>
+    main()
+  File "/home/spark/post-training-unified/backends/megatron/megatron_lab/sft.py", line 238, in main
+    finetune(config=config, forward_step_func=forward_step)
+  File "/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/bridge/utils/decorators.py", line 39, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/bridge/training/finetune.py", line 54, in finetune
+    return pretrain(config, forward_step_func, callbacks=callbacks)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/bridge/utils/decorators.py", line 39, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/bridge/training/pretrain.py", line 74, in pretrain
+    runtime_config_update(config)
+  File "/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/bridge/training/config.py", line 1883, in runtime_config_update
+    cfg.validate()
+  File "/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/bridge/training/config.py", line 1257, in validate
+    self.model.finalize()
+  File "/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/bridge/models/transformer_config.py", line 180, in finalize
+    MCoreTransformerConfig.__post_init__(self)
+  File "/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/transformer/transformer_config.py", line 1752, in __post_init__
+    raise ValueError(
+ValueError: When using recompute_granularity: selective recompute_num_layers must be None.
+E0908 19:23:24.430000 468524 torch/distributed/elastic/multiprocessing/api.py:984] failed (exitcode: 1) local_rank: 0 (pid: 468532) of binary: /home/spark/ptl-envs/megatron/bin/python
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/run.py", line 995, in <module>
+    main()
+  File "/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 362, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/run.py", line 991, in main
+    run(args)
+  File "/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/run.py", line 982, in run
+    elastic_launch(
+  File "/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 170, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 317, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+megatron_lab.sft FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-09-08_19:23:24
+  host      : spark2
+  rank      : 1 (local_rank: 0)
+  exitcode  : 1 (pid: 468532)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

@@ -61,7 +61,7 @@ Canonical metric은 [`config/metrics.json`](config/metrics.json)에 정의하며
 ## Public Dashboard Demo
 
 합성 데이터 기반의 profiling dashboard 데모는 [Post-Training Lab Observatory](https://daegyu94.github.io/post-training-lab-observatory/)에서 확인할 수 있습니다.
-실제 exporter, cluster, training run에는 연결하지 않으며, 실습과 profiling 구성은 이 브랜치에서 계속 제공합니다.
+실제 exporter, cluster, training run에는 연결하지 않으며, 실습과 profiling 구성은 `observability/`에서 제공합니다.
 
 ## Labs
 

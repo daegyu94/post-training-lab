@@ -13,3 +13,7 @@ The runner owns `NODE_RANK`, `PYTHON`, `NNODES`, `NPROC_PER_NODE`, rendezvous va
 
 Use a node-local model snapshot on every participating node and a shared NFS directory for prepared data and output when a multi-node checkpoint is saved or reloaded.
 The runner maps the experiment's `MODEL_ID` to each node's `model_dirs` entry and uses the node's `data_dir` and `output_root` for that rank; the example uses the same placeholders to represent shared NFS paths.
+
+Create each configured `output_root` before running an experiment.
+Both nodes must use a clean checkout at the controller commit.
+NFS can delay peer session visibility; the runner allows up to 70 seconds, bounded by the run timeout, before rejecting an unowned output directory.

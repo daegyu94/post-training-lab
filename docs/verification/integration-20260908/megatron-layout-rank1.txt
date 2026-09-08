@@ -1,0 +1,979 @@
+[spark-runtime] python=/home/spark/ptl-envs/megatron/bin/python
+[spark-runtime] python_site=/home/spark/ptl-envs/megatron/lib/python3.12/site-packages
+[spark-runtime] libext=.cpython-312-aarch64-linux-gnu.so nvte_nccl_ep=0
+{
+  "context_parallel_size": 1,
+  "data_parallel_size": 2,
+  "expert_data_parallel_size": 2,
+  "expert_parallel_size": 1,
+  "expert_tensor_parallel_size": 1,
+  "global_batch_size": 2,
+  "gradient_accumulation_steps": 1,
+  "micro_batch_size": 1,
+  "model_parallel_size": 1,
+  "nnodes": 2,
+  "node_rank": 1,
+  "nproc_per_node": 1,
+  "pipeline_parallel_size": 1,
+  "tensor_parallel_size": 1,
+  "world_size": 2
+}
+[workflow] stage=base node_rank=1
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/backends.py:34: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/gpt/gpt_layer_specs.py:74: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/gpt/heterogeneous/heterogeneous_layer_specs.py:68: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+    
+  queued_call()
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/vision/vit_layer_specs.py:31: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+INFO:megatron.bridge.models.gemma.gemma2_provider:Gemma2: PyTorch FlexAttention available — softcap+SWA fused via Triton score_mod.
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/mimo/config/base_configs.py:12: UserWarning: MimoModelConfig is experimental and still under active development. The API may change without notice in future releases.
+  class MimoModelConfig:
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[stage] rank=1 model=Qwen/Qwen2.5-0.5B-Instruct model_type=qwen2 dataset=HuggingFaceH4/no_robots model_revision=7ae557604adf67be50417f59c2c2f167def9a775 dataset_revision=e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b
+[stage] world_size=2 tp=1 pp=1 ep=1 dp=2 gbs=2
+INFO:megatron.training.utils.log_utils:Setting logging level to 20
+spark2:452795:452795 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+spark2:452795:452795 [0] NCCL INFO cudaDriverVersion 13000
+spark2:452795:452795 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark2:452795:452795 [0] NCCL INFO Bootstrap: Using enp1s0f0np0:12.201.48.13<0>
+spark2:452795:452795 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+spark2:452795:452795 [0] NCCL INFO Comm config Blocking set to 1
+spark2:452795:452795 [0] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+spark2:452795:452795 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark2:452795:452795 [0] NCCL INFO NCCL_IB_HCA set to rocep1s0f0
+spark2:452795:452795 [0] NCCL INFO NET/IB : Using [0]rocep1s0f0:1/RoCE [RO]; OOB enp1s0f0np0:12.201.48.13<0>
+spark2:452795:452795 [0] NCCL INFO Initialized NET plugin IB
+spark2:452795:452795 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:452795:452795 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:452795:452795 [0] NCCL INFO Using network IB
+spark2:452795:452795 [0] NCCL INFO ncclCommInitRankConfig comm 0x4da8c450 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x2989b35735012a9c - Init START
+spark2:452795:452795 [0] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+spark2:452795:452795 [0] NCCL INFO Bootstrap timings total 0.010388 (create 0.000026, send 0.000827, recv 0.008320, ring 0.000378, delay 0.000000)
+spark2:452795:452795 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:452795:452795 [0] NCCL INFO comm 0x4da8c450 rank 1 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark2:452795:452795 [0] NCCL INFO Trees [0] -1/-1/-1->1->0 [1] -1/-1/-1->1->0 [2] -1/-1/-1->1->0 [3] -1/-1/-1->1->0 [4] 0/-1/-1->1->-1 [5] 0/-1/-1->1->-1 [6] 0/-1/-1->1->-1 [7] 0/-1/-1->1->-1
+spark2:452795:452795 [0] NCCL INFO P2P Chunksize set to 131072
+spark2:452795:452795 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+spark2:452795:452795 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:452795:452821 [0] NCCL INFO [Proxy Service] Device 0 CPU core 15
+spark2:452795:452822 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 17
+spark2:452795:452795 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+spark2:452795:452795 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark2:452795:452795 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark2:452795:452795 [0] NCCL INFO ncclCommInitRankConfig comm 0x4da8c450 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x2989b35735012a9c - Init COMPLETE
+spark2:452795:452795 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 1 nranks 2 total 0.16 (kernels 0.12, alloc 0.02, bootstrap 0.01, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark2:452795:452795 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452823 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 15
+spark2:452795:452795 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+[Gloo] Rank 1 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[Gloo] Rank 1 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[Gloo] Rank 1 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+> compiling dataset index builder ...
+make: Entering directory '/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/datasets'
+make: Nothing to be done for 'default'.
+make: Leaving directory '/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/datasets'
+>>> done with dataset index builder. Compilation time: 0.020 seconds
+INFO:root:Using preset vocab_size: 151936 over the tokenizer vocab_size: 151665, dummy tokens: 271.
+spark2:452795:452795 [0] NCCL INFO Comm config Blocking set to 1
+spark2:452795:452795 [0] NCCL INFO Initialized NET plugin IB
+spark2:452795:452795 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:452795:452795 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:452795:452795 [0] NCCL INFO Using network IB
+spark2:452795:452795 [0] NCCL INFO ncclCommInitRankConfig comm 0x5b187b30 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x435bbd5fe7acf4df - Init START
+spark2:452795:452795 [0] NCCL INFO Bootstrap timings total 0.000343 (create 0.000016, send 0.000089, recv 0.000172, ring 0.000000, delay 0.000000)
+spark2:452795:452795 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:452795:452795 [0] NCCL INFO comm 0x5b187b30 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+spark2:452795:452795 [0] NCCL INFO Channel 00/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 01/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 02/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 03/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 04/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 05/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 06/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 07/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 08/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 09/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 10/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 11/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 12/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 13/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 14/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 15/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 16/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 17/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 18/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 19/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 20/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 21/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 22/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 23/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 24/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 25/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 26/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 27/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 28/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 29/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 30/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 31/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 32/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 33/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 34/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 35/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 36/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 37/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 38/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 39/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 40/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 41/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 42/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 43/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 44/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 45/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 46/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 47/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 48/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 49/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 50/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 51/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 52/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 53/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 54/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 55/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 56/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 57/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 58/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 59/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 60/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 61/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 62/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 63/64 : 0
+spark2:452795:452795 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1 [32] -1/-1/-1->0->-1 [33] -1/-1/-1->0->-1 [34] -1/-1/-1->0->-1 [35] -1/-1/-1->0->-1 [36] -1/-1/-1->0->-1 [37] -1/-1/-1->0->-1 [38] -1/-1/-1->0->-1 [39] -1/-1/-1->0->-1 [40] -1/-1/-1->0->-1 [41] -1/-1/-1->0->-1 [42] -1/-1/-1->0->-1 [43] -1/-1/-1->0->-1 [44] -1/-1/-1->0->-1 [45] -1/-1/-1->0->-1 [46] -1/-1/-1->0->-1 [47] 
+spark2:452795:452795 [0] NCCL INFO P2P Chunksize set to 524288
+spark2:452795:452795 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:452795:452887 [0] NCCL INFO [Proxy Service] Device 0 CPU core 0
+spark2:452795:452888 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 1
+spark2:452795:452795 [0] NCCL INFO 64 coll channels, 64 collnet channels, 0 nvls channels, 64 p2p channels, 64 p2p channels per peer
+spark2:452795:452795 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark2:452795:452795 [0] NCCL INFO ncclCommInitRankConfig comm 0x5b187b30 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x435bbd5fe7acf4df - Init COMPLETE
+spark2:452795:452795 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 1 total 0.03 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.02, rest 0.00)
+INFO:megatron.core.timers:(min, max) time across ranks (ms):
+    load-checkpoint ................................: (4415.19, 4415.19)
+> setting tensorboard ...
+Generating train split: 0 examples [00:00, ? examples/s]Generating train split: 8 examples [00:00, 7223.77 examples/s]
+Generating validation split: 0 examples [00:00, ? examples/s]Generating validation split: 2 examples [00:00, 2171.53 examples/s]
+INFO:megatron.core.timers:(min, max) time across ranks (ms):
+    model-and-optimizer-setup ......................: (298.42, 298.54)
+    train/valid/test-data-iterators-setup ..........: (245.52, 245.54)
+spark2:452795:452795 [0] NCCL INFO Comm config Blocking set to 1
+spark2:452795:452795 [0] NCCL INFO Initialized NET plugin IB
+spark2:452795:452795 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:452795:452795 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:452795:452795 [0] NCCL INFO Using network IB
+spark2:452795:452795 [0] NCCL INFO ncclCommInitRankConfig comm 0x763ac190 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x4020ce08936ca8d3 - Init START
+spark2:452795:452795 [0] NCCL INFO Bootstrap timings total 0.000327 (create 0.000019, send 0.000087, recv 0.000152, ring 0.000000, delay 0.000000)
+spark2:452795:452795 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:452795:452795 [0] NCCL INFO comm 0x763ac190 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+spark2:452795:452795 [0] NCCL INFO Channel 00/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 01/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 02/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 03/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 04/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 05/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 06/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 07/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 08/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 09/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 10/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 11/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 12/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 13/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 14/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 15/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 16/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 17/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 18/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 19/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 20/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 21/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 22/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 23/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 24/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 25/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 26/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 27/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 28/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 29/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 30/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 31/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 32/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 33/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 34/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 35/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 36/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 37/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 38/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 39/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 40/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 41/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 42/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 43/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 44/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 45/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 46/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 47/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 48/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 49/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 50/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 51/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 52/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 53/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 54/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 55/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 56/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 57/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 58/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 59/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 60/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 61/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 62/64 : 0
+spark2:452795:452795 [0] NCCL INFO Channel 63/64 : 0
+spark2:452795:452795 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1 [32] -1/-1/-1->0->-1 [33] -1/-1/-1->0->-1 [34] -1/-1/-1->0->-1 [35] -1/-1/-1->0->-1 [36] -1/-1/-1->0->-1 [37] -1/-1/-1->0->-1 [38] -1/-1/-1->0->-1 [39] -1/-1/-1->0->-1 [40] -1/-1/-1->0->-1 [41] -1/-1/-1->0->-1 [42] -1/-1/-1->0->-1 [43] -1/-1/-1->0->-1 [44] -1/-1/-1->0->-1 [45] -1/-1/-1->0->-1 [46] -1/-1/-1->0->-1 [47] 
+spark2:452795:452795 [0] NCCL INFO P2P Chunksize set to 524288
+spark2:452795:452795 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:452795:452951 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 17
+spark2:452795:452950 [0] NCCL INFO [Proxy Service] Device 0 CPU core 1
+spark2:452795:452795 [0] NCCL INFO 64 coll channels, 64 collnet channels, 0 nvls channels, 64 p2p channels, 64 p2p channels per peer
+spark2:452795:452795 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark2:452795:452795 [0] NCCL INFO ncclCommInitRankConfig comm 0x763ac190 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x4020ce08936ca8d3 - Init COMPLETE
+spark2:452795:452795 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 1 total 0.02 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.02, rest 0.00)
+spark2:452795:452795 [0] NCCL INFO Comm config Blocking set to 1
+spark2:452795:452795 [0] NCCL INFO Initialized NET plugin IB
+spark2:452795:452795 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:452795:452795 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:452795:452795 [0] NCCL INFO Using network IB
+spark2:452795:452795 [0] NCCL INFO ncclCommInitRankConfig comm 0x81bcbfe0 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xb6dbfb4a410b7c05 - Init START
+spark2:452795:452795 [0] NCCL INFO Bootstrap timings total 0.002939 (create 0.000040, send 0.000381, recv 0.001559, ring 0.000203, delay 0.000000)
+spark2:452795:452795 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:452795:452795 [0] NCCL INFO comm 0x81bcbfe0 rank 1 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark2:452795:452795 [0] NCCL INFO Trees [0] -1/-1/-1->1->0 [1] -1/-1/-1->1->0 [2] -1/-1/-1->1->0 [3] -1/-1/-1->1->0 [4] 0/-1/-1->1->-1 [5] 0/-1/-1->1->-1 [6] 0/-1/-1->1->-1 [7] 0/-1/-1->1->-1
+spark2:452795:452795 [0] NCCL INFO P2P Chunksize set to 131072
+spark2:452795:452795 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:452795:452953 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 7
+spark2:452795:452952 [0] NCCL INFO [Proxy Service] Device 0 CPU core 1
+spark2:452795:452795 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark2:452795:452795 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark2:452795:452795 [0] NCCL INFO ncclCommInitRankConfig comm 0x81bcbfe0 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xb6dbfb4a410b7c05 - Init COMPLETE
+spark2:452795:452795 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 1 nranks 2 total 0.01 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark2:452795:452954 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 7
+spark2:452795:452795 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452795:452795 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+INFO:megatron.core.timers:(min, max) time across ranks (ms):
+    evaluate .......................................: (737.15, 737.16)
+---------------------------------------------------------------------------------------------------------------
+ validation loss at iteration 0 on validation set | lm loss value: 3.152960E+00 | lm loss PPL: 2.340524E+01 | 
+---------------------------------------------------------------------------------------------------------------
+spark2:452795:452795 [0] NCCL INFO comm 0x81bcbfe0 rank 1 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark2:452795:452795 [0] NCCL INFO comm 0x5b187b30 rank 0 nranks 1 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark2:452795:452795 [0] NCCL INFO comm 0x763ac190 rank 0 nranks 1 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark2:452795:452795 [0] NCCL INFO comm 0x4da8c450 rank 1 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark2:452795:452795 [0] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+[workflow] stage=train node_rank=1
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/backends.py:34: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/gpt/gpt_layer_specs.py:74: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/gpt/heterogeneous/heterogeneous_layer_specs.py:68: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+    
+  queued_call()
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/vision/vit_layer_specs.py:31: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+INFO:megatron.bridge.models.gemma.gemma2_provider:Gemma2: PyTorch FlexAttention available — softcap+SWA fused via Triton score_mod.
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/mimo/config/base_configs.py:12: UserWarning: MimoModelConfig is experimental and still under active development. The API may change without notice in future releases.
+  class MimoModelConfig:
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[stage] rank=1 model=Qwen/Qwen2.5-0.5B-Instruct model_type=qwen2 dataset=HuggingFaceH4/no_robots model_revision=7ae557604adf67be50417f59c2c2f167def9a775 dataset_revision=e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b
+[stage] world_size=2 tp=1 pp=1 ep=1 dp=2 gbs=2
+INFO:megatron.training.utils.log_utils:Setting logging level to 20
+spark2:452967:452967 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+spark2:452967:452967 [0] NCCL INFO cudaDriverVersion 13000
+spark2:452967:452967 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark2:452967:452967 [0] NCCL INFO Bootstrap: Using enp1s0f0np0:12.201.48.13<0>
+spark2:452967:452967 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+spark2:452967:452967 [0] NCCL INFO Comm config Blocking set to 1
+spark2:452967:452967 [0] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+spark2:452967:452967 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark2:452967:452967 [0] NCCL INFO NCCL_IB_HCA set to rocep1s0f0
+spark2:452967:452967 [0] NCCL INFO NET/IB : Using [0]rocep1s0f0:1/RoCE [RO]; OOB enp1s0f0np0:12.201.48.13<0>
+spark2:452967:452967 [0] NCCL INFO Initialized NET plugin IB
+spark2:452967:452967 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:452967:452967 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:452967:452967 [0] NCCL INFO Using network IB
+spark2:452967:452967 [0] NCCL INFO ncclCommInitRankConfig comm 0x20fdb150 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xd71ee907426719e - Init START
+spark2:452967:452967 [0] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+spark2:452967:452967 [0] NCCL INFO Bootstrap timings total 0.003412 (create 0.000024, send 0.000364, recv 0.001404, ring 0.000696, delay 0.000000)
+spark2:452967:452967 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:452967:452967 [0] NCCL INFO comm 0x20fdb150 rank 1 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark2:452967:452967 [0] NCCL INFO Trees [0] -1/-1/-1->1->0 [1] -1/-1/-1->1->0 [2] -1/-1/-1->1->0 [3] -1/-1/-1->1->0 [4] 0/-1/-1->1->-1 [5] 0/-1/-1->1->-1 [6] 0/-1/-1->1->-1 [7] 0/-1/-1->1->-1
+spark2:452967:452967 [0] NCCL INFO P2P Chunksize set to 131072
+spark2:452967:452967 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+spark2:452967:452967 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:452967:452993 [0] NCCL INFO [Proxy Service] Device 0 CPU core 11
+spark2:452967:452994 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 13
+spark2:452967:452967 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+spark2:452967:452967 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark2:452967:452967 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark2:452967:452967 [0] NCCL INFO ncclCommInitRankConfig comm 0x20fdb150 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xd71ee907426719e - Init COMPLETE
+spark2:452967:452967 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 1 nranks 2 total 0.15 (kernels 0.12, alloc 0.02, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark2:452967:452995 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 11
+spark2:452967:452967 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+[Gloo] Rank 1 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[Gloo] Rank 1 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[Gloo] Rank 1 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+> compiling dataset index builder ...
+make: Entering directory '/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/datasets'
+make: Nothing to be done for 'default'.
+make: Leaving directory '/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/datasets'
+>>> done with dataset index builder. Compilation time: 0.020 seconds
+INFO:root:Using preset vocab_size: 151936 over the tokenizer vocab_size: 151665, dummy tokens: 271.
+spark2:452967:452967 [0] NCCL INFO Comm config Blocking set to 1
+spark2:452967:452967 [0] NCCL INFO Initialized NET plugin IB
+spark2:452967:452967 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:452967:452967 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:452967:452967 [0] NCCL INFO Using network IB
+spark2:452967:452967 [0] NCCL INFO ncclCommInitRankConfig comm 0x2e70f520 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x671d58702383735a - Init START
+spark2:452967:452967 [0] NCCL INFO Bootstrap timings total 0.000315 (create 0.000013, send 0.000082, recv 0.000157, ring 0.000000, delay 0.000000)
+spark2:452967:452967 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:452967:452967 [0] NCCL INFO comm 0x2e70f520 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+spark2:452967:452967 [0] NCCL INFO Channel 00/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 01/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 02/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 03/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 04/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 05/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 06/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 07/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 08/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 09/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 10/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 11/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 12/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 13/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 14/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 15/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 16/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 17/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 18/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 19/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 20/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 21/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 22/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 23/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 24/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 25/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 26/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 27/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 28/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 29/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 30/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 31/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 32/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 33/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 34/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 35/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 36/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 37/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 38/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 39/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 40/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 41/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 42/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 43/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 44/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 45/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 46/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 47/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 48/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 49/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 50/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 51/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 52/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 53/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 54/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 55/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 56/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 57/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 58/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 59/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 60/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 61/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 62/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 63/64 : 0
+spark2:452967:452967 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1 [32] -1/-1/-1->0->-1 [33] -1/-1/-1->0->-1 [34] -1/-1/-1->0->-1 [35] -1/-1/-1->0->-1 [36] -1/-1/-1->0->-1 [37] -1/-1/-1->0->-1 [38] -1/-1/-1->0->-1 [39] -1/-1/-1->0->-1 [40] -1/-1/-1->0->-1 [41] -1/-1/-1->0->-1 [42] -1/-1/-1->0->-1 [43] -1/-1/-1->0->-1 [44] -1/-1/-1->0->-1 [45] -1/-1/-1->0->-1 [46] -1/-1/-1->0->-1 [47] 
+spark2:452967:452967 [0] NCCL INFO P2P Chunksize set to 524288
+spark2:452967:452967 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:452967:453059 [0] NCCL INFO [Proxy Service] Device 0 CPU core 6
+spark2:452967:453060 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 10
+spark2:452967:452967 [0] NCCL INFO 64 coll channels, 64 collnet channels, 0 nvls channels, 64 p2p channels, 64 p2p channels per peer
+spark2:452967:452967 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark2:452967:452967 [0] NCCL INFO ncclCommInitRankConfig comm 0x2e70f520 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x671d58702383735a - Init COMPLETE
+spark2:452967:452967 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 1 total 0.03 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.03, rest 0.00)
+INFO:megatron.core.timers:(min, max) time across ranks (ms):
+    load-checkpoint ................................: (4495.25, 4495.25)
+> setting tensorboard ...
+Generating train split: 0 examples [00:00, ? examples/s]Generating train split: 8 examples [00:00, 7155.99 examples/s]
+Generating validation split: 0 examples [00:00, ? examples/s]Generating validation split: 2 examples [00:00, 1595.10 examples/s]
+INFO:megatron.core.timers:(min, max) time across ranks (ms):
+    model-and-optimizer-setup ......................: (310.43, 310.52)
+    train/valid/test-data-iterators-setup ..........: (213.07, 268.02)
+spark2:452967:452967 [0] NCCL INFO Comm config Blocking set to 1
+spark2:452967:452967 [0] NCCL INFO Initialized NET plugin IB
+spark2:452967:452967 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:452967:452967 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:452967:452967 [0] NCCL INFO Using network IB
+spark2:452967:452967 [0] NCCL INFO ncclCommInitRankConfig comm 0x49979260 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0xb4a18ba0df14ce83 - Init START
+spark2:452967:452967 [0] NCCL INFO Bootstrap timings total 0.000460 (create 0.000023, send 0.000112, recv 0.000249, ring 0.000000, delay 0.000000)
+spark2:452967:452967 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:452967:452967 [0] NCCL INFO comm 0x49979260 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+spark2:452967:452967 [0] NCCL INFO Channel 00/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 01/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 02/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 03/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 04/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 05/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 06/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 07/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 08/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 09/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 10/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 11/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 12/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 13/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 14/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 15/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 16/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 17/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 18/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 19/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 20/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 21/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 22/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 23/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 24/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 25/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 26/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 27/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 28/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 29/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 30/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 31/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 32/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 33/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 34/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 35/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 36/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 37/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 38/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 39/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 40/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 41/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 42/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 43/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 44/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 45/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 46/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 47/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 48/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 49/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 50/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 51/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 52/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 53/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 54/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 55/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 56/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 57/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 58/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 59/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 60/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 61/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 62/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 63/64 : 0
+spark2:452967:452967 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1 [32] -1/-1/-1->0->-1 [33] -1/-1/-1->0->-1 [34] -1/-1/-1->0->-1 [35] -1/-1/-1->0->-1 [36] -1/-1/-1->0->-1 [37] -1/-1/-1->0->-1 [38] -1/-1/-1->0->-1 [39] -1/-1/-1->0->-1 [40] -1/-1/-1->0->-1 [41] -1/-1/-1->0->-1 [42] -1/-1/-1->0->-1 [43] -1/-1/-1->0->-1 [44] -1/-1/-1->0->-1 [45] -1/-1/-1->0->-1 [46] -1/-1/-1->0->-1 [47] 
+spark2:452967:452967 [0] NCCL INFO P2P Chunksize set to 524288
+spark2:452967:452967 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:452967:453123 [0] NCCL INFO [Proxy Service] Device 0 CPU core 10
+spark2:452967:453124 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 15
+spark2:452967:452967 [0] NCCL INFO 64 coll channels, 64 collnet channels, 0 nvls channels, 64 p2p channels, 64 p2p channels per peer
+spark2:452967:452967 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark2:452967:452967 [0] NCCL INFO ncclCommInitRankConfig comm 0x49979260 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0xb4a18ba0df14ce83 - Init COMPLETE
+spark2:452967:452967 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 1 total 0.03 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.02, rest 0.00)
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/pipeline_parallel/schedules.py:220: UserWarning: The AccumulateGrad node's stream does not match the stream of the node that produced the incoming gradient. This may incur unnecessary synchronization and break CUDA graph capture if the AccumulateGrad node's stream is the default stream. This mismatch is caused by an AccumulateGrad node created prior to the current iteration being kept alive. This can happen if the autograd graph is still being kept alive by tensors such as the loss, or if you are using DDP, which will stash a reference to the node. To resolve the mismatch, delete all references to the autograd graph or ensure that DDP initialization is performed under the same stream as subsequent forwards. If the mismatch is intentional, you can use torch.autograd.graph.set_warn_on_accumulate_grad_stream_mismatch(False) to suppress this warning. (Triggered internally at /pytorch/torch/csrc/autograd/input_buffer.cpp:240.)
+  Variable._execution_engine.run_backward(
+spark2:452967:452967 [0] NCCL INFO Comm config Blocking set to 1
+spark2:452967:452967 [0] NCCL INFO Initialized NET plugin IB
+spark2:452967:452967 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:452967:452967 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:452967:452967 [0] NCCL INFO Using network IB
+spark2:452967:452967 [0] NCCL INFO ncclCommInitRankConfig comm 0x551a41d0 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x74ee28aaec7c5257 - Init START
+spark2:452967:452967 [0] NCCL INFO Bootstrap timings total 0.004034 (create 0.000114, send 0.000995, recv 0.001110, ring 0.000732, delay 0.000000)
+spark2:452967:452967 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:452967:452967 [0] NCCL INFO comm 0x551a41d0 rank 1 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark2:452967:452967 [0] NCCL INFO Trees [0] -1/-1/-1->1->0 [1] -1/-1/-1->1->0 [2] -1/-1/-1->1->0 [3] -1/-1/-1->1->0 [4] 0/-1/-1->1->-1 [5] 0/-1/-1->1->-1 [6] 0/-1/-1->1->-1 [7] 0/-1/-1->1->-1
+spark2:452967:452967 [0] NCCL INFO P2P Chunksize set to 131072
+spark2:452967:452967 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:452967:453125 [0] NCCL INFO [Proxy Service] Device 0 CPU core 14
+spark2:452967:453126 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 17
+spark2:452967:452967 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark2:452967:452967 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark2:452967:452967 [0] NCCL INFO ncclCommInitRankConfig comm 0x551a41d0 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x74ee28aaec7c5257 - Init COMPLETE
+spark2:452967:452967 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 1 nranks 2 total 0.02 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.01, graphs 0.00, connections 0.01, rest 0.00)
+spark2:452967:452967 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:453127 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 15
+spark2:452967:452967 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+spark2:452967:452967 [0] NCCL INFO Comm config Blocking set to 1
+spark2:452967:452967 [0] NCCL INFO Initialized NET plugin IB
+spark2:452967:452967 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:452967:452967 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:452967:452967 [0] NCCL INFO Using network IB
+spark2:452967:452967 [0] NCCL INFO ncclCommInitRankConfig comm 0x5543eb80 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x182eef024096417f - Init START
+spark2:452967:452967 [0] NCCL INFO Bootstrap timings total 0.003210 (create 0.000027, send 0.000635, recv 0.001377, ring 0.000365, delay 0.000000)
+spark2:452967:452967 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:452967:452967 [0] NCCL INFO comm 0x5543eb80 rank 1 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark2:452967:452967 [0] NCCL INFO Trees [0] -1/-1/-1->1->0 [1] -1/-1/-1->1->0 [2] -1/-1/-1->1->0 [3] -1/-1/-1->1->0 [4] 0/-1/-1->1->-1 [5] 0/-1/-1->1->-1 [6] 0/-1/-1->1->-1 [7] 0/-1/-1->1->-1
+spark2:452967:452967 [0] NCCL INFO P2P Chunksize set to 131072
+spark2:452967:452967 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:452967:453128 [0] NCCL INFO [Proxy Service] Device 0 CPU core 16
+spark2:452967:453129 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 14
+spark2:452967:452967 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark2:452967:452967 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark2:452967:452967 [0] NCCL INFO ncclCommInitRankConfig comm 0x5543eb80 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x182eef024096417f - Init COMPLETE
+spark2:452967:452967 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 1 nranks 2 total 0.01 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark2:452967:453130 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 14
+spark2:452967:452967 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:452967:452967 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+spark2:452967:452967 [0] NCCL INFO Comm config Blocking set to 1
+spark2:452967:452967 [0] NCCL INFO Initialized NET plugin IB
+spark2:452967:452967 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:452967:452967 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:452967:452967 [0] NCCL INFO Using network IB
+spark2:452967:452967 [0] NCCL INFO ncclCommInitRankConfig comm 0x560d29f0 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x96e6b59ed0fdc000 - Init START
+spark2:452967:452967 [0] NCCL INFO Bootstrap timings total 0.000371 (create 0.000020, send 0.000099, recv 0.000181, ring 0.000000, delay 0.000000)
+spark2:452967:452967 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:452967:452967 [0] NCCL INFO comm 0x560d29f0 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+spark2:452967:452967 [0] NCCL INFO Channel 00/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 01/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 02/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 03/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 04/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 05/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 06/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 07/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 08/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 09/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 10/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 11/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 12/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 13/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 14/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 15/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 16/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 17/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 18/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 19/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 20/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 21/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 22/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 23/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 24/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 25/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 26/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 27/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 28/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 29/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 30/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 31/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 32/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 33/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 34/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 35/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 36/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 37/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 38/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 39/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 40/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 41/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 42/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 43/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 44/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 45/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 46/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 47/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 48/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 49/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 50/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 51/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 52/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 53/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 54/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 55/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 56/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 57/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 58/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 59/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 60/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 61/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 62/64 : 0
+spark2:452967:452967 [0] NCCL INFO Channel 63/64 : 0
+spark2:452967:452967 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1 [32] -1/-1/-1->0->-1 [33] -1/-1/-1->0->-1 [34] -1/-1/-1->0->-1 [35] -1/-1/-1->0->-1 [36] -1/-1/-1->0->-1 [37] -1/-1/-1->0->-1 [38] -1/-1/-1->0->-1 [39] -1/-1/-1->0->-1 [40] -1/-1/-1->0->-1 [41] -1/-1/-1->0->-1 [42] -1/-1/-1->0->-1 [43] -1/-1/-1->0->-1 [44] -1/-1/-1->0->-1 [45] -1/-1/-1->0->-1 [46] -1/-1/-1->0->-1 [47] 
+spark2:452967:452967 [0] NCCL INFO P2P Chunksize set to 524288
+spark2:452967:452967 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:452967:453132 [0] NCCL INFO [Proxy Service] Device 0 CPU core 16
+spark2:452967:453133 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 14
+spark2:452967:452967 [0] NCCL INFO 64 coll channels, 64 collnet channels, 0 nvls channels, 64 p2p channels, 64 p2p channels per peer
+spark2:452967:452967 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark2:452967:452967 [0] NCCL INFO ncclCommInitRankConfig comm 0x560d29f0 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x96e6b59ed0fdc000 - Init COMPLETE
+spark2:452967:452967 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 1 total 0.03 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.03, rest 0.00)
+ [2026-09-08 17:58:43] iteration        1/       2 | consumed samples:            2 | elapsed time per iteration (ms): 1386.6 | learning rate: 5.000000E-06 | global batch size:     2 | lm loss: 2.845535E+00 | loss scale: 1.0 | grad norm: 123.527 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-09-08 17:58:44] iteration        2/       2 | consumed samples:            4 | elapsed time per iteration (ms): 340.2 | learning rate: 0.000000E+00 | global batch size:     2 | lm loss: 2.574254E+00 | loss scale: 1.0 | grad norm: 24.289 | number of skipped iterations:   0 | number of nan iterations:   0 |
+INFO:megatron.core.timers:(min, max) time across ranks (ms):
+    evaluate .......................................: (53.22, 53.22)
+---------------------------------------------------------------------------------------------
+ validation loss at iteration 2 | lm loss value: 3.145808E+00 | lm loss PPL: 2.323844E+01 | 
+---------------------------------------------------------------------------------------------
+spark2:452967:452967 [0] NCCL INFO Channel 04/1 : 1[0] -> 0[0] [send] via NET/IB/0/Shared
+spark2:452967:452967 [0] NCCL INFO Channel 05/1 : 1[0] -> 0[0] [send] via NET/IB/0/Shared
+INFO:megatron.core.timers:(min, max) time across ranks (ms):
+    save-checkpoint ................................: (63672.74, 63672.76)
+INFO:megatron.core.timers:(min, max) time across ranks (ms):
+    evaluate .......................................: (111.61, 111.62)
+---------------------------------------------------------------------------------------------------------------
+ validation loss at iteration 2 on validation set | lm loss value: 1.468120E+00 | lm loss PPL: 4.341068E+00 | 
+---------------------------------------------------------------------------------------------------------------
+spark2:452967:452967 [0] NCCL INFO comm 0x5543eb80 rank 1 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark2:452967:452967 [0] NCCL INFO comm 0x551a41d0 rank 1 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark2:452967:452967 [0] NCCL INFO comm 0x2e70f520 rank 0 nranks 1 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark2:452967:452967 [0] NCCL INFO comm 0x49979260 rank 0 nranks 1 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark2:452967:452967 [0] NCCL INFO comm 0x560d29f0 rank 0 nranks 1 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark2:452967:452967 [0] NCCL INFO comm 0x20fdb150 rank 1 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark2:452967:452967 [0] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+[workflow] stage=tuned node_rank=1
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/backends.py:34: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/gpt/gpt_layer_specs.py:74: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/gpt/heterogeneous/heterogeneous_layer_specs.py:68: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+    
+  queued_call()
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/vision/vit_layer_specs.py:31: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+INFO:megatron.bridge.models.gemma.gemma2_provider:Gemma2: PyTorch FlexAttention available — softcap+SWA fused via Triton score_mod.
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/mimo/config/base_configs.py:12: UserWarning: MimoModelConfig is experimental and still under active development. The API may change without notice in future releases.
+  class MimoModelConfig:
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[stage] rank=1 model=Qwen/Qwen2.5-0.5B-Instruct model_type=qwen2 dataset=HuggingFaceH4/no_robots model_revision=7ae557604adf67be50417f59c2c2f167def9a775 dataset_revision=e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b
+[stage] world_size=2 tp=1 pp=1 ep=1 dp=2 gbs=2
+INFO:megatron.training.utils.log_utils:Setting logging level to 20
+spark2:453166:453166 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+spark2:453166:453166 [0] NCCL INFO cudaDriverVersion 13000
+spark2:453166:453166 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark2:453166:453166 [0] NCCL INFO Bootstrap: Using enp1s0f0np0:12.201.48.13<0>
+spark2:453166:453166 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+spark2:453166:453166 [0] NCCL INFO Comm config Blocking set to 1
+spark2:453166:453166 [0] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+spark2:453166:453166 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark2:453166:453166 [0] NCCL INFO NCCL_IB_HCA set to rocep1s0f0
+spark2:453166:453166 [0] NCCL INFO NET/IB : Using [0]rocep1s0f0:1/RoCE [RO]; OOB enp1s0f0np0:12.201.48.13<0>
+spark2:453166:453166 [0] NCCL INFO Initialized NET plugin IB
+spark2:453166:453166 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:453166:453166 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:453166:453166 [0] NCCL INFO Using network IB
+spark2:453166:453166 [0] NCCL INFO ncclCommInitRankConfig comm 0x1f9e7a50 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x2e6edcef3db62a55 - Init START
+spark2:453166:453166 [0] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+spark2:453166:453166 [0] NCCL INFO Bootstrap timings total 0.004895 (create 0.000023, send 0.001200, recv 0.001866, ring 0.000550, delay 0.000000)
+spark2:453166:453166 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:453166:453166 [0] NCCL INFO comm 0x1f9e7a50 rank 1 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark2:453166:453166 [0] NCCL INFO Trees [0] -1/-1/-1->1->0 [1] -1/-1/-1->1->0 [2] -1/-1/-1->1->0 [3] -1/-1/-1->1->0 [4] 0/-1/-1->1->-1 [5] 0/-1/-1->1->-1 [6] 0/-1/-1->1->-1 [7] 0/-1/-1->1->-1
+spark2:453166:453166 [0] NCCL INFO P2P Chunksize set to 131072
+spark2:453166:453166 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+spark2:453166:453166 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:453166:453192 [0] NCCL INFO [Proxy Service] Device 0 CPU core 8
+spark2:453166:453193 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 0
+spark2:453166:453166 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+spark2:453166:453166 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark2:453166:453166 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark2:453166:453166 [0] NCCL INFO ncclCommInitRankConfig comm 0x1f9e7a50 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x2e6edcef3db62a55 - Init COMPLETE
+spark2:453166:453166 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 1 nranks 2 total 0.19 (kernels 0.13, alloc 0.05, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark2:453166:453166 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453194 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 6
+spark2:453166:453166 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+[Gloo] Rank 1 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[Gloo] Rank 1 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[Gloo] Rank 1 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+> compiling dataset index builder ...
+make: Entering directory '/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/datasets'
+make: Nothing to be done for 'default'.
+make: Leaving directory '/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/datasets'
+>>> done with dataset index builder. Compilation time: 0.020 seconds
+INFO:root:Using preset vocab_size: 151936 over the tokenizer vocab_size: 151665, dummy tokens: 271.
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/checkpoint/utils.py:483: UserWarning: torch.distributed is disabled, unavailable or uninitialized, assuming the intent is to load in a single process.
+  return func(*args, **kwargs)
+spark2:453166:453166 [0] NCCL INFO Comm config Blocking set to 1
+spark2:453166:453166 [0] NCCL INFO Initialized NET plugin IB
+spark2:453166:453166 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:453166:453166 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:453166:453166 [0] NCCL INFO Using network IB
+spark2:453166:453166 [0] NCCL INFO ncclCommInitRankConfig comm 0x30835650 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xcb131864b2b6afc7 - Init START
+spark2:453166:453166 [0] NCCL INFO Bootstrap timings total 0.001236 (create 0.000036, send 0.000317, recv 0.000448, ring 0.000109, delay 0.000000)
+spark2:453166:453166 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:453166:453166 [0] NCCL INFO comm 0x30835650 rank 1 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark2:453166:453166 [0] NCCL INFO Trees [0] -1/-1/-1->1->0 [1] -1/-1/-1->1->0 [2] -1/-1/-1->1->0 [3] -1/-1/-1->1->0 [4] 0/-1/-1->1->-1 [5] 0/-1/-1->1->-1 [6] 0/-1/-1->1->-1 [7] 0/-1/-1->1->-1
+spark2:453166:453166 [0] NCCL INFO P2P Chunksize set to 131072
+spark2:453166:453166 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:453166:453259 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 17
+spark2:453166:453258 [0] NCCL INFO [Proxy Service] Device 0 CPU core 1
+spark2:453166:453166 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark2:453166:453166 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark2:453166:453166 [0] NCCL INFO ncclCommInitRankConfig comm 0x30835650 rank 1 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xcb131864b2b6afc7 - Init COMPLETE
+spark2:453166:453166 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 1 nranks 2 total 0.01 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark2:453166:453166 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [receive] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453260 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 0
+spark2:453166:453166 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [send] via NET/IB/0
+spark2:453166:453166 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/checkpoint/logger.py:90: UserWarning: The argument order of load has been changed. Please check the document to avoid future breakages.
+  result = func(*args, **kwargs)
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/checkpoint/utils.py:481: UserWarning: torch.distributed is disabled, unavailable or uninitialized, assuming the intent is to load in a single process.
+  return func(args[0], **kwargs)
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/checkpoint/planner_helpers.py:419: FutureWarning: Please use DTensor instead and we are deprecating ShardedTensor.
+  device = getattr(value, "device", None)
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/checkpoint/default_planner.py:483: FutureWarning: Please use DTensor instead and we are deprecating ShardedTensor.
+  and md.size != obj.size()
+INFO:megatron.core.timers:(min, max) time across ranks (ms):
+    load-checkpoint ................................: (466.26, 466.26)
+> setting tensorboard ...
+Generating train split: 0 examples [00:00, ? examples/s]Generating train split: 8 examples [00:00, 7533.55 examples/s]
+Generating validation split: 0 examples [00:00, ? examples/s]Generating validation split: 2 examples [00:00, 2285.72 examples/s]
+INFO:megatron.core.timers:(min, max) time across ranks (ms):
+    model-and-optimizer-setup ......................: (290.35, 290.46)
+    train/valid/test-data-iterators-setup ..........: (214.49, 233.65)
+spark2:453166:453166 [0] NCCL INFO Comm config Blocking set to 1
+spark2:453166:453166 [0] NCCL INFO Initialized NET plugin IB
+spark2:453166:453166 [0] NCCL INFO Assigned NET plugin IB to comm
+spark2:453166:453166 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark2:453166:453166 [0] NCCL INFO Using network IB
+spark2:453166:453166 [0] NCCL INFO ncclCommInitRankConfig comm 0x48306890 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x6572748183dbbee8 - Init START
+spark2:453166:453166 [0] NCCL INFO Bootstrap timings total 0.000352 (create 0.000019, send 0.000096, recv 0.000167, ring 0.000000, delay 0.000000)
+spark2:453166:453166 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark2:453166:453166 [0] NCCL INFO comm 0x48306890 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+spark2:453166:453166 [0] NCCL INFO Channel 00/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 01/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 02/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 03/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 04/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 05/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 06/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 07/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 08/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 09/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 10/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 11/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 12/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 13/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 14/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 15/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 16/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 17/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 18/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 19/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 20/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 21/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 22/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 23/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 24/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 25/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 26/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 27/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 28/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 29/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 30/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 31/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 32/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 33/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 34/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 35/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 36/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 37/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 38/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 39/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 40/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 41/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 42/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 43/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 44/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 45/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 46/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 47/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 48/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 49/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 50/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 51/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 52/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 53/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 54/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 55/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 56/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 57/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 58/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 59/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 60/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 61/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 62/64 : 0
+spark2:453166:453166 [0] NCCL INFO Channel 63/64 : 0
+spark2:453166:453166 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1 [32] -1/-1/-1->0->-1 [33] -1/-1/-1->0->-1 [34] -1/-1/-1->0->-1 [35] -1/-1/-1->0->-1 [36] -1/-1/-1->0->-1 [37] -1/-1/-1->0->-1 [38] -1/-1/-1->0->-1 [39] -1/-1/-1->0->-1 [40] -1/-1/-1->0->-1 [41] -1/-1/-1->0->-1 [42] -1/-1/-1->0->-1 [43] -1/-1/-1->0->-1 [44] -1/-1/-1->0->-1 [45] -1/-1/-1->0->-1 [46] -1/-1/-1->0->-1 [47] 
+spark2:453166:453166 [0] NCCL INFO P2P Chunksize set to 524288
+spark2:453166:453166 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark2:453166:453320 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 19
+spark2:453166:453319 [0] NCCL INFO [Proxy Service] Device 0 CPU core 7
+spark2:453166:453166 [0] NCCL INFO 64 coll channels, 64 collnet channels, 0 nvls channels, 64 p2p channels, 64 p2p channels per peer
+spark2:453166:453166 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark2:453166:453166 [0] NCCL INFO ncclCommInitRankConfig comm 0x48306890 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x6572748183dbbee8 - Init COMPLETE
+spark2:453166:453166 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 1 total 0.02 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.02, rest 0.00)
+INFO:megatron.core.timers:(min, max) time across ranks (ms):
+    evaluate .......................................: (443.56, 443.56)
+---------------------------------------------------------------------------------------------------------------
+ validation loss at iteration 2 on validation set | lm loss value: 3.145808E+00 | lm loss PPL: 2.323844E+01 | 
+---------------------------------------------------------------------------------------------------------------
+spark2:453166:453166 [0] NCCL INFO comm 0x30835650 rank 1 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark2:453166:453166 [0] NCCL INFO comm 0x48306890 rank 0 nranks 1 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark2:453166:453166 [0] NCCL INFO comm 0x1f9e7a50 rank 1 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark2:453166:453166 [0] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+    
+  queued_call()
+[summary] base_eval_loss=3.152960 tuned_eval_loss=3.145808 change=-0.23%
+[summary] path=/home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/summary.json

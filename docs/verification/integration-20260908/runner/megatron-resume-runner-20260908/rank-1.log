@@ -1,0 +1,24 @@
+[runner] remote_commit=b913f39d887c80714c6120f0a2b151fe375cd39a
+[runner] remote_dirty=
+[spark-runtime] python=/home/spark/ptl-envs/megatron/bin/python
+[spark-runtime] python_site=/home/spark/ptl-envs/megatron/lib/python3.12/site-packages
+[spark-runtime] libext=.cpython-312-aarch64-linux-gnu.so nvte_nccl_ep=0
+{
+  "context_parallel_size": 1,
+  "data_parallel_size": 2,
+  "expert_data_parallel_size": 2,
+  "expert_parallel_size": 1,
+  "expert_tensor_parallel_size": 1,
+  "global_batch_size": 2,
+  "gradient_accumulation_steps": 1,
+  "micro_batch_size": 1,
+  "model_parallel_size": 1,
+  "nnodes": 2,
+  "node_rank": 1,
+  "nproc_per_node": 1,
+  "pipeline_parallel_size": 1,
+  "tensor_parallel_size": 1,
+  "world_size": 2
+}
+[workflow] stage=base node_rank=1
+Terminated

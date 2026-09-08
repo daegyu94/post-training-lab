@@ -1,0 +1,2341 @@
+[spark-runtime] python=/home/spark/ptl-envs/megatron/bin/python
+[spark-runtime] python_site=/home/spark/ptl-envs/megatron/lib/python3.12/site-packages
+[spark-runtime] libext=.cpython-312-aarch64-linux-gnu.so nvte_nccl_ep=0
+{
+  "context_parallel_size": 1,
+  "data_parallel_size": 2,
+  "expert_data_parallel_size": 2,
+  "expert_parallel_size": 1,
+  "expert_tensor_parallel_size": 1,
+  "global_batch_size": 2,
+  "gradient_accumulation_steps": 1,
+  "micro_batch_size": 1,
+  "model_parallel_size": 1,
+  "nnodes": 2,
+  "node_rank": 0,
+  "nproc_per_node": 1,
+  "pipeline_parallel_size": 1,
+  "tensor_parallel_size": 1,
+  "world_size": 2
+}
+[workflow] stage=base node_rank=0
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/backends.py:34: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/gpt/gpt_layer_specs.py:74: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/gpt/heterogeneous/heterogeneous_layer_specs.py:68: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+    
+  queued_call()
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/vision/vit_layer_specs.py:31: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+INFO:megatron.bridge.models.gemma.gemma2_provider:Gemma2: PyTorch FlexAttention available — softcap+SWA fused via Triton score_mod.
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/mimo/config/base_configs.py:12: UserWarning: MimoModelConfig is experimental and still under active development. The API may change without notice in future releases.
+  class MimoModelConfig:
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[stage] rank=0 model=Qwen/Qwen2.5-0.5B-Instruct model_type=qwen2 dataset=HuggingFaceH4/no_robots model_revision=7ae557604adf67be50417f59c2c2f167def9a775 dataset_revision=e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b
+[stage] world_size=2 tp=1 pp=1 ep=1 dp=2 gbs=2
+/home/spark/post-training-unified/backends/megatron/megatron_lab/sft.py:231: UserWarning: Function 'finetune' is experimental. APIs in this module are subject to change without notice.
+  finetune(config=config, forward_step_func=forward_step)
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/bridge/training/finetune.py:54: UserWarning: Function 'pretrain' is experimental. APIs in this module are subject to change without notice.
+  return pretrain(config, forward_step_func, callbacks=callbacks)
+
+======================================================================
+Configuration Summary (Non-Default Values vs Megatron Core)
+======================================================================
+
+[optimizer] Non-default values (vs Mcore OptimizerConfig):
+  bf16: True  (Mcore default: False)
+  fp8_recipe: 'tensorwise'  (Mcore default: None)
+  lr: 5e-06  (Mcore default: None)
+  min_lr: 0.0  (Mcore default: None)
+  params_dtype: torch.bfloat16  (Mcore default: torch.float32)
+  use_distributed_optimizer: True  (Mcore default: False)
+
+[ddp] Non-default values (vs Mcore DistributedDataParallelConfig):
+  grad_reduce_in_fp32: True  (Mcore default: False)
+  use_distributed_optimizer: True  (Mcore default: False)
+
+[model] Non-default values (vs Mcore TransformerConfig):
+  add_bias_linear: False  (Mcore default: True)
+  add_qkv_bias: True  (Mcore default: False)
+  attention_backend: <AttnBackend.local: 4>  (Mcore default: <AttnBackend.auto: 5>)
+  attention_dropout: 0.0  (Mcore default: 0.1)
+  attention_softmax_in_fp32: False  (Mcore default: True)
+  autocast_dtype: torch.bfloat16  (Mcore default: None)
+  bf16: True  (Mcore default: False)
+  cuda_graph_modules: []  (Mcore default: 'full')
+  deallocate_pipeline_outputs: True  (Mcore default: False)
+  embedding_init_method_std: 0.02  (Mcore default: None)
+  expert_tensor_parallel_size: 1  (Mcore default: None)
+  ffn_hidden_size: 4864  (Mcore default: None)
+  fp8_recipe: 'tensorwise'  (Mcore default: 'delayed')
+  gated_linear_unit: True  (Mcore default: False)
+  hidden_dropout: 0.0  (Mcore default: 0.1)
+  hidden_size: 896  (Mcore default: 0)
+  inference_cuda_graph_scope: <InferenceCudaGraphScope.none: 1>  (Mcore default: None)
+  kv_channels: 64  (Mcore default: None)
+  layernorm_epsilon: 1e-06  (Mcore default: 1e-05)
+  microbatch_group_size_per_vp_stage: 1  (Mcore default: None)
+  mtp_num_layers: 0  (Mcore default: None)
+  normalization: 'RMSNorm'  (Mcore default: 'LayerNorm')
+  num_attention_heads: 14  (Mcore default: 0)
+  num_layers: 24  (Mcore default: 0)
+  num_layers_at_end_in_bf16: 0  (Mcore default: 1)
+  num_layers_at_start_in_bf16: 0  (Mcore default: 1)
+  num_query_groups: 2  (Mcore default: None)
+  params_dtype: torch.bfloat16  (Mcore default: torch.float32)
+  pipeline_dtype: torch.bfloat16  (Mcore default: None)
+  recompute_granularity: 'full'  (Mcore default: None)
+  recompute_method: 'uniform'  (Mcore default: None)
+  recompute_modules: ['core_attn']  (Mcore default: None)
+  recompute_num_layers: 1  (Mcore default: None)
+  transformer_impl: 'local'  (Mcore default: 'transformer_engine')
+
+----------------------------------------------------------------------
+Other Configuration Values:
+----------------------------------------------------------------------
+
+[train]:
+  check_optimizer_step_success: True
+  decrease_batch_size_if_needed: False
+  empty_unused_memory_level: 0
+  exit_signal: <Signals.SIGTERM: 15>
+  exit_signal_handler: False
+  exit_signal_handler_for_dataloader: False
+  exit_signal_handler_for_training: False
+  global_batch_size: 2
+  iterations_to_skip: []
+  manual_gc: False
+  manual_gc_eval: True
+  manual_gc_interval: 0
+  micro_batch_size: 1
+  skip_sync_grad_norm_across_mp: False
+  train_iters: 2
+
+[validation]:
+  eval_global_batch_size: 2
+  eval_interval: 2
+  eval_iters: 1
+  eval_micro_batch_size: 1
+  full_validation: False
+  multiple_validation_sets: False
+  skip_train: True
+  test_mode: False
+
+[scheduler]:
+  end_weight_decay: 0.01
+  lr_decay_iters: 2
+  lr_decay_steps: 4
+  lr_decay_style: 'linear'
+  lr_warmup_init: 0.0
+  lr_warmup_iters: 1
+  lr_warmup_samples: 0
+  lr_warmup_steps: 2
+  lr_wsd_decay_style: 'exponential'
+  max_steps: 2
+  override_opt_param_scheduler: False
+  start_weight_decay: 0.01
+  use_checkpoint_opt_param_scheduler: False
+  wd_incr_steps: 4
+  weight_decay_incr_style: 'constant'
+
+[dataset]:
+  data_sharding: True
+  dataloader_type: 'cyclic'
+  defer_in_batch_packing_to_step: False
+  do_test: False
+  do_validation: True
+  drop_last: True
+  enable_in_batch_packing: False
+  hf_processor_path: '/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct'
+  in_batch_packing_pad_to_multiple_of: 1
+  num_workers: 0
+  pad_to_max_length: False
+  pad_to_multiple_of: 128
+  persistent_workers: False
+  pin_memory: True
+  preprocessing: PromptCompletionSFTPreprocessingConfig(prompt_column='prompt', completion_column='completion', prompt_template='{prompt}', separator='', loss_mode='completion', strip_whitespace=False, add_bos=False, add_sep=False, add_eos=False, truncation_method='right')
+  seq_length: 2048
+  skip_getting_attention_mask_from_dataset: True
+  source: HFDatasetSourceConfig(dataset_name=None, path_or_dataset='json', split='train', subset=None, load_kwargs={'data_files': {'train': '/home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/prepared-cluster-data-rank-0/training.jsonl'}}, schema_adapter=None, adapter_kwargs=None)
+  validation_source: HFDatasetSourceConfig(dataset_name=None, path_or_dataset='json', split='validation', subset=None, load_kwargs={'data_files': {'validation': '/home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/prepared-cluster-data-rank-0/validation.jsonl'}}, schema_adapter=None, adapter_kwargs=None)
+
+[checkpoint]:
+  also_save_hf_checkpoint: False
+  async_ckpt_cpu_priority: 10
+  async_ckpt_io_priority: 3
+  async_ckpt_use_cpu_shm: False
+  async_save: False
+  async_strategy: 'mcore'
+  async_write_results_mp_mode: 'fork'
+  auto_detect_ckpt_format: False
+  ckpt_assume_constant_structure: False
+  ckpt_convert_update_legacy_dist_opt_format: False
+  ckpt_format: 'torch_dist'
+  ckpt_fully_parallel_load_exchange_algo: 'broadcast'
+  ckpt_fully_parallel_load_process_group: 'dp'
+  ckpt_fully_parallel_save_process_group: 'dp'
+  ckpt_load_validate_sharding_integrity: True
+  dist_ckpt_optim_fully_reshardable: False
+  dist_ckpt_save_pre_mcore_014: False
+  dist_ckpt_strictness: 'assume_ok_unexpected'
+  dist_ckpt_workers: 1
+  distrib_optim_fully_reshardable_mem_efficient: False
+  exit_on_missing_checkpoint: False
+  finetune: True
+  fully_parallel_load: True
+  fully_parallel_save: True
+  hf_distributed_save: False
+  hf_save_every_n_ranks: 1
+  hf_trust_remote_code: False
+  load_main_params_from_ckpt: False
+  load_optim: False
+  load_rng: True
+  most_recent_k: -1
+  non_persistent_local_ckpt_algo: 'fully_parallel'
+  pretrained_checkpoint: '/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct'
+  replication: False
+  replication_factor: 2
+  save_interval: 2
+  save_optim: True
+  save_rng: True
+  save_tokenizer_assets: True
+  storage_writers_per_rank: 1
+  stream_ckpt_dequant: True
+  strict_fsdp_dtensor_load: False
+  use_checkpoint_args: False
+  use_mp_args_from_checkpoint_args: False
+  use_persistent_ckpt_worker: True
+  use_tokenizer_model_from_checkpoint_args: True
+  verify_integrity: False
+
+[logger]:
+  barrier_with_L1_time: True
+  filter_warnings: True
+  log_device_memory_used: False
+  log_energy: False
+  log_interval: 1
+  log_l2_norm_grad_to_tensorboard: False
+  log_loss_scale_to_tensorboard: True
+  log_max_attention_logit: False
+  log_memory_to_tensorboard: False
+  log_num_zeros_in_grad: False
+  log_params_norm: False
+  log_progress: False
+  log_runtime_to_tensorboard: False
+  log_throughput: False
+  log_throughput_to_tensorboard: False
+  log_timers_to_tensorboard: False
+  log_validation_ppl_to_tensorboard: False
+  log_world_size_to_tensorboard: False
+  mlflow_log_artifacts: True
+  moe_routing_trace_capture_hidden_states: False
+  moe_routing_trace_capture_logits: False
+  moe_routing_trace_dump_weights: False
+  runtime_time_unit: 'hours'
+  set_level_for_all_loggers: False
+  skip_train_metrics_log: False
+  tensorboard_dir: '/home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/tensorboard'
+  tensorboard_log_interval: 1
+  tensorboard_queue_size: 1000
+  throughput_window_size: 100
+  timing_log_level: 0
+  timing_log_option: 'minmax'
+
+[tokenizer]:
+  force_system_message: False
+  hf_tokenizer_kwargs: {}
+  make_vocab_size_divisible_by: 1
+  null_tokenizer_pad_id: -1
+  pad_vocab_size: False
+  rank: 0
+  sp_tokenizer_kwargs: {}
+  tensor_model_parallel_size: 1
+  tiktoken_num_special_tokens: 1000
+  tokenizer_hf_no_include_special_tokens: False
+  tokenizer_hf_no_use_fast: False
+  tokenizer_model: '/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct'
+  tokenizer_sentencepiece_ignore_extra_whitespaces: True
+  tokenizer_sentencepiece_legacy: False
+  tokenizer_type: 'HuggingFaceTokenizer'
+  trust_remote_code: False
+  use_tokenizer_vocab_size: False
+  vocab_extra_ids: 0
+
+[rng]:
+  data_parallel_random_init: False
+  inference_rng_tracker: False
+  seed: 42
+  te_rng_tracker: False
+
+======================================================================
+INFO:megatron.training.utils.log_utils:Setting logging level to 20
+INFO:megatron.core.num_microbatches_calculator:setting number of microbatches to constant 1
+> initializing torch distributed ...
+spark1:1228934:1228934 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+spark1:1228934:1228934 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark1:1228934:1228934 [0] NCCL INFO Bootstrap: Using enp1s0f0np0:12.201.48.11<0>
+spark1:1228934:1228934 [0] NCCL INFO cudaDriverVersion 13000
+spark1:1228934:1228934 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+spark1:1228934:1228934 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1228934:1228934 [0] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+spark1:1228934:1228934 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark1:1228934:1228934 [0] NCCL INFO NCCL_IB_HCA set to rocep1s0f0
+spark1:1228934:1228934 [0] NCCL INFO NET/IB : Using [0]rocep1s0f0:1/RoCE [RO]; OOB enp1s0f0np0:12.201.48.11<0>
+spark1:1228934:1228934 [0] NCCL INFO Initialized NET plugin IB
+spark1:1228934:1228934 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1228934:1228934 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1228934:1228934 [0] NCCL INFO Using network IB
+spark1:1228934:1228934 [0] NCCL INFO ncclCommInitRankConfig comm 0x23527e40 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x2989b35735012a9c - Init START
+spark1:1228934:1228934 [0] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+spark1:1228934:1228934 [0] NCCL INFO Bootstrap timings total 0.002612 (create 0.000027, send 0.000076, recv 0.000953, ring 0.000504, delay 0.000000)
+spark1:1228934:1228934 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1228934:1228934 [0] NCCL INFO comm 0x23527e40 rank 0 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 00/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Channel 01/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Channel 02/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Channel 03/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Channel 04/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Channel 05/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Channel 06/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Channel 07/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] 1/-1/-1->0->-1 [2] 1/-1/-1->0->-1 [3] 1/-1/-1->0->-1 [4] -1/-1/-1->0->1 [5] -1/-1/-1->0->1 [6] -1/-1/-1->0->1 [7] -1/-1/-1->0->1
+spark1:1228934:1228934 [0] NCCL INFO P2P Chunksize set to 131072
+spark1:1228934:1228934 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+spark1:1228934:1228934 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1228934:1228962 [0] NCCL INFO [Proxy Service] Device 0 CPU core 14
+spark1:1228934:1228963 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 11
+spark1:1228934:1228934 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+spark1:1228934:1228934 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark1:1228934:1228934 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark1:1228934:1228934 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1228934:1228934 [0] NCCL INFO ncclCommInitRankConfig comm 0x23527e40 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x2989b35735012a9c - Init COMPLETE
+spark1:1228934:1228934 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 2 total 0.16 (kernels 0.12, alloc 0.02, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark1:1228934:1228934 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228964 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 17
+spark1:1228934:1228934 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+[Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+> initialized tensor model parallel with size 1
+> initialized pipeline model parallel with size 1
+> setting random seeds to 42 ...
+> compiling dataset index builder ...
+make: Entering directory '/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/datasets'
+make: Nothing to be done for 'default'.
+make: Leaving directory '/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/datasets'
+>>> done with dataset index builder. Compilation time: 0.021 seconds
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+time to initialize megatron (seconds): 1.464
+[after megatron is initialized] datetime: 2026-09-08 17:58:19 
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/bridge/utils/common_utils.py:112: UserWarning: `build_tokenizer` is deprecated and will be removed soon. Please, use `megatron.core.tokenizers.utils.build_tokenizer` instead.
+  warnings.warn(message)
+INFO:root:Using preset vocab_size: 151936 over the tokenizer vocab_size: 151665, dummy tokens: 271.
+[after tokenizer is built] datetime: 2026-09-08 17:58:19 
+ > number of parameters on (tensor, gtp_remat, pipeline) model parallel rank (0, 0, 0): 494032768
+INFO:megatron.core.distributed.distributed_data_parallel:Setting up DistributedDataParallel with config DistributedDataParallelConfig(grad_reduce_in_fp32=True, overlap_grad_reduce=False, overlap_param_gather=False, align_param_gather=False, use_distributed_optimizer=True, num_distributed_optimizer_instances=1, check_for_nan_in_grad=False, check_for_large_grads=False, bucket_size=None, num_buckets=None, pad_buckets_for_high_nccl_busbw=False, reduce_scatter_with_fp32_accumulation=False, param_name_patterns_for_fp32_local_accumulation=(), average_in_collective=False, fp8_param_gather=False, fp4_param_gather=False, reuse_grad_buf_for_mxfp8_param_ag=False, use_megatron_fsdp=False, use_custom_fsdp=False, data_parallel_sharding_strategy='no_shard', gradient_reduce_div_fusion=True, suggested_communication_unit_size=None, keep_fp8_transpose_cache=False, nccl_ub=False, fsdp_double_buffer=False, fsdp_db_use_persist_buf_on_alloc_fail=False, fsdp_all_gather_in_start_param_sync=True, outer_dp_sharding_strategy='no_shard', disable_symmetric_registration=False, fsdp_manual_registration=False, delay_wgrad_compute=False, megatron_fsdp_main_params_dtype=torch.float32, megatron_fsdp_main_grads_dtype=None, megatron_fsdp_grad_comm_dtype=None, megatron_fsdp_use_decoupled_grad=False, megatron_fsdp_cuda_graph_mode=False, megatron_fsdp_enable_fine_grained_param_gather=False, megatron_fsdp_max_pool_double_buffer=False)
+INFO:megatron.core.distributed.param_and_grad_buffer:Number of buckets for gradient all-reduce / reduce-scatter: 1
+Params for bucket 1 (494032768 elements, 494032768 padded size, 0 param(s) with extra main_grads):
+	module.decoder.final_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.embedding.word_embeddings.weight (param.main_grad.dtype=torch.float32)
+INFO:megatron.core.distributed.param_and_grad_buffer:Using reduce-scatter for gradient reductions because self.ddp_config.use_distributed_optimizer=True
+INFO:megatron.core.optimizer:Setting up optimizer with config OptimizerConfig(lr=5e-06, min_lr=0.0, decoupled_lr=None, decoupled_min_lr=None, weight_decay=0.01, apply_wd_to_qk_layernorm=False, fp8_recipe='tensorwise', fp16=False, bf16=True, reuse_grad_buf_for_mxfp8_param_ag=False, params_dtype=torch.bfloat16, use_precision_aware_optimizer=False, store_param_remainders=True, main_grads_dtype=torch.float32, main_params_dtype=torch.float32, exp_avg_dtype=torch.float32, exp_avg_sq_dtype=torch.float32, optimizer='adam', loss_scale=None, initial_loss_scale=4294967296, min_loss_scale=1.0, loss_scale_window=1000, hysteresis=2, adam_beta1=0.9, adam_beta2=0.999, adam_eps=1e-08, decoupled_weight_decay=True, sgd_momentum=0.9, muon_momentum=0.95, muon_split_qkv=True, muon_nesterov=False, muon_scale_mode='spectral', muon_fp32_matmul_prec='medium', muon_coefficient_type='quintic', muon_num_ns_steps=5, muon_tp_mode='blockwise', muon_extra_scale_factor=1.0, muon_scalar_optimizer='adam', lion_beta1=0.95, lion_beta2=0.98, soap_shampoo_beta=0.95, soap_precondition_frequency=1, soap_use_kl_shampoo=True, adaptive_muon_moment2_method='adamuon', adaptive_muon_beta2=0.95, adaptive_muon_eps=1e-08, use_distributed_optimizer=True, use_layer_wise_distributed_optimizer=False, overlap_param_gather=False, overlap_param_gather_with_optimizer_step=False, optimizer_cpu_offload=False, optimizer_offload_fraction=0.0, use_torch_optimizer_for_cpu_offload=False, overlap_cpu_optimizer_d2h_h2d=False, pin_cpu_grads=True, pin_cpu_params=True, clip_grad=1.0, grad_norm_skip_threshold=inf, log_num_zeros_in_grad=False, barrier_with_L1_time=False, timers=<megatron.core.timers.Timers object at 0xeb2ab99f8740>, config_logger_dir='', optimizer_cuda_graph=False)
+INFO:megatron.core.distributed.param_and_grad_buffer:Using reduce-scatter for gradient reductions because self.ddp_config.use_distributed_optimizer=True
+INFO:megatron.core.optimizer_param_scheduler:> learning rate decay style: linear
+[after model, optimizer, and learning rate scheduler are built] datetime: 2026-09-08 17:58:19 
+Checkpoint file not found in load directory None. Attempting to finetune with checkpoint in /home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct
+ loading HuggingFace-format checkpoint from /home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct
+spark1:1228934:1228934 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1228934:1228934 [0] NCCL INFO Initialized NET plugin IB
+spark1:1228934:1228934 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1228934:1228934 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1228934:1228934 [0] NCCL INFO Using network IB
+spark1:1228934:1228934 [0] NCCL INFO ncclCommInitRankConfig comm 0x30c5a140 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x30473a27d6ebbed2 - Init START
+spark1:1228934:1228934 [0] NCCL INFO Bootstrap timings total 0.000339 (create 0.000019, send 0.000075, recv 0.000181, ring 0.000001, delay 0.000000)
+spark1:1228934:1228934 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1228934:1228934 [0] NCCL INFO comm 0x30c5a140 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 00/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 01/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 02/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 03/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 04/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 05/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 06/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 07/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 08/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 09/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 10/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 11/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 12/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 13/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 14/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 15/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 16/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 17/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 18/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 19/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 20/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 21/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 22/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 23/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 24/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 25/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 26/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 27/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 28/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 29/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 30/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 31/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 32/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 33/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 34/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 35/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 36/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 37/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 38/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 39/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 40/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 41/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 42/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 43/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 44/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 45/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 46/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 47/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 48/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 49/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 50/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 51/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 52/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 53/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 54/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 55/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 56/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 57/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 58/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 59/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 60/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 61/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 62/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 63/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1 [32] -1/-1/-1->0->-1 [33] -1/-1/-1->0->-1 [34] -1/-1/-1->0->-1 [35] -1/-1/-1->0->-1 [36] -1/-1/-1->0->-1 [37] -1/-1/-1->0->-1 [38] -1/-1/-1->0->-1 [39] -1/-1/-1->0->-1 [40] -1/-1/-1->0->-1 [41] -1/-1/-1->0->-1 [42] -1/-1/-1->0->-1 [43] -1/-1/-1->0->-1 [44] -1/-1/-1->0->-1 [45] -1/-1/-1->0->-1 [46] -1/-1/-1->0->-1 [47
+spark1:1228934:1228934 [0] NCCL INFO P2P Chunksize set to 524288
+spark1:1228934:1228934 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1228934:1229029 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 10
+spark1:1228934:1229028 [0] NCCL INFO [Proxy Service] Device 0 CPU core 7
+spark1:1228934:1228934 [0] NCCL INFO 64 coll channels, 64 collnet channels, 0 nvls channels, 64 p2p channels, 64 p2p channels per peer
+spark1:1228934:1228934 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1228934:1228934 [0] NCCL INFO ncclCommInitRankConfig comm 0x30c5a140 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x30473a27d6ebbed2 - Init COMPLETE
+spark1:1228934:1228934 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 1 total 0.03 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.03, rest 0.00)
+Loading from /home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-I… (… Qwe…
+> building train, validation, and test datasets ...
+ > datasets target sizes (minimum size):
+    train:      4
+    validation: 4
+    test:       2
+Generating train split: 0 examples [00:00, ? examples/s]Generating train split: 8 examples [00:00, 7347.15 examples/s]
+Generating validation split: 0 examples [00:00, ? examples/s]Generating validation split: 2 examples [00:00, 1992.54 examples/s]
+[after dataloaders are built] datetime: 2026-09-08 17:58:24 
+done with setup ...
+skipping training ...
+Evaluating on 2 samples
+Evaluating iter 1/1
+spark1:1228934:1228934 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1228934:1228934 [0] NCCL INFO Initialized NET plugin IB
+spark1:1228934:1228934 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1228934:1228934 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1228934:1228934 [0] NCCL INFO Using network IB
+spark1:1228934:1228934 [0] NCCL INFO ncclCommInitRankConfig comm 0x4a4050b0 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x8f977bb98c8d4e07 - Init START
+spark1:1228934:1228934 [0] NCCL INFO Bootstrap timings total 0.000411 (create 0.000034, send 0.000114, recv 0.000180, ring 0.000000, delay 0.000000)
+spark1:1228934:1228934 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1228934:1228934 [0] NCCL INFO comm 0x4a4050b0 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 00/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 01/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 02/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 03/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 04/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 05/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 06/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 07/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 08/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 09/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 10/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 11/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 12/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 13/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 14/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 15/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 16/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 17/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 18/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 19/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 20/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 21/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 22/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 23/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 24/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 25/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 26/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 27/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 28/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 29/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 30/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 31/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 32/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 33/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 34/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 35/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 36/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 37/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 38/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 39/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 40/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 41/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 42/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 43/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 44/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 45/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 46/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 47/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 48/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 49/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 50/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 51/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 52/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 53/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 54/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 55/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 56/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 57/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 58/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 59/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 60/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 61/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 62/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 63/64 : 0
+spark1:1228934:1228934 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1 [32] -1/-1/-1->0->-1 [33] -1/-1/-1->0->-1 [34] -1/-1/-1->0->-1 [35] -1/-1/-1->0->-1 [36] -1/-1/-1->0->-1 [37] -1/-1/-1->0->-1 [38] -1/-1/-1->0->-1 [39] -1/-1/-1->0->-1 [40] -1/-1/-1->0->-1 [41] -1/-1/-1->0->-1 [42] -1/-1/-1->0->-1 [43] -1/-1/-1->0->-1 [44] -1/-1/-1->0->-1 [45] -1/-1/-1->0->-1 [46] -1/-1/-1->0->-1 [47
+spark1:1228934:1228934 [0] NCCL INFO P2P Chunksize set to 524288
+spark1:1228934:1228934 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1228934:1229096 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 15
+spark1:1228934:1229095 [0] NCCL INFO [Proxy Service] Device 0 CPU core 19
+spark1:1228934:1228934 [0] NCCL INFO 64 coll channels, 64 collnet channels, 0 nvls channels, 64 p2p channels, 64 p2p channels per peer
+spark1:1228934:1228934 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1228934:1228934 [0] NCCL INFO ncclCommInitRankConfig comm 0x4a4050b0 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x8f977bb98c8d4e07 - Init COMPLETE
+spark1:1228934:1228934 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 1 total 0.03 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.02, rest 0.00)
+spark1:1228934:1228934 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1228934:1228934 [0] NCCL INFO Initialized NET plugin IB
+spark1:1228934:1228934 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1228934:1228934 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1228934:1228934 [0] NCCL INFO Using network IB
+spark1:1228934:1228934 [0] NCCL INFO ncclCommInitRankConfig comm 0x576babd0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xb6dbfb4a410b7c05 - Init START
+spark1:1228934:1228934 [0] NCCL INFO Bootstrap timings total 0.005363 (create 0.000018, send 0.000094, recv 0.002271, ring 0.000726, delay 0.000000)
+spark1:1228934:1228934 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1228934:1228934 [0] NCCL INFO comm 0x576babd0 rank 0 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark1:1228934:1228934 [0] NCCL INFO Channel 00/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Channel 01/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Channel 02/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Channel 03/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Channel 04/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Channel 05/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Channel 06/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Channel 07/08 : 0 1
+spark1:1228934:1228934 [0] NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] 1/-1/-1->0->-1 [2] 1/-1/-1->0->-1 [3] 1/-1/-1->0->-1 [4] -1/-1/-1->0->1 [5] -1/-1/-1->0->1 [6] -1/-1/-1->0->1 [7] -1/-1/-1->0->1
+spark1:1228934:1228934 [0] NCCL INFO P2P Chunksize set to 131072
+spark1:1228934:1228934 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1228934:1229098 [0] NCCL INFO [Proxy Service] Device 0 CPU core 19
+spark1:1228934:1229099 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 15
+spark1:1228934:1228934 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark1:1228934:1228934 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark1:1228934:1228934 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1228934:1228934 [0] NCCL INFO ncclCommInitRankConfig comm 0x576babd0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xb6dbfb4a410b7c05 - Init COMPLETE
+spark1:1228934:1228934 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 2 total 0.01 (kernels 0.00, alloc 0.00, bootstrap 0.01, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark1:1228934:1229100 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 16
+spark1:1228934:1228934 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1228934:1228934 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+spark1:1228934:1228934 [0] NCCL INFO comm 0x576babd0 rank 0 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark1:1228934:1228934 [0] NCCL INFO comm 0x30c5a140 rank 0 nranks 1 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark1:1228934:1228934 [0] NCCL INFO comm 0x4a4050b0 rank 0 nranks 1 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark1:1228934:1228934 [0] NCCL INFO comm 0x23527e40 rank 0 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark1:1228934:1228934 [0] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+[workflow] stage=train node_rank=0
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/backends.py:34: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/gpt/gpt_layer_specs.py:74: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/gpt/heterogeneous/heterogeneous_layer_specs.py:68: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+    
+  queued_call()
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/vision/vit_layer_specs.py:31: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+INFO:megatron.bridge.models.gemma.gemma2_provider:Gemma2: PyTorch FlexAttention available — softcap+SWA fused via Triton score_mod.
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/mimo/config/base_configs.py:12: UserWarning: MimoModelConfig is experimental and still under active development. The API may change without notice in future releases.
+  class MimoModelConfig:
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[stage] rank=0 model=Qwen/Qwen2.5-0.5B-Instruct model_type=qwen2 dataset=HuggingFaceH4/no_robots model_revision=7ae557604adf67be50417f59c2c2f167def9a775 dataset_revision=e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b
+[stage] world_size=2 tp=1 pp=1 ep=1 dp=2 gbs=2
+/home/spark/post-training-unified/backends/megatron/megatron_lab/sft.py:231: UserWarning: Function 'finetune' is experimental. APIs in this module are subject to change without notice.
+  finetune(config=config, forward_step_func=forward_step)
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/bridge/training/finetune.py:54: UserWarning: Function 'pretrain' is experimental. APIs in this module are subject to change without notice.
+  return pretrain(config, forward_step_func, callbacks=callbacks)
+
+======================================================================
+Configuration Summary (Non-Default Values vs Megatron Core)
+======================================================================
+
+[optimizer] Non-default values (vs Mcore OptimizerConfig):
+  bf16: True  (Mcore default: False)
+  fp8_recipe: 'tensorwise'  (Mcore default: None)
+  lr: 5e-06  (Mcore default: None)
+  min_lr: 0.0  (Mcore default: None)
+  params_dtype: torch.bfloat16  (Mcore default: torch.float32)
+  use_distributed_optimizer: True  (Mcore default: False)
+
+[ddp] Non-default values (vs Mcore DistributedDataParallelConfig):
+  grad_reduce_in_fp32: True  (Mcore default: False)
+  use_distributed_optimizer: True  (Mcore default: False)
+
+[model] Non-default values (vs Mcore TransformerConfig):
+  add_bias_linear: False  (Mcore default: True)
+  add_qkv_bias: True  (Mcore default: False)
+  attention_backend: <AttnBackend.local: 4>  (Mcore default: <AttnBackend.auto: 5>)
+  attention_dropout: 0.0  (Mcore default: 0.1)
+  attention_softmax_in_fp32: False  (Mcore default: True)
+  autocast_dtype: torch.bfloat16  (Mcore default: None)
+  bf16: True  (Mcore default: False)
+  cuda_graph_modules: []  (Mcore default: 'full')
+  deallocate_pipeline_outputs: True  (Mcore default: False)
+  embedding_init_method_std: 0.02  (Mcore default: None)
+  expert_tensor_parallel_size: 1  (Mcore default: None)
+  ffn_hidden_size: 4864  (Mcore default: None)
+  fp8_recipe: 'tensorwise'  (Mcore default: 'delayed')
+  gated_linear_unit: True  (Mcore default: False)
+  hidden_dropout: 0.0  (Mcore default: 0.1)
+  hidden_size: 896  (Mcore default: 0)
+  inference_cuda_graph_scope: <InferenceCudaGraphScope.none: 1>  (Mcore default: None)
+  kv_channels: 64  (Mcore default: None)
+  layernorm_epsilon: 1e-06  (Mcore default: 1e-05)
+  microbatch_group_size_per_vp_stage: 1  (Mcore default: None)
+  mtp_num_layers: 0  (Mcore default: None)
+  normalization: 'RMSNorm'  (Mcore default: 'LayerNorm')
+  num_attention_heads: 14  (Mcore default: 0)
+  num_layers: 24  (Mcore default: 0)
+  num_layers_at_end_in_bf16: 0  (Mcore default: 1)
+  num_layers_at_start_in_bf16: 0  (Mcore default: 1)
+  num_query_groups: 2  (Mcore default: None)
+  params_dtype: torch.bfloat16  (Mcore default: torch.float32)
+  pipeline_dtype: torch.bfloat16  (Mcore default: None)
+  recompute_granularity: 'full'  (Mcore default: None)
+  recompute_method: 'uniform'  (Mcore default: None)
+  recompute_modules: ['core_attn']  (Mcore default: None)
+  recompute_num_layers: 1  (Mcore default: None)
+  transformer_impl: 'local'  (Mcore default: 'transformer_engine')
+
+----------------------------------------------------------------------
+Other Configuration Values:
+----------------------------------------------------------------------
+
+[train]:
+  check_optimizer_step_success: True
+  decrease_batch_size_if_needed: False
+  empty_unused_memory_level: 0
+  exit_signal: <Signals.SIGTERM: 15>
+  exit_signal_handler: False
+  exit_signal_handler_for_dataloader: False
+  exit_signal_handler_for_training: False
+  global_batch_size: 2
+  iterations_to_skip: []
+  manual_gc: False
+  manual_gc_eval: True
+  manual_gc_interval: 0
+  micro_batch_size: 1
+  skip_sync_grad_norm_across_mp: False
+  train_iters: 2
+
+[validation]:
+  eval_global_batch_size: 2
+  eval_interval: 2
+  eval_iters: 1
+  eval_micro_batch_size: 1
+  full_validation: False
+  multiple_validation_sets: False
+  skip_train: False
+  test_mode: False
+
+[scheduler]:
+  end_weight_decay: 0.01
+  lr_decay_iters: 2
+  lr_decay_steps: 4
+  lr_decay_style: 'linear'
+  lr_warmup_init: 0.0
+  lr_warmup_iters: 1
+  lr_warmup_samples: 0
+  lr_warmup_steps: 2
+  lr_wsd_decay_style: 'exponential'
+  max_steps: 2
+  override_opt_param_scheduler: False
+  start_weight_decay: 0.01
+  use_checkpoint_opt_param_scheduler: False
+  wd_incr_steps: 4
+  weight_decay_incr_style: 'constant'
+
+[dataset]:
+  data_sharding: True
+  dataloader_type: 'cyclic'
+  defer_in_batch_packing_to_step: False
+  do_test: False
+  do_validation: True
+  drop_last: True
+  enable_in_batch_packing: False
+  hf_processor_path: '/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct'
+  in_batch_packing_pad_to_multiple_of: 1
+  num_workers: 0
+  pad_to_max_length: False
+  pad_to_multiple_of: 128
+  persistent_workers: False
+  pin_memory: True
+  preprocessing: PromptCompletionSFTPreprocessingConfig(prompt_column='prompt', completion_column='completion', prompt_template='{prompt}', separator='', loss_mode='completion', strip_whitespace=False, add_bos=False, add_sep=False, add_eos=False, truncation_method='right')
+  seq_length: 2048
+  skip_getting_attention_mask_from_dataset: True
+  source: HFDatasetSourceConfig(dataset_name=None, path_or_dataset='json', split='train', subset=None, load_kwargs={'data_files': {'train': '/home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/prepared-cluster-data-rank-0/training.jsonl'}}, schema_adapter=None, adapter_kwargs=None)
+  validation_source: HFDatasetSourceConfig(dataset_name=None, path_or_dataset='json', split='validation', subset=None, load_kwargs={'data_files': {'validation': '/home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/prepared-cluster-data-rank-0/validation.jsonl'}}, schema_adapter=None, adapter_kwargs=None)
+
+[checkpoint]:
+  also_save_hf_checkpoint: False
+  async_ckpt_cpu_priority: 10
+  async_ckpt_io_priority: 3
+  async_ckpt_use_cpu_shm: False
+  async_save: False
+  async_strategy: 'mcore'
+  async_write_results_mp_mode: 'fork'
+  auto_detect_ckpt_format: False
+  ckpt_assume_constant_structure: False
+  ckpt_convert_update_legacy_dist_opt_format: False
+  ckpt_format: 'torch_dist'
+  ckpt_fully_parallel_load_exchange_algo: 'broadcast'
+  ckpt_fully_parallel_load_process_group: 'dp'
+  ckpt_fully_parallel_save_process_group: 'dp'
+  ckpt_load_validate_sharding_integrity: True
+  dist_ckpt_optim_fully_reshardable: False
+  dist_ckpt_save_pre_mcore_014: False
+  dist_ckpt_strictness: 'assume_ok_unexpected'
+  dist_ckpt_workers: 1
+  distrib_optim_fully_reshardable_mem_efficient: False
+  exit_on_missing_checkpoint: False
+  finetune: True
+  fully_parallel_load: True
+  fully_parallel_save: True
+  hf_distributed_save: False
+  hf_save_every_n_ranks: 1
+  hf_trust_remote_code: False
+  load_main_params_from_ckpt: False
+  load_optim: False
+  load_rng: True
+  most_recent_k: -1
+  non_persistent_local_ckpt_algo: 'fully_parallel'
+  pretrained_checkpoint: '/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct'
+  replication: False
+  replication_factor: 2
+  save: '/home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/checkpoints'
+  save_interval: 2
+  save_optim: True
+  save_rng: True
+  save_tokenizer_assets: True
+  storage_writers_per_rank: 1
+  stream_ckpt_dequant: True
+  strict_fsdp_dtensor_load: False
+  use_checkpoint_args: False
+  use_mp_args_from_checkpoint_args: False
+  use_persistent_ckpt_worker: True
+  use_tokenizer_model_from_checkpoint_args: True
+  verify_integrity: False
+
+[logger]:
+  barrier_with_L1_time: True
+  filter_warnings: True
+  log_device_memory_used: False
+  log_energy: False
+  log_interval: 1
+  log_l2_norm_grad_to_tensorboard: False
+  log_loss_scale_to_tensorboard: True
+  log_max_attention_logit: False
+  log_memory_to_tensorboard: False
+  log_num_zeros_in_grad: False
+  log_params_norm: False
+  log_progress: False
+  log_runtime_to_tensorboard: False
+  log_throughput: False
+  log_throughput_to_tensorboard: False
+  log_timers_to_tensorboard: False
+  log_validation_ppl_to_tensorboard: False
+  log_world_size_to_tensorboard: False
+  mlflow_log_artifacts: True
+  moe_routing_trace_capture_hidden_states: False
+  moe_routing_trace_capture_logits: False
+  moe_routing_trace_dump_weights: False
+  runtime_time_unit: 'hours'
+  set_level_for_all_loggers: False
+  skip_train_metrics_log: False
+  tensorboard_dir: '/home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/tensorboard'
+  tensorboard_log_interval: 1
+  tensorboard_queue_size: 1000
+  throughput_window_size: 100
+  timing_log_level: 0
+  timing_log_option: 'minmax'
+
+[tokenizer]:
+  force_system_message: False
+  hf_tokenizer_kwargs: {}
+  make_vocab_size_divisible_by: 1
+  null_tokenizer_pad_id: -1
+  pad_vocab_size: False
+  rank: 0
+  sp_tokenizer_kwargs: {}
+  tensor_model_parallel_size: 1
+  tiktoken_num_special_tokens: 1000
+  tokenizer_hf_no_include_special_tokens: False
+  tokenizer_hf_no_use_fast: False
+  tokenizer_model: '/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct'
+  tokenizer_sentencepiece_ignore_extra_whitespaces: True
+  tokenizer_sentencepiece_legacy: False
+  tokenizer_type: 'HuggingFaceTokenizer'
+  trust_remote_code: False
+  use_tokenizer_vocab_size: False
+  vocab_extra_ids: 0
+
+[rng]:
+  data_parallel_random_init: False
+  inference_rng_tracker: False
+  seed: 42
+  te_rng_tracker: False
+
+======================================================================
+INFO:megatron.training.utils.log_utils:Setting logging level to 20
+INFO:megatron.core.num_microbatches_calculator:setting number of microbatches to constant 1
+> initializing torch distributed ...
+spark1:1229115:1229115 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+spark1:1229115:1229115 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark1:1229115:1229115 [0] NCCL INFO Bootstrap: Using enp1s0f0np0:12.201.48.11<0>
+spark1:1229115:1229115 [0] NCCL INFO cudaDriverVersion 13000
+spark1:1229115:1229115 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+spark1:1229115:1229115 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1229115:1229115 [0] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+spark1:1229115:1229115 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark1:1229115:1229115 [0] NCCL INFO NCCL_IB_HCA set to rocep1s0f0
+spark1:1229115:1229115 [0] NCCL INFO NET/IB : Using [0]rocep1s0f0:1/RoCE [RO]; OOB enp1s0f0np0:12.201.48.11<0>
+spark1:1229115:1229115 [0] NCCL INFO Initialized NET plugin IB
+spark1:1229115:1229115 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1229115:1229115 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1229115:1229115 [0] NCCL INFO Using network IB
+spark1:1229115:1229115 [0] NCCL INFO ncclCommInitRankConfig comm 0x277d0e70 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xd71ee907426719e - Init START
+spark1:1229115:1229115 [0] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+spark1:1229115:1229115 [0] NCCL INFO Bootstrap timings total 0.008054 (create 0.000026, send 0.000093, recv 0.004975, ring 0.000966, delay 0.000000)
+spark1:1229115:1229115 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1229115:1229115 [0] NCCL INFO comm 0x277d0e70 rank 0 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 00/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 01/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 02/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 03/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 04/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 05/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 06/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 07/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] 1/-1/-1->0->-1 [2] 1/-1/-1->0->-1 [3] 1/-1/-1->0->-1 [4] -1/-1/-1->0->1 [5] -1/-1/-1->0->1 [6] -1/-1/-1->0->1 [7] -1/-1/-1->0->1
+spark1:1229115:1229115 [0] NCCL INFO P2P Chunksize set to 131072
+spark1:1229115:1229115 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+spark1:1229115:1229115 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1229115:1229142 [0] NCCL INFO [Proxy Service] Device 0 CPU core 17
+spark1:1229115:1229143 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 10
+spark1:1229115:1229115 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+spark1:1229115:1229115 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark1:1229115:1229115 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark1:1229115:1229115 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1229115:1229115 [0] NCCL INFO ncclCommInitRankConfig comm 0x277d0e70 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xd71ee907426719e - Init COMPLETE
+spark1:1229115:1229115 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 2 total 0.16 (kernels 0.12, alloc 0.02, bootstrap 0.01, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark1:1229115:1229115 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229144 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 10
+spark1:1229115:1229115 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+[Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+> initialized tensor model parallel with size 1
+> initialized pipeline model parallel with size 1
+> setting random seeds to 42 ...
+> compiling dataset index builder ...
+make: Entering directory '/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/datasets'
+make: Nothing to be done for 'default'.
+make: Leaving directory '/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/datasets'
+>>> done with dataset index builder. Compilation time: 0.023 seconds
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+time to initialize megatron (seconds): 1.399
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+[after megatron is initialized] datetime: 2026-09-08 17:58:37 
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/bridge/utils/common_utils.py:112: UserWarning: `build_tokenizer` is deprecated and will be removed soon. Please, use `megatron.core.tokenizers.utils.build_tokenizer` instead.
+  warnings.warn(message)
+INFO:root:Using preset vocab_size: 151936 over the tokenizer vocab_size: 151665, dummy tokens: 271.
+[after tokenizer is built] datetime: 2026-09-08 17:58:37 
+ > number of parameters on (tensor, gtp_remat, pipeline) model parallel rank (0, 0, 0): 494032768
+INFO:megatron.core.distributed.distributed_data_parallel:Setting up DistributedDataParallel with config DistributedDataParallelConfig(grad_reduce_in_fp32=True, overlap_grad_reduce=False, overlap_param_gather=False, align_param_gather=False, use_distributed_optimizer=True, num_distributed_optimizer_instances=1, check_for_nan_in_grad=False, check_for_large_grads=False, bucket_size=None, num_buckets=None, pad_buckets_for_high_nccl_busbw=False, reduce_scatter_with_fp32_accumulation=False, param_name_patterns_for_fp32_local_accumulation=(), average_in_collective=False, fp8_param_gather=False, fp4_param_gather=False, reuse_grad_buf_for_mxfp8_param_ag=False, use_megatron_fsdp=False, use_custom_fsdp=False, data_parallel_sharding_strategy='no_shard', gradient_reduce_div_fusion=True, suggested_communication_unit_size=None, keep_fp8_transpose_cache=False, nccl_ub=False, fsdp_double_buffer=False, fsdp_db_use_persist_buf_on_alloc_fail=False, fsdp_all_gather_in_start_param_sync=True, outer_dp_sharding_strategy='no_shard', disable_symmetric_registration=False, fsdp_manual_registration=False, delay_wgrad_compute=False, megatron_fsdp_main_params_dtype=torch.float32, megatron_fsdp_main_grads_dtype=None, megatron_fsdp_grad_comm_dtype=None, megatron_fsdp_use_decoupled_grad=False, megatron_fsdp_cuda_graph_mode=False, megatron_fsdp_enable_fine_grained_param_gather=False, megatron_fsdp_max_pool_double_buffer=False)
+INFO:megatron.core.distributed.param_and_grad_buffer:Number of buckets for gradient all-reduce / reduce-scatter: 1
+Params for bucket 1 (494032768 elements, 494032768 padded size, 0 param(s) with extra main_grads):
+	module.decoder.final_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.embedding.word_embeddings.weight (param.main_grad.dtype=torch.float32)
+INFO:megatron.core.distributed.param_and_grad_buffer:Using reduce-scatter for gradient reductions because self.ddp_config.use_distributed_optimizer=True
+INFO:megatron.core.optimizer:Setting up optimizer with config OptimizerConfig(lr=5e-06, min_lr=0.0, decoupled_lr=None, decoupled_min_lr=None, weight_decay=0.01, apply_wd_to_qk_layernorm=False, fp8_recipe='tensorwise', fp16=False, bf16=True, reuse_grad_buf_for_mxfp8_param_ag=False, params_dtype=torch.bfloat16, use_precision_aware_optimizer=False, store_param_remainders=True, main_grads_dtype=torch.float32, main_params_dtype=torch.float32, exp_avg_dtype=torch.float32, exp_avg_sq_dtype=torch.float32, optimizer='adam', loss_scale=None, initial_loss_scale=4294967296, min_loss_scale=1.0, loss_scale_window=1000, hysteresis=2, adam_beta1=0.9, adam_beta2=0.999, adam_eps=1e-08, decoupled_weight_decay=True, sgd_momentum=0.9, muon_momentum=0.95, muon_split_qkv=True, muon_nesterov=False, muon_scale_mode='spectral', muon_fp32_matmul_prec='medium', muon_coefficient_type='quintic', muon_num_ns_steps=5, muon_tp_mode='blockwise', muon_extra_scale_factor=1.0, muon_scalar_optimizer='adam', lion_beta1=0.95, lion_beta2=0.98, soap_shampoo_beta=0.95, soap_precondition_frequency=1, soap_use_kl_shampoo=True, adaptive_muon_moment2_method='adamuon', adaptive_muon_beta2=0.95, adaptive_muon_eps=1e-08, use_distributed_optimizer=True, use_layer_wise_distributed_optimizer=False, overlap_param_gather=False, overlap_param_gather_with_optimizer_step=False, optimizer_cpu_offload=False, optimizer_offload_fraction=0.0, use_torch_optimizer_for_cpu_offload=False, overlap_cpu_optimizer_d2h_h2d=False, pin_cpu_grads=True, pin_cpu_params=True, clip_grad=1.0, grad_norm_skip_threshold=inf, log_num_zeros_in_grad=False, barrier_with_L1_time=False, timers=<megatron.core.timers.Timers object at 0xee0ca1bcf5f0>, config_logger_dir='', optimizer_cuda_graph=False)
+INFO:megatron.core.distributed.param_and_grad_buffer:Using reduce-scatter for gradient reductions because self.ddp_config.use_distributed_optimizer=True
+INFO:megatron.core.optimizer_param_scheduler:> learning rate decay style: linear
+[after model, optimizer, and learning rate scheduler are built] datetime: 2026-09-08 17:58:37 
+Checkpoint file not found in load directory None. Attempting to finetune with checkpoint in /home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct
+ loading HuggingFace-format checkpoint from /home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct
+spark1:1229115:1229115 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1229115:1229115 [0] NCCL INFO Initialized NET plugin IB
+spark1:1229115:1229115 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1229115:1229115 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1229115:1229115 [0] NCCL INFO Using network IB
+spark1:1229115:1229115 [0] NCCL INFO ncclCommInitRankConfig comm 0x34e20340 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x52e66735eec39f8e - Init START
+spark1:1229115:1229115 [0] NCCL INFO Bootstrap timings total 0.000511 (create 0.000012, send 0.000070, recv 0.000367, ring 0.000001, delay 0.000000)
+spark1:1229115:1229115 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1229115:1229115 [0] NCCL INFO comm 0x34e20340 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 00/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 01/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 02/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 03/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 04/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 05/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 06/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 07/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 08/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 09/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 10/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 11/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 12/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 13/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 14/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 15/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 16/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 17/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 18/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 19/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 20/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 21/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 22/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 23/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 24/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 25/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 26/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 27/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 28/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 29/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 30/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 31/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 32/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 33/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 34/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 35/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 36/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 37/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 38/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 39/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 40/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 41/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 42/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 43/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 44/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 45/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 46/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 47/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 48/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 49/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 50/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 51/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 52/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 53/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 54/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 55/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 56/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 57/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 58/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 59/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 60/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 61/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 62/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 63/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1 [32] -1/-1/-1->0->-1 [33] -1/-1/-1->0->-1 [34] -1/-1/-1->0->-1 [35] -1/-1/-1->0->-1 [36] -1/-1/-1->0->-1 [37] -1/-1/-1->0->-1 [38] -1/-1/-1->0->-1 [39] -1/-1/-1->0->-1 [40] -1/-1/-1->0->-1 [41] -1/-1/-1->0->-1 [42] -1/-1/-1->0->-1 [43] -1/-1/-1->0->-1 [44] -1/-1/-1->0->-1 [45] -1/-1/-1->0->-1 [46] -1/-1/-1->0->-1 [47
+spark1:1229115:1229115 [0] NCCL INFO P2P Chunksize set to 524288
+spark1:1229115:1229115 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1229115:1229208 [0] NCCL INFO [Proxy Service] Device 0 CPU core 12
+spark1:1229115:1229209 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 7
+spark1:1229115:1229115 [0] NCCL INFO 64 coll channels, 64 collnet channels, 0 nvls channels, 64 p2p channels, 64 p2p channels per peer
+spark1:1229115:1229115 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1229115:1229115 [0] NCCL INFO ncclCommInitRankConfig comm 0x34e20340 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x52e66735eec39f8e - Init COMPLETE
+spark1:1229115:1229115 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 1 total 0.03 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.02, rest 0.00)
+Loading from /home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-I… (… Qwe…
+> building train, validation, and test datasets ...
+ > datasets target sizes (minimum size):
+    train:      4
+    validation: 4
+    test:       2
+Generating train split: 0 examples [00:00, ? examples/s]Generating train split: 8 examples [00:00, 6460.23 examples/s]
+Generating validation split: 0 examples [00:00, ? examples/s]Generating validation split: 2 examples [00:00, 1946.76 examples/s]
+[after dataloaders are built] datetime: 2026-09-08 17:58:42 
+done with setup ...
+Setting rerun_state_machine.current_iteration to 0...
+Starting training loop at iteration 0
+spark1:1229115:1229115 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1229115:1229115 [0] NCCL INFO Initialized NET plugin IB
+spark1:1229115:1229115 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1229115:1229115 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1229115:1229115 [0] NCCL INFO Using network IB
+spark1:1229115:1229115 [0] NCCL INFO ncclCommInitRankConfig comm 0x504b1650 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0xddab55e53d2ea2a9 - Init START
+spark1:1229115:1229115 [0] NCCL INFO Bootstrap timings total 0.000318 (create 0.000018, send 0.000089, recv 0.000141, ring 0.000000, delay 0.000000)
+spark1:1229115:1229115 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1229115:1229115 [0] NCCL INFO comm 0x504b1650 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 00/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 01/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 02/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 03/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 04/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 05/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 06/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 07/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 08/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 09/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 10/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 11/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 12/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 13/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 14/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 15/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 16/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 17/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 18/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 19/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 20/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 21/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 22/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 23/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 24/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 25/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 26/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 27/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 28/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 29/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 30/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 31/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 32/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 33/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 34/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 35/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 36/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 37/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 38/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 39/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 40/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 41/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 42/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 43/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 44/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 45/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 46/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 47/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 48/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 49/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 50/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 51/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 52/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 53/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 54/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 55/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 56/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 57/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 58/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 59/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 60/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 61/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 62/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 63/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1 [32] -1/-1/-1->0->-1 [33] -1/-1/-1->0->-1 [34] -1/-1/-1->0->-1 [35] -1/-1/-1->0->-1 [36] -1/-1/-1->0->-1 [37] -1/-1/-1->0->-1 [38] -1/-1/-1->0->-1 [39] -1/-1/-1->0->-1 [40] -1/-1/-1->0->-1 [41] -1/-1/-1->0->-1 [42] -1/-1/-1->0->-1 [43] -1/-1/-1->0->-1 [44] -1/-1/-1->0->-1 [45] -1/-1/-1->0->-1 [46] -1/-1/-1->0->-1 [47
+spark1:1229115:1229115 [0] NCCL INFO P2P Chunksize set to 524288
+spark1:1229115:1229115 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1229115:1229275 [0] NCCL INFO [Proxy Service] Device 0 CPU core 3
+spark1:1229115:1229276 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 9
+spark1:1229115:1229115 [0] NCCL INFO 64 coll channels, 64 collnet channels, 0 nvls channels, 64 p2p channels, 64 p2p channels per peer
+spark1:1229115:1229115 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1229115:1229115 [0] NCCL INFO ncclCommInitRankConfig comm 0x504b1650 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0xddab55e53d2ea2a9 - Init COMPLETE
+spark1:1229115:1229115 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 1 total 0.02 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.02, rest 0.00)
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/pipeline_parallel/schedules.py:220: UserWarning: The AccumulateGrad node's stream does not match the stream of the node that produced the incoming gradient. This may incur unnecessary synchronization and break CUDA graph capture if the AccumulateGrad node's stream is the default stream. This mismatch is caused by an AccumulateGrad node created prior to the current iteration being kept alive. This can happen if the autograd graph is still being kept alive by tensors such as the loss, or if you are using DDP, which will stash a reference to the node. To resolve the mismatch, delete all references to the autograd graph or ensure that DDP initialization is performed under the same stream as subsequent forwards. If the mismatch is intentional, you can use torch.autograd.graph.set_warn_on_accumulate_grad_stream_mismatch(False) to suppress this warning. (Triggered internally at /pytorch/torch/csrc/autograd/input_buffer.cpp:240.)
+  Variable._execution_engine.run_backward(
+spark1:1229115:1229115 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1229115:1229115 [0] NCCL INFO Initialized NET plugin IB
+spark1:1229115:1229115 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1229115:1229115 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1229115:1229115 [0] NCCL INFO Using network IB
+spark1:1229115:1229115 [0] NCCL INFO ncclCommInitRankConfig comm 0x5d76faf0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x74ee28aaec7c5257 - Init START
+spark1:1229115:1229115 [0] NCCL INFO Bootstrap timings total 0.033084 (create 0.000042, send 0.000255, recv 0.029675, ring 0.001004, delay 0.000000)
+spark1:1229115:1229115 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1229115:1229115 [0] NCCL INFO comm 0x5d76faf0 rank 0 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 00/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 01/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 02/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 03/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 04/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 05/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 06/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 07/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] 1/-1/-1->0->-1 [2] 1/-1/-1->0->-1 [3] 1/-1/-1->0->-1 [4] -1/-1/-1->0->1 [5] -1/-1/-1->0->1 [6] -1/-1/-1->0->1 [7] -1/-1/-1->0->1
+spark1:1229115:1229115 [0] NCCL INFO P2P Chunksize set to 131072
+spark1:1229115:1229115 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1229115:1229278 [0] NCCL INFO [Proxy Service] Device 0 CPU core 9
+spark1:1229115:1229279 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 3
+spark1:1229115:1229115 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark1:1229115:1229115 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark1:1229115:1229115 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1229115:1229115 [0] NCCL INFO ncclCommInitRankConfig comm 0x5d76faf0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x74ee28aaec7c5257 - Init COMPLETE
+spark1:1229115:1229115 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 2 total 0.05 (kernels 0.00, alloc 0.00, bootstrap 0.03, allgathers 0.01, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark1:1229115:1229280 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 3
+spark1:1229115:1229115 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+spark1:1229115:1229115 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1229115:1229115 [0] NCCL INFO Initialized NET plugin IB
+spark1:1229115:1229115 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1229115:1229115 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1229115:1229115 [0] NCCL INFO Using network IB
+spark1:1229115:1229115 [0] NCCL INFO ncclCommInitRankConfig comm 0x5da17ff0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x182eef024096417f - Init START
+spark1:1229115:1229115 [0] NCCL INFO Bootstrap timings total 0.004255 (create 0.000013, send 0.000054, recv 0.002052, ring 0.000190, delay 0.000000)
+spark1:1229115:1229115 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1229115:1229115 [0] NCCL INFO comm 0x5da17ff0 rank 0 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 00/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 01/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 02/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 03/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 04/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 05/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 06/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 07/08 : 0 1
+spark1:1229115:1229115 [0] NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] 1/-1/-1->0->-1 [2] 1/-1/-1->0->-1 [3] 1/-1/-1->0->-1 [4] -1/-1/-1->0->1 [5] -1/-1/-1->0->1 [6] -1/-1/-1->0->1 [7] -1/-1/-1->0->1
+spark1:1229115:1229115 [0] NCCL INFO P2P Chunksize set to 131072
+spark1:1229115:1229115 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1229115:1229283 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 9
+spark1:1229115:1229282 [0] NCCL INFO [Proxy Service] Device 0 CPU core 1
+spark1:1229115:1229115 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark1:1229115:1229115 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark1:1229115:1229115 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1229115:1229115 [0] NCCL INFO ncclCommInitRankConfig comm 0x5da17ff0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x182eef024096417f - Init COMPLETE
+spark1:1229115:1229115 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 2 total 0.01 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark1:1229115:1229284 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 1
+spark1:1229115:1229115 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229115:1229115 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+spark1:1229115:1229115 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1229115:1229115 [0] NCCL INFO Initialized NET plugin IB
+spark1:1229115:1229115 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1229115:1229115 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1229115:1229115 [0] NCCL INFO Using network IB
+spark1:1229115:1229115 [0] NCCL INFO ncclCommInitRankConfig comm 0x5e6e3050 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0xbbb6d5536f976725 - Init START
+spark1:1229115:1229115 [0] NCCL INFO Bootstrap timings total 0.000365 (create 0.000012, send 0.000067, recv 0.000218, ring 0.000001, delay 0.000000)
+spark1:1229115:1229115 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1229115:1229115 [0] NCCL INFO comm 0x5e6e3050 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 00/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 01/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 02/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 03/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 04/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 05/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 06/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 07/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 08/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 09/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 10/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 11/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 12/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 13/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 14/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 15/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 16/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 17/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 18/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 19/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 20/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 21/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 22/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 23/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 24/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 25/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 26/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 27/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 28/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 29/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 30/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 31/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 32/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 33/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 34/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 35/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 36/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 37/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 38/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 39/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 40/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 41/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 42/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 43/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 44/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 45/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 46/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 47/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 48/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 49/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 50/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 51/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 52/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 53/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 54/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 55/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 56/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 57/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 58/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 59/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 60/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 61/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 62/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Channel 63/64 : 0
+spark1:1229115:1229115 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1 [32] -1/-1/-1->0->-1 [33] -1/-1/-1->0->-1 [34] -1/-1/-1->0->-1 [35] -1/-1/-1->0->-1 [36] -1/-1/-1->0->-1 [37] -1/-1/-1->0->-1 [38] -1/-1/-1->0->-1 [39] -1/-1/-1->0->-1 [40] -1/-1/-1->0->-1 [41] -1/-1/-1->0->-1 [42] -1/-1/-1->0->-1 [43] -1/-1/-1->0->-1 [44] -1/-1/-1->0->-1 [45] -1/-1/-1->0->-1 [46] -1/-1/-1->0->-1 [47
+spark1:1229115:1229115 [0] NCCL INFO P2P Chunksize set to 524288
+spark1:1229115:1229115 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1229115:1229286 [0] NCCL INFO [Proxy Service] Device 0 CPU core 8
+spark1:1229115:1229287 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 9
+spark1:1229115:1229115 [0] NCCL INFO 64 coll channels, 64 collnet channels, 0 nvls channels, 64 p2p channels, 64 p2p channels per peer
+spark1:1229115:1229115 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1229115:1229115 [0] NCCL INFO ncclCommInitRankConfig comm 0x5e6e3050 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0xbbb6d5536f976725 - Init COMPLETE
+spark1:1229115:1229115 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 1 total 0.03 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.02, rest 0.00)
+Step Time : 1.39s GPU utilization: 4.8MODEL_TFLOP/s/GPU
+Number of dense and embedding parameters in billions: 0.49
+Total number of parameters in billions: 0.49
+Number of dense and embedding parameters in most loaded shard in billions: 0.4940
+Theoretical memory footprints: weight and optimizer=5653.94 MB
+[Rank 0] (after 1 iterations) memory (GB) | mem-allocated-gigabytes: 5.9768 | mem-active-gigabytes: 5.9768 | mem-inactive-gigabytes: 0.071343 | mem-reserved-gigabytes: 6.065 | mem-max-allocated-gigabytes: 5.9768 | mem-max-active-gigabytes: 5.9768 | mem-max-inactive-gigabytes: 0.3167 | mem-max-reserved-gigabytes: 6.065 | mem-alloc-retires: 0 | mem-allocated-count: 358
+Step Time : 0.34s GPU utilization: 19.4MODEL_TFLOP/s/GPU
+Number of dense and embedding parameters in billions: 0.49
+Total number of parameters in billions: 0.49
+Number of dense and embedding parameters in most loaded shard in billions: 0.4940
+Theoretical memory footprints: weight and optimizer=5653.94 MB
+[Rank 0] (after 2 iterations) memory (GB) | mem-allocated-gigabytes: 5.9768 | mem-active-gigabytes: 5.9768 | mem-inactive-gigabytes: 0.071343 | mem-reserved-gigabytes: 6.8472 | mem-max-allocated-gigabytes: 6.5226 | mem-max-active-gigabytes: 6.7344 | mem-max-inactive-gigabytes: 0.3167 | mem-max-reserved-gigabytes: 6.8472 | mem-alloc-retires: 0 | mem-allocated-count: 358
+saving checkpoint at iteration       2 to /home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/checkpoints in torch_dist format
+Storing distributed optimizer sharded state of type dp_reshardable
+spark1:1229115:1229115 [0] NCCL INFO Channel 04/1 : 1[0] -> 0[0] [receive] via NET/IB/0/Shared
+spark1:1229115:1229115 [0] NCCL INFO Channel 05/1 : 1[0] -> 0[0] [receive] via NET/IB/0/Shared
+  successfully saved checkpoint from iteration       2 to /home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/checkpoints [ t 1/1, p 1/1 ]
+Deleting CUDA graphs
+[after training is done] datetime: 2026-09-08 17:59:48 
+Evaluating on 2 samples
+Evaluating iter 1/1
+spark1:1229115:1229115 [0] NCCL INFO comm 0x5e6e3050 rank 0 nranks 1 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark1:1229115:1229115 [0] NCCL INFO comm 0x5da17ff0 rank 0 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark1:1229115:1229115 [0] NCCL INFO comm 0x5d76faf0 rank 0 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark1:1229115:1229115 [0] NCCL INFO comm 0x34e20340 rank 0 nranks 1 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark1:1229115:1229115 [0] NCCL INFO comm 0x504b1650 rank 0 nranks 1 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark1:1229115:1229115 [0] NCCL INFO comm 0x277d0e70 rank 0 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark1:1229115:1229115 [0] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+[workflow] stage=tuned node_rank=0
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/backends.py:34: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/gpt/gpt_layer_specs.py:74: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/gpt/heterogeneous/heterogeneous_layer_specs.py:68: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+    
+  queued_call()
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/vision/vit_layer_specs.py:31: UserWarning: Apex is not installed. Falling back to Torch Norm
+  warnings.warn("Apex is not installed. Falling back to Torch Norm")
+INFO:megatron.bridge.models.gemma.gemma2_provider:Gemma2: PyTorch FlexAttention available — softcap+SWA fused via Triton score_mod.
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/models/mimo/config/base_configs.py:12: UserWarning: MimoModelConfig is experimental and still under active development. The API may change without notice in future releases.
+  class MimoModelConfig:
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[stage] rank=0 model=Qwen/Qwen2.5-0.5B-Instruct model_type=qwen2 dataset=HuggingFaceH4/no_robots model_revision=7ae557604adf67be50417f59c2c2f167def9a775 dataset_revision=e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b
+[stage] world_size=2 tp=1 pp=1 ep=1 dp=2 gbs=2
+/home/spark/post-training-unified/backends/megatron/megatron_lab/sft.py:231: UserWarning: Function 'finetune' is experimental. APIs in this module are subject to change without notice.
+  finetune(config=config, forward_step_func=forward_step)
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/bridge/training/finetune.py:54: UserWarning: Function 'pretrain' is experimental. APIs in this module are subject to change without notice.
+  return pretrain(config, forward_step_func, callbacks=callbacks)
+
+======================================================================
+Configuration Summary (Non-Default Values vs Megatron Core)
+======================================================================
+
+[optimizer] Non-default values (vs Mcore OptimizerConfig):
+  bf16: True  (Mcore default: False)
+  fp8_recipe: 'tensorwise'  (Mcore default: None)
+  lr: 5e-06  (Mcore default: None)
+  min_lr: 0.0  (Mcore default: None)
+  params_dtype: torch.bfloat16  (Mcore default: torch.float32)
+  use_distributed_optimizer: True  (Mcore default: False)
+
+[ddp] Non-default values (vs Mcore DistributedDataParallelConfig):
+  grad_reduce_in_fp32: True  (Mcore default: False)
+  use_distributed_optimizer: True  (Mcore default: False)
+
+[model] Non-default values (vs Mcore TransformerConfig):
+  add_bias_linear: False  (Mcore default: True)
+  add_qkv_bias: True  (Mcore default: False)
+  attention_backend: <AttnBackend.local: 4>  (Mcore default: <AttnBackend.auto: 5>)
+  attention_dropout: 0.0  (Mcore default: 0.1)
+  attention_softmax_in_fp32: False  (Mcore default: True)
+  autocast_dtype: torch.bfloat16  (Mcore default: None)
+  bf16: True  (Mcore default: False)
+  cuda_graph_modules: []  (Mcore default: 'full')
+  deallocate_pipeline_outputs: True  (Mcore default: False)
+  embedding_init_method_std: 0.02  (Mcore default: None)
+  expert_tensor_parallel_size: 1  (Mcore default: None)
+  ffn_hidden_size: 4864  (Mcore default: None)
+  fp8_recipe: 'tensorwise'  (Mcore default: 'delayed')
+  gated_linear_unit: True  (Mcore default: False)
+  hidden_dropout: 0.0  (Mcore default: 0.1)
+  hidden_size: 896  (Mcore default: 0)
+  inference_cuda_graph_scope: <InferenceCudaGraphScope.none: 1>  (Mcore default: None)
+  kv_channels: 64  (Mcore default: None)
+  layernorm_epsilon: 1e-06  (Mcore default: 1e-05)
+  microbatch_group_size_per_vp_stage: 1  (Mcore default: None)
+  mtp_num_layers: 0  (Mcore default: None)
+  normalization: 'RMSNorm'  (Mcore default: 'LayerNorm')
+  num_attention_heads: 14  (Mcore default: 0)
+  num_layers: 24  (Mcore default: 0)
+  num_layers_at_end_in_bf16: 0  (Mcore default: 1)
+  num_layers_at_start_in_bf16: 0  (Mcore default: 1)
+  num_query_groups: 2  (Mcore default: None)
+  params_dtype: torch.bfloat16  (Mcore default: torch.float32)
+  pipeline_dtype: torch.bfloat16  (Mcore default: None)
+  recompute_granularity: 'full'  (Mcore default: None)
+  recompute_method: 'uniform'  (Mcore default: None)
+  recompute_modules: ['core_attn']  (Mcore default: None)
+  recompute_num_layers: 1  (Mcore default: None)
+  transformer_impl: 'local'  (Mcore default: 'transformer_engine')
+
+----------------------------------------------------------------------
+Other Configuration Values:
+----------------------------------------------------------------------
+
+[train]:
+  check_optimizer_step_success: True
+  decrease_batch_size_if_needed: False
+  empty_unused_memory_level: 0
+  exit_signal: <Signals.SIGTERM: 15>
+  exit_signal_handler: False
+  exit_signal_handler_for_dataloader: False
+  exit_signal_handler_for_training: False
+  global_batch_size: 2
+  iterations_to_skip: []
+  manual_gc: False
+  manual_gc_eval: True
+  manual_gc_interval: 0
+  micro_batch_size: 1
+  skip_sync_grad_norm_across_mp: False
+  train_iters: 2
+
+[validation]:
+  eval_global_batch_size: 2
+  eval_interval: 2
+  eval_iters: 1
+  eval_micro_batch_size: 1
+  full_validation: False
+  multiple_validation_sets: False
+  skip_train: True
+  test_mode: False
+
+[scheduler]:
+  end_weight_decay: 0.01
+  lr_decay_iters: 2
+  lr_decay_steps: 4
+  lr_decay_style: 'linear'
+  lr_warmup_init: 0.0
+  lr_warmup_iters: 1
+  lr_warmup_samples: 0
+  lr_warmup_steps: 2
+  lr_wsd_decay_style: 'exponential'
+  max_steps: 2
+  override_opt_param_scheduler: False
+  start_weight_decay: 0.01
+  use_checkpoint_opt_param_scheduler: False
+  wd_incr_steps: 4
+  weight_decay_incr_style: 'constant'
+
+[dataset]:
+  data_sharding: True
+  dataloader_type: 'cyclic'
+  defer_in_batch_packing_to_step: False
+  do_test: False
+  do_validation: True
+  drop_last: True
+  enable_in_batch_packing: False
+  hf_processor_path: '/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct'
+  in_batch_packing_pad_to_multiple_of: 1
+  num_workers: 0
+  pad_to_max_length: False
+  pad_to_multiple_of: 128
+  persistent_workers: False
+  pin_memory: True
+  preprocessing: PromptCompletionSFTPreprocessingConfig(prompt_column='prompt', completion_column='completion', prompt_template='{prompt}', separator='', loss_mode='completion', strip_whitespace=False, add_bos=False, add_sep=False, add_eos=False, truncation_method='right')
+  seq_length: 2048
+  skip_getting_attention_mask_from_dataset: True
+  source: HFDatasetSourceConfig(dataset_name=None, path_or_dataset='json', split='train', subset=None, load_kwargs={'data_files': {'train': '/home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/prepared-cluster-data-rank-0/training.jsonl'}}, schema_adapter=None, adapter_kwargs=None)
+  validation_source: HFDatasetSourceConfig(dataset_name=None, path_or_dataset='json', split='validation', subset=None, load_kwargs={'data_files': {'validation': '/home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/prepared-cluster-data-rank-0/validation.jsonl'}}, schema_adapter=None, adapter_kwargs=None)
+
+[checkpoint]:
+  also_save_hf_checkpoint: False
+  async_ckpt_cpu_priority: 10
+  async_ckpt_io_priority: 3
+  async_ckpt_use_cpu_shm: False
+  async_save: False
+  async_strategy: 'mcore'
+  async_write_results_mp_mode: 'fork'
+  auto_detect_ckpt_format: False
+  ckpt_assume_constant_structure: False
+  ckpt_convert_update_legacy_dist_opt_format: False
+  ckpt_format: 'torch_dist'
+  ckpt_fully_parallel_load_exchange_algo: 'broadcast'
+  ckpt_fully_parallel_load_process_group: 'dp'
+  ckpt_fully_parallel_save_process_group: 'dp'
+  ckpt_load_validate_sharding_integrity: True
+  dist_ckpt_optim_fully_reshardable: False
+  dist_ckpt_save_pre_mcore_014: False
+  dist_ckpt_strictness: 'assume_ok_unexpected'
+  dist_ckpt_workers: 1
+  distrib_optim_fully_reshardable_mem_efficient: False
+  exit_on_missing_checkpoint: False
+  finetune: False
+  fully_parallel_load: True
+  fully_parallel_save: True
+  hf_distributed_save: False
+  hf_save_every_n_ranks: 1
+  hf_trust_remote_code: False
+  load: '/home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/checkpoints'
+  load_main_params_from_ckpt: False
+  load_optim: False
+  load_rng: True
+  most_recent_k: -1
+  non_persistent_local_ckpt_algo: 'fully_parallel'
+  pretrained_checkpoint: '/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct'
+  replication: False
+  replication_factor: 2
+  save_interval: 2
+  save_optim: True
+  save_rng: True
+  save_tokenizer_assets: True
+  storage_writers_per_rank: 1
+  stream_ckpt_dequant: True
+  strict_fsdp_dtensor_load: False
+  use_checkpoint_args: False
+  use_mp_args_from_checkpoint_args: False
+  use_persistent_ckpt_worker: True
+  use_tokenizer_model_from_checkpoint_args: True
+  verify_integrity: False
+
+[logger]:
+  barrier_with_L1_time: True
+  filter_warnings: True
+  log_device_memory_used: False
+  log_energy: False
+  log_interval: 1
+  log_l2_norm_grad_to_tensorboard: False
+  log_loss_scale_to_tensorboard: True
+  log_max_attention_logit: False
+  log_memory_to_tensorboard: False
+  log_num_zeros_in_grad: False
+  log_params_norm: False
+  log_progress: False
+  log_runtime_to_tensorboard: False
+  log_throughput: False
+  log_throughput_to_tensorboard: False
+  log_timers_to_tensorboard: False
+  log_validation_ppl_to_tensorboard: False
+  log_world_size_to_tensorboard: False
+  mlflow_log_artifacts: True
+  moe_routing_trace_capture_hidden_states: False
+  moe_routing_trace_capture_logits: False
+  moe_routing_trace_dump_weights: False
+  runtime_time_unit: 'hours'
+  set_level_for_all_loggers: False
+  skip_train_metrics_log: False
+  tensorboard_dir: '/home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/tensorboard'
+  tensorboard_log_interval: 1
+  tensorboard_queue_size: 1000
+  throughput_window_size: 100
+  timing_log_level: 0
+  timing_log_option: 'minmax'
+
+[tokenizer]:
+  force_system_message: False
+  hf_tokenizer_kwargs: {}
+  make_vocab_size_divisible_by: 1
+  null_tokenizer_pad_id: -1
+  pad_vocab_size: False
+  rank: 0
+  sp_tokenizer_kwargs: {}
+  tensor_model_parallel_size: 1
+  tiktoken_num_special_tokens: 1000
+  tokenizer_hf_no_include_special_tokens: False
+  tokenizer_hf_no_use_fast: False
+  tokenizer_model: '/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct'
+  tokenizer_sentencepiece_ignore_extra_whitespaces: True
+  tokenizer_sentencepiece_legacy: False
+  tokenizer_type: 'HuggingFaceTokenizer'
+  trust_remote_code: False
+  use_tokenizer_vocab_size: False
+  vocab_extra_ids: 0
+
+[rng]:
+  data_parallel_random_init: False
+  inference_rng_tracker: False
+  seed: 42
+  te_rng_tracker: False
+
+======================================================================
+INFO:megatron.training.utils.log_utils:Setting logging level to 20
+INFO:megatron.core.num_microbatches_calculator:setting number of microbatches to constant 1
+> initializing torch distributed ...
+spark1:1229647:1229647 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+spark1:1229647:1229647 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark1:1229647:1229647 [0] NCCL INFO Bootstrap: Using enp1s0f0np0:12.201.48.11<0>
+spark1:1229647:1229647 [0] NCCL INFO cudaDriverVersion 13000
+spark1:1229647:1229647 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+spark1:1229647:1229647 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1229647:1229647 [0] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+spark1:1229647:1229647 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark1:1229647:1229647 [0] NCCL INFO NCCL_IB_HCA set to rocep1s0f0
+spark1:1229647:1229647 [0] NCCL INFO NET/IB : Using [0]rocep1s0f0:1/RoCE [RO]; OOB enp1s0f0np0:12.201.48.11<0>
+spark1:1229647:1229647 [0] NCCL INFO Initialized NET plugin IB
+spark1:1229647:1229647 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1229647:1229647 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1229647:1229647 [0] NCCL INFO Using network IB
+spark1:1229647:1229647 [0] NCCL INFO ncclCommInitRankConfig comm 0x4831cb90 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x2e6edcef3db62a55 - Init START
+spark1:1229647:1229647 [0] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+spark1:1229647:1229647 [0] NCCL INFO Bootstrap timings total 0.016533 (create 0.000027, send 0.000114, recv 0.012311, ring 0.000713, delay 0.000000)
+spark1:1229647:1229647 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1229647:1229647 [0] NCCL INFO comm 0x4831cb90 rank 0 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 00/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 01/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 02/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 03/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 04/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 05/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 06/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 07/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] 1/-1/-1->0->-1 [2] 1/-1/-1->0->-1 [3] 1/-1/-1->0->-1 [4] -1/-1/-1->0->1 [5] -1/-1/-1->0->1 [6] -1/-1/-1->0->1 [7] -1/-1/-1->0->1
+spark1:1229647:1229647 [0] NCCL INFO P2P Chunksize set to 131072
+spark1:1229647:1229647 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+spark1:1229647:1229647 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1229647:1229674 [0] NCCL INFO [Proxy Service] Device 0 CPU core 1
+spark1:1229647:1229675 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 6
+spark1:1229647:1229647 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+spark1:1229647:1229647 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark1:1229647:1229647 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark1:1229647:1229647 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1229647:1229647 [0] NCCL INFO ncclCommInitRankConfig comm 0x4831cb90 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x2e6edcef3db62a55 - Init COMPLETE
+spark1:1229647:1229647 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 2 total 0.19 (kernels 0.13, alloc 0.04, bootstrap 0.02, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark1:1229647:1229676 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 6
+spark1:1229647:1229647 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+[Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+> initialized tensor model parallel with size 1
+> initialized pipeline model parallel with size 1
+> setting random seeds to 42 ...
+> compiling dataset index builder ...
+make: Entering directory '/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/datasets'
+make: Nothing to be done for 'default'.
+make: Leaving directory '/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/core/datasets'
+>>> done with dataset index builder. Compilation time: 0.020 seconds
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+time to initialize megatron (seconds): 1.548
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+[after megatron is initialized] datetime: 2026-09-08 18:00:00 
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/megatron/bridge/utils/common_utils.py:112: UserWarning: `build_tokenizer` is deprecated and will be removed soon. Please, use `megatron.core.tokenizers.utils.build_tokenizer` instead.
+  warnings.warn(message)
+INFO:root:Using preset vocab_size: 151936 over the tokenizer vocab_size: 151665, dummy tokens: 271.
+[after tokenizer is built] datetime: 2026-09-08 18:00:01 
+ > number of parameters on (tensor, gtp_remat, pipeline) model parallel rank (0, 0, 0): 494032768
+INFO:megatron.core.distributed.distributed_data_parallel:Setting up DistributedDataParallel with config DistributedDataParallelConfig(grad_reduce_in_fp32=True, overlap_grad_reduce=False, overlap_param_gather=False, align_param_gather=False, use_distributed_optimizer=True, num_distributed_optimizer_instances=1, check_for_nan_in_grad=False, check_for_large_grads=False, bucket_size=None, num_buckets=None, pad_buckets_for_high_nccl_busbw=False, reduce_scatter_with_fp32_accumulation=False, param_name_patterns_for_fp32_local_accumulation=(), average_in_collective=False, fp8_param_gather=False, fp4_param_gather=False, reuse_grad_buf_for_mxfp8_param_ag=False, use_megatron_fsdp=False, use_custom_fsdp=False, data_parallel_sharding_strategy='no_shard', gradient_reduce_div_fusion=True, suggested_communication_unit_size=None, keep_fp8_transpose_cache=False, nccl_ub=False, fsdp_double_buffer=False, fsdp_db_use_persist_buf_on_alloc_fail=False, fsdp_all_gather_in_start_param_sync=True, outer_dp_sharding_strategy='no_shard', disable_symmetric_registration=False, fsdp_manual_registration=False, delay_wgrad_compute=False, megatron_fsdp_main_params_dtype=torch.float32, megatron_fsdp_main_grads_dtype=None, megatron_fsdp_grad_comm_dtype=None, megatron_fsdp_use_decoupled_grad=False, megatron_fsdp_cuda_graph_mode=False, megatron_fsdp_enable_fine_grained_param_gather=False, megatron_fsdp_max_pool_double_buffer=False)
+INFO:megatron.core.distributed.param_and_grad_buffer:Number of buckets for gradient all-reduce / reduce-scatter: 1
+Params for bucket 1 (494032768 elements, 494032768 padded size, 0 param(s) with extra main_grads):
+	module.decoder.final_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.23.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.22.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.21.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.20.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.19.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.18.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.17.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.16.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.15.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.14.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.13.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.12.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.11.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.10.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.9.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.8.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.7.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.6.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.5.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.4.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.3.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.2.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.1.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.pre_mlp_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	module.decoder.layers.0.input_layernorm.weight (param.main_grad.dtype=torch.float32)
+	module.embedding.word_embeddings.weight (param.main_grad.dtype=torch.float32)
+INFO:megatron.core.distributed.param_and_grad_buffer:Using reduce-scatter for gradient reductions because self.ddp_config.use_distributed_optimizer=True
+INFO:megatron.core.optimizer:Setting up optimizer with config OptimizerConfig(lr=5e-06, min_lr=0.0, decoupled_lr=None, decoupled_min_lr=None, weight_decay=0.01, apply_wd_to_qk_layernorm=False, fp8_recipe='tensorwise', fp16=False, bf16=True, reuse_grad_buf_for_mxfp8_param_ag=False, params_dtype=torch.bfloat16, use_precision_aware_optimizer=False, store_param_remainders=True, main_grads_dtype=torch.float32, main_params_dtype=torch.float32, exp_avg_dtype=torch.float32, exp_avg_sq_dtype=torch.float32, optimizer='adam', loss_scale=None, initial_loss_scale=4294967296, min_loss_scale=1.0, loss_scale_window=1000, hysteresis=2, adam_beta1=0.9, adam_beta2=0.999, adam_eps=1e-08, decoupled_weight_decay=True, sgd_momentum=0.9, muon_momentum=0.95, muon_split_qkv=True, muon_nesterov=False, muon_scale_mode='spectral', muon_fp32_matmul_prec='medium', muon_coefficient_type='quintic', muon_num_ns_steps=5, muon_tp_mode='blockwise', muon_extra_scale_factor=1.0, muon_scalar_optimizer='adam', lion_beta1=0.95, lion_beta2=0.98, soap_shampoo_beta=0.95, soap_precondition_frequency=1, soap_use_kl_shampoo=True, adaptive_muon_moment2_method='adamuon', adaptive_muon_beta2=0.95, adaptive_muon_eps=1e-08, use_distributed_optimizer=True, use_layer_wise_distributed_optimizer=False, overlap_param_gather=False, overlap_param_gather_with_optimizer_step=False, optimizer_cpu_offload=False, optimizer_offload_fraction=0.0, use_torch_optimizer_for_cpu_offload=False, overlap_cpu_optimizer_d2h_h2d=False, pin_cpu_grads=True, pin_cpu_params=True, clip_grad=1.0, grad_norm_skip_threshold=inf, log_num_zeros_in_grad=False, barrier_with_L1_time=False, timers=<megatron.core.timers.Timers object at 0xed8125918a40>, config_logger_dir='', optimizer_cuda_graph=False)
+INFO:megatron.core.distributed.param_and_grad_buffer:Using reduce-scatter for gradient reductions because self.ddp_config.use_distributed_optimizer=True
+INFO:megatron.core.optimizer_param_scheduler:> learning rate decay style: linear
+[after model, optimizer, and learning rate scheduler are built] datetime: 2026-09-08 18:00:01 
+Broadcasting TrainState from rank 0 to all 2 ranks
+ Auto-detected checkpoint format as 'torch_dist' from /home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/checkpoints/iter_0000002.
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/checkpoint/utils.py:483: UserWarning: torch.distributed is disabled, unavailable or uninitialized, assuming the intent is to load in a single process.
+  return func(*args, **kwargs)
+Broadcasting config from rank 0 to all 2 ranks
+sharded_state_dict metadata loaded from the checkpoint: {'distrib_optim_sharding_type': 'dp_reshardable', 'singleton_local_shards': False, 'chained_optim_avoid_prefix': True}
+ Auto-detected checkpoint format as 'torch_dist' from /home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/checkpoints/iter_0000002.
+ loading distributed checkpoint from /home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/checkpoints at iteration 2
+spark1:1229647:1229647 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1229647:1229647 [0] NCCL INFO Initialized NET plugin IB
+spark1:1229647:1229647 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1229647:1229647 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1229647:1229647 [0] NCCL INFO Using network IB
+spark1:1229647:1229647 [0] NCCL INFO ncclCommInitRankConfig comm 0x55b4c130 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xcb131864b2b6afc7 - Init START
+spark1:1229647:1229647 [0] NCCL INFO Bootstrap timings total 0.002118 (create 0.000015, send 0.000073, recv 0.001237, ring 0.000117, delay 0.000000)
+spark1:1229647:1229647 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1229647:1229647 [0] NCCL INFO comm 0x55b4c130 rank 0 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 00/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 01/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 02/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 03/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 04/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 05/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 06/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 07/08 : 0 1
+spark1:1229647:1229647 [0] NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] 1/-1/-1->0->-1 [2] 1/-1/-1->0->-1 [3] 1/-1/-1->0->-1 [4] -1/-1/-1->0->1 [5] -1/-1/-1->0->1 [6] -1/-1/-1->0->1 [7] -1/-1/-1->0->1
+spark1:1229647:1229647 [0] NCCL INFO P2P Chunksize set to 131072
+spark1:1229647:1229647 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1229647:1229740 [0] NCCL INFO [Proxy Service] Device 0 CPU core 0
+spark1:1229647:1229741 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 17
+spark1:1229647:1229647 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark1:1229647:1229647 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark1:1229647:1229647 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1229647:1229647 [0] NCCL INFO ncclCommInitRankConfig comm 0x55b4c130 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xcb131864b2b6afc7 - Init COMPLETE
+spark1:1229647:1229647 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 2 total 0.01 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark1:1229647:1229742 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 1
+spark1:1229647:1229647 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1229647:1229647 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/checkpoint/logger.py:90: UserWarning: The argument order of load has been changed. Please check the document to avoid future breakages.
+  result = func(*args, **kwargs)
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/checkpoint/utils.py:481: UserWarning: torch.distributed is disabled, unavailable or uninitialized, assuming the intent is to load in a single process.
+  return func(args[0], **kwargs)
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/checkpoint/planner_helpers.py:419: FutureWarning: Please use DTensor instead and we are deprecating ShardedTensor.
+  device = getattr(value, "device", None)
+/home/spark/ptl-envs/megatron/lib/python3.12/site-packages/torch/distributed/checkpoint/default_planner.py:483: FutureWarning: Please use DTensor instead and we are deprecating ShardedTensor.
+  and md.size != obj.size()
+Broadcasting TrainState from rank 0 to all 2 ranks
+ checkpoint version 3.0
+  successfully loaded checkpoint from /home/spark/shared/post-training-lab/results/unified-layout-megatron-verified-20260908/checkpoints [ t 0/1, p 0/1 ] at iteration 2
+> building train, validation, and test datasets ...
+ > datasets target sizes (minimum size):
+    train:      4
+    validation: 4
+    test:       2
+Generating train split: 0 examples [00:00, ? examples/s]Generating train split: 8 examples [00:00, 5484.54 examples/s]
+Generating validation split: 0 examples [00:00, ? examples/s]Generating validation split: 2 examples [00:00, 1332.37 examples/s]
+[after dataloaders are built] datetime: 2026-09-08 18:00:02 
+done with setup ...
+skipping training ...
+Evaluating on 2 samples
+Evaluating iter 1/1
+spark1:1229647:1229647 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1229647:1229647 [0] NCCL INFO Initialized NET plugin IB
+spark1:1229647:1229647 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1229647:1229647 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1229647:1229647 [0] NCCL INFO Using network IB
+spark1:1229647:1229647 [0] NCCL INFO ncclCommInitRankConfig comm 0x6e9a2c60 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x3381cb47b856d176 - Init START
+spark1:1229647:1229647 [0] NCCL INFO Bootstrap timings total 0.000832 (create 0.000021, send 0.000089, recv 0.000648, ring 0.000000, delay 0.000000)
+spark1:1229647:1229647 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1229647:1229647 [0] NCCL INFO comm 0x6e9a2c60 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 00/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 01/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 02/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 03/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 04/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 05/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 06/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 07/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 08/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 09/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 10/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 11/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 12/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 13/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 14/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 15/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 16/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 17/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 18/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 19/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 20/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 21/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 22/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 23/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 24/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 25/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 26/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 27/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 28/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 29/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 30/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 31/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 32/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 33/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 34/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 35/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 36/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 37/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 38/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 39/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 40/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 41/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 42/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 43/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 44/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 45/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 46/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 47/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 48/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 49/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 50/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 51/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 52/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 53/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 54/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 55/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 56/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 57/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 58/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 59/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 60/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 61/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 62/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Channel 63/64 : 0
+spark1:1229647:1229647 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1 [32] -1/-1/-1->0->-1 [33] -1/-1/-1->0->-1 [34] -1/-1/-1->0->-1 [35] -1/-1/-1->0->-1 [36] -1/-1/-1->0->-1 [37] -1/-1/-1->0->-1 [38] -1/-1/-1->0->-1 [39] -1/-1/-1->0->-1 [40] -1/-1/-1->0->-1 [41] -1/-1/-1->0->-1 [42] -1/-1/-1->0->-1 [43] -1/-1/-1->0->-1 [44] -1/-1/-1->0->-1 [45] -1/-1/-1->0->-1 [46] -1/-1/-1->0->-1 [47
+spark1:1229647:1229647 [0] NCCL INFO P2P Chunksize set to 524288
+spark1:1229647:1229647 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1229647:1229805 [0] NCCL INFO [Proxy Service] Device 0 CPU core 0
+spark1:1229647:1229806 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 8
+spark1:1229647:1229647 [0] NCCL INFO 64 coll channels, 64 collnet channels, 0 nvls channels, 64 p2p channels, 64 p2p channels per peer
+spark1:1229647:1229647 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1229647:1229647 [0] NCCL INFO ncclCommInitRankConfig comm 0x6e9a2c60 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId f01000 commId 0x3381cb47b856d176 - Init COMPLETE
+spark1:1229647:1229647 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 1 total 0.02 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.02, rest 0.00)
+spark1:1229647:1229647 [0] NCCL INFO comm 0x55b4c130 rank 0 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark1:1229647:1229647 [0] NCCL INFO comm 0x6e9a2c60 rank 0 nranks 1 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark1:1229647:1229647 [0] NCCL INFO comm 0x4831cb90 rank 0 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark1:1229647:1229647 [0] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault

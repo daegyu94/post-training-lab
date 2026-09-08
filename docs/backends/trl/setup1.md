@@ -3,7 +3,7 @@
 이 가이드의 명령은 `backends/trl` 디렉터리에서 실행합니다.
 전체 구성은 [PoC Setups](../../../README.md#poc-setups)를, 두 Spark 노드 실행은 [Setup 2](spark-cluster.md)를 참고하세요.
 
-이 브랜치는 TRL을 사용해 `Qwen/Qwen2.5-14B-Instruct`를 `HuggingFaceH4/ultrachat_200k`의 대화 데이터로 NF4 QLoRA fine-tuning하는 실험을 수행하고, 그 결과를 기록하기 위한 브랜치입니다.
+이 기존 실습은 TRL을 사용해 `Qwen/Qwen2.5-14B-Instruct`를 `HuggingFaceH4/ultrachat_200k`의 대화 데이터로 NF4 QLoRA fine-tuning하는 실험을 수행하고, 그 결과를 기록합니다.
 
 실험 과정은 local dataset과 cached model을 사용한 학습, 학습 전후 held-out evaluation, deterministic generation 비교, 저장한 PEFT adapter의 독립 프로세스 재로딩으로 구성됩니다.
 

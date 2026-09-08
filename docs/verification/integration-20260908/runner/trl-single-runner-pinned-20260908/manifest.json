@@ -1,0 +1,30 @@
+{
+  "backend": "trl",
+  "config_sha256": {
+    "experiment": "939b3ba875b268823a7d9d3ac745ca5237e0784c260a7112f10130fd525b66cb",
+    "setup": "c062ca539a1f922c2242ec84b5a1e8e7c55f33d1b827742147fe0e0bb5348d49"
+  },
+  "controller_commit": "6d42a4fb15ca0f6b494d24e12a34e0b36571f3ba",
+  "elapsed_seconds": 49.147,
+  "experiment_path": "/tmp/post-training-unified/experiments/trl/single-node-smoke.json",
+  "output": "/tmp/post-training-unified/artifacts/runs/trl-single-runner-pinned-20260908",
+  "ranks": [
+    {
+      "command": "set -eu; if mkdir /home/spark/shared/post-training-lab/results/unified-experiments/trl-single-runner-pinned-20260908 2>/dev/null; then created_output=1; elif [ -d /home/spark/shared/post-training-lab/results/unified-experiments/trl-single-runner-pinned-20260908 ]; then created_output=0; else echo 'cannot allocate remote output' >&2; exit 2; fi; if [ \"$created_output\" = 1 ]; then mkdir /home/spark/shared/post-training-lab/results/unified-experiments/trl-single-runner-pinned-20260908/.runner-session-trl-single-runner-pinned-20260908 || { echo 'cannot claim new remote output' >&2; exit 2; }; mkdir /home/spark/shared/post-training-lab/results/unified-experiments/trl-single-runner-pinned-20260908/.runner-session-trl-single-runner-pinned-20260908/ada23d0ed51048fe80d87135fed7a043 || { echo 'cannot record remote session' >&2; exit 2; }; else attempts=0; while [ ! -d /home/spark/shared/post-training-lab/results/unified-experiments/trl-single-runner-pinned-20260908/.runner-session-trl-single-runner-pinned-20260908/ada23d0ed51048fe80d87135fed7a043 ] && [ \"$attempts\" -lt 50 ]; do attempts=$((attempts + 1)); sleep 0.1; done; if [ ! -d /home/spark/shared/post-training-lab/results/unified-experiments/trl-single-runner-pinned-20260908/.runner-session-trl-single-runner-pinned-20260908/ada23d0ed51048fe80d87135fed7a043 ]; then echo 'refusing prior, incomplete, or concurrent remote output' >&2; exit 2; fi; fi; if ! mkdir /home/spark/shared/post-training-lab/results/unified-experiments/trl-single-runner-pinned-20260908/.runner-rank-trl-single-runner-pinned-20260908-0 2>/dev/null; then echo 'refusing duplicate rank claim' >&2; exit 2; fi; if [ -e /home/spark/shared/post-training-lab/results/unified-experiments/trl-single-runner-pinned-20260908/.runner-cancel-trl-single-runner-pinned-20260908-rank0 ]; then echo 'remote launch cancelled before start' >&2; exit 143; fi; cd /home/spark/post-training-unified/backends/trl; remote_commit=\"$(git -C /home/spark/post-training-unified rev-parse HEAD 2>/dev/null || true)\"; remote_dirty=\"$(git -C /home/spark/post-training-unified status --porcelain 2>/dev/null | tr '\\n' ';' || true)\"; printf '[runner] remote_commit=%s\\n[runner] remote_dirty=%s\\n' \"$remote_commit\" \"$remote_dirty\"; if [ \"$remote_commit\" != 6d42a4fb15ca0f6b494d24e12a34e0b36571f3ba ]; then echo 'remote commit mismatch' >&2; exit 2; fi; if [ -n \"$remote_dirty\" ]; then echo 'remote checkout is dirty' >&2; exit 2; fi; export DATASET_ID=HuggingFaceH4/no_robots; export DATASET_REVISION=e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b; export DATA_DIR=/home/spark/shared/post-training-lab/data/public-smoke/no_robots; export DISTRIBUTED_BACKEND=ddp; export EVAL_SAMPLES=2; export FINETUNING_MODE=lora; export GRADIENT_ACCUMULATION_STEPS=1; export HF_DATASETS_OFFLINE=1; export HF_HUB_OFFLINE=1; export LEARNING_RATE=2e-5; export MASTER_ADDR=127.0.0.1; export MASTER_PORT=29671; export MAX_LENGTH=2048; export MAX_STEPS=1; export MODEL_DIR=/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct; export MODEL_ID=Qwen/Qwen2.5-0.5B-Instruct; export MODEL_REVISION=7ae557604adf67be50417f59c2c2f167def9a775; export NCCL_DEBUG=WARN; export NCCL_IB_HCA=rocep1s0f0; export NCCL_SOCKET_IFNAME=enp1s0f0np0; export NNODES=1; export NODE_RANK=0; export NPROC_PER_NODE=1; export OMP_NUM_THREADS=4; export OPTIMIZER=adamw; export OUTPUT_DIR=/home/spark/shared/post-training-lab/results/unified-experiments/trl-single-runner-pinned-20260908; export PYTHON=/home/spark/ptl-envs/trl/bin/python; export SEED=42; export STAGE=all; export TOKENIZERS_PARALLELISM=false; export TRAIN_SAMPLES=4; set +e; setsid bash -c 'if [ -e /home/spark/shared/post-training-lab/results/unified-experiments/trl-single-runner-pinned-20260908/.runner-cancel-trl-single-runner-pinned-20260908-rank0 ]; then exit 143; fi; echo $$ > /home/spark/shared/post-training-lab/results/unified-experiments/trl-single-runner-pinned-20260908/.runner-trl-single-runner-pinned-20260908-rank0.pid; exec timeout --signal=TERM --kill-after=30s 900 ./scripts/run_spark_cluster.sh'; rc=$?; set -e; rm -f /home/spark/shared/post-training-lab/results/unified-experiments/trl-single-runner-pinned-20260908/.runner-trl-single-runner-pinned-20260908-rank0.pid; exit $rc",
+      "exit_code": 0,
+      "host": "spark@spark1",
+      "log": "/tmp/post-training-unified/artifacts/runs/trl-single-runner-pinned-20260908/rank-0.log",
+      "output": "/home/spark/shared/post-training-lab/results/unified-experiments/trl-single-runner-pinned-20260908",
+      "rank": 0,
+      "remote_commit": "6d42a4fb15ca0f6b494d24e12a34e0b36571f3ba",
+      "remote_dirty": "",
+      "status": "passed"
+    }
+  ],
+  "run_id": "trl-single-runner-pinned-20260908",
+  "session_id": "ada23d0ed51048fe80d87135fed7a043",
+  "setup": "spark",
+  "setup_path": "/tmp/post-training-unified/setups/spark/local.integration.json",
+  "status": "passed",
+  "timeout_seconds": 900
+}

@@ -4,7 +4,7 @@
 이 문서는 학습 전의 데이터 준비부터 학습 후 checkpoint의 production 반영까지를 연결하는 **system integration guide**입니다.
 TRL과 Megatron-LM 중 어느 backend를 사용하더라도 유지해야 하는 공통 contract, 검증 단계와 운영 원칙을 설명합니다.
 
-학습 framework 실습은 [TRL](../../backends/trl/README.md) 또는 [Megatron](../../backends/megatron/README.md) 가이드를 따릅니다.
+학습 framework 실습은 [TRL](../../../backends/trl/README.md) 또는 [Megatron](../../../backends/megatron/README.md) 가이드를 따릅니다.
 이 설계 디렉터리에는 설치 script, 학습 command와 실행 가능한 reference implementation이 없습니다.
 문서의 schema와 값은 설계 예시이며, 실제 platform의 저장소, serving engine과 승인 정책에 맞춰 구체화해야 합니다.
 

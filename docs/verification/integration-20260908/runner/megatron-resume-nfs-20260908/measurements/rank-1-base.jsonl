@@ -1,0 +1,2 @@
+{"event": "finalize_async_saves", "seconds": 3.119930624961853e-06, "success": true, "stage": "base", "blocking": true, "terminate": true}
+{"event": "stage", "stage": "base", "success": true, "seconds": 8.791079751215875, "peak_cuda_allocated_bytes": 4560787456, "peak_cuda_reserved_bytes": 5228199936}

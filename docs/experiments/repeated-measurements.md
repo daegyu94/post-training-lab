@@ -52,3 +52,5 @@ The setup file may contain local absolute paths and host names and should remain
 The recompute and sequence length cells set `PAD_TO_MAX_LENGTH=true` so their 2048 and 4096 settings change tensor width instead of only truncating examples.
 
 Megatron SFT keeps padding disabled by default and accepts `--pad-to-max-length` for explicit opt-in.
+
+The [integration measurement record](../verification/integration-20260908/benchmarks/README.md) contains the executed short plan, raw logs, and the selective-recompute configuration failure.

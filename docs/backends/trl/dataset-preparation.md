@@ -9,7 +9,7 @@
 
 [공개 데이터 기준](../../datasets/public-datasets.md)을 적용한 뒤 아래 명령으로 준비합니다.
 
-TRL branch:
+TRL backend:
 
 ```bash
 ./scripts/prepare_public_data.sh --preset no_robots --output-dir data/public/no_robots --revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b --train-count 32 --eval-count 8 --seed 42
@@ -42,7 +42,7 @@ data/service-sft/
 ```
 
 `training.jsonl`과 `validation.jsonl`은 TRL conversational format인 `messages`를 포함합니다.
-`SFTTrainer`는 이 브랜치의 `assistant_only_loss=True` 설정과 Qwen chat template을 사용해 assistant token에만 loss를 계산합니다.
+`SFTTrainer`는 이 backend의 `assistant_only_loss=True` 설정과 Qwen chat template을 사용해 assistant token에만 loss를 계산합니다.
 
 `test.jsonl`은 마지막 assistant 응답을 prompt에서 제거하고 `reference_answer`로 분리합니다.
 이 파일은 `SFTTrainer`에 전달하지 않습니다.
@@ -55,7 +55,7 @@ TRACE_FILE=<reviewed-traces.jsonl> DATA_DIR=<prepared-data-dir> \
   ./scripts/prepare_service_data.sh
 ```
 
-변환 결과를 이 브랜치의 학습 경로에서 사용하려면 다음처럼 실행합니다.
+변환 결과를 이 backend의 학습 경로에서 사용하려면 다음처럼 실행합니다.
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 \

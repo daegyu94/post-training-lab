@@ -5,7 +5,7 @@
 
 - [Megatron-LM](https://github.com/NVIDIA/Megatron-LM)은 대규모 Transformer 학습을 위한 참조 애플리케이션입니다. Megatron Core와 실행 스크립트를 함께 제공합니다.
 - [Megatron Core](https://docs.nvidia.com/megatron-core/developer-guide/latest/)는 Transformer 블록과 병렬화 전략을 조합하는 라이브러리입니다.
-- [Megatron Bridge](https://docs.nvidia.com/nemo/megatron-bridge/latest/)는 Hugging Face 체크포인트와 Megatron 형식 사이의 변환, 모델별 recipe, 학습 진입점을 제공하는 연결 계층입니다. 이 브랜치는 local Hugging Face snapshot에서 Bridge provider를 만들어 분산 학습 설정을 적용합니다.
+- [Megatron Bridge](https://docs.nvidia.com/nemo/megatron-bridge/latest/)는 Hugging Face 체크포인트와 Megatron 형식 사이의 변환, 모델별 recipe, 학습 진입점을 제공하는 연결 계층입니다. 이 backend는 local Hugging Face snapshot에서 Bridge provider를 만들어 분산 학습 설정을 적용합니다.
 
 ## How Setup2 Uses the Stack
 

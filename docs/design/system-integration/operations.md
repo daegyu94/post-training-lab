@@ -97,4 +97,4 @@ dataset publish, registry alias 변경과 production traffic 전환처럼 상태
 - metric, log와 event의 timestamp가 동기화돼 있고 같은 phase를 비교할 수 있습니다.
 - 개인정보와 secret이 dataset, log, metric 또는 artifact metadata에 포함되지 않습니다.
 
-전체 문서 안내는 [branch README](../README.md)에서 확인할 수 있습니다.
+전체 문서 안내는 [branch README](README.md)에서 확인할 수 있습니다.

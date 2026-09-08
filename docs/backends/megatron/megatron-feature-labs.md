@@ -46,6 +46,8 @@ Record Observations + Validation Limits
 30B MoE integration 성공 여부, feature 성능, checkpoint correctness는 서로 다른 검증 항목입니다.
 양 노드의 NCCL collective correctness와 host RoCE `ib_write_bw`도 별도 prerequisite smoke로 취급합니다.
 
+통합 후 반복 측정의 실행 설정과 결과는 [공통 측정 가이드](../../experiments/repeated-measurements.md)와 [통합 검증 기록](../../verification/integration-20260908/README.md)에서 관리합니다.
+
 ## Matrix
 
 | Feature | Variants | Topology or requirement |
@@ -53,7 +55,7 @@ Record Observations + Validation Limits
 | Distributed checkpoint save | sync / async | `torch_dist`, fully parallel save/load, optimizer state 저장 |
 | Restart correctness | fresh / resumed | optimizer·scheduler·RNG·iteration state load, adapter eval과 별도 |
 | Grad-reduce overlap | off / on | EP=1, TP=1, PP=1, dense DP=2; LoRA gradient가 작으면 speedup 없음 가능 |
-| Recompute | full / selective | 같은 batch·precision·seed, warmup 제외 repeat |
+| Recompute | full / selective | full은 실행 확인; selective는 [현재 설정 검증 실패](../../verification/integration-20260908/README.md#recompute-limitation), 성능 비교 미완료 |
 | Sequence parallel | off / on | 두 variant 모두 TP=2; on만 sequence-parallel 활성화 |
 | Expert parallel | EP=1 / EP=2 | MoE model에서만 비교; network/NCCL evidence 선행 |
 
@@ -310,4 +312,4 @@ release note에 보이는 기능을 현재 Bridge provider·Transformer Engine b
 | HybridEP/DeepEP 또는 NCCL EP dispatcher | expert token dispatch 통신 경로 변경 | 현재 Transformer Engine은 `NVTE_WITH_NCCL_EP=0`으로 빌드되어 실행 대상이 아님. 지원 hardware·dependency 조합을 확보한 뒤 별도 실습으로 추가 |
 
 [Parallelism guide](https://docs.nvidia.com/megatron-core/developer-guide/latest/user-guide/parallelism-guide.html)의 여러 parallelism 조합도 후보 선택 기준으로 사용합니다.
-현재 runnable matrix는 DCP save/restart, grad-reduce overlap, recompute, sequence parallel과 expert parallel이며, 위 표의 나머지 항목은 구현·dependency·smoke evidence가 추가되기 전까지 screening 상태입니다.
+현재 실행 경로는 DCP save/restart, grad-reduce overlap, full recompute, sequence parallel과 expert parallel이며, 위 표의 나머지 항목은 구현·dependency·smoke evidence가 추가되기 전까지 screening 상태입니다.

@@ -1,6 +1,6 @@
 # Spark Cluster Profiling Walkthrough
 
-이 브랜치의 기본 실습은 **Spark cluster에서 실행**합니다.
+이 관측 도구의 기본 실습은 **Spark cluster에서 실행**합니다.
 공통 장비 소개는 [main의 PoC Setups](../../README.md#poc-setups)를 참고하세요.
 Controller는 편집·테스트·SSH 조율을 맡고, GPU 연산은 `spark1`, `spark2`에서 실행합니다.
 처음에는 아래 순서로 host/GPU 관측 → 작은 collective → storage → DDP 기준 실행 → selected trace를 진행하세요.

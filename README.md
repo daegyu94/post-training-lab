@@ -5,6 +5,7 @@ Post-Training Lab은 LLM post-training을 데이터 준비, 학습, 평가와 re
 기본 분산 실행 환경은 `spark1`, `spark2` 두 노드이며 실제 workload는 Spark 노드에서 수행합니다.
 
 지원 조합과 구조는 [Architecture](docs/architecture.md), 반복 성능 측정은 [실험 가이드](docs/experiments/repeated-measurements.md)를 참고하세요.
+실제 Spark 실행과 실패 원인, CPU 검사 결과는 [통합 검증 기록](docs/verification/integration-20260908/README.md)에 있습니다.
 
 ## Start Here
 

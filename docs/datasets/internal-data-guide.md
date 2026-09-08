@@ -71,7 +71,7 @@ SFT의 target은 서비스가 과거에 생성한 응답 그 자체가 아니라
 
 ## Conversion and Training
 
-브랜치별 변환 명령, output 처리와 학습 연결 제약은 실행 가이드에서 관리합니다.
+Backend별 변환 명령, output 처리와 학습 연결 제약은 실행 가이드에서 관리합니다.
 
 - [TRL 서비스 데이터 준비](../backends/trl/dataset-preparation.md#internal-service-data)
 - [Megatron 서비스 데이터 준비](../backends/megatron/dataset-preparation.md#internal-service-data)

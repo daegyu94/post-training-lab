@@ -1,0 +1,59 @@
+{
+  "setup": "spark-cluster",
+  "stage": "resume",
+  "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "model_type": "qwen2",
+  "model_snapshot": {
+    "path": "/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "config_sha256": "18e18afcaccafade98daf13a54092927904649e1dd4eba8299ab717d5d94ff45",
+    "index_sha256": null,
+    "shard_count": 1,
+    "tensor_count": null,
+    "weight_bytes": 988097824
+  },
+  "dataset": "HuggingFaceH4/no_robots",
+  "dataset_revision": "e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b",
+  "train_split": "training.jsonl",
+  "eval_split": "validation.jsonl",
+  "input_files": {
+    "train": "/home/spark/shared/post-training-lab/data/public-smoke/no_robots/training.jsonl",
+    "validation": "/home/spark/shared/post-training-lab/data/public-smoke/no_robots/validation.jsonl"
+  },
+  "load_checkpoint": "/home/spark/shared/post-training-lab/results/unified-experiments/megatron-resume-nfs-20260908/checkpoints",
+  "transformer_impl": "local",
+  "seed": 42,
+  "configuration": {
+    "finetuning_mode": "full",
+    "max_length": 2048,
+    "max_steps": 3,
+    "save_interval": 2,
+    "schedule_steps": 3,
+    "optimizer": "adam",
+    "micro_batch_size": 1,
+    "global_batch_size": 2,
+    "checkpoint_mode": "sync",
+    "fully_parallel_save": true,
+    "fully_parallel_load": true,
+    "dist_ckpt_optim_fully_reshardable": false,
+    "overlap_grad_reduce": false
+  },
+  "topology": {
+    "nnodes": 2,
+    "node_rank": 0,
+    "nproc_per_node": 1,
+    "tensor_parallel_size": 1,
+    "pipeline_parallel_size": 1,
+    "expert_parallel_size": 1,
+    "expert_tensor_parallel_size": 1,
+    "context_parallel_size": 1,
+    "micro_batch_size": 1,
+    "global_batch_size": 2,
+    "world_size": 2,
+    "model_parallel_size": 1,
+    "data_parallel_size": 2,
+    "expert_data_parallel_size": 2,
+    "gradient_accumulation_steps": 1
+  }
+}
