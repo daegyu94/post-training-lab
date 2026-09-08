@@ -1,0 +1,4 @@
+logs/rank-1-train.log 8764 bytes
+checkpoints/checkpoint-1/pytorch_model_fsdp_0/__1_0.distcp 13974912 bytes
+checkpoints/checkpoint-1/rng_state_1.pth 14725 bytes
+checkpoints/checkpoint-1/optimizer_0/__1_0.distcp 28616873 bytes

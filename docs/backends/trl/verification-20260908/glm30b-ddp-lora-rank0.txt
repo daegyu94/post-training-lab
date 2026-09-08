@@ -1,0 +1,251 @@
+[workflow] stage=train rank=0/2 model=zai-org/GLM-4.7-Flash model_dir=/home/spark/.cache/huggingface/hub/models--zai-org--GLM-4.7-Flash/snapshots/7dd20894a642a0aa287e9827cb1a1f7f91386b67 backend=ddp
+[workflow] running stage=train rank=0/2
+/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+    
+  queued_call()
+Loading weights:   0%|          | 0/751 [00:00<?, ?it/s]Loading weights:   2%|2         | 16/751 [00:00<00:14, 49.81it/s]Loading weights:   3%|2         | 21/751 [00:00<00:28, 25.42it/s]Loading weights:   4%|4         | 32/751 [00:00<00:20, 34.28it/s]Loading weights:   5%|4         | 36/751 [00:01<00:34, 20.98it/s]Loading weights:   6%|6         | 48/751 [00:01<00:23, 29.49it/s]Loading weights:   7%|6         | 52/751 [00:02<00:33, 21.05it/s]Loading weights:   9%|8         | 64/751 [00:02<00:23, 29.57it/s]Loading weights:   9%|9         | 68/751 [00:02<00:32, 21.11it/s]Loading weights:  11%|#         | 80/751 [00:02<00:23, 28.55it/s]Loading weights:  11%|#1        | 84/751 [00:03<00:31, 21.25it/s]Loading weights:  13%|#2        | 96/751 [00:03<00:22, 29.06it/s]Loading weights:  13%|#3        | 100/751 [00:03<00:29, 21.88it/s]Loading weights:  15%|#4        | 112/751 [00:04<00:21, 29.50it/s]Loading weights:  15%|#5        | 116/751 [00:04<00:31, 20.07it/s]Loading weights:  17%|#7        | 128/751 [00:05<00:25, 24.61it/s]Loading weights:  18%|#7        | 132/751 [00:05<00:38, 16.28it/s]Loading weights:  19%|#9        | 144/751 [00:05<00:27, 21.76it/s]Loading weights:  20%|#9        | 147/751 [00:06<00:38, 15.66it/s]Loading weights:  21%|##1       | 160/751 [00:06<00:25, 23.20it/s]Loading weights:  22%|##1       | 164/751 [00:07<00:34, 16.96it/s]Loading weights:  23%|##3       | 176/751 [00:07<00:24, 23.27it/s]Loading weights:  24%|##3       | 180/751 [00:08<00:33, 17.13it/s]Loading weights:  26%|##5       | 192/751 [00:08<00:23, 23.90it/s]Loading weights:  26%|##6       | 196/751 [00:08<00:31, 17.55it/s]Loading weights:  28%|##7       | 208/751 [00:09<00:22, 23.78it/s]Loading weights:  28%|##8       | 212/751 [00:09<00:30, 17.42it/s]Loading weights:  30%|##9       | 224/751 [00:09<00:22, 23.33it/s]Loading weights:  30%|###       | 228/751 [00:10<00:29, 17.49it/s]Loading weights:  32%|###1      | 240/751 [00:10<00:21, 23.94it/s]Loading weights:  32%|###2      | 244/751 [00:11<00:28, 17.86it/s]Loading weights:  34%|###4      | 256/751 [00:11<00:20, 24.55it/s]Loading weights:  35%|###4      | 260/751 [00:11<00:26, 18.26it/s]Loading weights:  36%|###6      | 272/751 [00:12<00:19, 25.00it/s]Loading weights:  37%|###6      | 276/751 [00:12<00:26, 17.97it/s]Loading weights:  38%|###8      | 288/751 [00:12<00:18, 24.42it/s]Loading weights:  39%|###8      | 292/751 [00:13<00:25, 17.69it/s]Loading weights:  40%|####      | 304/751 [00:13<00:18, 24.03it/s]Loading weights:  41%|####1     | 308/751 [00:14<00:25, 17.34it/s]Loading weights:  43%|####2     | 320/751 [00:14<00:18, 23.54it/s]Loading weights:  43%|####3     | 324/751 [00:15<00:25, 17.07it/s]Loading weights:  45%|####4     | 336/751 [00:15<00:18, 22.97it/s]Loading weights:  45%|####5     | 340/751 [00:15<00:24, 17.10it/s]Loading weights:  47%|####6     | 352/751 [00:16<00:16, 23.58it/s]Loading weights:  47%|####7     | 356/751 [00:16<00:22, 17.22it/s]Loading weights:  49%|####9     | 368/751 [00:16<00:16, 23.03it/s]Loading weights:  50%|####9     | 372/751 [00:17<00:22, 16.49it/s]Loading weights:  51%|#####1    | 384/751 [00:17<00:15, 23.03it/s]Loading weights:  52%|#####1    | 388/751 [00:18<00:21, 16.61it/s]Loading weights:  53%|#####3    | 400/751 [00:18<00:15, 23.30it/s]Loading weights:  54%|#####3    | 404/751 [00:19<00:20, 17.33it/s]Loading weights:  55%|#####5    | 416/751 [00:19<00:14, 23.81it/s]Loading weights:  56%|#####5    | 420/751 [00:20<00:24, 13.26it/s]Loading weights:  58%|#####7    | 432/751 [00:20<00:16, 18.90it/s]Loading weights:  58%|#####8    | 436/751 [00:21<00:30, 10.42it/s]Loading weights:  60%|#####9    | 448/751 [00:22<00:20, 14.81it/s]Loading weights:  60%|######    | 451/751 [00:23<00:33,  8.89it/s]Loading weights:  62%|######1   | 464/751 [00:23<00:20, 14.35it/s]Loading weights:  62%|######2   | 468/751 [00:25<00:32,  8.60it/s]Loading weights:  64%|######3   | 480/751 [00:25<00:20, 13.10it/s]Loading weights:  64%|######4   | 484/751 [00:26<00:30,  8.62it/s]Loading weights:  66%|######6   | 496/751 [00:26<00:19, 13.17it/s]Loading weights:  67%|######6   | 500/751 [00:28<00:29,  8.58it/s]Loading weights:  68%|######8   | 512/751 [00:28<00:18, 13.12it/s]Loading weights:  69%|######8   | 516/751 [00:29<00:27,  8.69it/s]Loading weights:  70%|#######   | 528/751 [00:29<00:16, 13.28it/s]Loading weights:  71%|#######   | 532/751 [00:30<00:21, 10.01it/s]Loading weights:  72%|#######2  | 544/751 [00:30<00:13, 15.15it/s]Loading weights:  73%|#######2  | 548/751 [00:31<00:15, 13.43it/s]Loading weights:  75%|#######4  | 560/751 [00:31<00:09, 20.05it/s]Loading weights:  75%|#######5  | 564/751 [00:32<00:17, 10.92it/s]Loading weights:  77%|#######6  | 576/751 [00:33<00:10, 16.10it/s]Loading weights:  77%|#######7  | 580/751 [00:33<00:13, 12.56it/s]Loading weights:  79%|#######8  | 592/751 [00:33<00:08, 18.24it/s]Loading weights:  79%|#######9  | 596/751 [00:34<00:13, 11.39it/s]Loading weights:  81%|########  | 608/751 [00:35<00:08, 16.38it/s]Loading weights:  81%|########1 | 612/751 [00:36<00:13, 10.62it/s]Loading weights:  83%|########3 | 624/751 [00:36<00:08, 14.96it/s]Loading weights:  83%|########3 | 627/751 [00:37<00:11, 10.47it/s]Loading weights:  85%|########5 | 640/751 [00:37<00:07, 15.29it/s]Loading weights:  86%|########5 | 643/751 [00:38<00:10, 10.29it/s]Loading weights:  87%|########7 | 656/751 [00:39<00:06, 15.29it/s]Loading weights:  88%|########7 | 659/751 [00:40<00:08, 10.42it/s]Loading weights:  89%|########9 | 672/751 [00:40<00:04, 15.81it/s]Loading weights:  90%|########9 | 675/751 [00:41<00:07, 10.09it/s]Loading weights:  92%|#########1| 688/751 [00:41<00:04, 14.14it/s]Loading weights:  92%|#########2| 691/751 [00:42<00:06,  9.64it/s]Loading weights:  94%|#########3| 704/751 [00:43<00:03, 14.72it/s]Loading weights:  94%|#########4| 707/751 [00:43<00:04, 10.75it/s]Loading weights:  96%|#########5| 720/751 [00:44<00:01, 16.28it/s]Loading weights:  96%|#########6| 723/751 [00:45<00:02, 10.75it/s]Loading weights:  98%|#########8| 736/751 [00:45<00:00, 16.00it/s]Loading weights:  98%|#########8| 739/751 [00:46<00:01,  8.67it/s]Loading weights: 100%|##########| 751/751 [00:46<00:00, 16.04it/s]
+Adding EOS to train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Adding EOS to train dataset: 100%|##########| 4/4 [00:00<00:00, 2101.35 examples/s]
+Tokenizing train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Tokenizing train dataset: 100%|##########| 4/4 [00:00<00:00, 216.13 examples/s]
+Building labels for train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Building labels for train dataset: 100%|##########| 4/4 [00:00<00:00, 2572.01 examples/s]
+Truncating train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Truncating train dataset: 100%|##########| 4/4 [00:00<00:00, 3278.08 examples/s]
+Dropping fully masked examples from train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Dropping fully masked examples from train dataset: 100%|##########| 4/4 [00:00<00:00, 5571.97 examples/s]
+spark1:1208216:1208216 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+spark1:1208216:1208216 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark1:1208216:1208216 [0] NCCL INFO Bootstrap: Using enp1s0f0np0:12.201.48.11<0>
+spark1:1208216:1208216 [0] NCCL INFO cudaDriverVersion 13000
+spark1:1208216:1208216 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+spark1:1208216:1208216 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1208216:1208216 [0] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+spark1:1208216:1208216 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark1:1208216:1208216 [0] NCCL INFO NCCL_IB_HCA set to rocep1s0f0
+spark1:1208216:1208216 [0] NCCL INFO NET/IB : Using [0]rocep1s0f0:1/RoCE [RO]; OOB enp1s0f0np0:12.201.48.11<0>
+spark1:1208216:1208216 [0] NCCL INFO Initialized NET plugin IB
+spark1:1208216:1208216 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1208216:1208216 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1208216:1208216 [0] NCCL INFO Using network IB
+spark1:1208216:1208216 [0] NCCL INFO ncclCommInitRankConfig comm 0x553da9f0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xb9da593249a0aedd - Init START
+spark1:1208216:1208216 [0] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+spark1:1208216:1208216 [0] NCCL INFO Bootstrap timings total 13.491889 (create 0.000027, send 0.000109, recv 13.489448, ring 0.000019, delay 0.000000)
+spark1:1208216:1208216 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1208216:1208216 [0] NCCL INFO comm 0x553da9f0 rank 0 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark1:1208216:1208216 [0] NCCL INFO Channel 00/08 : 0 1
+spark1:1208216:1208216 [0] NCCL INFO Channel 01/08 : 0 1
+spark1:1208216:1208216 [0] NCCL INFO Channel 02/08 : 0 1
+spark1:1208216:1208216 [0] NCCL INFO Channel 03/08 : 0 1
+spark1:1208216:1208216 [0] NCCL INFO Channel 04/08 : 0 1
+spark1:1208216:1208216 [0] NCCL INFO Channel 05/08 : 0 1
+spark1:1208216:1208216 [0] NCCL INFO Channel 06/08 : 0 1
+spark1:1208216:1208216 [0] NCCL INFO Channel 07/08 : 0 1
+spark1:1208216:1208216 [0] NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] 1/-1/-1->0->-1 [2] 1/-1/-1->0->-1 [3] 1/-1/-1->0->-1 [4] -1/-1/-1->0->1 [5] -1/-1/-1->0->1 [6] -1/-1/-1->0->1 [7] -1/-1/-1->0->1
+spark1:1208216:1208216 [0] NCCL INFO P2P Chunksize set to 131072
+spark1:1208216:1208216 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+spark1:1208216:1208216 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1208216:1208315 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 8
+spark1:1208216:1208314 [0] NCCL INFO [Proxy Service] Device 0 CPU core 16
+spark1:1208216:1208216 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+spark1:1208216:1208216 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark1:1208216:1208216 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark1:1208216:1208216 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1208216:1208216 [0] NCCL INFO ncclCommInitRankConfig comm 0x553da9f0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0xb9da593249a0aedd - Init COMPLETE
+spark1:1208216:1208216 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 2 total 13.66 (kernels 0.13, alloc 0.03, bootstrap 13.49, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
+spark1:1208216:1208216 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1208216:1208316 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 14
+spark1:1208216:1208216 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1208216:1208216 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+Adding EOS to eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Adding EOS to eval dataset: 100%|##########| 2/2 [00:00<00:00, 1804.39 examples/s]
+Tokenizing eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Tokenizing eval dataset: 100%|##########| 2/2 [00:00<00:00, 434.78 examples/s]
+Building labels for eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Building labels for eval dataset: 100%|##########| 2/2 [00:00<00:00, 1360.02 examples/s]
+Truncating eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Truncating eval dataset: 100%|##########| 2/2 [00:00<00:00, 1699.13 examples/s]
+Dropping fully masked examples from eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Dropping fully masked examples from eval dataset: 100%|##########| 2/2 [00:00<00:00, 2694.70 examples/s]
+[transformers] The tokenizer has new PAD/BOS/EOS tokens that differ from the model config and generation config. The model config and generation config were aligned accordingly, being updated with the tokenizer's values. Updated tokens: {'eos_token_id': 154820, 'bos_token_id': None}.
+  0%|          | 0/1 [00:00<?, ?it/s]100%|##########| 1/1 [00:04<00:00,  4.12s/it]                                             {'loss': '2.949', 'grad_norm': '1.802', 'learning_rate': '2e-05', 'entropy': '1.505', 'num_tokens': '521', 'mean_token_accuracy': '0.4654', 'epoch': '0.5'}
+100%|##########| 1/1 [00:04<00:00,  4.12s/it]                                             {'train_runtime': '10.23', 'train_samples_per_second': '0.195', 'train_steps_per_second': '0.098', 'train_loss': '2.949', 'epoch': '0.5'}
+100%|##########| 1/1 [00:04<00:00,  4.12s/it]100%|##########| 1/1 [00:04<00:00,  4.88s/it]
+  0%|          | 0/1 [00:00<?, ?it/s]100%|##########| 1/1 [00:00<00:00, 275.61it/s]
+{
+  "stage": "train",
+  "rank": 0,
+  "world_size": 2,
+  "node_rank": 0,
+  "distributed_backend": "ddp",
+  "deepspeed_config": null,
+  "model_id": "zai-org/GLM-4.7-Flash",
+  "model_family": "glm4_moe_lite",
+  "model_revision": "7dd20894a642a0aa287e9827cb1a1f7f91386b67",
+  "model_snapshot_evidence": {
+    "config_json_present": true,
+    "config_json_sha256": "dc9b97c7c9bed726a2e6939da4234d5c43abb3edec8812068c9a1af1dbc13acb",
+    "weight_index_present": true,
+    "weight_index_sha256": "91e6e95ca21700f50904a680c8c4212f5aa16dc7c10a013f01c906957c889791",
+    "indexed_tensor_count": 9703,
+    "indexed_shard_count": 48,
+    "weight_file_count": 48,
+    "snapshot_path_revision": "7dd20894a642a0aa287e9827cb1a1f7f91386b67",
+    "verification": "complete local files observed"
+  },
+  "dataset_id": "HuggingFaceH4/no_robots",
+  "dataset_revision": "e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b",
+  "finetuning_mode": "lora",
+  "optimizer": "adamw",
+  "learning_rate": 2e-05,
+  "precision": "bf16",
+  "gradient_checkpointing": {
+    "enabled": true,
+    "use_reentrant": false,
+    "fsdp_activation_checkpointing": false
+  },
+  "optimizer_state_estimate_bytes": 84127744,
+  "optimizer_state_actual_bytes": 84129624,
+  "optimizer_state_scope": "replicated rank-local optimizer",
+  "optimizer_state_dtypes": [
+    "torch.float32"
+  ],
+  "memory_components_scope": "replicated model view",
+  "memory_components_bytes": {
+    "parameters_by_dtype": {
+      "torch.bfloat16": 59886781952,
+      "torch.float32": 42063872
+    },
+    "trainable_gradients_by_dtype": {
+      "torch.float32": 42063872
+    },
+    "optimizer_state_estimate": 84127744,
+    "optimizer_state_actual": 84129624
+  },
+  "max_steps": 1,
+  "actual_optimizer_steps": 1,
+  "train_seconds": 51.43778344988823,
+  "train_metrics": {
+    "train_runtime": 10.2308,
+    "train_samples_per_second": 0.195,
+    "train_steps_per_second": 0.098,
+    "total_flos": 92644365565952.0,
+    "train_loss": 2.9491443634033203,
+    "epoch": 0.5
+  },
+  "trainable_parameter_count": 10515968,
+  "total_parameter_count": 29953906944,
+  "trainable_parameter_fraction": 0.0003510716655313116,
+  "sampled_parameter_names": [
+    "base_model.model.model.layers.0.self_attn.q_a_proj.lora_B.default.weight",
+    "base_model.model.model.layers.0.self_attn.q_b_proj.lora_B.default.weight",
+    "base_model.model.model.layers.0.self_attn.kv_a_proj_with_mqa.lora_B.default.weight",
+    "base_model.model.model.layers.0.self_attn.kv_b_proj.lora_B.default.weight",
+    "base_model.model.model.layers.0.self_attn.o_proj.lora_B.default.weight",
+    "base_model.model.model.layers.1.self_attn.q_a_proj.lora_B.default.weight",
+    "base_model.model.model.layers.1.self_attn.q_b_proj.lora_B.default.weight",
+    "base_model.model.model.layers.1.self_attn.kv_a_proj_with_mqa.lora_B.default.weight"
+  ],
+  "sampled_parameter_update_max_abs": {
+    "base_model.model.model.layers.0.self_attn.q_a_proj.lora_B.default.weight": 1.999649975914508e-05,
+    "base_model.model.model.layers.0.self_attn.q_b_proj.lora_B.default.weight": 1.9957800759584643e-05,
+    "base_model.model.model.layers.0.self_attn.kv_a_proj_with_mqa.lora_B.default.weight": 1.9999590222141705e-05,
+    "base_model.model.model.layers.0.self_attn.kv_b_proj.lora_B.default.weight": 1.9893717762897722e-05,
+    "base_model.model.model.layers.0.self_attn.o_proj.lora_B.default.weight": 1.9998917196062393e-05,
+    "base_model.model.model.layers.1.self_attn.q_a_proj.lora_B.default.weight": 1.9999302821815945e-05,
+    "base_model.model.model.layers.1.self_attn.q_b_proj.lora_B.default.weight": 1.9987190171377733e-05,
+    "base_model.model.model.layers.1.self_attn.kv_a_proj_with_mqa.lora_B.default.weight": 1.999975756916683e-05
+  },
+  "peak_cuda_memory_allocated_gib": 57.843071937561035,
+  "peak_cuda_memory_reserved_gib": 58.185546875,
+  "data": {
+    "manifest": {
+      "manifest_version": 1,
+      "adapter_version": "public-sft-v1",
+      "preset": "no_robots",
+      "dataset": "HuggingFaceH4/no_robots",
+      "config": "default",
+      "dataset_revision": "e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b",
+      "source_split": "train",
+      "validation_policy": "deterministic holdout from source train split; source test split not read",
+      "source_schema": "messages",
+      "license": "cc-by-nc-4.0",
+      "seed": 42,
+      "max_scan": 200,
+      "train_count": 8,
+      "eval_count": 2,
+      "train_prompt_ids": [
+        "627a77298cf96a309aa35a62207c4164e22a66f6db79119506228f28ddc0f947",
+        "7d443ef2cc3e34d9dc6ffcdf748c1d2a9880cd48be9c9887df29d25be90123f4",
+        "16d804af359db7823c457b7d82809eddaad9a5ea3c91ef3b192a04fee18ff7c6",
+        "a44e058dd0b58174a0e3bed67333b9f2e7bf1733041b308d16a7f23d11bd1934",
+        "2d8e4cc7524017dd3ab34bc542f3f706279f49b8baa8aac1c7af57d515a34551",
+        "5dce7ab02c8211fba9434d2ea31bc12fc9f5cb419832cdeae81c4a4ca8f709d6",
+        "dca7c1d32f891269b28bd65041b77eb3e61cfd0706941ff5de7ca563b296bdde",
+        "98153809e99610d9274fd3cc5c50bfa12baa0e5ea1ee8bcb38df7c77f8949e68"
+      ],
+      "eval_prompt_ids": [
+        "3c975b349494dea76dbbb9c01a2bb925a248efb8ca0944d4034bf6d23040f332",
+        "e9da2fa3a6d496c5a5ee500e58e5477362698aaa08e74ceeffd3fa89d0f806cb"
+      ],
+      "files": {
+        "training": {
+          "path": "training.jsonl",
+          "sha256": "b8fe53046c26bc02826be2606506d35da2d4d1b432ba9c80803f9ae3436707ab"
+        },
+        "validation": {
+          "path": "validation.jsonl",
+          "sha256": "d38e1f7bb39f154b607b5fd3d0b8878aa3354f57c3a41d1e175c9b7e813f6c5f"
+        }
+      }
+    },
+    "train_count": 4,
+    "eval_count": 2,
+    "actual_selected_rows": {
+      "train": [
+        "627a77298cf96a309aa35a62207c4164e22a66f6db79119506228f28ddc0f947",
+        "7d443ef2cc3e34d9dc6ffcdf748c1d2a9880cd48be9c9887df29d25be90123f4",
+        "16d804af359db7823c457b7d82809eddaad9a5ea3c91ef3b192a04fee18ff7c6",
+        "a44e058dd0b58174a0e3bed67333b9f2e7bf1733041b308d16a7f23d11bd1934"
+      ],
+      "validation": [
+        "3c975b349494dea76dbbb9c01a2bb925a248efb8ca0944d4034bf6d23040f332",
+        "e9da2fa3a6d496c5a5ee500e58e5477362698aaa08e74ceeffd3fa89d0f806cb"
+      ]
+    },
+    "supervised_tokens": {
+      "train": 680,
+      "validation": 984
+    },
+    "data_sha256": "604eb9f7ff623aba031dcdd328e44ae6bbd2b0f83b6c3cbad7a95c907b1f0965"
+  },
+  "evaluation": {
+    "eval_loss": 1.9317831993103027,
+    "eval_runtime": 0.6635,
+    "eval_samples_per_second": 3.014,
+    "eval_steps_per_second": 1.507,
+    "eval_entropy": 1.2700836658477783,
+    "eval_num_tokens": 521.0,
+    "eval_mean_token_accuracy": 0.6006097793579102,
+    "epoch": 0.5
+  },
+  "validation": {
+    "summary_writer_rank": 0,
+    "finite_eval_loss": true,
+    "finite_train_loss": true,
+    "supervision_policy": "native chat-template prompt plus final assistant completion and EOS",
+    "parameter_update_evidence": "sampled parameter delta",
+    "sampled_nonzero_update": true,
+    "training_result_verified": true,
+    "failure_reasons": []
+  }
+}
+spark1:1208216:1208216 [0] NCCL INFO comm 0x553da9f0 rank 0 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
+spark1:1208216:1208216 [0] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault

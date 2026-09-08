@@ -1,0 +1,22 @@
+{
+  "megatron": {
+    "original": "4f60132a7a5787c718d66ce44ce540506d3f7b0c",
+    "preserved": "b43c5f75160bac9450ffb87897b50f33b62f4a51"
+  },
+  "trl": {
+    "original": "867ef3d729042fa0b3871f8a5b58a9b193b4402f",
+    "preserved": "43240e68c9619a11555acc90f6dbf289142b5e87"
+  },
+  "main": {
+    "original": "1b0b1010f013c797362dea964b73bf3fac0bde67",
+    "preserved": "e5b053b71f60024dd2952e78ef14e048baf7649e"
+  },
+  "profiling": {
+    "original": "3dd4f9154612c63bfc8a6d99909c295b5d5a81d3",
+    "preserved": "e06ac017dce23d9d89b49b550a6c9b1c7ec44b32"
+  },
+  "system-integration": {
+    "original": "93cb2fa2361d010a466a18debc3b856464ffe335",
+    "preserved": "87733fad57d55d9605714b05518ca8c664ff27b0"
+  }
+}

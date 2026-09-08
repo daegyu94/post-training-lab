@@ -1,0 +1,110 @@
+[workflow] stage=train rank=0/2 model=Qwen/Qwen3-30B-A3B model_dir=/home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 backend=fsdp2
+[workflow] running stage=train rank=0/2
+/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+    
+  queued_call()
+Loading weights:   0%|          | 0/531 [00:00<?, ?it/s]Loading weights:   1%|          | 4/531 [00:00<00:35, 14.74it/s]Loading weights:   1%|1         | 6/531 [00:00<01:03,  8.27it/s]Loading weights:   3%|2         | 15/531 [00:00<00:25, 20.24it/s]Loading weights:   3%|3         | 18/531 [00:01<00:40, 12.53it/s]Loading weights:   5%|4         | 26/531 [00:01<00:27, 18.52it/s]Loading weights:   5%|5         | 29/531 [00:02<00:37, 13.49it/s]Loading weights:   7%|6         | 37/531 [00:02<00:26, 18.96it/s]Loading weights:   8%|7         | 40/531 [00:02<00:34, 14.04it/s]Loading weights:   9%|9         | 48/531 [00:02<00:25, 19.06it/s]Loading weights:  10%|9         | 51/531 [00:03<00:33, 14.35it/s]Loading weights:  11%|#1        | 59/531 [00:03<00:24, 19.63it/s]Loading weights:  12%|#1        | 62/531 [00:03<00:31, 14.93it/s]Loading weights:  13%|#3        | 70/531 [00:04<00:23, 19.78it/s]Loading weights:  14%|#3        | 73/531 [00:04<00:29, 15.32it/s]Loading weights:  15%|#5        | 81/531 [00:04<00:21, 20.75it/s]Loading weights:  16%|#5        | 84/531 [00:05<00:28, 15.72it/s]Loading weights:  17%|#7        | 92/531 [00:05<00:21, 20.68it/s]Loading weights:  18%|#7        | 95/531 [00:05<00:27, 15.69it/s]Loading weights:  19%|#9        | 103/531 [00:05<00:20, 21.38it/s]Loading weights:  20%|#9        | 106/531 [00:06<00:25, 16.81it/s]Loading weights:  21%|##1       | 114/531 [00:06<00:18, 22.14it/s]Loading weights:  22%|##2       | 117/531 [00:06<00:25, 16.12it/s]Loading weights:  24%|##3       | 125/531 [00:07<00:19, 21.15it/s]Loading weights:  24%|##4       | 128/531 [00:07<00:25, 15.73it/s]Loading weights:  26%|##5       | 136/531 [00:07<00:19, 20.70it/s]Loading weights:  26%|##6       | 139/531 [00:08<00:25, 15.59it/s]Loading weights:  28%|##7       | 147/531 [00:08<00:18, 20.81it/s]Loading weights:  28%|##8       | 150/531 [00:08<00:23, 16.45it/s]Loading weights:  30%|##9       | 158/531 [00:08<00:16, 23.16it/s]Loading weights:  31%|###       | 162/531 [00:09<00:19, 19.06it/s]Loading weights:  32%|###1      | 169/531 [00:09<00:15, 23.15it/s]Loading weights:  32%|###2      | 172/531 [00:09<00:20, 17.46it/s]Loading weights:  34%|###3      | 180/531 [00:09<00:14, 23.49it/s]Loading weights:  35%|###4      | 184/531 [00:10<00:17, 19.62it/s]Loading weights:  36%|###5      | 191/531 [00:10<00:13, 24.78it/s]Loading weights:  37%|###6      | 195/531 [00:10<00:16, 20.98it/s]Loading weights:  38%|###8      | 202/531 [00:10<00:13, 23.53it/s]Loading weights:  39%|###8      | 205/531 [00:11<00:18, 17.31it/s]Loading weights:  40%|####      | 213/531 [00:11<00:13, 23.73it/s]Loading weights:  41%|####      | 217/531 [00:11<00:16, 19.51it/s]Loading weights:  42%|####2     | 224/531 [00:11<00:13, 22.77it/s]Loading weights:  43%|####2     | 227/531 [00:12<00:17, 17.55it/s]Loading weights:  44%|####4     | 235/531 [00:12<00:13, 21.63it/s]Loading weights:  45%|####4     | 238/531 [00:12<00:18, 16.00it/s]Loading weights:  46%|####6     | 246/531 [00:13<00:13, 20.85it/s]Loading weights:  47%|####6     | 249/531 [00:13<00:19, 14.61it/s]Loading weights:  48%|####8     | 257/531 [00:13<00:14, 18.84it/s]Loading weights:  49%|####8     | 260/531 [00:14<00:17, 15.13it/s]Loading weights:  50%|#####     | 268/531 [00:14<00:12, 20.46it/s]Loading weights:  51%|#####1    | 271/531 [00:14<00:16, 16.20it/s]Loading weights:  53%|#####2    | 279/531 [00:15<00:11, 21.83it/s]Loading weights:  53%|#####3    | 282/531 [00:15<00:14, 17.01it/s]Loading weights:  55%|#####4    | 290/531 [00:15<00:11, 21.73it/s]Loading weights:  55%|#####5    | 293/531 [00:15<00:14, 16.76it/s]Loading weights:  57%|#####6    | 301/531 [00:16<00:10, 22.10it/s]Loading weights:  57%|#####7    | 304/531 [00:16<00:13, 17.08it/s]Loading weights:  59%|#####8    | 312/531 [00:16<00:10, 21.87it/s]Loading weights:  59%|#####9    | 315/531 [00:17<00:12, 16.90it/s]Loading weights:  61%|######    | 323/531 [00:17<00:09, 22.92it/s]Loading weights:  61%|######1   | 326/531 [00:17<00:11, 17.38it/s]Loading weights:  63%|######2   | 334/531 [00:17<00:08, 22.76it/s]Loading weights:  63%|######3   | 337/531 [00:18<00:11, 16.97it/s]Loading weights:  65%|######4   | 345/531 [00:18<00:08, 21.69it/s]Loading weights:  66%|######5   | 348/531 [00:18<00:10, 17.23it/s]Loading weights:  67%|######7   | 356/531 [00:18<00:07, 24.12it/s]Loading weights:  68%|######7   | 360/531 [00:19<00:08, 20.72it/s]Loading weights:  69%|######9   | 367/531 [00:19<00:06, 26.36it/s]Loading weights:  70%|######9   | 371/531 [00:19<00:07, 21.68it/s]Loading weights:  71%|#######1  | 378/531 [00:19<00:06, 24.34it/s]Loading weights:  72%|#######1  | 381/531 [00:20<00:08, 18.05it/s]Loading weights:  73%|#######3  | 389/531 [00:20<00:05, 25.01it/s]Loading weights:  74%|#######4  | 393/531 [00:20<00:06, 21.16it/s]Loading weights:  75%|#######5  | 400/531 [00:20<00:04, 26.76it/s]Loading weights:  76%|#######6  | 404/531 [00:21<00:05, 21.97it/s]Loading weights:  77%|#######7  | 411/531 [00:21<00:04, 27.61it/s]Loading weights:  78%|#######8  | 415/531 [00:21<00:05, 22.34it/s]Loading weights:  79%|#######9  | 422/531 [00:21<00:04, 25.84it/s]Loading weights:  80%|########  | 426/531 [00:22<00:05, 19.50it/s]Loading weights:  82%|########1 | 433/531 [00:22<00:04, 23.77it/s]Loading weights:  82%|########2 | 436/531 [00:22<00:05, 18.13it/s]Loading weights:  84%|########3 | 444/531 [00:22<00:03, 24.50it/s]Loading weights:  84%|########4 | 448/531 [00:23<00:04, 19.55it/s]Loading weights:  86%|########5 | 455/531 [00:23<00:03, 24.40it/s]Loading weights:  86%|########6 | 459/531 [00:23<00:03, 19.59it/s]Loading weights:  88%|########7 | 466/531 [00:23<00:02, 23.83it/s]Loading weights:  88%|########8 | 469/531 [00:24<00:03, 18.07it/s]Loading weights:  90%|########9 | 477/531 [00:24<00:02, 23.71it/s]Loading weights:  90%|######### | 480/531 [00:24<00:02, 17.40it/s]Loading weights:  92%|#########1| 488/531 [00:24<00:01, 22.39it/s]Loading weights:  92%|#########2| 491/531 [00:25<00:02, 17.18it/s]Loading weights:  94%|#########3| 499/531 [00:25<00:01, 22.36it/s]Loading weights:  95%|#########4| 502/531 [00:25<00:01, 17.32it/s]Loading weights:  96%|#########6| 510/531 [00:26<00:00, 22.93it/s]Loading weights:  97%|#########6| 513/531 [00:26<00:01, 17.44it/s]Loading weights:  98%|#########8| 521/531 [00:26<00:00, 23.12it/s]Loading weights:  99%|#########8| 524/531 [00:30<00:01,  3.93it/s]Loading weights: 100%|##########| 531/531 [00:30<00:00, 17.56it/s]
+Adding EOS to train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Adding EOS to train dataset: 100%|##########| 4/4 [00:00<00:00, 434.70 examples/s]
+Tokenizing train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Tokenizing train dataset: 100%|##########| 4/4 [00:00<00:00, 190.64 examples/s]
+Building labels for train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Building labels for train dataset: 100%|##########| 4/4 [00:00<00:00, 2715.20 examples/s]
+Truncating train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Truncating train dataset: 100%|##########| 4/4 [00:00<00:00, 3334.77 examples/s]
+Dropping fully masked examples from train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Dropping fully masked examples from train dataset: 100%|##########| 4/4 [00:00<00:00, 5773.30 examples/s]
+spark1:1204385:1204385 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+spark1:1204385:1204385 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark1:1204385:1204385 [0] NCCL INFO Bootstrap: Using enp1s0f0np0:12.201.48.11<0>
+spark1:1204385:1204385 [0] NCCL INFO cudaDriverVersion 13000
+spark1:1204385:1204385 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+spark1:1204385:1204385 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1204385:1204385 [0] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+spark1:1204385:1204385 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark1:1204385:1204385 [0] NCCL INFO NCCL_IB_HCA set to rocep1s0f0
+spark1:1204385:1204385 [0] NCCL INFO NET/IB : Using [0]rocep1s0f0:1/RoCE [RO]; OOB enp1s0f0np0:12.201.48.11<0>
+spark1:1204385:1204385 [0] NCCL INFO Initialized NET plugin IB
+spark1:1204385:1204385 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1204385:1204385 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1204385:1204385 [0] NCCL INFO Using network IB
+spark1:1204385:1204385 [0] NCCL INFO ncclCommInitRankConfig comm 0x31f0aee0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x1621fa50bcd5f7be - Init START
+spark1:1204385:1204385 [0] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+spark1:1204385:1204385 [0] NCCL INFO Bootstrap timings total 0.012380 (create 0.000026, send 0.000092, recv 0.000857, ring 0.009226, delay 0.000000)
+spark1:1204385:1204385 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1204385:1204385 [0] NCCL INFO comm 0x31f0aee0 rank 0 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark1:1204385:1204385 [0] NCCL INFO Channel 00/08 : 0 1
+spark1:1204385:1204385 [0] NCCL INFO Channel 01/08 : 0 1
+spark1:1204385:1204385 [0] NCCL INFO Channel 02/08 : 0 1
+spark1:1204385:1204385 [0] NCCL INFO Channel 03/08 : 0 1
+spark1:1204385:1204385 [0] NCCL INFO Channel 04/08 : 0 1
+spark1:1204385:1204385 [0] NCCL INFO Channel 05/08 : 0 1
+spark1:1204385:1204385 [0] NCCL INFO Channel 06/08 : 0 1
+spark1:1204385:1204385 [0] NCCL INFO Channel 07/08 : 0 1
+spark1:1204385:1204385 [0] NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] 1/-1/-1->0->-1 [2] 1/-1/-1->0->-1 [3] 1/-1/-1->0->-1 [4] -1/-1/-1->0->1 [5] -1/-1/-1->0->1 [6] -1/-1/-1->0->1 [7] -1/-1/-1->0->1
+spark1:1204385:1204385 [0] NCCL INFO P2P Chunksize set to 131072
+spark1:1204385:1204385 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+spark1:1204385:1204385 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1204385:1204461 [0] NCCL INFO [Proxy Service] Device 0 CPU core 16
+spark1:1204385:1204462 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 14
+spark1:1204385:1204385 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+spark1:1204385:1204385 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark1:1204385:1204385 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark1:1204385:1204385 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1204385:1204385 [0] NCCL INFO ncclCommInitRankConfig comm 0x31f0aee0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x1621fa50bcd5f7be - Init COMPLETE
+spark1:1204385:1204385 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 2 total 0.39 (kernels 0.24, alloc 0.03, bootstrap 0.01, allgathers 0.00, topo 0.01, graphs 0.00, connections 0.10, rest 0.00)
+spark1:1204385:1204385 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1204385:1204463 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 14
+spark1:1204385:1204385 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1204385:1204385 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+Adding EOS to eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Adding EOS to eval dataset: 100%|##########| 2/2 [00:00<00:00, 179.81 examples/s]
+Tokenizing eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Tokenizing eval dataset: 100%|##########| 2/2 [00:00<00:00, 139.87 examples/s]
+Building labels for eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Building labels for eval dataset: 100%|##########| 2/2 [00:00<00:00, 1401.61 examples/s]
+Truncating eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Truncating eval dataset: 100%|##########| 2/2 [00:00<00:00, 1777.62 examples/s]
+Dropping fully masked examples from eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Dropping fully masked examples from eval dataset: 100%|##########| 2/2 [00:00<00:00, 2756.69 examples/s]
+[transformers] The tokenizer has new PAD/BOS/EOS tokens that differ from the model config and generation config. The model config and generation config were aligned accordingly, being updated with the tokenizer's values. Updated tokens: {'bos_token_id': None, 'pad_token_id': 151643}.
+spark1:1204385:1204385 [0] NCCL INFO Channel 04/1 : 0[0] -> 1[0] [send] via NET/IB/0/Shared
+spark1:1204385:1204385 [0] NCCL INFO Channel 05/1 : 0[0] -> 1[0] [send] via NET/IB/0/Shared
+W0908 16:19:01.905000 1204376 torch/distributed/elastic/agent/server/api.py:739] Received 15 death signal, shutting down workers
+W0908 16:19:02.010000 1204376 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 1204385 closing signal SIGTERM
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/run.py", line 995, in <module>
+    main()
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 362, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/run.py", line 991, in main
+    run(args)
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/run.py", line 982, in run
+    elastic_launch(
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 170, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 308, in launch_agent
+    result = agent.run()
+             ^^^^^^^^^^^
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/elastic/metrics/api.py", line 134, in wrapper
+    result = f(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/elastic/agent/server/api.py", line 731, in run
+    result = self._invoke_run(role)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/elastic/agent/server/api.py", line 908, in _invoke_run
+    time.sleep(monitor_interval)
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/api.py", line 86, in _terminate_process_handler
+    raise SignalException(f"Process {os.getpid()} got signal: {sigval}", sigval=sigval)
+torch.distributed.elastic.multiprocessing.api.SignalException: Process 1204376 got signal: 15

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+<title id="title">Investigation workflow: broad signals to a bounded capture</title><desc id="desc">Lab IDs identify documents. Follow 01 -&gt; 02 -&gt; 06 first, then choose a framework integration.</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse"><path d="M0 0L8 4L0 8" fill="#47647d"/></marker></defs>
+<style>text{font-family:Arial,sans-serif;fill:#20354b}.title{font-size:27px;font-weight:700}.heading{font-size:19px;font-weight:700}.body{font-size:16px}.small{font-size:14px}</style>
+<rect width="1200" height="100%" fill="#ffffff"/>
+<text x="36" y="44" class="title">Investigation workflow: broad signals to a bounded capture</text>
+<text x="36" y="74" class="small">Lab IDs identify documents. Follow 01 -&gt; 02 -&gt; 06 first, then choose a framework integration.</text>
+<rect x="36" y="116" width="330" height="150" rx="12" fill="#eef4fb" stroke="#8194a8" stroke-width="1.5"/>
+<text x="56" y="148" class="heading">1. Establish observation</text>
+<text x="56" y="179" class="body">Lab 01: verify exporter targets</text>
+<text x="56" y="204" class="body">Lab 02: measure NCCL / fio</text>
+<text x="56" y="229" class="body">Keep topology and raw results.</text>
+<rect x="435" y="116" width="330" height="150" rx="12" fill="#eef4fb" stroke="#8194a8" stroke-width="1.5"/>
+<text x="455" y="148" class="heading">2. Rehearse, then integrate</text>
+<text x="455" y="179" class="body">Lab 06: synthetic DDP capture</text>
+<text x="455" y="204" class="body">Lab 03: Megatron OR Lab 04: verl</text>
+<text x="455" y="229" class="body">Connect actual framework signals.</text>
+<rect x="834" y="116" width="330" height="150" rx="12" fill="#eef4fb" stroke="#8194a8" stroke-width="1.5"/>
+<text x="854" y="148" class="heading">3. Record a baseline</text>
+<text x="854" y="179" class="body">Run with profiler disabled.</text>
+<text x="854" y="204" class="body">Find slow node / rank / role.</text>
+<text x="854" y="229" class="body">Record workload quality and speed.</text>
+<path d="M366 190 H435" fill="none" stroke="#47647d" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M765 190 H834" fill="none" stroke="#47647d" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="834" y="373" width="330" height="158" rx="12" fill="#fff6e7" stroke="#8194a8" stroke-width="1.5"/>
+<text x="854" y="405" class="heading">4. Select a short trace</text>
+<text x="854" y="436" class="body">Lab 05: suspect + comparison rank</text>
+<text x="854" y="461" class="body">Use a matching capture window.</text>
+<text x="854" y="486" class="body">Keep baseline and trace runs apart.</text>
+<rect x="435" y="373" width="330" height="158" rx="12" fill="#fff6e7" stroke="#8194a8" stroke-width="1.5"/>
+<text x="455" y="405" class="heading">5. Explain the delay</text>
+<text x="455" y="436" class="body">Compare compute, wait and copies.</text>
+<text x="455" y="461" class="body">Use Perfetto / HTA with rank map.</text>
+<text x="455" y="486" class="body">If unresolved: targeted diagnostics.</text>
+<rect x="36" y="373" width="330" height="158" rx="12" fill="#eef8f0" stroke="#8194a8" stroke-width="1.5"/>
+<text x="56" y="405" class="heading">6. Change and remeasure</text>
+<text x="56" y="436" class="body">Disable profiler for comparison.</text>
+<text x="56" y="461" class="body">Keep workload conditions matched.</text>
+<text x="56" y="486" class="body">Check performance and quality.</text>
+<path d="M999 266 V373" fill="none" stroke="#47647d" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M834 452 H765" fill="none" stroke="#47647d" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M435 452 H366" fill="none" stroke="#47647d" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="36" y="587" class="heading">DDP demo capture schedule (zero-based loop step; profiler.step() once per iteration)</text>
+<rect x="36" y="610" width="276" height="48" rx="8" fill="#eef4fb"/>
+<text x="54" y="640" class="body">0-3: skip</text>
+<rect x="322" y="610" width="175" height="48" rx="8" fill="#eef4fb"/>
+<text x="340" y="640" class="body">4: wait</text>
+<rect x="507" y="610" width="195" height="48" rx="8" fill="#fff6e7"/>
+<text x="525" y="640" class="body">5: warmup</text>
+<rect x="712" y="610" width="225" height="48" rx="8" fill="#e5f3e9"/>
+<text x="730" y="640" class="body">6-7: capture</text>
+<rect x="947" y="610" width="217" height="48" rx="8" fill="#eef4fb"/>
+<text x="965" y="640" class="body">8+: no capture</text>
+<text x="36" y="695" class="small">DDP baseline option: --profile-ranks &quot;&quot;. The demo writes traces and loss logs; throughput / phase metrics need extra instrumentation.</text>
+</svg>

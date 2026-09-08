@@ -1,0 +1,210 @@
+{
+  "date": "2026-09-08",
+  "source_base_commit": "867ef3d",
+  "source_change": "Rename Python package to trl_lab; training logic unchanged",
+  "tests": {
+    "command": "python -m pytest -q",
+    "hosts": [
+      "spark1",
+      "spark2"
+    ],
+    "passed_on_each_host": 49,
+    "final_host": "spark2",
+    "additional_checks": [
+      "Python compileall",
+      "bash -n scripts/*.sh (each file)",
+      "git diff --check",
+      "local Markdown link targets",
+      "10 package files compared against HEAD: only import-name replacement and __init__ docstring changed"
+    ]
+  },
+  "runs": {
+    "small-zero2": {
+      "rank_exit_codes": [
+        1,
+        1
+      ],
+      "status": "failed before optimizer step",
+      "error": "pynvml.NVMLError_NotSupported from DeepSpeed Stage1And2ZeroOptimizer accelerator.available_memory()"
+    },
+    "small-zero3": {
+      "rank_exit_codes": [
+        0,
+        0
+      ],
+      "status": "completed one optimizer step, save, and evaluation",
+      "summary_caveat": "ZeRO-3 partition placeholders cause pre-training numel-based parameter counts to be reported as zero; do not interpret them as logical model counts."
+    },
+    "qwen30b-fsdp2": {
+      "rank_exit_codes": [
+        1,
+        1
+      ],
+      "worker_exit_codes": [
+        -6,
+        -9
+      ],
+      "status": "failed during initialization; rank 1 kernel OOM kill followed by rank 0 NCCL abort",
+      "isolation": "Other Python/torchrun processes present in OOM task table; repeat with idle GPUs requested."
+    },
+    "qwen30b-fsdp2-isolated": {
+      "rank_exit_codes": [
+        1,
+        1
+      ],
+      "status": "rank 1 kernel OOM kill before optimizer step; rank 0 deliberately terminated after peer failure",
+      "rank1_worker_exit_code": -9,
+      "isolation": "No CUDA processes at preflight; only training CUDA PID observed on each node. Rank 1 observation gap reached 196 seconds during memory pressure."
+    },
+    "fsdp2-reload": {
+      "rank_exit_codes": [
+        0,
+        0
+      ],
+      "status": "FSDP2 small checkpoint merged and reloaded in fresh two-node DDP evaluation; finite loss; optimizer resume not tested"
+    },
+    "qwen30b-ddp-lora": {
+      "run": "qwen30b-ddp-lora",
+      "backend": "ddp",
+      "finetuning_mode": "lora",
+      "optimizer": "adamw",
+      "model": "Qwen/Qwen3-30B-A3B",
+      "revision": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+      "rank_exit_codes": [
+        0,
+        0
+      ],
+      "peer_terminated_after_failure": [],
+      "elapsed_seconds": 295.00798749923706,
+      "output_root": "/home/spark/trl-verification-results"
+    },
+    "glm30b-ddp-lora": {
+      "run": "glm30b-ddp-lora",
+      "backend": "ddp",
+      "finetuning_mode": "lora",
+      "optimizer": "adamw",
+      "model": "zai-org/GLM-4.7-Flash",
+      "revision": "7dd20894a642a0aa287e9827cb1a1f7f91386b67",
+      "rank_exit_codes": [
+        0,
+        0
+      ],
+      "peer_terminated_after_failure": [],
+      "elapsed_seconds": 295.00772309303284,
+      "output_root": "/home/spark/trl-verification-results"
+    },
+    "qwen30b-fsdp2-lora": {
+      "run": "qwen30b-fsdp2-lora",
+      "backend": "fsdp2",
+      "finetuning_mode": "lora",
+      "optimizer": "adamw",
+      "model": "Qwen/Qwen3-30B-A3B",
+      "revision": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+      "rank_exit_codes": [
+        0,
+        0
+      ],
+      "peer_terminated_after_failure": [],
+      "elapsed_seconds": 435.0129873752594,
+      "output_root": "/home/spark/trl-verification-results"
+    },
+    "glm30b-fsdp2-lora": {
+      "run": "glm30b-fsdp2-lora",
+      "backend": "fsdp2",
+      "finetuning_mode": "lora",
+      "optimizer": "adamw",
+      "model": "zai-org/GLM-4.7-Flash",
+      "revision": "7dd20894a642a0aa287e9827cb1a1f7f91386b67",
+      "rank_exit_codes": [
+        143,
+        1
+      ],
+      "peer_terminated_after_failure": [
+        0
+      ],
+      "elapsed_seconds": 115.36896896362305,
+      "output_root": "/home/spark/trl-verification-results",
+      "failure_phase": "state-dict initialization",
+      "failure_reason": "AttributeError: 'Tensor' object has no attribute 'device_mesh'"
+    },
+    "qwen30b-zero3-lora": {
+      "run": "qwen30b-zero3-lora",
+      "backend": "deepspeed",
+      "finetuning_mode": "lora",
+      "optimizer": "adamw",
+      "model": "Qwen/Qwen3-30B-A3B",
+      "revision": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+      "rank_exit_codes": [
+        1,
+        1
+      ],
+      "peer_terminated_after_failure": [
+        1
+      ],
+      "elapsed_seconds": 572.4459455013275,
+      "output_root": "/home/spark/trl-verification-results",
+      "failure_phase": "model initialization",
+      "failure_reason": "kernel OOM kill of rank 0 PID 1212398"
+    },
+    "glm30b-zero3-lora": {
+      "run": "glm30b-zero3-lora",
+      "backend": "deepspeed",
+      "finetuning_mode": "lora",
+      "optimizer": "adamw",
+      "model": "zai-org/GLM-4.7-Flash",
+      "revision": "7dd20894a642a0aa287e9827cb1a1f7f91386b67",
+      "rank_exit_codes": [
+        1,
+        1
+      ],
+      "peer_terminated_after_failure": [
+        1
+      ],
+      "elapsed_seconds": 455.87957978248596,
+      "output_root": "/home/spark/trl-verification-results",
+      "failure_phase": "first optimizer step before completion",
+      "failure_reason": "kernel OOM kill of rank 0 PID 1214575"
+    },
+    "glm30b-single-full": {
+      "run": "glm30b-single-full",
+      "node": "spark2",
+      "world_size": 1,
+      "model": "zai-org/GLM-4.7-Flash",
+      "revision": "7dd20894a642a0aa287e9827cb1a1f7f91386b67",
+      "finetuning_mode": "full",
+      "optimizer": "sgd",
+      "exit_code": 1,
+      "elapsed_seconds": 350.01015162467957,
+      "output_root": "/home/spark/trl-verification-results",
+      "observed_gpu_pids": [
+        "445668"
+      ],
+      "max_observed_system_used_gib": 119.45911407470703,
+      "error_messages": [
+        "[rank0]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 768.00 MiB. GPU 0 has a total capacity of 119.69 GiB of which 621.67 MiB is free. Including non-PyTorch memory, this process has 103.87 GiB memory in use. Of the allocated memory 103.03 GiB is allocated by PyTorch, and 101.18 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)"
+      ],
+      "failure_phase": "backward"
+    },
+    "qwen30b-single-full": {
+      "run": "qwen30b-single-full",
+      "node": "spark1",
+      "world_size": 1,
+      "model": "Qwen/Qwen3-30B-A3B",
+      "revision": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+      "finetuning_mode": "full",
+      "optimizer": "sgd",
+      "exit_code": 124,
+      "elapsed_seconds": 1251.231407403946,
+      "output_root": "/home/spark/trl-verification-results",
+      "observed_gpu_pids": [
+        "1216442"
+      ],
+      "max_observed_system_used_gib": 119.6934585571289,
+      "error_messages": [],
+      "failure_phase": "first training step, before optimizer step completion",
+      "failure_reason": "1200-second timeout (exit 124); NVIDIA driver NV_ERR_NO_MEMORY allocation failures observed during run; no kernel OOM kill confirmed",
+      "timeout_seconds": 1200
+    }
+  },
+  "cleanup": "After individual full SFT runs, neither Spark node had CUDA compute processes remaining."
+}

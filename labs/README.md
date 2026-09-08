@@ -35,7 +35,7 @@
 
 학습 실습의 작은 결과 summary에는 run ID, model·dataset revision, recipe, seed, hardware, 실행 시간과 metric 단위를 기록합니다.
 원본 데이터와 큰 artifact는 저장하지 않습니다.
-공통 metric 정의는 [`profiling`의 metric contract](https://github.com/daegyu94/post-training-lab/blob/profiling/docs/metric-schema.md)를 참조합니다.
+공통 metric 정의는 [`profiling`의 metric contract](../docs/observability/metric-schema.md)를 참조합니다.
 
 새 실습의 실행 command와 실패 경로를 검증한 뒤 프로젝트 안내에 entry point와 검증 범위를 등록합니다.
 실행하지 못한 환경은 명시하고, 예정된 기능을 실행 가능한 것으로 표시하지 않습니다.

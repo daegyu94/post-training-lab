@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="460" viewBox="0 0 1200 460" role="img" aria-labelledby="title desc">
+<title id="title">Post-training lifecycle</title>
+<desc id="desc">Each handoff preserves an immutable revision and its evidence.. Failed gates retain evidence; serving regressions restore the previous verified revision.</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#52627a" stroke-width="1.5"/></marker></defs>
+<rect width="1200" height="460" rx="20" fill="#f4f7fb"/>
+<g font-family="Arial, Helvetica, sans-serif">
+<text x="36" y="47" font-size="27" font-weight="700" fill="#15283f">Post-training lifecycle</text>
+<text x="36" y="77" font-size="16" fill="#52627a">Each handoff preserves an immutable revision and its evidence.</text>
+<rect x="36.0" y="112" width="258.0" height="250" rx="14" fill="white" stroke="#d7e0ec"/>
+<rect x="36.0" y="112" width="258.0" height="6" rx="3" fill="#2563eb"/>
+<text x="56.0" y="150" font-size="13" font-weight="700" fill="#2563eb">01 / DATA</text>
+<text x="56.0" y="186" font-size="21" font-weight="700" fill="#15283f">Prepare data</text>
+<text x="56.0" y="222" font-size="14" fill="#40536b">Traces and benchmarks</text>
+<text x="56.0" y="250" font-size="14" fill="#40536b">Curate, review, split</text>
+<text x="56.0" y="278" font-size="14" fill="#40536b">Publish dataset revision</text>
+<path d="M297.0 248 H321.0" fill="none" stroke="#52627a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="326.0" y="112" width="258.0" height="250" rx="14" fill="white" stroke="#d7e0ec"/>
+<rect x="326.0" y="112" width="258.0" height="6" rx="3" fill="#087e8b"/>
+<text x="346.0" y="150" font-size="13" font-weight="700" fill="#087e8b">02 / COMPUTE</text>
+<text x="346.0" y="186" font-size="21" font-weight="700" fill="#15283f">Train</text>
+<text x="346.0" y="222" font-size="14" fill="#40536b">Pin model and recipe</text>
+<text x="346.0" y="250" font-size="14" fill="#40536b">TRL or Megatron</text>
+<text x="346.0" y="278" font-size="14" fill="#40536b">Save artifact + run evidence</text>
+<path d="M587.0 248 H611.0" fill="none" stroke="#52627a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="616.0" y="112" width="258.0" height="250" rx="14" fill="white" stroke="#d7e0ec"/>
+<rect x="616.0" y="112" width="258.0" height="6" rx="3" fill="#7952b3"/>
+<text x="636.0" y="150" font-size="13" font-weight="700" fill="#7952b3">03 / RELEASE</text>
+<text x="636.0" y="186" font-size="21" font-weight="700" fill="#15283f">Validate</text>
+<text x="636.0" y="222" font-size="14" fill="#40536b">Register complete candidate</text>
+<text x="636.0" y="250" font-size="14" fill="#40536b">Evaluate quality and runtime</text>
+<text x="636.0" y="278" font-size="14" fill="#40536b">Record promotion decision</text>
+<path d="M877.0 248 H901.0" fill="none" stroke="#52627a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="906.0" y="112" width="258.0" height="250" rx="14" fill="white" stroke="#d7e0ec"/>
+<rect x="906.0" y="112" width="258.0" height="6" rx="3" fill="#b56b12"/>
+<text x="926.0" y="150" font-size="13" font-weight="700" fill="#b56b12">04 / SERVING</text>
+<text x="926.0" y="186" font-size="21" font-weight="700" fill="#15283f">Deploy</text>
+<text x="926.0" y="222" font-size="14" fill="#40536b">Canary with limited traffic</text>
+<text x="926.0" y="250" font-size="14" fill="#40536b">Promote healthy revision</text>
+<text x="926.0" y="278" font-size="14" fill="#40536b">Retain rollback dependencies</text>
+<text x="36" y="409" font-size="14" fill="#40536b">Failed gates retain evidence; serving regressions restore the previous verified revision.</text>
+</g></svg>

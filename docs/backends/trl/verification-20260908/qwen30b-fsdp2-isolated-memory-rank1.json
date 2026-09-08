@@ -1,0 +1,11 @@
+{
+  "rank": 1,
+  "samples": 23,
+  "observed_gpu_pids": [
+    "437231"
+  ],
+  "max_system_used_gib": 119.09326171875,
+  "min_available_gib": 0.599029541015625,
+  "max_swap_used_gib": 15.999847412109375,
+  "max_observation_gap_seconds": 196.0
+}

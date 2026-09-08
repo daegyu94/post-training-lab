@@ -1,0 +1,180 @@
+[workflow] stage=train rank=0/2 model=Qwen/Qwen3-30B-A3B model_dir=/home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39 backend=fsdp2
+[workflow] running stage=train rank=0/2
+/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (8.0) - (12.0)
+    
+  queued_call()
+Loading weights:   0%|          | 0/531 [00:00<?, ?it/s]Loading weights:   1%|          | 4/531 [00:00<00:50, 10.53it/s]Loading weights:   1%|1         | 6/531 [00:00<01:25,  6.11it/s]Loading weights:   3%|2         | 15/531 [00:01<00:34, 15.16it/s]Loading weights:   3%|3         | 17/531 [00:01<00:59,  8.62it/s]Loading weights:   5%|4         | 26/531 [00:02<00:36, 13.99it/s]Loading weights:   5%|5         | 28/531 [00:02<00:54,  9.17it/s]Loading weights:   7%|6         | 37/531 [00:03<00:34, 14.32it/s]Loading weights:   8%|7         | 40/531 [00:03<00:46, 10.45it/s]Loading weights:   9%|9         | 48/531 [00:03<00:34, 13.82it/s]Loading weights:   9%|9         | 50/531 [00:04<00:48,  9.91it/s]Loading weights:  11%|#1        | 59/531 [00:04<00:33, 14.18it/s]Loading weights:  11%|#1        | 61/531 [00:05<00:45, 10.31it/s]Loading weights:  13%|#3        | 70/531 [00:05<00:31, 14.71it/s]Loading weights:  14%|#3        | 72/531 [00:06<00:43, 10.50it/s]Loading weights:  15%|#5        | 81/531 [00:06<00:29, 15.06it/s]Loading weights:  16%|#5        | 84/531 [00:07<00:38, 11.46it/s]Loading weights:  17%|#7        | 92/531 [00:07<00:28, 15.28it/s]Loading weights:  18%|#7        | 95/531 [00:07<00:36, 11.84it/s]Loading weights:  19%|#9        | 103/531 [00:08<00:26, 15.86it/s]Loading weights:  20%|#9        | 106/531 [00:08<00:36, 11.80it/s]Loading weights:  21%|##1       | 114/531 [00:08<00:25, 16.27it/s]Loading weights:  22%|##2       | 117/531 [00:09<00:34, 11.88it/s]Loading weights:  24%|##3       | 125/531 [00:09<00:25, 15.62it/s]Loading weights:  24%|##4       | 128/531 [00:10<00:36, 10.95it/s]Loading weights:  26%|##5       | 136/531 [00:10<00:26, 14.92it/s]Loading weights:  26%|##6       | 139/531 [00:11<00:34, 11.31it/s]Loading weights:  28%|##7       | 147/531 [00:11<00:25, 15.25it/s]Loading weights:  28%|##8       | 150/531 [00:12<00:33, 11.38it/s]Loading weights:  30%|##9       | 158/531 [00:12<00:24, 15.10it/s]Loading weights:  30%|###       | 160/531 [00:12<00:36, 10.24it/s]Loading weights:  32%|###1      | 169/531 [00:13<00:23, 15.26it/s]Loading weights:  32%|###2      | 172/531 [00:13<00:30, 11.83it/s]Loading weights:  34%|###3      | 180/531 [00:13<00:22, 15.75it/s]Loading weights:  34%|###4      | 183/531 [00:14<00:27, 12.46it/s]Loading weights:  36%|###5      | 191/531 [00:14<00:20, 16.97it/s]Loading weights:  37%|###6      | 194/531 [00:15<00:28, 11.86it/s]Loading weights:  38%|###8      | 202/531 [00:15<00:20, 15.83it/s]Loading weights:  39%|###8      | 205/531 [00:16<00:27, 11.65it/s]Loading weights:  40%|####      | 213/531 [00:16<00:19, 16.01it/s]Loading weights:  41%|####      | 216/531 [00:16<00:24, 12.76it/s]Loading weights:  42%|####2     | 224/531 [00:17<00:17, 17.46it/s]Loading weights:  43%|####2     | 227/531 [00:17<00:25, 12.15it/s]Loading weights:  44%|####4     | 235/531 [00:17<00:18, 16.21it/s]Loading weights:  45%|####4     | 238/531 [00:18<00:26, 11.24it/s]Loading weights:  46%|####6     | 246/531 [00:18<00:18, 15.42it/s]Loading weights:  47%|####6     | 249/531 [00:19<00:24, 11.72it/s]Loading weights:  48%|####8     | 257/531 [00:19<00:17, 15.60it/s]Loading weights:  49%|####8     | 260/531 [00:20<00:24, 10.95it/s]Loading weights:  50%|#####     | 268/531 [00:20<00:17, 15.14it/s]Loading weights:  51%|#####1    | 271/531 [00:20<00:22, 11.58it/s]Loading weights:  53%|#####2    | 279/531 [00:21<00:15, 15.88it/s]Loading weights:  53%|#####3    | 282/531 [00:21<00:22, 11.18it/s]Loading weights:  55%|#####4    | 290/531 [00:22<00:15, 15.22it/s]Loading weights:  55%|#####5    | 293/531 [00:22<00:21, 10.93it/s]Loading weights:  57%|#####6    | 301/531 [00:22<00:15, 14.91it/s]Loading weights:  57%|#####7    | 304/531 [00:23<00:21, 10.34it/s]Loading weights:  59%|#####8    | 312/531 [00:23<00:15, 14.45it/s]Loading weights:  59%|#####9    | 315/531 [00:24<00:20, 10.58it/s]Loading weights:  61%|######    | 323/531 [00:24<00:14, 14.76it/s]Loading weights:  61%|######1   | 326/531 [00:25<00:18, 11.08it/s]Loading weights:  63%|######2   | 334/531 [00:25<00:13, 14.56it/s]Loading weights:  63%|######3   | 337/531 [00:26<00:17, 10.95it/s]Loading weights:  65%|######4   | 345/531 [00:26<00:13, 14.16it/s]Loading weights:  65%|######5   | 347/531 [00:27<00:18,  9.87it/s]Loading weights:  67%|######7   | 356/531 [00:27<00:12, 14.46it/s]Loading weights:  67%|######7   | 358/531 [00:27<00:15, 10.96it/s]Loading weights:  69%|######9   | 367/531 [00:28<00:10, 16.23it/s]Loading weights:  70%|######9   | 370/531 [00:28<00:13, 12.25it/s]Loading weights:  71%|#######1  | 378/531 [00:28<00:09, 16.17it/s]Loading weights:  72%|#######1  | 381/531 [00:29<00:12, 11.64it/s]Loading weights:  73%|#######3  | 389/531 [00:29<00:09, 15.45it/s]Loading weights:  74%|#######3  | 392/531 [00:30<00:12, 10.87it/s]Loading weights:  75%|#######5  | 400/531 [00:30<00:08, 14.76it/s]Loading weights:  76%|#######5  | 403/531 [00:31<00:11, 11.22it/s]Loading weights:  77%|#######7  | 411/531 [00:31<00:07, 15.10it/s]Loading weights:  78%|#######7  | 414/531 [00:32<00:12,  9.64it/s]Loading weights:  79%|#######9  | 422/531 [00:32<00:08, 12.73it/s]Loading weights:  80%|#######9  | 424/531 [00:33<00:12,  8.27it/s]Loading weights:  82%|########1 | 433/531 [00:33<00:08, 11.98it/s]Loading weights:  82%|########1 | 435/531 [00:34<00:12,  7.78it/s]Loading weights:  84%|########3 | 444/531 [00:35<00:07, 11.33it/s]Loading weights:  84%|########3 | 446/531 [00:35<00:10,  7.86it/s]Loading weights:  86%|########5 | 455/531 [00:36<00:06, 11.67it/s]Loading weights:  86%|########6 | 457/531 [00:37<00:10,  6.78it/s]Loading weights:  88%|########7 | 466/531 [00:38<00:07,  8.70it/s]Loading weights:  88%|########8 | 468/531 [00:39<00:12,  4.89it/s]Loading weights:  90%|########9 | 477/531 [00:39<00:06,  7.91it/s]Loading weights:  90%|######### | 479/531 [00:41<00:09,  5.50it/s]Loading weights:  92%|#########1| 488/531 [00:41<00:04,  8.73it/s]Loading weights:  92%|#########2| 490/531 [00:42<00:06,  6.32it/s]Loading weights:  94%|#########3| 499/531 [00:42<00:03, 10.03it/s]Loading weights:  95%|#########4| 502/531 [00:43<00:04,  7.08it/s]Loading weights:  96%|#########6| 510/531 [00:44<00:02,  9.11it/s]Loading weights:  96%|#########6| 512/531 [00:46<00:05,  3.76it/s]Loading weights:  98%|#########8| 521/531 [00:47<00:01,  5.27it/s]Loading weights:  98%|#########8| 523/531 [00:54<00:04,  1.78it/s]Loading weights: 100%|##########| 531/531 [00:54<00:00,  9.83it/s]
+Adding EOS to train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Adding EOS to train dataset: 100%|##########| 4/4 [00:00<00:00, 307.04 examples/s]
+Tokenizing train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Tokenizing train dataset: 100%|##########| 4/4 [00:00<00:00, 101.06 examples/s]
+Building labels for train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Building labels for train dataset: 100%|##########| 4/4 [00:00<00:00, 2787.38 examples/s]
+Truncating train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Truncating train dataset: 100%|##########| 4/4 [00:00<00:00, 3426.72 examples/s]
+Dropping fully masked examples from train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Dropping fully masked examples from train dataset: 100%|##########| 4/4 [00:00<00:00, 5793.24 examples/s]
+spark1:1194917:1194917 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+spark1:1194917:1194917 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark1:1194917:1194917 [0] NCCL INFO Bootstrap: Using enp1s0f0np0:12.201.48.11<0>
+spark1:1194917:1194917 [0] NCCL INFO cudaDriverVersion 13000
+spark1:1194917:1194917 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+spark1:1194917:1194917 [0] NCCL INFO Comm config Blocking set to 1
+spark1:1194917:1194917 [0] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+spark1:1194917:1194917 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
+spark1:1194917:1194917 [0] NCCL INFO NCCL_IB_HCA set to rocep1s0f0
+spark1:1194917:1194917 [0] NCCL INFO NET/IB : Using [0]rocep1s0f0:1/RoCE [RO]; OOB enp1s0f0np0:12.201.48.11<0>
+spark1:1194917:1194917 [0] NCCL INFO Initialized NET plugin IB
+spark1:1194917:1194917 [0] NCCL INFO Assigned NET plugin IB to comm
+spark1:1194917:1194917 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+spark1:1194917:1194917 [0] NCCL INFO Using network IB
+spark1:1194917:1194917 [0] NCCL INFO ncclCommInitRankConfig comm 0x30111780 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x825c377a96d3a579 - Init START
+spark1:1194917:1194917 [0] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+spark1:1194917:1194917 [0] NCCL INFO Bootstrap timings total 0.002922 (create 0.000031, send 0.000098, recv 0.000646, ring 0.000641, delay 0.000000)
+spark1:1194917:1194917 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
+spark1:1194917:1194917 [0] NCCL INFO comm 0x30111780 rank 0 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
+spark1:1194917:1194917 [0] NCCL INFO Channel 00/08 : 0 1
+spark1:1194917:1194917 [0] NCCL INFO Channel 01/08 : 0 1
+spark1:1194917:1194917 [0] NCCL INFO Channel 02/08 : 0 1
+spark1:1194917:1194917 [0] NCCL INFO Channel 03/08 : 0 1
+spark1:1194917:1194917 [0] NCCL INFO Channel 04/08 : 0 1
+spark1:1194917:1194917 [0] NCCL INFO Channel 05/08 : 0 1
+spark1:1194917:1194917 [0] NCCL INFO Channel 06/08 : 0 1
+spark1:1194917:1194917 [0] NCCL INFO Channel 07/08 : 0 1
+spark1:1194917:1194917 [0] NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] 1/-1/-1->0->-1 [2] 1/-1/-1->0->-1 [3] 1/-1/-1->0->-1 [4] -1/-1/-1->0->1 [5] -1/-1/-1->0->1 [6] -1/-1/-1->0->1 [7] -1/-1/-1->0->1
+spark1:1194917:1194917 [0] NCCL INFO P2P Chunksize set to 131072
+spark1:1194917:1194917 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+spark1:1194917:1194917 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+spark1:1194917:1195282 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 16
+spark1:1194917:1195281 [0] NCCL INFO [Proxy Service] Device 0 CPU core 13
+spark1:1194917:1194917 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+spark1:1194917:1194917 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+spark1:1194917:1194917 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
+spark1:1194917:1194917 [0] NCCL INFO CC Off, workFifoBytes 1048576
+spark1:1194917:1194917 [0] NCCL INFO ncclCommInitRankConfig comm 0x30111780 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x825c377a96d3a579 - Init COMPLETE
+spark1:1194917:1194917 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 2 total 0.30 (kernels 0.25, alloc 0.03, bootstrap 0.00, allgathers 0.01, topo 0.00, graphs 0.00, connections 0.01, rest 0.00)
+spark1:1194917:1194917 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1194917:1195283 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 16
+spark1:1194917:1194917 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [receive] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [send] via NET/IB/0
+spark1:1194917:1194917 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
+Adding EOS to eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Adding EOS to eval dataset: 100%|##########| 2/2 [00:00<00:00, 1990.65 examples/s]
+Tokenizing eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Tokenizing eval dataset: 100%|##########| 2/2 [00:00<00:00, 473.16 examples/s]
+Building labels for eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Building labels for eval dataset: 100%|##########| 2/2 [00:00<00:00, 1399.50 examples/s]
+Truncating eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Truncating eval dataset: 100%|##########| 2/2 [00:00<00:00, 1777.62 examples/s]
+Dropping fully masked examples from eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Dropping fully masked examples from eval dataset: 100%|##########| 2/2 [00:00<00:00, 2774.01 examples/s]
+[transformers] The tokenizer has new PAD/BOS/EOS tokens that differ from the model config and generation config. The model config and generation config were aligned accordingly, being updated with the tokenizer's values. Updated tokens: {'bos_token_id': None, 'pad_token_id': 151643}.
+spark1:1194917:1194917 [0] NCCL INFO Channel 04/1 : 0[0] -> 1[0] [send] via NET/IB/0/Shared
+spark1:1194917:1194917 [0] NCCL INFO Channel 05/1 : 0[0] -> 1[0] [send] via NET/IB/0/Shared
+
+[2026-09-08 16:03:10] spark1:1194917:1195283 [0] transport/net_ib.cc:2546 NCCL WARN NET/IB: Got completion from peer 12.201.48.13<52477> with status=IBV_WC_RETRY_EXC_ERR(12) opcode=UNKNOWN_OPCODE(61830) reqSize=524288 vendor_err=129 req_type=Send localGid ::ffff:12.201.48.11 remoteGids::ffff:12.201.48.13 hca rocep1s0f0
+spark1:1194917:1195283 [0] NCCL INFO transport/net.cc:1339 -> 6
+spark1:1194917:1195283 [0] NCCL INFO proxy.cc:965 -> 6 [Progress Thread]
+[rank0]:[E908 16:03:10.773647482 ProcessGroupNCCL.cpp:611] [Rank 0] Collective WorkNCCL(SeqNum=39, OpType=BROADCAST, NumelIn=402653184, NumelOut=402653184, Timeout(ms)=1800000) raised the following async exception: NCCL error: remote process exited or there was a network error, NCCL version 2.28.9
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+NET/IB: Got completion from peer 12.201.48.13<52477> with status=IBV_WC_RETRY_EXC_ERR(12) opcode=UNKNOWN_OPCODE(61830) reqSize=524288 vendor_err=129 req_type=Send localGid ::ffff:12.201.48.11 remoteGids::ffff:12.201.48.13 hca rocep1s0f0
+Exception raised from checkForNCCLErrorsInternal at /pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:2744 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf189309b5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: c10d::ProcessGroupNCCL::checkForNCCLErrorsInternal(std::shared_ptr<c10d::NCCLComm>&) + 0x2ec (0xf1893189b57c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: c10d::ProcessGroupNCCL::WorkNCCL::checkAndSetException() + 0x74 (0xf189318ad3b4 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10d::ProcessGroupNCCL::Watchdog::runLoop() + 0x7fc (0xf189318b4b9c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: c10d::ProcessGroupNCCL::Watchdog::run() + 0xe8 (0xf189318b6628 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #5: <unknown function> + 0xe1ae0 (0xf189e5a31ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #6: <unknown function> + 0x8582c (0xf189e7e8582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #7: <unknown function> + 0xeba0c (0xf189e7eeba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+[rank0]:[E908 16:03:10.777862511 ProcessGroupNCCL.cpp:2277] [PG ID 0 PG GUID 0(default_pg) Rank 0]  failure detected by watchdog at work sequence id: 39 PG status: last enqueued work: 40, last completed work: 38
+[rank0]:[E908 16:03:10.777876591 ProcessGroupNCCL.cpp:735] Stack trace of the failed collective not found, potentially because FlightRecorder is disabled. You can enable it by setting TORCH_NCCL_TRACE_BUFFER_SIZE to a non-zero value.
+[rank0]:[E908 16:03:10.777931712 ProcessGroupNCCL.cpp:2610] [PG ID 0 PG GUID 0(default_pg) Rank 0] First PG on this rank to signal dumping.
+[rank0]:[E908 16:03:10.257874544 ProcessGroupNCCL.cpp:1890] [PG ID 0 PG GUID 0(default_pg) Rank 0] Received a dump signal due to a collective timeout from this local rank and we will try our best to dump the debug info. Last enqueued NCCL work: 40, last completed NCCL work: 38.This is most likely caused by incorrect usages of collectives, e.g., wrong sizes used across ranks, the order of collectives is not same for all ranks or the scheduled collective, for some reason, didn't run. Additionally, this can be caused by GIL deadlock or other reasons such as network errors or bugs in the communications library (e.g. NCCL), etc. 
+[rank0]:[E908 16:03:10.268889951 ProcessGroupNCCL.cpp:1606] [PG ID 0 PG GUID 0(default_pg) Rank 0] ProcessGroupNCCL preparing to dump debug info. Include stack trace: 1, only active collectives: 0
+spark1:1194917:1194926 [0] NCCL INFO comm 0x30111780 rank 0 nRanks 2 cudaDev 0 busId f01000 - Abort START
+spark1:1194917:1194926 [0] NCCL INFO misc/socket.cc:64 -> 3
+spark1:1194917:1194926 [0] NCCL INFO misc/socket.cc:81 -> 3
+spark1:1194917:1194926 [0] NCCL INFO misc/socket.cc:868 -> 3
+spark1:1194917:1195281 [0] NCCL INFO misc/socket.cc:943 -> 3
+spark1:1194917:1194926 [0] NCCL INFO comm 0x30111780 rank 0 nranks 2 cudaDev 0 busId f01000 - Abort COMPLETE
+[rank0]:[E908 16:04:13.179071929 ProcessGroupNCCL.cpp:749] [Rank 0] Some NCCL operations have failed or timed out. Due to the asynchronous nature of CUDA kernels, subsequent GPU operations might run on corrupted/incomplete data.
+[rank0]:[E908 16:04:13.179087097 ProcessGroupNCCL.cpp:763] [Rank 0] To avoid data inconsistency, we are taking the entire process down.
+[rank0]:[E908 16:04:13.179130281 ProcessGroupNCCL.cpp:2093] [PG ID 0 PG GUID 0(default_pg) Rank 0] Process group watchdog thread terminated with exception: NCCL error: remote process exited or there was a network error, NCCL version 2.28.9
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+NET/IB: Got completion from peer 12.201.48.13<52477> with status=IBV_WC_RETRY_EXC_ERR(12) opcode=UNKNOWN_OPCODE(61830) reqSize=524288 vendor_err=129 req_type=Send localGid ::ffff:12.201.48.11 remoteGids::ffff:12.201.48.13 hca rocep1s0f0
+Exception raised from checkForNCCLErrorsInternal at /pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:2744 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf189309b5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: c10d::ProcessGroupNCCL::checkForNCCLErrorsInternal(std::shared_ptr<c10d::NCCLComm>&) + 0x2ec (0xf1893189b57c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: c10d::ProcessGroupNCCL::WorkNCCL::checkAndSetException() + 0x74 (0xf189318ad3b4 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10d::ProcessGroupNCCL::Watchdog::runLoop() + 0x7fc (0xf189318b4b9c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: c10d::ProcessGroupNCCL::Watchdog::run() + 0xe8 (0xf189318b6628 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #5: <unknown function> + 0xe1ae0 (0xf189e5a31ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #6: <unknown function> + 0x8582c (0xf189e7e8582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #7: <unknown function> + 0xeba0c (0xf189e7eeba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+terminate called after throwing an instance of 'c10::DistBackendError'
+  what():  [PG ID 0 PG GUID 0(default_pg) Rank 0] Process group watchdog thread terminated with exception: NCCL error: remote process exited or there was a network error, NCCL version 2.28.9
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+NET/IB: Got completion from peer 12.201.48.13<52477> with status=IBV_WC_RETRY_EXC_ERR(12) opcode=UNKNOWN_OPCODE(61830) reqSize=524288 vendor_err=129 req_type=Send localGid ::ffff:12.201.48.11 remoteGids::ffff:12.201.48.13 hca rocep1s0f0
+Exception raised from checkForNCCLErrorsInternal at /pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:2744 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf189309b5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: c10d::ProcessGroupNCCL::checkForNCCLErrorsInternal(std::shared_ptr<c10d::NCCLComm>&) + 0x2ec (0xf1893189b57c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: c10d::ProcessGroupNCCL::WorkNCCL::checkAndSetException() + 0x74 (0xf189318ad3b4 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10d::ProcessGroupNCCL::Watchdog::runLoop() + 0x7fc (0xf189318b4b9c in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: c10d::ProcessGroupNCCL::Watchdog::run() + 0xe8 (0xf189318b6628 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #5: <unknown function> + 0xe1ae0 (0xf189e5a31ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #6: <unknown function> + 0x8582c (0xf189e7e8582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #7: <unknown function> + 0xeba0c (0xf189e7eeba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+Exception raised from run at /pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:2099 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0xf189309b5978 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: c10d::ProcessGroupNCCL::Watchdog::run() + 0x550 (0xf189318b6a90 in /home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: <unknown function> + 0xe1ae0 (0xf189e5a31ae0 in /lib/aarch64-linux-gnu/libstdc++.so.6)
+frame #3: <unknown function> + 0x8582c (0xf189e7e8582c in /lib/aarch64-linux-gnu/libc.so.6)
+frame #4: <unknown function> + 0xeba0c (0xf189e7eeba0c in /lib/aarch64-linux-gnu/libc.so.6)
+
+E0908 16:06:41.000000 1194908 torch/distributed/elastic/multiprocessing/api.py:984] failed (exitcode: -6) local_rank: 0 (pid: 1194917) of binary: /home/spark/ptl-envs/trl/bin/python
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/run.py", line 995, in <module>
+    main()
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 362, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/run.py", line 991, in main
+    run(args)
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/run.py", line 982, in run
+    elastic_launch(
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 170, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 317, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+========================================================
+trl_lab.spark_train FAILED
+--------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+--------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-09-08_16:06:40
+  host      : spark1
+  rank      : 0 (local_rank: 0)
+  exitcode  : -6 (pid: 1194917)
+  error_file: <N/A>
+  traceback : Signal 6 (SIGABRT) received by PID 1194917
+========================================================

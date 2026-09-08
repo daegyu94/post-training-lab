@@ -73,8 +73,8 @@ SFT의 target은 서비스가 과거에 생성한 응답 그 자체가 아니라
 
 브랜치별 변환 명령, output 처리와 학습 연결 제약은 실행 가이드에서 관리합니다.
 
-- [TRL 서비스 데이터 준비](https://github.com/daegyu94/post-training-lab/blob/trl/docs/dataset-preparation.md#internal-service-data)
-- [Megatron 서비스 데이터 준비](https://github.com/daegyu94/post-training-lab/blob/megatron/docs/dataset-preparation.md#internal-service-data)
+- [TRL 서비스 데이터 준비](../backends/trl/dataset-preparation.md#internal-service-data)
+- [Megatron 서비스 데이터 준비](../backends/megatron/dataset-preparation.md#internal-service-data)
 
 ## Pre-Deployment Checklist
 
@@ -86,4 +86,3 @@ SFT의 target은 서비스가 과거에 생성한 응답 그 자체가 아니라
 - 잘린 token 비율과 assistant loss mask를 sample별로 검사했는가
 - task 분포, 언어, 길이, 안전성, 최신성이 실제 서비스 목표와 맞는가
 - dataset version과 model version으로 결과를 다시 추적할 수 있는가
-

@@ -56,8 +56,8 @@ Source test/benchmark split은 읽지 않습니다.
 
 변환 명령과 학습 연결은 각 실행 브랜치의 가이드를 따릅니다.
 
-- [TRL 데이터 준비](https://github.com/daegyu94/post-training-lab/blob/trl/docs/dataset-preparation.md#public-datasets)
-- [Megatron 데이터 준비](https://github.com/daegyu94/post-training-lab/blob/megatron/docs/dataset-preparation.md#public-datasets)
+- [TRL 데이터 준비](../backends/trl/dataset-preparation.md#public-datasets)
+- [Megatron 데이터 준비](../backends/megatron/dataset-preparation.md#public-datasets)
 
 ## Input compatibility
 
