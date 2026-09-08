@@ -84,8 +84,7 @@ Viewer 기반 경로는 `megatron_lab.prepare_data`에서 revision을 생략한 
 메시지는 비어 있지 않은 `system`, `user`, `assistant` 대화이고 마지막 메시지는 `assistant`여야 합니다.
 중복 `trace_id`는 오류이며 같은 입력 대화의 반복은 제외됩니다.
 
-다음 가상 예제는 Python 표준 라이브러리만 필요하며 GPU나 네트워크를 사용하지 않습니다.
-저장소 루트에서 새 임시 디렉터리에 실행합니다.
+다음 예제는 controller의 저장소 루트에서 새 임시 디렉터리에 실행합니다.
 
 ```bash
 trace_output="$(mktemp -d)"
@@ -104,14 +103,11 @@ Megatron은 `PYTHONPATH=backends/megatron`과 `megatron_lab.prepare_service_data
 
 | 실행 경로 | 입력 연결 | 제한 |
 | --- | --- | --- |
-| TRL 단일 GPU | `--dataset-jsonl-dir` | Qwen용 template과 assistant mask |
 | TRL Spark | setup의 `nodes[].data_dir` | 공개 데이터 형식 manifest와 `prompt_id` 필요 |
 | Megatron Spark | setup의 `nodes[].data_dir` | 고정 데이터 ID·revision과 native completion 전처리 필요 |
 
 서비스 변환 결과는 두 Spark 백엔드의 manifest 검증을 그대로 통과하지 못합니다.
 임의 revision을 채워 우회하지 말고 불변 버전과 호환 manifest를 만드는 구현이 별도로 필요하다는 제한으로 취급합니다.
-TRL 단일 GPU 연결은 [TRL 가이드](backends/trl.md#single-gpu-qlora)를 따릅니다.
-
 Spark 전처리는 모델의 native template으로 마지막 assistant 이전 prompt와 마지막 응답·EOS를 분리합니다.
 토큰 경계와 supervised token을 검사하며 길이를 초과하면 조용히 자르지 않고 중단합니다.
 Test 입력, `chosen`/`rejected` 선호도 쌍, 구조화된 `tool_calls`는 현재 SFT 입력 경로의 대체물이 아닙니다.

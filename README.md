@@ -6,14 +6,14 @@ Controller가 실행을 조율하고 실제 학습은 설정한 Spark 노드에�
 
 ## Start Here
 
-[Getting Started](docs/getting-started.md)에서 GPU 없는 dry-run부터 시작합니다.
-Controller에는 Python 3.10 이상과 Git이 필요하며 실제 학습에는 준비된 Spark 노드·CUDA 환경·모델·데이터가 추가로 필요합니다.
+[Getting Started](docs/getting-started.md)에서 NVIDIA DGX Spark 노드 환경과 입력을 준비한 뒤 첫 분산 SFT를 실행합니다.
+Controller에는 Python 3.10 이상과 Git이 필요하며 학습에는 준비된 Spark 노드·CUDA 환경·모델·데이터가 필요합니다.
 문서 전체 안내는 [Documentation](docs/README.md), 구성 요소의 책임은 [Architecture](docs/architecture.md)를 확인합니다.
 
 | 할 일 | 안내 |
 | --- | --- |
 | 학습 입력 만들기 | [Datasets](docs/datasets.md) |
-| TRL SFT·QLoRA 실행 | [TRL](docs/backends/trl.md) |
+| TRL SFT 실행 | [TRL](docs/backends/trl.md) |
 | Megatron SFT·checkpoint 재개 | [Megatron](docs/backends/megatron.md) |
 | 반복 비교 | [Experiments](docs/experiments.md) |
 | 자원·통신·저장소 계측 | [Observability](docs/observability.md) |

@@ -22,7 +22,7 @@ done
 ```
 
 테스트는 mock과 작은 입력을 사용하는 회귀 검사이며 실제 GPU·NCCL·fresh installation 성공을 증명하지 않습니다.
-원격 실행 없이 [Getting Started의 dry-run](getting-started.md#check-a-plan-first)과 [가상 데이터 변환](datasets.md#reviewed-service-traces)도 확인할 수 있습니다.
+실제 실행 전에는 [Getting Started의 실행 계획 검토](getting-started.md#check-the-execution-plan)로 설정을 점검할 수 있습니다.
 
 ## Judge a Run
 
@@ -44,7 +44,6 @@ ZeRO-3 과거 summary의 parameter count 0은 placeholder 계측 문제이며 �
 
 | 기록 | 범위 |
 | --- | --- |
-| [TRL 단일 GPU](verification/trl-20260904.md) | 14B QLoRA의 제한된 held-out 평가와 adapter reload |
 | [TRL Spark](verification/trl-20260908/README.md) | 모델·백엔드별 성공, OOM·NVML·state-dict 실패 |
 | [Megatron 통합 전 해설](verification/megatron-20260908.md) | 30B LoRA와 작은 모델의 제한된 checkpoint 비교 |
 | [구조 통합·공통 runner](verification/integration-20260908/README.md) | 실행 commit, 환경, 수정 이력과 raw evidence |
@@ -65,7 +64,6 @@ ZeRO-3 과거 summary의 parameter count 0은 placeholder 계측 문제이며 �
 - Megatron selective recompute는 `recompute_num_layers=1`을 설정해 Bridge의 `None` 요구와 충돌합니다.
 - Megatron Spark requirements의 ModelOpt stable pin과 Bridge의 rc 의존성이 달라 fresh-install 전체 성공이 검증되지 않았습니다.
 - 서비스 변환 manifest는 두 Spark validator의 고정 데이터 형식과 다릅니다.
-- TRL 단일 GPU wrapper는 JSONL 옵션을 전달해도 parquet 디렉터리를 먼저 검사합니다.
 - Sharded export·resume와 parameter 계측은 백엔드별 제한이 있으므로 학습 성공과 별도 검증해야 합니다.
 
 문서의 명령을 맞추기 위해 위 구현을 변경하지 않았습니다.

@@ -27,7 +27,7 @@ flowchart TD
 | `tests/` | CPU 회귀와 mock 기반 실행 계약 검사 | 실제 GPU 실행 보장 |
 
 `run_summary.py` 계열은 공통 summary helper를 제공하지만 모든 진입점이 동일 schema를 사용하는 것은 아닙니다.
-TRL 단일 GPU, TRL Spark와 Megatron summary는 각각 실제 생성 코드를 기준으로 읽습니다.
+TRL Spark와 Megatron summary는 각각 실제 생성 코드를 기준으로 읽습니다.
 공통 runner는 backend summary나 가중치를 controller로 자동 수집하지 않습니다.
 
 ## Configuration Contract

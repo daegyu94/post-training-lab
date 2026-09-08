@@ -5,8 +5,7 @@
 
 ## Start Here
 
-[Getting Started](getting-started.md)에서 GPU 없는 계획 확인부터 환경 준비·첫 실행·결과 판정까지 진행합니다.
-데이터 변환만 먼저 확인하려면 [가상 서비스 기록 예제](datasets.md#reviewed-service-traces)를 사용합니다.
+[Getting Started](getting-started.md)에서 NVIDIA DGX Spark 환경 준비·첫 실행·결과 판정까지 진행합니다.
 
 | 목적 | 문서 |
 | --- | --- |

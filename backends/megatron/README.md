@@ -10,7 +10,6 @@ Launcher 기본값은 LoRA이며 소형 smoke preset은 full SFT를 명시합니
 | `megatron_lab/sft.py` | Base/train/resume/tuned |
 | `megatron_lab/cluster.py` | Topology 검증 |
 | `megatron_lab/feature_lab.py` | 기능 비교 로그 파싱 |
-| `megatron_lab/parallelism.py` | CPU 논리 rank 배치 |
 | `scripts/` | 환경·데이터 준비와 실행 |
 
 CPU 테스트와 실행 판정은 [Verification](../../docs/verification.md)을 확인합니다.

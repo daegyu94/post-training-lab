@@ -11,26 +11,12 @@
 | DP | 데이터 배치 | 작은 dense 모델의 기본 비교 |
 | TP | 레이어의 텐서 연산 | TP=2와 sequence parallel 비교 |
 | PP | 레이어 구간 | topology 검증과 논리적 배치 |
-| CP | 한 샘플의 token 구간 | 개념 simulator 지원; Spark 학습은 CP=1 |
+| CP | 한 샘플의 token 구간 | Spark 학습은 CP=1 |
 | EP | MoE expert | MoE 모델의 expert 분산 |
 
 Spark에서 `world_size=TP*PP*DP`이며 `world_size`는 `TP*PP`와 `PP*EP`로 나누어져야 합니다.
 `GLOBAL_BATCH_SIZE`는 `MICRO_BATCH_SIZE*DP`로 나누어져야 합니다.
 노드 메모리가 자동으로 하나의 pool이 되는 것은 아닙니다.
-
-다음 명령은 controller의 저장소 루트에서 Python 표준 라이브러리만으로 실행합니다.
-GPU·NCCL·process group을 초기화하지 않고 16개 논리 rank와 DP=2인 배치를 JSON으로 출력합니다.
-
-```bash
-PYTHONPATH=backends/megatron python -m megatron_lab.parallelism \
-  --world-size 16 \
-  --tensor-parallel-size 2 \
-  --pipeline-parallel-size 2 \
-  --context-parallel-size 2
-```
-
-`scripts/run_megatron_practice.sh`는 recipe inspection도 함께 수행하므로 Bridge가 설치된 `.venv`가 필요합니다.
-GPU를 쓰지 않는다는 설명이 의존성도 필요 없다는 뜻은 아닙니다.
 
 ## Spark Environment
 

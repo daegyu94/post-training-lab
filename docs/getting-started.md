@@ -1,14 +1,15 @@
 # Getting Started
 
-먼저 controller에서 GPU 없이 계획을 확인하고, Spark 노드에 환경과 입력을 준비한 뒤 작은 TRL SFT를 실행합니다.
+NVIDIA DGX Spark 노드에 환경과 입력을 준비한 뒤 controller에서 작은 TRL 분산 SFT를 시작합니다.
 최종 목표는 `base`, `train`, `tuned` 단계의 완료와 결과 판정입니다.
 실제 학습은 controller가 아니라 설정한 Spark 노드에서 수행합니다.
+Controller와 `spark1`·`spark2`의 역할, SSH 실행 흐름, NFS 경로는 [Spark cluster setup](../setups/spark/README.md)을 확인합니다.
 
-## Check a Plan First
+## Check the Execution Plan
 
 Controller에는 Python 3.10 이상과 Git이 필요합니다.
-아래 명령은 저장소 루트에서 실행하며 Python 표준 라이브러리만 사용합니다.
-예제 setup의 경로는 자리표시자이지만 dry-run은 SSH나 원격 파일 검사를 하지 않으므로 계획 확인에 사용할 수 있습니다.
+아래 명령은 저장소 루트에서 실행해 setup과 experiment를 결합한 실행 계획을 출력합니다.
+예제 setup의 경로는 자리표시자이며 이 검토 단계는 SSH나 원격 파일을 검사하지 않습니다.
 
 ```bash
 python experiments/run.py \
@@ -21,8 +22,7 @@ python experiments/run.py \
 종료 코드 0과 JSON 계획이 예상 결과입니다.
 `backend`가 `trl`이고 두 rank의 환경변수와 출력 경로가 있는지 확인합니다.
 명령은 출력 디렉터리를 만들지 않지만 이미 존재하는 경로를 지정하면 거부합니다.
-Dry-run 성공은 모델·데이터·GPU·SSH가 준비됐다는 뜻이 아닙니다.
-GPU 없는 변환도 확인하려면 [가상 서비스 기록 예제](datasets.md#reviewed-service-traces)를 실행합니다.
+계획 출력은 모델·데이터·GPU·SSH 준비를 증명하지 않습니다.
 
 ## Prepare the Nodes
 
@@ -36,7 +36,7 @@ GPU 없는 변환도 확인하려면 [가상 서비스 기록 예제](datasets.m
 - 미리 생성한 쓰기 가능한 출력 부모 디렉터리
 
 설치는 [TRL](backends/trl.md#spark-environment) 또는 [Megatron](backends/megatron.md#spark-environment)을 따릅니다.
-두 requirements는 서로 다른 환경을 대상으로 하며 일반 `scripts/setup.sh`가 Spark 설치를 완결한다고 가정하지 않습니다.
+두 backend requirements는 서로 다른 Spark 환경을 대상으로 하며 단일 설치 스크립트가 환경 준비를 완결한다고 가정하지 않습니다.
 특히 Megatron은 새 환경의 전체 의존성 설치가 검증되지 않았다는 제한이 있습니다.
 
 Controller에는 OpenSSH client가 필요하고 노드에는 Git, Bash, GNU `timeout`, `setsid`가 필요합니다.
