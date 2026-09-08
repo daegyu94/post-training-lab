@@ -1,48 +1,31 @@
-# Post-Training Lab 문서
+# Documentation
 
-이 디렉터리는 처음 repository를 사용하는 software engineer를 위한 사용자 문서입니다.
-실제 source code, configuration, launcher와 test가 문서의 source of truth입니다.
-문서에 없는 option이나 아직 구현되지 않은 workflow를 추측해서 추가하지 않습니다.
+이 문서는 처음 프로젝트를 사용하는 소프트웨어 엔지니어를 위한 안내입니다.
+코드·설정·스크립트·테스트를 기준으로 현재 실행 경로와 제안·과거 관측을 구분합니다.
 
-## 먼저 읽을 문서
+## Start Here
+
+[Getting Started](getting-started.md)에서 GPU 없는 계획 확인부터 환경 준비·첫 실행·결과 판정까지 진행합니다.
+데이터 변환만 먼저 확인하려면 [가상 서비스 기록 예제](datasets.md#reviewed-service-traces)를 사용합니다.
 
 | 목적 | 문서 |
 | --- | --- |
-| 환경을 준비하고 첫 실행하기 | [Getting Started](getting-started.md) |
-| runner와 설정 파일의 책임 이해하기 | [Architecture](architecture.md) |
-| 학습 데이터 만들기 | [Datasets](datasets.md) |
-| TRL 실행하기 | [TRL backend](backends/trl.md) |
-| Megatron Bridge 실행하기 | [Megatron backend](backends/megatron.md) |
-| 반복 측정 실행하기 | [Experiments](experiments.md) |
-| 자원과 통신 관측하기 | [Observability](observability.md) |
-| 구현 전 lifecycle 구상 확인하기 | [Design](design.md) |
-| 실행 결과를 판정하기 | [Verification](verification.md) |
+| 환경 준비와 첫 실행 | [Getting Started](getting-started.md) |
+| 구성 요소와 책임 | [Architecture](architecture.md) |
+| 공개·서비스 데이터 변환 | [Datasets](datasets.md) |
+| 학습 환경·backend별 제약 | [TRL](backends/trl.md), [Megatron](backends/megatron.md) |
+| Preset과 반복 측정 | [Experiments](experiments.md) |
+| Monitoring·baseline·trace 실행 | [Observability](observability.md) |
+| 지표 계약·framework 연결 | [Observability Reference](observability-reference.md) |
+| 현재 미구현 lifecycle 제안 | [Design](design.md) |
+| 판정·실패 한계·과거 기록 | [Verification](verification.md) |
 
-## 문서와 코드의 책임 경계
+## Information Boundaries
 
-| 영역 | Canonical source |
-| --- | --- |
-| 공통 원격 실행 | experiments/run.py |
-| 반복 Megatron 측정 | experiments/benchmarks.py와 experiments/megatron/benchmark-plan.json |
-| 환경·노드 경로 | setups/spark/local.example.json과 gitignored local.json |
-| 학습 조건 | experiments/trl/*.json, experiments/megatron/*.json |
-| TRL 학습·데이터 | backends/trl/ |
-| Megatron 학습·데이터 | backends/megatron/ |
-| Profiling 도구와 예제 | observability/ |
-| 회귀 검증 | tests/ |
+설치·현재 실행 절차는 task guide에, 지표 계약은 reference에, 측정 당시 조건은 `verification/`에 둡니다.
+과거 기록의 수치는 새 실행의 성능·품질을 보증하지 않습니다.
+대형 checkpoint·모델 가중치는 Git에 포함되지 않습니다.
 
-design.md는 현재 구현의 사용 설명서가 아니라 구현 전 설계 문서입니다.
-docs/verification/은 과거 실행의 manifest, log, summary와 raw measurement를 보관하는 archive입니다.
-Archive의 수치는 새로운 실행의 성능이나 품질을 보증하지 않습니다.
-
-## 권장 학습 순서
-
-1. [Getting Started](getting-started.md)에서 setup 파일을 만들고 TRL smoke를 dry-run합니다.
-2. [Datasets](datasets.md)에서 작은 pinned dataset을 준비합니다.
-3. [TRL backend](backends/trl.md) 또는 [Megatron backend](backends/megatron.md)의 실행 경로를 선택합니다.
-4. [Verification](verification.md)의 성공 조건으로 output과 log를 확인합니다.
-5. 병목을 조사할 때만 [Observability](observability.md)를 추가합니다.
-6. 기능 비교가 필요할 때 [Experiments](experiments.md)의 반복 측정을 사용합니다.
-
-이 repository는 현재 TRL SFT와 Megatron Bridge SFT를 제공합니다.
-DPO, RL trainer와 serving lifecycle은 구현된 실행 경로가 아닙니다.
+Setup과 experiment의 책임은 [Architecture](architecture.md), 모델·데이터 준비는 [Getting Started](getting-started.md)와 [Datasets](datasets.md)에서 관리합니다.
+백엔드 README는 진입점만 제공하며 같은 명령을 복제하지 않습니다.
+DPO, RL trainer, registry, serving 배포는 현재 구현된 workflow가 아닙니다.

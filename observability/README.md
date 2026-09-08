@@ -1,15 +1,15 @@
-# Resource Profiling Lab
+# Observability Tools
 
-관측 기능의 실행 방법은 [Observability guide](../docs/observability.md)에 모읍니다.
-이 directory에는 telemetry helper, Prometheus/Grafana example, NCCL·fio baseline과 PyTorch profiler example이 있습니다.
+Host·GPU 계측, monitoring 설정, NCCL·fio baseline과 PyTorch trace 예제입니다.
+실행은 [Observability](../docs/observability.md), 지표 계약과 framework 연결은 [Reference](../docs/observability-reference.md)를 따릅니다.
 
-```text
-config/metrics.json                 metric vocabulary
-examples/observability/             Compose and Prometheus configuration
-examples/pytorch/                   synthetic DDP and selected-rank trace
-profiling_lab/                      validation and telemetry modules
-scripts/                            setup and profiling launchers
-```
+| 경로 | 역할 |
+| --- | --- |
+| `config/metrics.json` | 지표 이름·단위·수집 범위 |
+| `examples/observability/` | Compose·Prometheus·Grafana 설정 |
+| `examples/pytorch/` | Synthetic DDP와 selected-rank trace |
+| `profiling_lab/` | 검증·계측 모듈 |
+| `scripts/` | 환경 준비·수집·baseline 실행 |
 
-이 directory의 도구는 실제 LLM training과 별도의 synthetic 또는 framework adapter 경로입니다.
-실행 결과는 해당 run의 model, topology와 host 환경에 한정해 해석합니다.
+Framework hook은 사용자가 연결하는 예제이며 모든 LLM 학습에 자동 적용되지 않습니다.
+Synthetic 결과와 실제 학습 결과는 구분합니다.

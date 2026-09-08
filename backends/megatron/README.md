@@ -1,20 +1,16 @@
-# Megatron Bridge Post-Training Lab
+# Megatron Backend
 
-Megatron backend는 Megatron Bridge recipe를 사용한 Spark 분산 SFT와 checkpoint workflow를 제공합니다.
-주요 학습 대상은 full parameter SFT이며 LoRA와 parallelism feature도 설정으로 다룹니다.
+Megatron Bridge와 Core 기반의 Spark SFT·checkpoint 코드입니다.
+Launcher 기본값은 LoRA이며 소형 smoke preset은 full SFT를 명시합니다.
+실행 절차·설치 한계는 [Megatron 가이드](../../docs/backends/megatron.md), 공통 시작 경로는 [Getting Started](../../docs/getting-started.md)를 따릅니다.
 
-실제 실행 방법과 제한은 [Megatron backend guide](../../docs/backends/megatron.md)에 모읍니다.
-공통 runner와 setup은 [Getting Started](../../docs/getting-started.md)에서 확인합니다.
+| 진입점 | 역할 |
+| --- | --- |
+| `megatron_lab/config.py` | Model provider와 학습 설정 |
+| `megatron_lab/sft.py` | Base/train/resume/tuned |
+| `megatron_lab/cluster.py` | Topology 검증 |
+| `megatron_lab/feature_lab.py` | 기능 비교 로그 파싱 |
+| `megatron_lab/parallelism.py` | CPU 논리 rank 배치 |
+| `scripts/` | 환경·데이터 준비와 실행 |
 
-```text
-megatron_lab/config.py          model provider configuration
-megatron_lab/sft.py             base/train/resume/tuned entry point
-megatron_lab/cluster.py         topology validation
-megatron_lab/feature_lab.py     feature measurement harness
-megatron_lab/parallelism.py     CPU-only rank layout simulation
-scripts/                        setup, data and launchers
-```
-
-```bash
-python -m pytest -q
-```
+CPU 테스트와 실행 판정은 [Verification](../../docs/verification.md)을 확인합니다.

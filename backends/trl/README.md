@@ -1,22 +1,15 @@
-# TRL Post-Training Lab
+# TRL Backend
 
-TRL backend는 SFT, LoRA/QLoRA, adapter 저장·재로딩과 Spark 분산 실행을 제공합니다.
-DPO와 RL trainer는 이 repository에 포함되어 있지 않습니다.
+단일 GPU QLoRA와 Spark SFT를 위한 학습·데이터·launcher 코드입니다.
+실행 절차와 제한은 [TRL 가이드](../../docs/backends/trl.md), 공통 시작 경로는 [Getting Started](../../docs/getting-started.md)를 따릅니다.
 
-실제 실행 방법과 제한은 [TRL backend guide](../../docs/backends/trl.md)에 모읍니다.
-공통 환경과 runner 사용법은 [Getting Started](../../docs/getting-started.md)에서 확인합니다.
+| 진입점 | 역할 |
+| --- | --- |
+| `trl_lab/train.py` | 단일 GPU QLoRA |
+| `trl_lab/infer.py` | Adapter 재로딩 추론 |
+| `trl_lab/spark_train.py` | Spark SFT |
+| `trl_lab/spark_config.py` | 설정·snapshot·manifest 검증 |
+| `scripts/` | 환경·데이터 준비와 실행 |
+| `configs/` | DeepSpeed 예제 설정 |
 
-```text
-trl_lab/train.py          single-GPU QLoRA entry point
-trl_lab/infer.py          adapter reload entry point
-trl_lab/spark_train.py    Spark training entry point
-trl_lab/spark_config.py   model and dataset validation
-scripts/                  setup, data preparation and launchers
-configs/                  DeepSpeed configuration files
-```
-
-Repository root에서 테스트를 실행합니다.
-
-```bash
-python -m pytest -q
-```
+CPU 테스트와 실행 판정은 [Verification](../../docs/verification.md)을 확인합니다.
