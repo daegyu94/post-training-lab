@@ -23,7 +23,6 @@
 
 Storage, host memory, GPU와 node 간 전송은 전체 run 평균만 보지 않고 workflow phase와 path별 bytes, duration, effective bandwidth로 구분합니다. Canonical metric은 [`config/metrics.json`](config/metrics.json)에 정의되어 있고, 파일 형식과 확장 규칙은 [Profiling metric contract](docs/metric-schema.md)에서 설명합니다.
 
-
 ## Public Dashboard Demo
 
 합성 데이터 기반의 profiling dashboard 데모는 [Post-Training Lab Observatory](https://daegyu94.github.io/post-training-lab-observatory/)에서 확인할 수 있습니다. 실제 exporter, cluster, training run에는 연결하지 않으며, 실습과 profiling 구성은 이 브랜치에서 계속 제공합니다.
