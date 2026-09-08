@@ -53,6 +53,15 @@ Pretrained Model + Training Data / Feedback
 DPO와 RL 학습은 [확장 계획](labs/README.md#planned-exercises) 단계입니다.
 Observatory의 RL 데이터는 합성 예시입니다.
 
+## Dataset Guides
+
+데이터 선택·schema 변환·revision·manifest와 사내 데이터 정제·split 기준은 `main`에서 공통으로 관리합니다.
+실행 코드와 변환 명령은 각 실습 브랜치에서 관리합니다.
+
+- [공개 데이터 가이드](docs/datasets/public-datasets.md): No Robots, Self-OSS, xLAM 등의 schema와 provenance
+- [사내 데이터 가이드](docs/datasets/internal-data-guide.md): 승인된 service trace의 정제, split과 test 정답 분리
+- [TRL 데이터 준비](https://github.com/daegyu94/post-training-lab/blob/trl/docs/dataset-preparation.md), [Megatron 데이터 준비](https://github.com/daegyu94/post-training-lab/blob/megatron/docs/dataset-preparation.md): 브랜치별 변환·학습 연결
+
 ## PoC Setups
 
 | Setup | Hardware | 실습 범위 |
