@@ -3,27 +3,59 @@
 이 저장소는 Megatron 또는 verl 기반 post-training workload를 멀티노드에서 실행할 때 resource bottleneck을 찾는 오픈소스 profiling 실습입니다.
 특정 command의 부모 PID를 sampling하는 wrapper 대신, 실제 cluster의 node, GPU, network, storage, distributed rank와 agentic rollout을 같은 run으로 연결합니다.
 
-## What You Will Build
+## Start Here
 
-![멀티 GPU·멀티 노드 profiling architecture](docs/profiling-architecture.svg)
+처음에는 **01 → 02 → 06** 순서로 telemetry, hardware baseline, 작은 DDP trace를 익힙니다.
+그다음 실제 workload에 따라 **03 (Megatron)** 또는 **04 (verl)**를 선택하고, 더 자세한 증거가 필요할 때 **05 (selected trace)**를 적용합니다.
+Lab 번호는 문서 식별자이며 실행 순서와는 다릅니다.
 
-실습은 다음 흐름으로 진행합니다.
+```bash
+git clone -b profiling https://github.com/daegyu94/post-training-lab.git
+cd post-training-lab
+./scripts/setup.sh
+. .venv/bin/activate
+python -m pytest -q
+```
 
-1. 각 training node에 Node Exporter와 DCGM Exporter를 배치합니다.
-2. Prometheus와 Grafana를 띄워 CPU, memory, GPU, NIC와 disk를 한 화면에서 비교합니다.
-3. 동일한 node allocation에서 NCCL Tests와 fio baseline을 측정합니다.
-4. Megatron timer/straggler 또는 verl/Ray/rollout metric을 동일한 `run_id`로 연결합니다.
-5. 상시 metric으로 병목 rank와 구간을 찾은 후 일부 rank와 step에만 PyTorch Profiler를 켭니다.
-6. 오픈소스 trace로 원인이 구분되지 않을 때만 Nsight 같은 vendor tool을 짧은 diagnostic run에 사용합니다.
+`setup.sh`는 CPU 검증용 environment와 pytest만 설치합니다.
+Docker/Compose, exporter, CUDA용 PyTorch, NCCL Tests, fio와 framework는 각 실습의 실행 호스트에 별도로 준비합니다.
+Spark cluster에서는 controller가 실행을 조율하고 실제 DDP·LLM 연산은 `spark1`, `spark2`에서 수행합니다.
+공유 저장소 경로는 controller에서 `/home/daegyu/shared/post-training-lab`, Spark 노드에서 `/home/spark/shared/post-training-lab`입니다.
+Lab 06의 2-GPU 및 Slurm 예제는 일반적인 구성 예시이므로 실제 GPU 수와 launcher에 맞춰 적용합니다.
 
-다이어그램의 도구별 관측 범위와 오픈소스만으로 확정할 수 없는 질문은 [tool 선택과 사각지대](docs/tooling.md)에 정리했습니다.
+## What Is Included
+
+| 구성 | 제공 범위 | 사용자가 연결할 부분 |
+| --- | --- | --- |
+| Cluster telemetry | Prometheus·Grafana Compose, target 예제, host/GPU dashboard, health 검증 | 각 node의 exporter 설치와 실제 target 주소 |
+| Hardware baseline | NCCL Tests·fio 실행 script와 raw 결과 저장 | benchmark binary, node allocation, storage 경로 |
+| DDP trace | synthetic workload, selected-rank helper, Chrome trace JSON | CUDA PyTorch와 분산 실행 환경 |
+| Megatron | 기존 timer 값을 `.prom`으로 내보내는 hook 예제 | training logging loop 호출, textfile collector 설정 |
+| verl / agent loop | 기존 framework 설정과 계측 가이드 | 실제 endpoint, role dashboard, OpenTelemetry 계측 |
+| Metric contract | 공통 이름·단위·phase 정의와 validator | 원본 metric 변환, phase marker, derived metric 계산 |
+
+Metric contract에 나열된 항목이 모두 자동 수집되는 것은 아닙니다.
+기본 dashboard는 host/GPU resource를 보여주며, role·phase 분석과 Tempo/OpenTelemetry 배포는 추가 통합 범위입니다.
+
+## How Evidence Flows
+
+![compute node의 metric 수집과 별도 trace 파일 분석 경로](docs/profiling-architecture.svg)
+
+Prometheus는 각 node의 exporter endpoint를 주기적으로 읽고, Grafana는 Prometheus를 조회합니다.
+선택한 rank의 trace와 NCCL/fio 결과는 별도 파일로 남으며 Prometheus에 자동으로 들어가지 않습니다.
+`run_id`, 실행 시간대와 rank map을 보존해 metric과 파일을 함께 해석합니다.
+도구별 관측 범위는 [tool 선택과 사각지대](docs/tooling.md)를 참고하세요.
+
+![baseline에서 selected trace와 재검증으로 이어지는 실습 흐름](docs/profiling-workflow.svg)
 
 ## Metric Contract and Data Movement
 
-![phase별 data movement profiling 경로](docs/data-movement-profiling.svg)
+![전송 경로별 관측 신호와 추가 계측이 필요한 부분](docs/data-movement-profiling.svg)
 
-Storage, host memory, GPU와 node 간 전송은 전체 run 평균만 보지 않고 workflow phase와 path별 bytes, duration, effective bandwidth로 구분합니다.
-Canonical metric은 [`config/metrics.json`](config/metrics.json)에 정의되어 있고, 파일 형식과 확장 규칙은 [Profiling metric contract](docs/metric-schema.md)에서 설명합니다.
+Storage, host memory, GPU와 node 간 전송은 workflow phase와 path별로 구분합니다.
+Exporter는 node/device 전체 신호를 제공하고, framework marker와 selected trace가 해당 구간의 의미를 보완합니다.
+Bytes와 duration을 실제로 얻은 경로에만 effective bandwidth를 계산합니다.
+Canonical metric은 [`config/metrics.json`](config/metrics.json)에 정의하며, 작성 규칙은 [Profiling metric contract](docs/metric-schema.md)에서 설명합니다.
 
 ## Public Dashboard Demo
 
@@ -90,5 +122,5 @@ GPU나 exporter 없이 Python helper, metric schema, shell script syntax를 확�
 
 ```bash
 .venv/bin/python -m pytest -q
-bash -n scripts/*.sh
+for script in scripts/*.sh; do bash -n "$script" || exit; done
 ```

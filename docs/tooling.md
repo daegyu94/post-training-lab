@@ -23,7 +23,9 @@
 
 ### 1. Always-on telemetry
 
-Node Exporter, DCGM Exporter, Ray/vLLM/verl metric을 Prometheus가 수집하고 Grafana에서 `run_id`, node, GPU와 role별로 비교합니다.
+기본 Compose는 Node Exporter와 DCGM Exporter endpoint를 수집하며, application target 목록은 비어 있습니다.
+Ray/vLLM/verl endpoint와 role dashboard를 추가하면 framework 신호도 함께 비교할 수 있습니다.
+Exporter target의 `run_id`는 allocation을 연결하는 label이며 해당 run의 process만 격리해 측정하지는 않습니다.
 이 계층은 regression, imbalance와 이상 시점을 찾는 데 사용하며 profiler를 켜지 않은 기준 성능을 보존합니다.
 
 ### 2. Framework semantics

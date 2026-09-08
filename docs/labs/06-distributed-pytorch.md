@@ -2,7 +2,8 @@
 
 ## Goal
 
-한 번의 기준 run에서 cluster telemetry, rank별 step 시간과 PyTorch trace를 연결하는 최소 멀티 GPU 실습입니다.
+작은 DDP workload로 선택한 rank의 PyTorch trace 생성을 확인하는 실습입니다.
+기준 run과 capture run을 분리하며, 이 예제는 rank별 step 시간이나 tokens/s를 집계하지 않습니다.
 Megatron이나 verl을 아직 설치하지 않은 환경에서도 `torchrun`과 제공된 작은 DDP workload로 profiling 흐름을 검증할 수 있습니다.
 실제 학습으로 바꿀 때도 관측 지점과 artifact 형식은 유지합니다.
 
@@ -20,8 +21,10 @@ artifacts/ddp-profile/<run-id>/
     └── rank-<selected-rank>/trace-0.json
 ```
 
-`trace-*.json`은 Perfetto와 HTA에서 열 수 있습니다.
-Node Exporter textfile collector를 설정했다면 같은 `run_id`로 host/GPU telemetry와 trace 시점을 비교할 수 있습니다.
+Trace는 workload가 생성하고, log와 manifest는 아래 shell command가 저장합니다.
+`PROFILE_RUN_ID`는 shell에서 artifact 경로를 구성하는 값이며 DDP 코드가 metric label이나 trace metadata에 자동 삽입하지 않습니다.
+Lab 01의 target label도 같은 값으로 설정하고 실행 시간대와 rank map을 기록해야 telemetry와 비교할 수 있습니다.
+DDP 예제는 Node Exporter textfile metric을 작성하지 않습니다.
 
 ## Prerequisites
 
@@ -40,9 +43,12 @@ python -m pip install HolisticTraceAnalysis
 
 ## Single-node: Two-GPU Capture
 
-다음 command는 global rank 0과 1을 대상으로, 처음 4 step을 건너뛴 뒤 한 번의 짧은 capture를 생성합니다.
+다음 command는 global rank 0과 1을 대상으로 한 번의 짧은 capture를 생성합니다.
+0부터 세는 loop step 0–3은 skip, 4는 wait, 5는 warmup, 6–7은 active capture이며 나머지는 수집하지 않습니다.
+기준 run에서는 `--profile-ranks ""`로 profiler를 끄고 별도 run ID와 출력 경로를 사용합니다.
 
 ```bash
+set -o pipefail
 export PYTHONPATH="$PWD"
 export PROFILE_RUN_ID=ddp-$(date +%Y%m%d-%H%M%S)
 export TRACE_OUTPUT_DIR="artifacts/ddp-profile/$PROFILE_RUN_ID"
@@ -72,7 +78,8 @@ torchrun --standalone --nproc_per_node=2 \
 
 ## Multi-node: Scheduler Allocation
 
-multi-node 실행은 scheduler가 각 node에 한 process group member를 시작하게 해야 합니다.
+multi-node 실행은 scheduler가 각 node에 하나의 `torchrun` launcher를 시작하게 해야 합니다.
+각 launcher가 `--nproc_per_node`만큼 GPU worker를 생성합니다.
 아래는 Slurm의 한 가지 형태이며, node당 GPU 수와 launcher option은 클러스터 정책에 맞게 바꿉니다.
 
 ```bash
@@ -80,18 +87,25 @@ export PYTHONPATH="$PWD"
 export PROFILE_RUN_ID=ddp-2nodes-$(date +%Y%m%d-%H%M%S)
 export TRACE_OUTPUT_DIR="<shared-artifact-path>/$PROFILE_RUN_ID"
 
-srun --nodes=2 --ntasks-per-node=1 --gpus-per-task=8 \
-  torchrun \
+export MASTER_ADDR="$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n1)"
+
+srun --nodes=2 --ntasks-per-node=1 --gpus-per-task=8 bash -c '
+  exec torchrun \
     --nnodes="$SLURM_NNODES" \
     --nproc_per_node=8 \
     --node_rank="$SLURM_NODEID" \
-    --master_addr="$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n1)" \
+    --master_addr="$MASTER_ADDR" \
     --master_port=29500 \
     examples/pytorch/ddp_profile_demo.py \
       --steps 24 \
       --profile-ranks 0,8 \
       --trace-dir "$TRACE_OUTPUT_DIR/traces"
+'
 ```
+
+`SLURM_NODEID`는 `bash -c` 안에서 각 node의 값으로 평가됩니다.
+예시의 node당 8 GPU에서는 global rank 0과 8이 각각 두 node의 첫 GPU입니다.
+Node당 1 GPU라면 `--gpus-per-task=1`, `--nproc_per_node=1`, `--profile-ranks 0,1`로 함께 바꿉니다.
 
 공유 filesystem이 없다면 각 node의 local trace directory에 저장한 뒤, job 종료 전에 중앙 artifact store로 복사합니다.
 전송 완료 전에는 trace를 삭제하지 않습니다.
@@ -111,17 +125,9 @@ srun --nodes=2 --ntasks-per-node=1 --gpus-per-task=8 \
 
 ### HTA
 
-같은 capture window의 rank trace만 한 directory에 모은 후 분석합니다.
-
-```python
-from hta.trace_analysis import TraceAnalysis
-
-analysis = TraceAnalysis(trace_dir="artifacts/ddp-profile/<run-id>/traces")
-print(analysis.get_temporal_breakdown())
-```
-
-HTA의 결과는 trace가 같은 world size, rank naming, capture schedule을 사용했을 때만 비교합니다.
-한 rank만 capture한 경우에는 HTA의 cross-rank 결론을 내리지 말고 Perfetto와 baseline telemetry를 함께 봅니다.
+Helper는 `rank-<global-rank>/trace-<capture-index>.json` 구조로 저장합니다.
+[Lab 05의 명시적 rank-to-file mapping](05-selected-trace.md#4-analyze-multiple-rank-traces-with-hta)을 사용해 같은 capture window만 분석합니다.
+한 rank만 capture한 경우에는 cross-rank 결론을 내리지 말고 Perfetto와 baseline telemetry를 함께 봅니다.
 
 ## Scale-up Decision Flow
 

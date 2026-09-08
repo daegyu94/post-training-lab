@@ -1,83 +1,60 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
-  <title id="title">Post-training data movement profiling paths</title>
-  <desc id="desc">Storage, host memory, GPUs, and remote GPU nodes are connected by labeled data paths. Each path lists its always-on metrics, diagnostic tool, and remaining visibility gap.</desc>
-  <style>
-    .title{font:700 25px sans-serif;fill:#14253b}.subtitle{font:13px sans-serif;fill:#52657d}.label{font:700 16px sans-serif;fill:#172a43}.text{font:13px sans-serif;fill:#2e435d}.small{font:11px sans-serif;fill:#5c6f87}.box{stroke-width:2;rx:12}.storage{fill:#f2f6ff;stroke:#5274ad}.host{fill:#f0f8f2;stroke:#4d815e}.gpu{fill:#edf3ff;stroke:#416eb3}.remote{fill:#fff5e8;stroke:#b97a2e}.control{fill:#f7f2fc;stroke:#7c5ba4}.gap{fill:#fff0f1;stroke:#bd5e66}.path{fill:none;stroke:#3f6fae;stroke-width:3;marker-end:url(#arrow)}.return{fill:none;stroke:#ad782e;stroke-width:2;stroke-dasharray:7 5;marker-end:url(#amber)}.dash{fill:none;stroke:#885eab;stroke-width:2;stroke-dasharray:6 5;marker-end:url(#purple)}.tag{font:700 10px sans-serif;fill:#fff}.phase{font:12px sans-serif;fill:#334961}
-  </style>
-  <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#3f6fae"/></marker>
-    <marker id="amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#ad782e"/></marker>
-    <marker id="purple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#885eab"/></marker>
-  </defs>
-  <text x="35" y="38" class="title">Post-training Data Movement and Profiling Paths</text>
-  <text x="35" y="62" class="subtitle">Measure bytes, duration, and effective bandwidth per phase; compare workload values with fio and NCCL baselines.</text>
-
-  <rect x="35" y="105" width="235" height="175" class="box storage"/>
-  <text x="58" y="137" class="label">Storage paths</text>
-  <text x="58" y="167" class="text">Local NVMe</text>
-  <text x="58" y="190" class="text">Remote/shared filesystem</text>
-  <text x="58" y="213" class="text">Object/checkpoint storage</text>
-  <text x="58" y="245" class="small">Node Exporter · mountstats · client metrics</text>
-  <rect x="58" y="257" width="126" height="18" rx="9" fill="#5274ad"/><text x="69" y="270" class="tag">fio baseline</text>
-
-  <rect x="355" y="105" width="235" height="175" class="box host"/>
-  <text x="378" y="137" class="label">Host memory</text>
-  <text x="378" y="167" class="text">Dataset/model staging</text>
-  <text x="378" y="190" class="text">Pinned memory</text>
-  <text x="378" y="213" class="text">Serialization / preprocessing</text>
-  <text x="378" y="245" class="small">Node Exporter · cAdvisor · phase marker</text>
-
-  <rect x="675" y="105" width="235" height="175" class="box gpu"/>
-  <text x="698" y="137" class="label">GPU node</text>
-  <text x="698" y="167" class="text">GPU 0 … 7 / rank map</text>
-  <text x="698" y="190" class="text">NVLink / NVSwitch</text>
-  <text x="698" y="213" class="text">Compute + collective</text>
-  <text x="698" y="245" class="small">DCGM · framework timer · selected trace</text>
-  <rect x="698" y="257" width="154" height="18" rx="9" fill="#416eb3"/><text x="709" y="270" class="tag">NCCL single-node baseline</text>
-
-  <rect x="995" y="105" width="170" height="175" class="box remote"/>
-  <text x="1018" y="137" class="label">Remote GPU node</text>
-  <text x="1018" y="167" class="text">InfiniBand / RoCE</text>
-  <text x="1018" y="190" class="text">GPUDirect RDMA</text>
-  <text x="1018" y="213" class="text">DP / TP / PP / CP / EP</text>
-  <text x="1018" y="245" class="small">NIC counters · NCCL timers</text>
-
-  <path d="M270 160 H355" class="path"/><text x="279" y="145" class="small">read bytes · latency</text>
-  <path d="M355 228 H270" class="return"/><text x="278" y="249" class="small">checkpoint write</text>
-  <path d="M590 160 H675" class="path"/><text x="600" y="145" class="small">H2D bytes/time</text>
-  <path d="M675 228 H590" class="return"/><text x="601" y="249" class="small">GPU → host</text>
-  <path d="M910 176 H995" class="path"/><text x="916" y="158" class="small">RDMA collective</text>
-
-  <rect x="35" y="335" width="1130" height="105" class="box control"/>
-  <text x="58" y="367" class="label">Phase correlation and metric contract</text>
-  <text x="58" y="393" class="phase">dataset_loading → model_loading → training_input → forward_backward → optimizer_step → checkpoint_save / restore → evaluation</text>
-  <text x="58" y="417" class="phase">agentic RL extension: rollout → tool_interaction → reward → weight_sync</text>
-  <text x="820" y="367" class="text">Correlation keys</text>
-  <text x="820" y="393" class="small">run_id · phase · node · rank · GPU</text>
-  <text x="820" y="417" class="small">device · interface · operation · parallel_group</text>
-
-  <rect x="35" y="495" width="340" height="165" class="box control"/>
-  <text x="58" y="527" class="label">Always-on evidence</text>
-  <text x="58" y="557" class="text">Prometheus: host, container, GPU, NIC, disk</text>
-  <text x="58" y="583" class="text">Framework: step, phase, queue, collective</text>
-  <text x="58" y="609" class="text">Dashboard: path utilization and imbalance</text>
-  <text x="58" y="635" class="small">Low overhead; preserves unprofiled baseline.</text>
-
-  <rect x="430" y="495" width="340" height="165" class="box remote"/>
-  <text x="453" y="527" class="label">Selected diagnostic evidence</text>
-  <text x="453" y="557" class="text">PyTorch Profiler / Kineto / HTA</text>
-  <text x="453" y="583" class="text">fio and NCCL Tests baselines</text>
-  <text x="453" y="609" class="text">Nsight only for unresolved lower-level cause</text>
-  <text x="453" y="635" class="small">Bounded rank and step window; separate run.</text>
-
-  <rect x="825" y="495" width="340" height="165" class="box gap"/>
-  <text x="848" y="527" class="label">What metrics cannot prove alone</text>
-  <text x="848" y="557" class="text">Exporter cannot attribute traffic to a phase/rank.</text>
-  <text x="848" y="583" class="text">Timer cannot expose kernel or fabric internals.</text>
-  <text x="848" y="609" class="text">Remote storage needs client + network + server view.</text>
-  <text x="848" y="635" class="small">Correlate sources before assigning causality.</text>
-
-  <path d="M590 335 C590 310 790 310 790 280" class="dash"/>
-  <text x="603" y="318" class="small">phase marker binds resource traffic to workload semantics</text>
-  <text x="35" y="714" class="subtitle">Canonical format: config/metrics.json · validation contract: config/metrics.schema.json · high-cardinality topology and paths remain in the run manifest.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="850" viewBox="0 0 1200 850" role="img" aria-labelledby="title desc">
+<title id="title">Data movement: locate the path, then choose evidence</title><desc id="desc">Conceptual paths, not a fixed hardware topology. Available links and counters must be checked on the allocation.</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse"><path d="M0 0L8 4L0 8" fill="#47647d"/></marker></defs>
+<style>text{font-family:Arial,sans-serif;fill:#20354b}.title{font-size:27px;font-weight:700}.heading{font-size:19px;font-weight:700}.body{font-size:16px}.small{font-size:14px}</style>
+<rect width="1200" height="100%" fill="#ffffff"/>
+<text x="36" y="44" class="title">Data movement: locate the path, then choose evidence</text>
+<text x="36" y="74" class="small">Conceptual paths, not a fixed hardware topology. Available links and counters must be checked on the allocation.</text>
+<rect x="36" y="112" width="210" height="135" rx="12" fill="#eef4fb" stroke="#8194a8" stroke-width="1.5"/>
+<text x="56" y="144" class="heading">Storage</text>
+<text x="56" y="175" class="body">Local disk or shared NFS</text>
+<text x="56" y="200" class="body">Dataset / checkpoint files</text>
+<rect x="342" y="112" width="210" height="135" rx="12" fill="#eef4fb" stroke="#8194a8" stroke-width="1.5"/>
+<text x="362" y="144" class="heading">Host memory</text>
+<text x="362" y="175" class="body">Staging / preprocessing</text>
+<text x="362" y="200" class="body">Serialization / input</text>
+<rect x="648" y="112" width="210" height="135" rx="12" fill="#eef4fb" stroke="#8194a8" stroke-width="1.5"/>
+<text x="668" y="144" class="heading">Local GPU</text>
+<text x="668" y="175" class="body">Compute / device copies</text>
+<text x="668" y="200" class="body">Rank-to-device mapping</text>
+<rect x="954" y="112" width="210" height="135" rx="12" fill="#eef4fb" stroke="#8194a8" stroke-width="1.5"/>
+<text x="974" y="144" class="heading">Peer GPU</text>
+<text x="974" y="175" class="body">Same or remote node</text>
+<text x="974" y="200" class="body">Collective / weight sync</text>
+<path d="M246 176 H342" fill="none" stroke="#47647d" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M552 176 H648" fill="none" stroke="#47647d" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M858 176 H954" fill="none" stroke="#47647d" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="264" y="155" class="small">I/O</text>
+<text x="563" y="155" class="small">H2D</text>
+<text x="869" y="155" class="small">transfer</text>
+<text x="36" y="280" class="small">Reads and H2D shown above; checkpoint staging and writes can flow in the reverse direction.</text>
+<text x="55" y="329" class="heading">Path / phase</text>
+<text x="358" y="329" class="heading">First evidence</text>
+<text x="757" y="329" class="heading">Next measurement / boundary</text>
+<rect x="36" y="350" width="1128" height="92" rx="8" fill="#eef4fb"/>
+<text x="55" y="380" class="body">Storage &lt;-&gt; host</text>
+<text x="55" y="409" class="small">loading / checkpoint</text>
+<text x="358" y="380" class="small">Disk / NIC counters + framework I/O timer</text>
+<text x="757" y="380" class="small">fio on the same path and cache conditions</text>
+<text x="757" y="409" class="small">NFS also needs client and server evidence.</text>
+<rect x="36" y="449" width="1128" height="92" rx="8" fill="#f5f7f9"/>
+<text x="55" y="479" class="body">Host &lt;-&gt; GPU</text>
+<text x="55" y="508" class="small">input / restore / save</text>
+<text x="358" y="479" class="small">Data wait + selected copy events</text>
+<text x="757" y="479" class="small">Measure copy bytes and elapsed time</text>
+<text x="757" y="508" class="small">Host/GPU utilization is not copy bandwidth.</text>
+<rect x="36" y="548" width="1128" height="92" rx="8" fill="#eef4fb"/>
+<text x="55" y="578" class="body">GPU &lt;-&gt; GPU: local</text>
+<text x="55" y="607" class="small">forward_backward / optimizer</text>
+<text x="358" y="578" class="small">Framework collective timer + GPU counters</text>
+<text x="757" y="578" class="small">Single-node NCCL baseline + selected trace</text>
+<text x="757" y="607" class="small">Do not assume NVLink or NVSwitch exists.</text>
+<rect x="36" y="647" width="1128" height="92" rx="8" fill="#f5f7f9"/>
+<text x="55" y="677" class="body">GPU &lt;-&gt; GPU: remote</text>
+<text x="55" y="706" class="small">collective / weight_sync</text>
+<text x="358" y="677" class="small">NIC counters + communication timer</text>
+<text x="757" y="677" class="small">Multi-node NCCL baseline + rank traces</text>
+<text x="757" y="706" class="small">Do not infer RDMA from NIC traffic alone.</text>
+<text x="36" y="778" class="body">Phase markers correlate time windows; they do not attribute every observed byte to a rank or operation.</text>
+<text x="36" y="808" class="small">Effective bandwidth = measured path bytes / measured duration. Contract entries require adapters; they are not auto-collected.</text>
 </svg>

@@ -1,75 +1,46 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="690" viewBox="0 0 1200 690" role="img" aria-labelledby="title desc">
-  <title id="title">Distributed LLM post-training profiling architecture</title>
-  <desc id="desc">Compute nodes emit low-cost telemetry continuously and selected traces temporarily. Prometheus, Grafana, Tempo, and an artifact store correlate the results. Coverage gaps point to vendor diagnostic tools.</desc>
-  <style>
-    .title { font: 700 25px sans-serif; fill: #13243a; }
-    .label { font: 700 16px sans-serif; fill: #13243a; }
-    .text { font: 14px sans-serif; fill: #23354d; }
-    .small { font: 12px sans-serif; fill: #40546e; }
-    .box { stroke: #426b9e; stroke-width: 2; rx: 12; }
-    .compute { fill: #eaf2ff; }
-    .control { fill: #edf8f0; stroke: #477b57; }
-    .trace { fill: #fff4e5; stroke: #b77427; }
-    .gap { fill: #fcebed; stroke: #ad4f59; }
-    .line { stroke: #426b9e; stroke-width: 2; fill: none; marker-end: url(#arrow); }
-    .dash { stroke: #b77427; stroke-width: 2; stroke-dasharray: 7 5; fill: none; marker-end: url(#orangeArrow); }
-  </style>
-  <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#426b9e"/></marker>
-    <marker id="orangeArrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#b77427"/></marker>
-  </defs>
-
-  <text x="40" y="40" class="title">Distributed LLM Post-training Profiling Architecture</text>
-  <text x="40" y="66" class="small">Always-on metrics narrow the search; selected traces establish the cause.</text>
-
-  <rect x="45" y="115" width="300" height="275" class="box compute"/>
-  <text x="70" y="147" class="label">Compute node A</text>
-  <text x="70" y="179" class="text">Megatron ranks / verl roles</text>
-  <text x="70" y="204" class="text">PyTorch DDP process group</text>
-  <text x="70" y="244" class="text">Always on</text>
-  <text x="90" y="268" class="small">Node Exporter: CPU, memory, disk, NIC</text>
-  <text x="90" y="289" class="small">DCGM Exporter: GPU utilization, power, clock</text>
-  <text x="90" y="310" class="small">Framework: step, timer, queue, role metrics</text>
-  <text x="70" y="348" class="text">Selected diagnostic window</text>
-  <text x="90" y="372" class="small">PyTorch Profiler / Kineto trace</text>
-
-  <rect x="45" y="435" width="300" height="175" class="box compute"/>
-  <text x="70" y="467" class="label">Compute node B … N</text>
-  <text x="70" y="499" class="text">Same exporter and rank mapping</text>
-  <text x="70" y="530" class="small">NCCL Tests: fabric baseline</text>
-  <text x="70" y="551" class="small">fio: checkpoint/data storage baseline</text>
-  <text x="70" y="582" class="small">Only selected ranks write traces</text>
-
-  <rect x="455" y="115" width="285" height="175" class="box control"/>
-  <text x="480" y="147" class="label">Monitoring control plane</text>
-  <text x="480" y="179" class="text">Prometheus</text>
-  <text x="500" y="202" class="small">scrapes node, GPU, framework metrics</text>
-  <text x="480" y="234" class="text">Grafana</text>
-  <text x="500" y="257" class="small">compares node / GPU / role / run_id</text>
-
-  <rect x="455" y="350" width="285" height="160" class="box trace"/>
-  <text x="480" y="382" class="label">Trace and artifact plane</text>
-  <text x="480" y="414" class="text">Shared artifact store</text>
-  <text x="500" y="437" class="small">rank map, manifest, Kineto JSON</text>
-  <text x="480" y="470" class="text">Perfetto / HTA</text>
-  <text x="500" y="493" class="small">timeline, overlap, imbalance, idle</text>
-
-  <rect x="845" y="185" width="300" height="195" class="box gap"/>
-  <text x="870" y="217" class="label">Coverage gaps</text>
-  <text x="870" y="250" class="text">OSS stack cannot fully show:</text>
-  <text x="890" y="276" class="small">• CUDA / NCCL system-wide causality</text>
-  <text x="890" y="299" class="small">• kernel occupancy and stall counters</text>
-  <text x="890" y="322" class="small">• fabric internals or tool-service internals</text>
-  <text x="870" y="355" class="text">Short diagnostic only: Nsight Systems / Compute</text>
-
-  <path d="M345 245 H455" class="line"/>
-  <text x="365" y="230" class="small">metrics</text>
-  <path d="M345 515 H455" class="line"/>
-  <text x="365" y="500" class="small">baseline results</text>
-  <path d="M345 365 C405 365 405 415 455 415" class="dash"/>
-  <text x="350" y="402" class="small">bounded traces</text>
-  <path d="M740 430 H845" class="dash"/>
-  <text x="756" y="414" class="small">unresolved cause</text>
-
-  <text x="45" y="654" class="small">Correlation keys: run_id, job, node, global rank, local rank, framework role. Keep high-cardinality request or prompt data out of metric labels.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+<title id="title">Profiling architecture: metrics and files</title><desc id="desc">Solid arrows: metric/query flow. Dashed arrows: files for offline analysis. Boxes identify deployment ownership.</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse"><path d="M0 0L8 4L0 8" fill="#47647d"/></marker></defs>
+<style>text{font-family:Arial,sans-serif;fill:#20354b}.title{font-size:27px;font-weight:700}.heading{font-size:19px;font-weight:700}.body{font-size:16px}.small{font-size:14px}</style>
+<rect width="1200" height="100%" fill="#ffffff"/>
+<text x="36" y="44" class="title">Profiling architecture: metrics and files</text>
+<text x="36" y="74" class="small">Solid arrows: metric/query flow. Dashed arrows: files for offline analysis. Boxes identify deployment ownership.</text>
+<rect x="36" y="112" width="430" height="190" rx="12" fill="#eef4fb" stroke="#8194a8" stroke-width="1.5"/>
+<text x="56" y="144" class="heading">Compute nodes: spark1 / spark2</text>
+<text x="56" y="175" class="body">Run DDP, Megatron or verl on these nodes.</text>
+<text x="56" y="200" class="body">Node Exporter :9100 — CPU, memory, disk, NIC</text>
+<text x="56" y="225" class="body">DCGM Exporter :9400 — GPU counters</text>
+<text x="56" y="250" class="body">Deploy exporters separately on each node.</text>
+<rect x="36" y="326" width="430" height="160" rx="12" fill="#fff6e7" stroke="#8194a8" stroke-width="1.5"/>
+<text x="56" y="358" class="heading">Application integration</text>
+<text x="56" y="389" class="body">Megatron hook -&gt; rank .prom -&gt; Node Exporter</text>
+<text x="56" y="414" class="body">Ray / verl endpoints -&gt; application targets</text>
+<text x="56" y="439" class="body">Requires logging hooks or framework setup.</text>
+<rect x="710" y="112" width="450" height="190" rx="12" fill="#eef8f0" stroke="#8194a8" stroke-width="1.5"/>
+<text x="730" y="144" class="heading">Monitoring host: provided Compose</text>
+<text x="730" y="175" class="body">Prometheus :9090 scrapes endpoints every 5s.</text>
+<text x="730" y="200" class="body">Grafana :3000 queries Prometheus.</text>
+<text x="730" y="225" class="body">Provided dashboard: host / GPU resources</text>
+<text x="730" y="250" class="body">Application targets start empty.</text>
+<path d="M466 195 H710" fill="none" stroke="#47647d" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="498" y="177" class="small">metric response</text>
+<text x="498" y="223" class="small">Prometheus pulls</text>
+<path d="M466 389 H630 V270 H710" fill="none" stroke="#47647d" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="488" y="369" class="small">configured metrics</text>
+<rect x="36" y="520" width="430" height="158" rx="12" fill="#fff6e7" stroke="#8194a8" stroke-width="1.5"/>
+<text x="56" y="552" class="heading">Files written by the run</text>
+<text x="56" y="583" class="body">Selected ranks: rank-N/trace-0.json</text>
+<text x="56" y="608" class="body">NCCL: all-reduce.log + manifest.env</text>
+<text x="56" y="633" class="body">fio: checkpoint.json</text>
+<rect x="710" y="520" width="450" height="158" rx="12" fill="#fff6e7" stroke="#8194a8" stroke-width="1.5"/>
+<text x="730" y="552" class="heading">Offline analysis: separately prepared</text>
+<text x="730" y="583" class="body">Perfetto: individual Chrome trace</text>
+<text x="730" y="608" class="body">HTA: explicit rank-to-file mapping</text>
+<text x="730" y="633" class="body">Compare raw baselines with workload evidence.</text>
+<path d="M466 590 H710" fill="none" stroke="#47647d" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="7 5"/>
+<text x="490" y="570" class="small">trace / baseline files</text>
+<text x="710" y="349" class="heading">Not deployed by this Compose:</text>
+<text x="710" y="377" class="body">OpenTelemetry / Tempo, role dashboards,</text>
+<text x="710" y="402" class="body">canonical metric conversion and phase accounting.</text>
+<text x="36" y="720" class="small">Join evidence using run ID, time window and rank map. Exporter labels do not isolate a process or attribute bytes to a phase.</text>
 </svg>

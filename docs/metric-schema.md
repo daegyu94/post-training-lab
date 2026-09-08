@@ -38,13 +38,16 @@
 | `source` | exporter, framework timer, selected trace, manifest 또는 derived summary |
 | `policy` | always-on, workload-specific, baseline 또는 diagnostic 수집 조건 |
 
-Exporter의 원본 metric name은 version에 따라 달라질 수 있으므로 adapter가 canonical name으로 변환합니다.
+이 contract는 목표 vocabulary이며 자동 수집 목록이 아닙니다.
+현재 dashboard는 exporter 원본 이름을 조회하고, Megatron hook은 `llm_training_*`와 `llm_megatron_timer_seconds`를 내보냅니다.
+Canonical name 변환과 phase별 bytes/time 집계는 workload adapter에서 추가 구현해야 합니다.
 Derived metric은 원본 값을 덮어쓰지 않으며 계산에 사용한 window와 source metric을 summary에 함께 기록합니다.
 
 ## Labels and Manifest Fields
 
 `recommended_labels`는 run 비교와 drill-down에 필요한 bounded-cardinality dimension입니다.
-`run_id`, `cluster`, `job`, `node`, `gpu`, `framework`, `role`, `phase`, `device`, `interface`, `operation`, `parallel_group`만 metric label 후보로 사용합니다.
+`run_id`, `cluster`, `job`, `node`, `gpu`, `framework`, `role`, `phase`, `device`, `interface`, `operation`, `parallel_group`을 공통 후보로 사용합니다.
+Megatron hook의 `rank`, `local_rank`, `tp_rank`, `pp_rank`, `dp_rank`, `timer`는 allocation과 timer 목록으로 범위를 제한하는 예제 확장입니다.
 
 Commit, image digest, model/dataset/checkpoint URI, complete rank map, profiler option, precision, batch/sequence configuration, storage path type, filesystem, cache state와 node topology는 `manifest_only_fields`에 기록합니다.
 Prompt, request ID, timestamp와 trace ID처럼 계속 늘어나는 값은 Prometheus label로 사용하지 않습니다.

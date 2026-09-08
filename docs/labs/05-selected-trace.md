@@ -67,9 +67,16 @@ python -m pip install HolisticTraceAnalysis
 ```python
 from hta.trace_analysis import TraceAnalysis
 
-analysis = TraceAnalysis(trace_dir="artifacts/traces/run-123")
+analysis = TraceAnalysis(
+    trace_dir="artifacts/traces/run-123",
+    trace_files={0: "rank-0/trace-0.json", 8: "rank-8/trace-0.json"},
+)
 print(analysis.get_temporal_breakdown())
 ```
+
+Helper의 rank별 하위 디렉터리를 자동 탐색한다고 가정하지 않고 `trace_files`에 global rank와 상대 경로를 지정합니다.
+실제 capture rank와 출력 경로에 맞게 예제를 수정합니다.
+이 argument는 [HTA TraceAnalysis 구현](https://github.com/facebookresearch/HolisticTraceAnalysis/blob/main/hta/trace_analysis.py)에 정의되어 있습니다.
 
 HTA로 compute/communication/idle breakdown, kernel duration distribution, rank imbalance와 communication overlap을 비교합니다.
 trace 파일명이 rank를 안정적으로 나타내고 모든 trace가 같은 capture window를 포함하는지 먼저 검증합니다.
