@@ -52,7 +52,7 @@ Model revision과 dataset revision은 모두 immutable 40-hex SHA여야 하고, 
 Model preflight는 revision 이름의 snapshot directory, safetensors index, index가 열거한 모든 non-empty shard와 `.incomplete` 부재를 model load 전에 각 노드에서 확인합니다.
 Manifest에 split SHA-256 또는 count가 있으면 local JSONL bytes와 line count를 검증합니다.
 Summary에는 local `config.json`과 weight index hash, indexed tensor/shard count, snapshot directory revision을 기록합니다.
-Canonical data preparation은 [public dataset guide](dataset-preparation.md#public-datasets)를 참고하세요.
+Canonical data preparation은 [public dataset guide](../../datasets/README.md#public-data)를 참고하세요.
 
 각 노드에서 동일하게 내려받는 예시는 다음과 같습니다.
 `hf download`가 출력하는 snapshot path는 node-local 경로이며 NFS에 복사할 필요가 없습니다.

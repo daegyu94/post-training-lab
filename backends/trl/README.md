@@ -7,7 +7,7 @@ Python 패키지 `trl_lab`은 데이터 준비, 학습과 inference 진입점을
 
 공통 하드웨어 구성과 Setup 1·2 소개는 [Spark 설정](../../docs/setups/spark.md)에서 확인하세요.
 
-데이터 선택·정제 기준은 [main의 Dataset Guides](../../README.md#dataset-guides), TRL 변환 명령과 학습 입력 옵션은 [데이터 준비](../../docs/backends/trl/dataset-preparation.md)를 참고하세요.
+데이터 선택·정제, 변환 명령과 학습 연결은 [SFT 데이터 준비 가이드](../../docs/datasets/README.md)를 참고하세요.
 
 현재 공통 실행기의 기본 setup은 [Spark](../../docs/getting-started.md)입니다.
 아래 RTX Setup 1 경로는 기존 기능 보존용이며 통합 후 재검증 범위에 포함하지 않습니다.

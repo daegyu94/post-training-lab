@@ -37,10 +37,8 @@ Observability는 GPU나 exporter 없이 실행할 수 있는 CPU 검증과 실�
 
 ## Dataset Guides
 
-- [공개 데이터 가이드](docs/datasets/public-datasets.md): schema, license와 pinned revision
-- [사내 데이터 가이드](docs/datasets/internal-data-guide.md): 승인된 service trace의 정제, split과 test 정답 분리
+[SFT 데이터 준비 가이드](docs/datasets/README.md)에서 공개·사내 데이터 선택, 변환 명령, TRL·Megatron 학습 연결과 검증 기준을 함께 설명합니다.
 
-변환 명령과 backend별 학습 연결 방법은 [TRL 데이터 준비](docs/backends/trl/dataset-preparation.md)와 [Megatron 데이터 준비](docs/backends/megatron/dataset-preparation.md)에 있습니다.
 
 ## Repository Layout
 

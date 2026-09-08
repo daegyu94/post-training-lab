@@ -96,6 +96,6 @@ model checkpoint나 GPU 없이 data selection, log parsing, parallel rank layout
 ## Related Guides
 
 - [공통 Dataset Guides](../../README.md#dataset-guides): 공개·사내 데이터 기준
-- [Megatron 데이터 준비](../../docs/backends/megatron/dataset-preparation.md): 변환 명령과 학습 연결 제약
+- [Megatron 데이터 준비](../../docs/datasets/README.md#training): 변환 명령과 학습 연결 제약
 - `system-integration` branch: data·checkpoint·serving lifecycle 설계
 - `profiling` branch: cluster resource 분석

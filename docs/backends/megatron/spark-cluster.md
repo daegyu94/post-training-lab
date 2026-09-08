@@ -116,7 +116,7 @@ Launcher는 `HF_HOME`, `XDG_CACHE_HOME`, `~/.cache/huggingface` 순서로 node-l
 
 기본 smoke dataset은 `HuggingFaceH4/no_robots`의 `train` split이며 revision `e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b`를 pin합니다.
 Preparation은 source test split을 읽지 않고 train에서 deterministic validation holdout을 만들며, 생성한 `training.jsonl`, `validation.jsonl`, `manifest.json`을 함께 보관합니다.
-UltraChat, Self-OSS와 xLAM 변환은 [public dataset guide](dataset-preparation.md#public-datasets)를 따릅니다.
+UltraChat, Self-OSS와 xLAM 변환은 [public dataset guide](../../datasets/README.md#public-data)를 따릅니다.
 
 ```bash
 cd /home/spark/shared/post-training-lab
