@@ -225,7 +225,12 @@ def main() -> None:
     from megatron.bridge.training.finetune import finetune
     from megatron.bridge.training.gpt_step import forward_step
 
-    finetune(config=config, forward_step_func=forward_step)
+    if os.environ.get("MEASURE_TIMING", "false") == "true":
+        from megatron_lab.measurement import measure_execution
+        with measure_execution(args.output_dir, args.stage):
+            finetune(config=config, forward_step_func=forward_step)
+    else:
+        finetune(config=config, forward_step_func=forward_step)
 
 
 if __name__ == "__main__":

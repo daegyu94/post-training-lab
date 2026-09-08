@@ -10,6 +10,11 @@ nnodes="${NNODES:-2}"
 nproc_per_node="${NPROC_PER_NODE:-1}"
 master_addr="${MASTER_ADDR:?set MASTER_ADDR to the spark1 data IP or hostname}"
 master_port="${MASTER_PORT:-29500}"
+stage="${STAGE:-all}"
+case "$stage" in
+  all|base|train|tuned) ;;
+  *) echo "STAGE must be all, base, train, or tuned" >&2; exit 2 ;;
+esac
 model_id="${MODEL_ID:-Qwen/Qwen3-30B-A3B}"
 data_dir="${DATA_DIR:-data/public-smoke/no_robots}"
 output_dir="${OUTPUT_DIR:-results/setup2-${model_id##*/}}"
@@ -179,6 +184,11 @@ run_stage() {
       --master-port "$master_port" \
       -m megatron_lab.sft --stage "$stage" "${stage_args[@]}"
 }
+
+if [[ "$stage" != all ]]; then
+  run_stage "$stage"
+  exit 0
+fi
 
 run_stage base
 run_stage train
