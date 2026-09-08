@@ -1,7 +1,7 @@
 # Megatron Bridge Post-Training Lab
 
-Megatron Bridge로 Setup2의 두 Spark 노드에서 분산 학습, checkpoint 저장·재개와 parallelism을 실습하는 `megatron` 브랜치입니다.
-단일 GPU post-training 입문은 [`trl` 브랜치](../../backends/trl/README.md), 공통 하드웨어 구성은 [main의 PoC Setups](../../README.md#poc-setups)를 참고하세요.
+Megatron Bridge로 Setup2의 두 Spark 노드에서 분산 학습, checkpoint 저장·재개와 parallelism을 실습하는 backend입니다.
+단일 GPU post-training 입문은 [TRL backend](../../backends/trl/README.md), 공통 하드웨어 구성은 [Spark 설정](../../docs/setups/spark.md)를 참고하세요.
 
 ## Start Here
 

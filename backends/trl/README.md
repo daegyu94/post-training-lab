@@ -1,13 +1,16 @@
 # TRL Post-Training Lab
 
-이 브랜치는 TRL 기반 SFT의 데이터 준비, 학습, 평가와 checkpoint·adapter 저장을 실습합니다.
+이 backend는 TRL 기반 SFT의 데이터 준비, 학습, 평가와 checkpoint·adapter 저장을 실습합니다.
 Single-GPU QLoRA부터 두 노드의 BF16 LoRA 및 full-parameter 학습 경로까지 다룹니다.
 현재 학습 구현은 SFT이며, DPO와 RL trainer는 포함하지 않습니다.
 Python 패키지 `trl_lab`은 데이터 준비, 학습과 inference 진입점을 제공합니다.
 
-공통 하드웨어 구성과 Setup 1·2 소개는 [main의 PoC Setups](../../README.md#poc-setups)에서 확인하세요.
+공통 하드웨어 구성과 Setup 1·2 소개는 [Spark 설정](../../docs/setups/spark.md)에서 확인하세요.
 
 데이터 선택·정제 기준은 [main의 Dataset Guides](../../README.md#dataset-guides), TRL 변환 명령과 학습 입력 옵션은 [데이터 준비](../../docs/backends/trl/dataset-preparation.md)를 참고하세요.
+
+현재 공통 실행기의 기본 setup은 [Spark](../../docs/getting-started.md)입니다.
+아래 RTX Setup 1 경로는 기존 기능 보존용이며 통합 후 재검증 범위에 포함하지 않습니다.
 
 ## Setup 1: Single-GPU QLoRA
 
