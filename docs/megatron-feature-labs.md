@@ -15,7 +15,7 @@
 | Sequence parallel | off / on | 두 variant 모두 TP=2; on만 sequence-parallel 활성화 |
 | Expert parallel | EP=1 / EP=2 | MoE model에서만 비교; network/NCCL evidence 선행 |
 
-공개 [Megatron-LM release 목록](https://github.com/NVIDIA/Megatron-LM/releases)과 [Megatron Core 최신 문서](https://docs.nvidia.com/megatron-core/developer-guide/latest/)를 함께 확인합니다. 2026-09-08 기준 최신 공개 release와 이 환경의 설치 stack은 모두 Megatron Core `0.19.0`이지만, release note에 보이는 기능을 현재 Bridge provider·Transformer Engine build와 GB10에서 자동으로 실행 가능하다고 가정하지 않습니다.
+공개 [Megatron-LM release 목록](https://github.com/NVIDIA/Megatron-LM/releases)과 [Megatron Core 최신 문서](https://docs.nvidia.com/megatron-core/developer-guide/latest/)를 함께 확인합니다. 이 환경의 설치 stack은 Megatron Core `0.19.0`이며, 공개 release와 최신 문서의 version은 검증 시점에 각각 확인합니다. release note에 보이는 기능을 현재 Bridge provider·Transformer Engine build와 GB10에서 자동으로 실행 가능하다고 가정하지 않습니다.
 
 | 최신 설계 후보 | 기대 효과와 관측값 | Spark 실습 상태 |
 | --- | --- | --- |
