@@ -1,114 +1,47 @@
-# Megatron Bridge Qwen2.5-7B SFT Lab
+# Megatron Bridge Post-Training Lab
 
-이 브랜치는 Setup1에서 `Qwen/Qwen2.5-7B-Instruct`에 Megatron Bridge의 Qwen recipe로 LoRA supervised fine-tuning(SFT)을 적용하는 single-GPU 실습과, Setup2에서 소형 모델로 검증한 two-node 분산 경로를 제공합니다.
+Megatron Bridge로 LoRA supervised fine-tuning(SFT)과 분산 학습 기능을 실습하는 `megatron` 브랜치입니다.
+Setup1과 Setup2는 순서대로 설치하는 단계가 아니라 실행 환경과 목적에 따라 선택하는 구성입니다.
 
-Setup1의 기존 Qwen2.5-7B 실습은 TP=1, PP=1, CP=1, DP=1로 실행됩니다.
-Setup2의 Spark cluster bring-up과 두 노드 launcher는 [Spark-cluster guide](docs/spark-cluster.md)를, checkpoint·overlap·recompute A/B 범위는 [Megatron feature labs](docs/megatron-feature-labs.md)를 참고하세요.
-Setup2의 NCCL/RoCE correctness, 소형 Qwen2.5-0.5B 분산 학습·DCP·feature 경로와 Qwen3-30B-A3B/GLM-4.7-Flash의 EP=2 LoRA one-step integration을 실제 검증했습니다.
-짧은 30B smoke는 장기 수렴·품질·성능 결과가 아닙니다.
+## Choose a Setup
 
-## Requirements
+| 항목 | Setup1: single GPU | Setup2: Spark cluster |
+| --- | --- | --- |
+| 목적 | LoRA SFT, 학습 전후 평가와 checkpoint reload | 두 노드 MoE SFT와 분산 기능 검증 |
+| 실행 환경 | BF16 지원 NVIDIA GPU 1개, preflight 최소 20 GiB | `spark1`·`spark2`, 각 DGX Spark GB10 GPU 1개, ARM64 stack과 RoCE |
+| 대상 모델 | Qwen2.5-7B-Instruct | Qwen3-30B-A3B, GLM-4.7-Flash |
+| 기본 병렬 구성 | TP=1, PP=1, CP=1, DP=1 | TP=1, PP=1, CP=1, EP=2, dense DP=2, expert DP=1 |
+| 기본 학습 설정 | BF16 LoRA, sequence 512, micro/global batch 1/8, 5 steps | BF16 attention LoRA, sequence 2048, micro/global batch 1/8, 5 steps |
+| 기본 데이터 | UltraChat: train 32개, evaluation 8개 | no_robots: 준비 예시 train 8개, validation 2개 |
+| 환경 준비 | `scripts/setup.sh`, `requirements.txt` | 노드별 ARM64 환경, `requirements-spark.txt`, runtime helper |
+| 실행 진입점 | `scripts/run_experiment.sh` | 양 노드에서 `scripts/run_spark_cluster.sh` |
+| 내부 CLI 설정 | `--setup single` (기본값) | `--setup spark-cluster` |
+| 실행 가이드 | [Setup1 guide](docs/single-gpu.md) | [Setup2 guide](docs/spark-cluster.md) |
 
-- Linux와 NVIDIA GPU 1개
-- CUDA를 사용할 수 있고 BF16을 지원하는 GPU
-- Python virtual environment를 생성할 수 있는 환경
-- 약 20GiB 이상의 GPU memory
-- model과 결과를 위한 약 16GB 이상의 disk 공간
-- Hugging Face에서 model과 dataset을 받을 수 있는 network 연결
+TP는 tensor parallelism, PP는 pipeline parallelism, CP는 context parallelism, DP는 data parallelism, EP는 expert parallelism입니다.
+Setup2의 dense DP와 expert DP는 서로 다른 rank group을 나타냅니다.
+GPU 수와 gradient accumulation 계산은 [Setup2 topology 설명](docs/spark-cluster.md#explicit-two-node-launch)을 참고하세요.
 
-기본 설정은 sequence length 512, micro batch size 1, global batch size 8, activation recomputation을 사용합니다.
-VRAM 20GiB는 preflight의 최소 기준이며, driver·CUDA·allocator 상태에 따라 더 많은 memory가 필요할 수 있습니다.
+## Start Here
 
-## Setup
+1. 단일 GPU SFT는 [Setup1 guide](docs/single-gpu.md)의 환경 설치 → model/data 준비 → 실행 → 결과 확인 순서를 따릅니다.
+2. Spark 두 노드 실행은 [Setup2 guide](docs/spark-cluster.md)의 노드별 환경 확인 → model/data 준비 → 양 노드 launcher 실행 순서를 따릅니다.
+3. Checkpoint save/resume, overlap, recompute, sequence parallel 비교는 Setup2 환경에서 [feature labs](docs/megatron-feature-labs.md)를 진행합니다.
 
-```bash
-git clone -b megatron https://github.com/daegyu94/post-training-lab.git
-cd post-training-lab
-./scripts/setup.sh
-```
+실제 LLM 연산은 Spark 노드에서 실행하고 controller는 개발과 실행 조율에 사용합니다.
+Controller의 `/home/daegyu/shared/post-training-lab`와 Spark 노드의 `/home/spark/shared/post-training-lab`는 같은 NFS 파일을 가리킵니다.
+명령의 경로는 실행 노드의 mount 경로를 사용합니다.
 
-setup script는 `.venv`를 만들고 `requirements.txt`의 PyTorch, Megatron Bridge, dataset 도구를 설치합니다.
-이미 environment가 있으면 같은 경로를 재사용합니다.
+## Workflow and Validation Scope
 
-## Prepare the Model and Dataset
+두 launcher의 기본 흐름은 base held-out evaluation → LoRA 학습과 checkpoint 저장 → 별도 process에서 tuned evaluation입니다.
+Setup2는 `RESUME_AFTER_TRAIN=true`와 `RESUME_MAX_STEPS`로 optimizer·scheduler state를 읽는 학습 재개 단계를 추가할 수 있습니다.
+Adapter reload 평가와 학습 상태 resume는 별도로 확인합니다.
 
-Hugging Face 인증이 필요한 환경이라면 먼저 로그인합니다.
-
-```bash
-.venv/bin/hf auth login
-```
-
-Qwen2.5-7B checkpoint와 UltraChat train/evaluation subset을 준비합니다.
-
-```bash
-./scripts/download_model.sh
-./scripts/prepare_data.sh
-```
-
-| Item | Default |
-| --- | --- |
-| Model | `models/Qwen2.5-7B-Instruct` |
-| Dataset | `HuggingFaceH4/ultrachat_200k` |
-| Training subset | 32 conversations from `train_sft` |
-| Evaluation subset | 8 conversations from `test_sft` |
-| Prepared data | `data/ultrachat_200k/{training,validation}.jsonl` |
-| Output | `results/qwen2.5-7b-megatron-experiment` |
-
-`MODEL_DIR`, `DATA_DIR`, `TRAIN_SAMPLES`, `EVAL_SAMPLES`, `SEED`로 준비 경로와 subset을 바꿀 수 있습니다.
-
-UltraChat 외 public source의 schema adapter와 canonical JSONL preparation은 [public dataset guide](docs/public-datasets.md)를 참고하세요.
-출력은 `DATA_DIR`와 `--train-data`/`--eval-data`로 연결할 수 있지만, dataset 호환성은 model/tokenizer loss-mask나 GPU training 검증을 의미하지 않습니다.
-
-## Run the Experiment
-
-```bash
-CUDA_VISIBLE_DEVICES=0 ./scripts/run_experiment.sh
-```
-
-script는 preflight를 통과한 후 다음 세 stage를 각각 새 `torchrun` process로 실행합니다.
-
-1. pretrained checkpoint의 held-out evaluation
-2. 기본 5 optimizer step의 LoRA SFT와 checkpoint 저장
-3. 저장한 checkpoint를 새 process에서 다시 읽은 held-out evaluation
-
-학습 조건과 경로는 environment variable로 바꿀 수 있습니다.
-
-```bash
-MODEL_DIR=/path/to/Qwen2.5-7B-Instruct \
-DATA_DIR=/path/to/prepared-data \
-OUTPUT_DIR=/path/to/output \
-MAX_STEPS=10 \
-CUDA_VISIBLE_DEVICES=0 \
-./scripts/run_experiment.sh
-```
-
-## Outputs and Verification
-
-정상 실행 후 output directory는 다음 핵심 artifact를 포함합니다.
-
-```text
-results/qwen2.5-7b-megatron-experiment/
-├── base-eval.log
-├── train.log
-├── tuned-eval.log
-├── checkpoints/
-└── summary.json
-```
-
-`summary.json`에서 다음을 확인합니다.
-
-- `validation.checkpoint_reload_verified`가 `true`인지 확인합니다.
-- `quality.tuned_eval_loss`와 `quality.tuned_perplexity`가 대응하는 base 값보다 낮은지 비교합니다.
-- 세 log에 `nan`, 무한대, checkpoint load 오류가 없는지 확인합니다.
-
-```bash
-.venv/bin/python -m json.tool results/qwen2.5-7b-megatron-experiment/summary.json
-```
-
-짧은 subset과 5 step에서의 loss 변화는 workflow 검증 신호일 뿐, 일반적인 모델 품질이나 cluster-scale 성능을 의미하지 않습니다.
-
-`summary.json`은 `schema_version: 1`과 `configuration`, `environment`, `quality`, `performance`, `artifacts`, `validation` section을 사용합니다.
-현재 Megatron workflow는 안정적으로 추출하는 performance metric이 없으므로 `performance`는 빈 object로 기록합니다.
+기존 [Setup2 검증 기록](docs/spark-cluster.md#verified-30b-integration-smoke)은 두 30B 모델의 EP=2 LoRA **1-step** 학습·validation·sync DCP 저장을 다룹니다.
+위 표의 기본 **5-step 전체 workflow** 또는 30B checkpoint의 별도-process reload 완료를 의미하지 않습니다.
+소형 Qwen2.5-0.5B는 Setup2의 분산·checkpoint·feature A/B를 확인하는 보조 모델이며 상세 결과는 [feature labs](docs/megatron-feature-labs.md)에 정리되어 있습니다.
+짧은 smoke와 작은 subset의 loss 변화는 장기 수렴, 일반적인 model quality 또는 안정적인 throughput 결과로 해석하지 않습니다.
 
 ## CPU-only Concept Exercise
 
@@ -147,8 +80,9 @@ model checkpoint나 GPU 없이 data selection, log parsing, parallel rank layout
 .venv/bin/python -m pytest -q
 ```
 
-## Limitations
+## Related Guides
 
-Setup2 launcher는 두 노드 NCCL/RoCE correctness, 소형 Qwen2.5-0.5B 분산 학습, sync/async DCP와 optimizer/scheduler resume, fully-reshardable DP=2→TP=2 재개, 두 30B target의 one-step SFT와 sync DCP 저장까지 검증했습니다.
-이 결과는 장기 model quality·throughput 또는 power-loss durability를 입증하지 않으며, topology 변경 재개에서는 RNG/rerun state가 보존되지 않았습니다.
-학습 전후의 data·checkpoint·serving lifecycle은 `system-integration` branch에서 설계 문서로 설명하며, cluster resource 분석은 `profiling` branch에서 다룹니다.
+- [Public datasets](docs/public-datasets.md): 공개 dataset의 canonical JSONL 변환
+- [Internal data](docs/internal-data-guide.md): 서비스 데이터 준비
+- `system-integration` branch: data·checkpoint·serving lifecycle 설계
+- `profiling` branch: cluster resource 분석

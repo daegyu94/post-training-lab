@@ -1,6 +1,7 @@
 # Megatron feature labs
 
-이 문서는 setup2의 model-quality PoC와 분리된 A/B 실험 계획입니다.
+이 문서는 [Setup2](spark-cluster.md) 환경에서 수행하는 분산 기능 A/B 실습과 기존 측정 기록을 설명합니다.
+30B MoE SFT integration과 feature 효과 측정은 별도의 실험으로 구분합니다.
 Feature 효과는 30B MoE LoRA run이 아니라 작은 dense full-parameter model에서 먼저 측정할 수 있으며, 결과 summary에는 `model_scope=small-dense-feature-model`을 남겨 30B evidence와 섞지 않습니다.
 
 현재 harness는 variant를 고정하고 rank-local metadata·timing record를 모으는 scaffold입니다.
@@ -109,7 +110,7 @@ Resume의 step 5–8 LR/loss/grad는 연속 run과 print precision에서 일치�
 export NNODES=2
 export NPROC_PER_NODE=1
 export NODE_RANK=0  # spark2에서는 1
-export MASTER_ADDR=<spark1-data-address>
+export MASTER_ADDR="<spark1-data-address>"
 export MASTER_PORT=29500
 export PYTHON=/path/to/arm64-venv/bin/python
 source scripts/spark_runtime_env.sh
