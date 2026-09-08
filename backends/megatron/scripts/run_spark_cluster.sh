@@ -227,6 +227,7 @@ if (( NODE_RANK == nnodes - 1 )); then
     --eval-iters "$eval_iters" \
     --max-length "$max_length" \
     --global-batch-size "$global_batch_size" \
+    --micro-batch-size "$micro_batch_size" \
     --seed "$seed" \
     --finetuning-mode "${FINETUNING_MODE:-lora}" \
     --metadata "$output_dir/run-metadata-tuned-rank-${metrics_rank}.json" \

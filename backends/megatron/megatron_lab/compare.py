@@ -73,6 +73,7 @@ def main() -> None:
     tuned_loss = read_last_loss(args.tuned_log)
     topology = ClusterTopology(
         nnodes=args.nnodes,
+        node_rank=int(os.environ.get("NODE_RANK", "0")),
         nproc_per_node=args.nproc_per_node,
         tensor_parallel_size=args.tp,
         pipeline_parallel_size=args.pp,
@@ -143,14 +144,15 @@ def main() -> None:
         artifacts={
             "checkpoint_dir": str(args.output_dir / "checkpoints"),
             "base_evaluation_log": str(args.base_log),
-            "training_log": str(args.output_dir / "train.log"),
+            "training_log": str(args.output_dir / "logs" / f"rank-{topology.world_size - 1}-train.log"),
             "tuned_evaluation_log": str(args.tuned_log),
             "summary_file": str(args.output),
         },
         validation={
             "held_out_loss_improved": tuned_loss < base_loss,
             "checkpoint_reload_verified": True,
-            "summary_writer_rank": 0,
+            "summary_writer_node_rank": topology.node_rank,
+            "metrics_rank": topology.world_size - 1,
             "evaluated_stage": "tuned",
         },
     )
