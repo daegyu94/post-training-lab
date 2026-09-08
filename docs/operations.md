@@ -7,17 +7,9 @@
 
 ## Correlation Model
 
-```mermaid
-flowchart TD
-    A["dataset_id and revision"] --> B["request_id and run_id"]
-    B --> C["candidate revision"]
-    C --> D["evaluation result"]
-    D --> E["serving revision"]
-    E --> F["deployment and rollback events"]
-```
-
-모든 metric에 위 값을 전부 label로 넣는다는 뜻은 아닙니다.
-각 system의 metadata에서 다음 identity로 이동할 수 있는 link를 보존하고, metric에는 cardinality가 통제된 `run_id`, phase와 revision만 사용합니다.
+dataset부터 deployment까지의 연결은 아래 identity를 기준으로 보존합니다.
+각 system의 metadata에서 다음 identity로 이동할 수 있는 link를 보존하고, metric label은 phase처럼 값의 범위가 제한된 항목을 우선 사용합니다.
+`run_id`와 revision은 수집 범위·보존 기간으로 cardinality를 제한할 수 있을 때만 label로 사용하고, 나머지 연결은 metadata와 log에 둡니다.
 
 | Identity | Created by | Must link to |
 | --- | --- | --- |
@@ -25,7 +17,9 @@ flowchart TD
 | Request ID | training control plane | dataset, base model, recipe, evaluation suite |
 | Run ID | training backend | request ID, backend job, summary와 logs |
 | Candidate revision | model registry | run ID, artifact manifest, evaluation evidence |
+| Evaluation result ID | evaluation pipeline | candidate revision, suite revision, threshold와 gate result |
 | Serving revision | deployment controller | candidate, serving configuration, rollout event |
+| Deployment event ID | deployment controller | 이전·대상 serving revision, traffic 전환, 승인 또는 rollback 이유 |
 
 ## Observability
 
@@ -63,11 +57,8 @@ raw prompt, response, credential와 user identifier는 metric label에 넣지 �
 
 ### After a run
 
-- summary, logs, backend configuration과 artifact file inventory를 수집합니다.
-- per-file digest와 clean-process reload를 확인한 뒤 candidate를 publish합니다.
-- evaluation과 canary result를 candidate revision에 연결합니다.
-- promotion 또는 reject event와 판단 기준을 기록합니다.
-- retention policy에 따라 이전 production revision과 rollback dependency를 보존합니다.
+summary, logs와 backend configuration을 run에 연결한 후 [artifact publish](checkpoint-lifecycle.md#atomic-publish)와 [promotion gates](checkpoint-lifecycle.md#promotion-gates)를 적용합니다.
+배포와 이전 revision 보존은 [Deployment and Rollback](checkpoint-lifecycle.md#deployment-and-rollback)을 따릅니다.
 
 ## Storage and Network
 
@@ -77,8 +68,7 @@ checkpoint save가 training step과 겹치는지, 각 rank가 많은 small file�
 multi-node run에서는 collective communication과 storage traffic이 같은 NIC 또는 fabric을 공유하는지도 확인합니다.
 network utilization 하나로 병목을 결론 내리지 않고 GPU idle time, collective duration, I/O queueing과 checkpoint phase를 같은 timeline에서 비교합니다.
 
-training cluster와 serving cluster 사이의 artifact transfer는 명시적인 publish 단계로 관리합니다.
-upload 완료와 digest validation 이후에만 registry revision을 visible 상태로 바꾸며, serving node가 training 중인 checkpoint directory를 직접 읽지 않게 합니다.
+training cluster와 serving cluster 사이에서는 artifact transfer duration, bytes와 digest validation 결과를 publish event에 연결합니다.
 
 ## Failure Handling
 
@@ -101,9 +91,10 @@ dataset publish, registry alias 변경과 production traffic 전환처럼 상태
 - floating model 또는 dataset 이름 대신 immutable revision과 digest를 사용합니다.
 - framework-specific configuration과 공통 lifecycle metadata가 분리돼 있습니다.
 - incomplete artifact가 registry나 serving system에 노출되지 않습니다.
-- clean process에서 checkpoint 또는 adapter reload를 검증합니다.
+- clean process에서 checkpoint 또는 adapter reload와 필요한 base model dependency를 검증합니다.
+- gate threshold와 승인 결과가 versioned evidence로 남습니다.
 - canary failure와 production regression에 대한 rollback을 실제 serving 환경에서 연습했습니다.
 - metric, log와 event의 timestamp가 동기화돼 있고 같은 phase를 비교할 수 있습니다.
 - 개인정보와 secret이 dataset, log, metric 또는 artifact metadata에 포함되지 않습니다.
 
-전체 개념을 다시 확인하려면 [branch README](../README.md)의 lifecycle과 용어 표로 돌아가세요.
+전체 문서 안내는 [branch README](../README.md)에서 확인할 수 있습니다.

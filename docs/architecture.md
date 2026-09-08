@@ -18,30 +18,9 @@ training job이나 shared storage의 장애가 현재 serving revision에 직접
 
 ## Logical Topology
 
-```mermaid
-flowchart TD
-    subgraph Online["Online serving plane"]
-        S["Serving system"] --> T["Trace and feedback events"]
-    end
+![Online, offline, release 영역의 구성 요소와 전달 경계](images/architecture.svg)
 
-    subgraph Offline["Offline post-training plane"]
-        P["Data pipeline"] --> C["Training control plane"]
-        C --> B["TRL or Megatron backend"]
-        B --> E["Evaluation pipeline"]
-    end
-
-    subgraph Release["Artifact and release plane"]
-        R["Model registry"] --> D["Deployment controller"]
-        D --> V["Serving revision"]
-    end
-
-    T --> P
-    B --> R
-    E --> R
-    D --> S
-```
-
-화살표는 logical control 또는 artifact flow를 나타냅니다.
+영역 사이의 실선은 artifact·event 전달, 점선은 deployment 제어를 나타냅니다.
 실제 구현에서는 trace storage, dataset storage와 model registry가 서로 다른 storage system일 수 있습니다.
 
 ## Components
@@ -60,28 +39,6 @@ flowchart TD
 
 TRL과 Megatron 내부의 tokenizer 적용, optimizer, parallelism과 checkpoint writer는 각 framework branch의 책임입니다.
 registry 이후의 evaluation, promotion과 deployment contract는 backend 종류에 의존하지 않아야 합니다.
-
-## End-to-End Control Flow
-
-```mermaid
-flowchart TD
-    A["Publish dataset revision"] --> B["Create training request"]
-    B --> C{"Select backend"}
-    C -->|TRL| D["Train adapter or model"]
-    C -->|Megatron| E["Run distributed training"]
-    D --> F["Upload complete artifact"]
-    E --> F
-    F --> G["Register candidate"]
-    G --> H["Evaluate and validate"]
-    H --> I{"Promotion decision"}
-    I -->|Reject| J["Retain evidence"]
-    I -->|Approve| K["Canary rollout"]
-    K -->|Healthy| L["Promote revision"]
-    K -->|Regression| M["Rollback and quarantine"]
-```
-
-`upload complete`와 `register candidate`를 분리하는 이유는 incomplete checkpoint가 discovery API나 deployment controller에 보이지 않게 하기 위해서입니다.
-일반적으로 임시 위치에 모든 파일을 쓴 뒤 digest를 검증하고, registry metadata를 원자적으로 visible 상태로 전환합니다.
 
 ## Boundary Contracts
 
@@ -108,12 +65,10 @@ flowchart TD
 PoC에서 directory와 script로 구현한 각 단계는 production에서 object storage, workflow orchestrator, model registry와 deployment controller로 바뀔 수 있습니다.
 하지만 revision, digest, 상태 전이와 evidence contract는 그대로 유지합니다.
 
-## Scaling Considerations
+## Resource Boundaries
 
-multi-node로 확장하면 model quality 외에 dataset read throughput, collective duration, GPU idle time, checkpoint save/load 시간, storage metadata 부하와 artifact transfer 시간이 critical path가 될 수 있습니다.
-이 값은 [`profiling` branch](https://github.com/daegyu94/post-training-lab/tree/profiling)의 metric contract를 사용해 같은 `run_id`와 phase로 연결합니다.
-
-training cluster와 serving cluster가 물리적으로 분리된 경우에는 artifact transfer 완료, digest validation과 registry publish를 하나의 release boundary로 취급합니다.
-serving node는 training storage를 직접 mount해 미완성 checkpoint를 읽지 않습니다.
+training과 serving의 compute·storage 경계를 분리하고, serving revision의 파일과 dependency는 training job의 수명과 무관하게 유지합니다.
+multi-node의 I/O, collective communication과 artifact transfer 관측은 [Operations의 Storage and Network](operations.md#storage-and-network)를 따릅니다.
+artifact를 공개하는 절차는 [Checkpoint Lifecycle의 Atomic Publish](checkpoint-lifecycle.md#atomic-publish)에서 정의합니다.
 
 다음 단계: [Data Lifecycle](data-lifecycle.md)에서 첫 번째 contract인 dataset revision을 확인하세요.

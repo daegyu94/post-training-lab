@@ -21,20 +21,9 @@ manifest의 artifact type을 명시하고, format conversion을 수행했다면 
 
 ## State Transitions
 
-```mermaid
-flowchart TD
-    A["Generated"] --> B["Integrity verified"]
-    B --> C["Registered candidate"]
-    C --> D["Offline evaluated"]
-    D --> E{"Promotion decision"}
-    E -->|Reject| F["Rejected"]
-    E -->|Approve| G["Canary"]
-    G -->|Healthy| H["Production"]
-    G -->|Regression| I["Quarantined"]
-    I --> J["Previous revision active"]
-```
+![Candidate 검증, serving 승격과 rollback 대상](images/checkpoint-lifecycle.svg)
 
-각 화살표는 event와 evidence를 남겨야 합니다.
+각 상태 전이는 event와 evidence를 남겨야 합니다.
 파일 경로만 옮겨 상태를 표현하면 누가 어떤 기준으로 승인했는지와 어느 revision으로 rollback할지 알기 어렵습니다.
 
 ## Training Request
@@ -79,7 +68,8 @@ post-training system에서는 이를 training run의 evidence로 수집할 수 �
 
 `summary.json`만으로 production promotion을 승인하지는 않습니다.
 safety, task quality, serving compatibility와 canary 결과는 별도 evaluation·deployment evidence가 필요합니다.
-반대로 request의 `request_id`와 결과의 run identity가 다르면 candidate 등록을 중단해야 합니다.
+결과의 run이 어떤 `request_id`에 속하는지 확인할 수 없거나 연결 정보가 request와 충돌하면 candidate 등록을 중단해야 합니다.
+하나의 request를 재시도할 때는 attempt마다 별도의 `run_id`를 사용합니다.
 
 현재 공통 `summary.json` schema에는 `request_id` 또는 `run_id` 전용 top-level field가 없습니다.
 production integration은 registry metadata나 orchestration record에서 summary를 request와 명시적으로 묶어야 하며, output directory 이름만으로 관계를 추론해서는 안 됩니다.
@@ -98,11 +88,20 @@ candidate를 registry에 등록할 때 다음 항목을 함께 보관합니다.
 | Model configuration | architecture, context length와 required base model |
 | Numeric format | BF16, FP16, FP8 또는 quantization 정보 |
 | File inventory | relative path, size와 per-file digest |
-| Evaluation results | suite revision, quality, safety와 regression result |
-| Runtime compatibility | 검증한 serving engine, version과 load configuration |
+| Evaluation policy | 실행할 suite revision과 gate policy 참조 |
+| Runtime requirements | 대상 serving engine, version과 필요한 load configuration |
 
 PEFT adapter를 등록할 때는 adapter만으로 완전한 serving artifact라고 표시하지 않습니다.
 필요한 base model ID·revision, tokenizer와 merge 여부를 manifest에 기록해야 합니다.
+
+## Atomic Publish
+
+모든 파일을 임시 위치에 업로드한 뒤 manifest의 file inventory와 size·digest를 검증합니다.
+검증이 끝나면 registry metadata를 원자적으로 visible 상태로 전환해 immutable candidate를 등록합니다.
+training 중인 directory나 업로드 중인 파일은 discovery API에 노출하지 않습니다.
+
+등록 후 생성되는 evaluation evidence는 candidate revision과 suite revision에 연결한 별도 record로 추가합니다.
+artifact 파일과 최초 manifest는 덮어쓰지 않으며, serving format으로 변환하면 원본 candidate를 참조하는 새 artifact와 manifest를 생성합니다.
 
 ## Promotion Gates
 
@@ -127,19 +126,9 @@ threshold 값과 승인 주체는 service마다 다르지만, gate의 입력과 
 3. 제한된 replica 또는 traffic percentage로 canary를 시작합니다.
 4. rollout window 동안 metric과 alert를 candidate revision 기준으로 비교합니다.
 5. 기준을 만족하면 traffic을 단계적으로 확대하고 production alias를 원자적으로 갱신합니다.
-6. regression이 발생하면 alias를 이전 serving revision으로 되돌리고 candidate를 격리합니다.
+6. canary 또는 production에서 regression이 발생하면 traffic routing과 alias를 이전 serving revision으로 되돌리고 candidate를 격리합니다.
 
 rollback은 이전 파일을 다시 복사하는 작업이 아니라, 이미 검증되고 보존된 serving revision을 다시 선택하는 작업이어야 합니다.
 따라서 이전 artifact, serving configuration, evaluation evidence와 dependency를 retention 기간 동안 함께 유지합니다.
-
-## Completion Criteria
-
-candidate lifecycle 구현은 다음 질문에 모두 답할 수 있을 때 완료된 것으로 봅니다.
-
-- serving revision에서 source dataset, base model, recipe와 training run을 역추적할 수 있는가?
-- incomplete 또는 digest가 다른 artifact가 registry discovery에 노출되지 않는가?
-- adapter와 full model을 구분하고 필요한 load dependency를 확인하는가?
-- gate threshold와 승인 결과가 versioned evidence로 남는가?
-- canary 중 장애를 주입했을 때 이전 revision으로 실제 rollback되는가?
 
 다음 단계: [Operations](operations.md)에서 lifecycle 전체를 같은 identifier와 metric으로 운영하는 방법을 확인하세요.

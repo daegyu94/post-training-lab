@@ -17,17 +17,7 @@ training backend에는 raw trace가 아니라 검토와 검증이 끝난 revisio
 
 ## Trust Boundaries
 
-```mermaid
-flowchart TD
-    A["Restricted raw events"] --> B["Reconstruct traces"]
-    B --> C["Redact secrets and personal data"]
-    C --> D{"Quality and policy review"}
-    D -->|Reject| E["Quarantine with reason"]
-    D -->|Approve| F["Canonical records"]
-    F --> G["Deduplicate and split"]
-    G --> H["Immutable dataset revision"]
-    H --> I["Backend-specific adapter"]
-```
+![접근 영역별 data curation과 immutable dataset publish](images/data-lifecycle.svg)
 
 각 단계는 입력보다 넓은 접근 권한을 자동으로 상속하지 않습니다.
 특히 raw event와 reject evidence는 canonical dataset보다 강한 접근 제어와 별도의 retention policy가 필요할 수 있습니다.
@@ -108,22 +98,6 @@ canonical schema는 tokenizer나 framework-specific binary format에 종속되�
 `messages`의 마지막 assistant content는 기존 model의 원본 응답이 아니라 승인된 training target이어야 합니다.
 tool-using sample은 tool definition, call과 result가 consumer가 이해할 수 있는 contract로 함께 검증돼야 합니다.
 
-## Backend Adapters
-
-`trl` branch는 canonical record를 Hugging Face Dataset과 chat template 입력으로 변환하고, loss mask가 의도한 assistant token에만 적용되는지 검증합니다.
-`megatron` branch는 같은 record를 Megatron 전처리 형식으로 변환하고 tokenizer revision, sequence packing, data index와 distributed consumption 조건을 검증합니다.
-
-adapter는 다음 값을 보존해야 합니다.
-
-- source dataset ID, revision과 content digest
-- 원본 `sample_id` 또는 역추적 가능한 안전한 mapping
-- tokenizer와 chat template revision
-- adapter code 또는 configuration revision
-- 변환 전후 record count와 reject reason
-
-backend dataset은 canonical dataset의 새로운 source가 아닙니다.
-adapter bug를 수정하면 canonical revision을 바꾸지 않고 새 adapter revision으로 다시 생성합니다.
-
 ## Dataset Manifest
 
 dataset revision에는 최소한 다음 정보가 필요합니다.
@@ -143,5 +117,21 @@ dataset revision에는 최소한 다음 정보가 필요합니다.
 publish 전에 schema validation, split overlap 검사, sample ID uniqueness, record count와 digest를 자동 검사합니다.
 하나라도 실패하면 revision을 visible 상태로 만들지 않습니다.
 내용을 고칠 때는 기존 revision을 덮어쓰지 않고 새 revision을 생성합니다.
+
+## Backend Adapters
+
+`trl` branch는 canonical record를 Hugging Face Dataset과 chat template 입력으로 변환하고, loss mask가 의도한 assistant token에만 적용되는지 검증합니다.
+`megatron` branch는 같은 record를 Megatron 전처리 형식으로 변환하고 tokenizer revision, sequence packing, data index와 distributed consumption 조건을 검증합니다.
+
+adapter는 다음 값을 보존해야 합니다.
+
+- source dataset ID, revision과 content digest
+- 원본 `sample_id` 또는 역추적 가능한 안전한 mapping
+- tokenizer와 chat template revision
+- adapter code 또는 configuration revision
+- 변환 전후 record count와 reject reason
+
+backend dataset은 canonical dataset의 새로운 source가 아닙니다.
+adapter bug를 수정하면 canonical revision을 바꾸지 않고 새 adapter revision으로 다시 생성합니다.
 
 다음 단계: [Checkpoint Lifecycle](checkpoint-lifecycle.md)에서 이 dataset revision이 training request와 candidate artifact로 연결되는 방식을 확인하세요.
