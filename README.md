@@ -2,27 +2,9 @@
 
 이 브랜치는 TRL 기반 SFT의 데이터 준비, 학습, 평가와 checkpoint·adapter 저장을 실습합니다.
 Single-GPU QLoRA부터 두 노드의 BF16 LoRA 및 full-parameter 학습 경로까지 다룹니다.
-Python과 기본적인 LLM 학습 개념을 아는 개발자가 사용할 장비와 학습 목적에 맞는 setup을 선택하도록 구성했습니다.
 현재 학습 구현은 SFT이며, DPO와 RL trainer는 포함하지 않습니다.
 
-## Choose a Setup
-
-Setup 1과 Setup 2는 독립적인 실행 경로이며 순서대로 수행할 필요가 없습니다.
-
-| 항목 | Setup 1 | Setup 2 |
-| --- | --- | --- |
-| 장비 | RTX PRO 4000 Blackwell 24 GiB 한 장 | DGX Spark GB10 두 노드, 노드당 GPU 한 개 |
-| 주요 모델 | Qwen2.5-14B-Instruct | Qwen3-30B-A3B, GLM-4.7-Flash |
-| 기본 학습 | NF4 4-bit QLoRA, BF16 compute | Native BF16 LoRA, two-node DDP |
-| 추가 학습 범위 | 저장한 adapter의 독립 process inference | Full-parameter 학습, FSDP2·DeepSpeed backend 실습 |
-| 진입점 | `sft_lab.train` | `sft_lab.spark_train` |
-| Launcher | `scripts/run_experiment.sh` | `scripts/run_spark_cluster.sh` |
-| 의존성 | `requirements.txt` | `requirements-spark.txt`, ARM64/CUDA 호환 환경 필요 |
-| 데이터 입력 | UltraChat parquet 또는 conversational JSONL | Revision·manifest를 갖춘 canonical JSONL |
-| 상세 안내 | [Setup 1 가이드](docs/setup1.md) | [Setup 2 가이드](docs/spark-cluster.md) |
-
-모델, 정밀도, 데이터와 학습 조건이 다르므로 두 setup의 결과를 직접적인 성능 비교로 해석하지 않습니다.
-공통 hardware 범위는 [main의 PoC setup guide](https://github.com/daegyu94/post-training-lab/blob/main/docs/poc-setups.md)에서 관리합니다.
+공통 하드웨어 구성과 Setup 1·2 소개는 [main의 PoC Setups](https://github.com/daegyu94/post-training-lab/blob/main/README.md#poc-setups)에서 확인하세요.
 
 ## Setup 1: Single-GPU QLoRA
 

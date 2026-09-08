@@ -1,7 +1,7 @@
 # Setup 1: Single-GPU QLoRA
 
 이 가이드의 명령은 `trl` 브랜치 저장소 루트에서 실행합니다.
-전체 구성은 [Setup 선택 안내](../README.md)를, 두 Spark 노드 실행은 [Setup 2](spark-cluster.md)를 참고하세요.
+전체 구성은 [main의 PoC Setups](https://github.com/daegyu94/post-training-lab/blob/main/README.md#poc-setups)를, 두 Spark 노드 실행은 [Setup 2](spark-cluster.md)를 참고하세요.
 
 이 브랜치는 TRL을 사용해 `Qwen/Qwen2.5-14B-Instruct`를 `HuggingFaceH4/ultrachat_200k`의 대화 데이터로 NF4 QLoRA fine-tuning하는 실험을 수행하고, 그 결과를 기록하기 위한 브랜치입니다.
 

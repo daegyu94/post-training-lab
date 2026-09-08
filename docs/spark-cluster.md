@@ -1,6 +1,6 @@
 # Setup 2: Two-Node Spark SFT
 
-전체 구성은 [Setup 선택 안내](../README.md)를 참고하세요.
+전체 구성은 [main의 PoC Setups](https://github.com/daegyu94/post-training-lab/blob/main/README.md#poc-setups)를 참고하세요.
 아래 명령은 각 Spark 노드의 `trl` 저장소 루트에서 실행하며, controller는 원격 실행 조율에 사용합니다.
 
 ## Software Prerequisites
