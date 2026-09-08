@@ -1,8 +1,8 @@
 # Megatron Bridge Qwen2.5-7B SFT Lab
 
-이 브랜치는 `Qwen/Qwen2.5-7B-Instruct`에 Megatron Bridge의 Qwen recipe로 LoRA supervised fine-tuning(SFT)을 적용하고, 학습 전후의 held-out loss와 checkpoint 재로딩 경로를 확인하는 단일 GPU 실습입니다.
+이 브랜치는 Setup1에서 `Qwen/Qwen2.5-7B-Instruct`에 Megatron Bridge의 Qwen recipe로 LoRA supervised fine-tuning(SFT)을 적용하는 single-GPU 실습과, Setup2에서 소형 모델로 검증한 two-node 분산 경로를 제공합니다.
 
-실제 학습은 TP=1, PP=1, CP=1, DP=1로 실행됩니다. 따라서 이 브랜치는 Megatron 기반 model·dataset·checkpoint workflow를 검증하는 출발점이며, multi-GPU 성능이나 확장성을 측정하는 benchmark는 아닙니다.
+Setup1의 기존 Qwen2.5-7B 실습은 TP=1, PP=1, CP=1, DP=1로 실행됩니다. Setup2의 Spark cluster bring-up과 두 노드 launcher는 [Spark-cluster guide](docs/spark-cluster.md)를, checkpoint·overlap·recompute A/B 범위는 [Megatron feature labs](docs/megatron-feature-labs.md)를 참고하세요. Setup2의 NCCL/RoCE correctness, 소형 Qwen2.5-0.5B 분산 학습·DCP·feature 경로와 Qwen3-30B-A3B/GLM-4.7-Flash의 EP=2 LoRA one-step integration을 실제 검증했습니다. 짧은 30B smoke는 장기 수렴·품질·성능 결과가 아닙니다.
 
 ## Requirements
 
@@ -50,6 +50,8 @@ Qwen2.5-7B checkpoint와 UltraChat train/evaluation subset을 준비합니다.
 | Output | `results/qwen2.5-7b-megatron-experiment` |
 
 `MODEL_DIR`, `DATA_DIR`, `TRAIN_SAMPLES`, `EVAL_SAMPLES`, `SEED`로 준비 경로와 subset을 바꿀 수 있습니다.
+
+UltraChat 외 public source의 schema adapter와 canonical JSONL preparation은 [public dataset guide](docs/public-datasets.md)를 참고하세요. 출력은 `DATA_DIR`와 `--train-data`/`--eval-data`로 연결할 수 있지만, dataset 호환성은 model/tokenizer loss-mask나 GPU training 검증을 의미하지 않습니다.
 
 ## Run the Experiment
 
@@ -113,15 +115,19 @@ GPU 초기화, checkpoint download, NCCL 통신 없이 Bridge recipe와 논리�
 
 ## Repository Layout
 
-- `megatron_lab/config.py`: Qwen2.5-7B LoRA recipe와 single-GPU 설정
-- `megatron_lab/sft.py`: base, train, tuned stage 진입점
+- `megatron_lab/config.py`: Qwen2.5-7B single-GPU 및 Qwen3/GLM setup2 provider 설정
+- `megatron_lab/sft.py`: base, train, resume, tuned stage 진입점
+- `megatron_lab/cluster.py`: explicit torchrun topology와 dense/expert DP 검증
+- `megatron_lab/feature_lab.py`: feature variant와 warmup 제외 timing summary
 - `megatron_lab/prepare_data.py`: deterministic UltraChat subset 준비
 - `megatron_lab/compare.py`: base와 reloaded-checkpoint loss 비교
 - `megatron_lab/preflight.py`: GPU, dependency, input path 검사
 - `megatron_lab/inspect_recipe.py`: GPU 초기화 없는 recipe 요약
 - `megatron_lab/parallelism.py`: TP/PP/CP/DP rank group simulation
 - `run_summary.py`: framework 공통 summary schema
-- `scripts/run_experiment.sh`: end-to-end experiment orchestration
+- `scripts/run_experiment.sh`: setup1 end-to-end experiment orchestration
+- `scripts/run_spark_cluster.sh`: explicit two-node setup2 launcher
+- `scripts/run_feature_lab.sh`: small dense model feature A/B harness
 - `tests/`: data, log parsing, rank layout의 CPU unit tests
 
 ## Run the CPU Tests
@@ -134,4 +140,4 @@ model checkpoint나 GPU 없이 data selection, log parsing, parallel rank layout
 
 ## Limitations
 
-이 branch는 실제 multi-GPU·multi-node launcher, distributed checkpoint scale test, throughput benchmark를 제공하지 않습니다. 학습 전후의 data·checkpoint·serving lifecycle은 `system-integration` branch에서 설계 문서로 설명하며, cluster resource 분석은 `profiling` branch에서 다룹니다.
+Setup2 launcher는 두 노드 NCCL/RoCE correctness, 소형 Qwen2.5-0.5B 분산 학습, sync/async DCP와 optimizer/scheduler resume, fully-reshardable DP=2→TP=2 재개, 두 30B target의 one-step SFT와 sync DCP 저장까지 검증했습니다. 이 결과는 장기 model quality·throughput 또는 power-loss durability를 입증하지 않으며, topology 변경 재개에서는 RNG/rerun state가 보존되지 않았습니다. 학습 전후의 data·checkpoint·serving lifecycle은 `system-integration` branch에서 설계 문서로 설명하며, cluster resource 분석은 `profiling` branch에서 다룹니다.

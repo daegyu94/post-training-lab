@@ -1,0 +1,18 @@
+# Setup2 dependency set for the ARM64 Spark nodes.
+# Install torch==2.10.0 from the PyTorch cu130 index before this file; a plain
+# requirements install does not select the CUDA wheel variant.
+torch==2.10.0
+megatron-bridge[recipes]==0.6.0
+megatron-core==0.19.0
+# Bridge 0.6.0 declares the 0.46.0rc1 ModelOpt dependency; 0.46.0 stable is
+# the verified runtime candidate and is intentionally recorded as a deviation.
+nvidia-modelopt==0.46.0
+transformers>=5.8,<=5.12.1
+datasets==5.0.0
+huggingface_hub==1.7.1
+pytest>=8,<10
+
+# Transformer Engine 2.18.0 was built from source for ARM64 with
+# NVTE_WITH_NCCL_EP=0 because the installed Torch tree lacks the optional
+# symm_mem/nccl_dev_cap.hpp header. It is not asserted as a portable pip
+# requirement here; see docs/spark-cluster.md and scripts/spark_runtime_env.sh.
