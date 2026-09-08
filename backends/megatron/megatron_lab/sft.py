@@ -51,6 +51,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--schedule-steps", type=int)
     parser.add_argument("--eval-iters", type=int, default=8)
     parser.add_argument("--max-length", type=int, default=512)
+    parser.add_argument(
+        "--pad-to-max-length",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="pad every example to max-length instead of only capping it",
+    )
     parser.add_argument("--global-batch-size", type=int, default=8)
     parser.add_argument("--micro-batch-size", type=int, default=1)
     parser.add_argument("--tp", type=int, default=1)
@@ -155,6 +161,7 @@ def write_run_metadata(args: argparse.Namespace, spec: object, topology: object)
         "configuration": {
             "finetuning_mode": args.finetuning_mode,
             "max_length": args.max_length,
+            "pad_to_max_length": getattr(args, "pad_to_max_length", False),
             "max_steps": args.max_steps,
             "save_interval": (
                 getattr(args, "save_interval", None) or args.max_steps

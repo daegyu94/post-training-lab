@@ -34,20 +34,20 @@
       {"name": "on", "env": {"MICRO_BATCH_SIZE": 2, "OVERLAP_GRAD_REDUCE": true}}
     ]},
     {"name": "recompute-length-2048", "varying": ["RECOMPUTE"], "variants": [
-      {"name": "full", "env": {"MAX_LENGTH": 2048, "RECOMPUTE": "full"}},
-      {"name": "selective", "env": {"MAX_LENGTH": 2048, "RECOMPUTE": "selective"}}
+      {"name": "full", "env": {"MAX_LENGTH": 2048, "PAD_TO_MAX_LENGTH": true, "RECOMPUTE": "full"}},
+      {"name": "selective", "env": {"MAX_LENGTH": 2048, "PAD_TO_MAX_LENGTH": true, "RECOMPUTE": "selective"}}
     ]},
     {"name": "recompute-length-4096", "varying": ["RECOMPUTE"], "variants": [
-      {"name": "full", "env": {"MAX_LENGTH": 4096, "RECOMPUTE": "full"}},
-      {"name": "selective", "env": {"MAX_LENGTH": 4096, "RECOMPUTE": "selective"}}
+      {"name": "full", "env": {"MAX_LENGTH": 4096, "PAD_TO_MAX_LENGTH": true, "RECOMPUTE": "full"}},
+      {"name": "selective", "env": {"MAX_LENGTH": 4096, "PAD_TO_MAX_LENGTH": true, "RECOMPUTE": "selective"}}
     ]},
     {"name": "sequence-parallel-length-2048", "varying": ["SEQUENCE_PARALLEL"], "variants": [
-      {"name": "off", "env": {"MAX_LENGTH": 2048, "SEQUENCE_PARALLEL": false, "TP": 2, "TRANSFORMER_IMPL": "transformer_engine"}},
-      {"name": "on", "env": {"MAX_LENGTH": 2048, "SEQUENCE_PARALLEL": true, "TP": 2, "TRANSFORMER_IMPL": "transformer_engine"}}
+      {"name": "off", "env": {"MAX_LENGTH": 2048, "PAD_TO_MAX_LENGTH": true, "SEQUENCE_PARALLEL": false, "TP": 2, "TRANSFORMER_IMPL": "transformer_engine"}},
+      {"name": "on", "env": {"MAX_LENGTH": 2048, "PAD_TO_MAX_LENGTH": true, "SEQUENCE_PARALLEL": true, "TP": 2, "TRANSFORMER_IMPL": "transformer_engine"}}
     ]},
     {"name": "sequence-parallel-length-4096", "varying": ["SEQUENCE_PARALLEL"], "variants": [
-      {"name": "off", "env": {"MAX_LENGTH": 4096, "SEQUENCE_PARALLEL": false, "TP": 2, "TRANSFORMER_IMPL": "transformer_engine"}},
-      {"name": "on", "env": {"MAX_LENGTH": 4096, "SEQUENCE_PARALLEL": true, "TP": 2, "TRANSFORMER_IMPL": "transformer_engine"}}
+      {"name": "off", "env": {"MAX_LENGTH": 4096, "PAD_TO_MAX_LENGTH": true, "SEQUENCE_PARALLEL": false, "TP": 2, "TRANSFORMER_IMPL": "transformer_engine"}},
+      {"name": "on", "env": {"MAX_LENGTH": 4096, "PAD_TO_MAX_LENGTH": true, "SEQUENCE_PARALLEL": true, "TP": 2, "TRANSFORMER_IMPL": "transformer_engine"}}
     ]},
     {"name": "checkpoint-interval-16", "varying": ["CHECKPOINT_MODE"], "variants": [
       {"name": "sync", "env": {"SAVE_INTERVAL": 16, "CHECKPOINT_MODE": "sync"}},

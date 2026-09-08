@@ -5,6 +5,7 @@
 The driver is dry-run by default and requires an explicit `--execute` before it starts remote training.
 
 The default plan uses 64 training steps, four measured repeats, eight within-run warmup steps, and checkpoint intervals 16 and 32.
+The interval values in cell names identify the default plan; CLI overrides change the effective values recorded in each run configuration.
 
 The short validation configuration is `--steps 16 --repeats 2 --within-run-warmup 4 --checkpoint-intervals 4 8`.
 
@@ -47,3 +48,7 @@ python experiments/benchmarks.py \
 ```
 
 The setup file may contain local absolute paths and host names and should remain gitignored.
+
+The recompute and sequence length cells set `PAD_TO_MAX_LENGTH=true` so their 2048 and 4096 settings change tensor width instead of only truncating examples.
+
+Megatron SFT keeps padding disabled by default and accepts `--pad-to-max-length` for explicit opt-in.

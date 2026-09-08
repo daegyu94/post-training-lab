@@ -239,6 +239,7 @@ def _build_cluster_dataset(args: Namespace):
 
     return DirectHFSFTDatasetConfig(
         seq_length=args.max_length,
+        pad_to_max_length=getattr(args, "pad_to_max_length", False),
         preprocessing=preprocessing,
         hf_processor_path=str(args.model_dir),
         source=HFDatasetSourceConfig(

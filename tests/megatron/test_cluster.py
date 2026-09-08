@@ -22,7 +22,7 @@ from megatron_lab.config import (
     validate_dataset_manifest,
     validate_model_identity,
 )
-from megatron_lab.sft import write_run_metadata
+from megatron_lab.sft import parse_args, write_run_metadata
 from megatron_lab.sft import positive_int
 from megatron_lab.feature_lab import make_feature_run, summarize_timings
 
@@ -212,17 +212,30 @@ def test_run_metadata_records_actual_input_files_and_dataset(tmp_path: Path) -> 
     assert metadata["input_files"]["train"].endswith("training.jsonl")
     assert metadata["configuration"]["save_interval"] == 5
     assert metadata["configuration"]["dist_ckpt_optim_fully_reshardable"] is False
+    assert metadata["configuration"]["pad_to_max_length"] is False
     source = tmp_path / "iter_0000004"
     source.mkdir()
     args.stage = "resume"
     args.load_checkpoint = source
     args.dist_ckpt_optim_fully_reshardable = True
+    args.pad_to_max_length = True
     write_run_metadata(args, types.SimpleNamespace(model_type="qwen3_moe"), topology)
     resumed_metadata = json.loads(
         (args.output_dir / "run-metadata-resume.json").read_text(encoding="utf-8")
     )
     assert resumed_metadata["load_checkpoint"] == str(source)
     assert resumed_metadata["configuration"]["dist_ckpt_optim_fully_reshardable"] is True
+    assert resumed_metadata["configuration"]["pad_to_max_length"] is True
+
+
+def test_pad_to_max_length_cli_defaults_off_and_accepts_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
+    argv = ["sft", "--stage", "train", "--model-id", "m", "--model-revision", "a" * 40,
+            "--dataset-revision", "b" * 40, "--model-dir", "model", "--train-data", "train",
+            "--eval-data", "eval", "--output-dir", "out"]
+    monkeypatch.setattr(sys, "argv", argv)
+    assert parse_args().pad_to_max_length is False
+    monkeypatch.setattr(sys, "argv", argv + ["--pad-to-max-length"])
+    assert parse_args().pad_to_max_length is True
 
 
 def test_save_interval_cli_requires_positive_value() -> None:
@@ -479,6 +492,10 @@ def test_glm_config_uses_local_provider_and_known_options_only(tmp_path: Path, m
     assert cfg.checkpoint.dist_ckpt_optim_fully_reshardable is True
     assert cfg.dataset.preprocessing.loss_mode == "completion"
     assert cfg.dataset.preprocessing.add_eos is False
+    assert cfg.dataset.pad_to_max_length is False
+    args.pad_to_max_length = True
+    padded_cfg, _ = build_cluster_config(args)
+    assert padded_cfg.dataset.pad_to_max_length is True
     args.save_interval = 3
     custom_cfg, _ = build_cluster_config(args)
     assert custom_cfg.checkpoint.save_interval == 3

@@ -62,6 +62,15 @@ def test_dry_run_prints_hashes_without_creating_output(tmp_path: Path, capsys: p
     assert not output.exists()
 
 
+def test_megatron_padding_env_is_accepted_and_normalized(tmp_path: Path) -> None:
+    _, experiment_path = config_files(tmp_path, backend="megatron", nnodes=1)
+    experiment = json.loads(experiment_path.read_text())
+    experiment["env"]["PAD_TO_MAX_LENGTH"] = True
+    experiment_path.write_text(json.dumps(experiment))
+    loaded = run.load_experiment(experiment_path)
+    assert loaded["env"]["PAD_TO_MAX_LENGTH"] == "true"
+
+
 def test_rejects_reserved_and_invalid_topology(tmp_path: Path) -> None:
     setup_path, experiment_path = config_files(tmp_path, backend="megatron")
     experiment = json.loads(experiment_path.read_text())

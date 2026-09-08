@@ -302,6 +302,8 @@ def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execu
             plan = runner.build_plan(setup, runner.load_experiment(config_path), setup_path.resolve(), config_path.resolve(), run_output, ROOT)
             code = execute_fn(plan, timeout, run_output)
             record["elapsed_seconds"] = round(time.monotonic() - started, 3)
+            if code == 130:
+                raise KeyboardInterrupt
             record["status"] = "passed" if code == 0 else "failed"
             record["exit_code"] = code
             if code == 0:

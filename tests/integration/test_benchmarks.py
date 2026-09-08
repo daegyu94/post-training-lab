@@ -140,3 +140,33 @@ def test_run_benchmark_uses_fake_runner_and_fetch(tmp_path: Path, monkeypatch: p
 def test_missing_measurement_metrics_are_rejected() -> None:
     with pytest.raises(ValueError, match="missing or empty"):
         benchmarks.validate_fetched_metrics({"0": {"metrics": {}}})
+
+
+def test_execute_130_interrupts_without_launching_next_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    plan = _plan()
+    plan["base_experiment"] = "base.json"
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    base_path = tmp_path / "base.json"
+    base_path.write_text("{}", encoding="utf-8")
+    base = {"backend": "megatron", "setup": "spark", "nnodes": 1, "nproc_per_node": 1,
+            "env": {"MODEL_ID": "m", "MODEL_REVISION": "a" * 40,
+                    "DATASET_ID": "d", "DATASET_REVISION": "b" * 40}}
+    monkeypatch.setattr(benchmarks, "ROOT", tmp_path)
+    monkeypatch.setattr(benchmarks.runner, "load_setup", lambda path: {"nodes": []})
+    def fake_load(path):
+        return base.copy() if path == base_path else json.loads(path.read_text(encoding="utf-8"))
+    monkeypatch.setattr(benchmarks.runner, "load_experiment", fake_load)
+    monkeypatch.setattr(benchmarks, "_git_head", lambda: "c" * 40)
+    monkeypatch.setattr(benchmarks.runner, "build_plan", lambda *args: {"ranks": [], "backend": "megatron"})
+    calls = []
+    def interrupted(plan_value, timeout, output):
+        calls.append(output.name)
+        return 130
+    result = benchmarks.run_benchmark(setup_path=tmp_path / "setup.json", benchmark_path=plan_path,
+                                      output=tmp_path / "interrupted", execute=True, steps=4, repeats=2,
+                                      within_run_warmup=1, checkpoint_intervals=[2, 3],
+                                      execute_fn=interrupted, fetch_fn=lambda *args: {})
+    assert result["status"] == "interrupted"
+    assert len(calls) == 1
+    assert len(result["records"]) == 1

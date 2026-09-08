@@ -67,6 +67,8 @@ fi
 schedule_steps="${SCHEDULE_STEPS:-${RESUME_MAX_STEPS:-$max_steps}}"
 eval_iters="${EVAL_ITERS:-8}"
 max_length="${MAX_LENGTH:-2048}"
+pad_to_max_length="${PAD_TO_MAX_LENGTH:-false}"
+case "$pad_to_max_length" in true|false) ;; *) echo "PAD_TO_MAX_LENGTH must be true or false" >&2; exit 2 ;; esac
 seed="${SEED:-42}"
 transformer_impl="${TRANSFORMER_IMPL:-auto}"
 dist_ckpt_optim_fully_reshardable="${DIST_CKPT_OPTIM_FULLY_RESHARDABLE:-false}"
@@ -124,6 +126,9 @@ if [[ "$dist_ckpt_optim_fully_reshardable" == "true" ]]; then
 fi
 if [[ -n "$save_interval" ]]; then
   common_args+=(--save-interval "$save_interval")
+fi
+if [[ "$pad_to_max_length" == "true" ]]; then
+  common_args+=(--pad-to-max-length)
 fi
 
 if [[ "${DISTRIBUTED_OPTIMIZER:-true}" == "false" ]]; then
