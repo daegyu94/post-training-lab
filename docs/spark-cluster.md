@@ -4,7 +4,7 @@
 두 노드의 shared repository는 controller의 `/home/daegyu/shared/post-training-lab`가 Spark 노드에서 `/home/spark/shared/post-training-lab`로 보이는 NFS 경로를 사용합니다.
 
 Setup2는 두 노드가 하나의 distributed job에 참여하며 launcher가 `--setup spark-cluster`를 전달합니다.
-선택 기준은 [README](../README.md), 단일 GPU 절차는 [Setup1 guide](single-gpu.md)를 참고하세요.
+공통 구성은 [main의 PoC Setups](https://github.com/daegyu94/post-training-lab/blob/main/README.md#poc-setups), 단일 GPU 절차는 [Setup1 guide](single-gpu.md)를 참고하세요.
 
 ## Execution order
 

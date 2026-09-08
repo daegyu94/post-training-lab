@@ -2,7 +2,7 @@
 
 Setup1은 단일 GPU에서 LoRA SFT와 학습 전후 평가, checkpoint reload 흐름을 익히는 실습입니다.
 TP=1, PP=1, CP=1, DP=1이며 CLI에서는 `--setup single`에 해당합니다.
-구성 비교는 [README](../README.md), 두 노드 실행은 [Setup2 guide](spark-cluster.md)를 참고하세요.
+공통 구성은 [main의 PoC Setups](https://github.com/daegyu94/post-training-lab/blob/main/README.md#poc-setups), 두 노드 실행은 [Setup2 guide](spark-cluster.md)를 참고하세요.
 
 명령은 GPU 실행 노드의 repository root에서 실행합니다.
 Controller는 개발과 실행 조율을 담당하며, Spark에서는 SSH로 접속해 `/home/spark/shared/post-training-lab`에서 작업합니다.
