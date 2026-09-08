@@ -187,7 +187,9 @@ if [[ "${RESUME_AFTER_TRAIN:-false}" == "true" ]]; then
 fi
 run_stage tuned
 
-if [[ "$NODE_RANK" == "0" ]]; then
+# Bridge emits validation loss on the last global rank.
+metrics_rank=$((nnodes * nproc_per_node - 1))
+if (( NODE_RANK == nnodes - 1 )); then
   compare_max_steps="$max_steps"
   compare_tp="$tp"
   compare_pp="$pp"
@@ -199,8 +201,8 @@ if [[ "$NODE_RANK" == "0" ]]; then
     compare_ep="$resume_ep"
   fi
   "$python_bin" -m megatron_lab.compare \
-    --base-log "$output_dir/logs/rank-0-base.log" \
-    --tuned-log "$output_dir/logs/rank-0-tuned.log" \
+    --base-log "$output_dir/logs/rank-${metrics_rank}-base.log" \
+    --tuned-log "$output_dir/logs/rank-${metrics_rank}-tuned.log" \
     --output "$output_dir/summary.json" \
     --model-id "$model_id" \
     --model-revision "$model_revision" \
@@ -217,7 +219,7 @@ if [[ "$NODE_RANK" == "0" ]]; then
     --global-batch-size "$global_batch_size" \
     --seed "$seed" \
     --finetuning-mode "${FINETUNING_MODE:-lora}" \
-    --metadata "$output_dir/run-metadata-tuned.json" \
+    --metadata "$output_dir/run-metadata-tuned-rank-${metrics_rank}.json" \
     --tp "$compare_tp" --pp "$compare_pp" --ep "$compare_ep" \
     --nnodes "$nnodes" --nproc-per-node "$nproc_per_node"
 fi

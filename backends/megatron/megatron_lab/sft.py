@@ -119,10 +119,7 @@ def configure_rank_log(args: argparse.Namespace) -> None:
 
 
 def write_run_metadata(args: argparse.Namespace, spec: object, topology: object) -> None:
-    """Write provenance once, from global rank zero only."""
-
-    if rank() != 0:
-        return
+    """Write rank-local provenance and retain the rank-zero compatibility file."""
     args.output_dir.mkdir(parents=True, exist_ok=True)
     input_train_split = Path(args.train_data).name
     input_eval_split = Path(args.eval_data).name
@@ -176,9 +173,14 @@ def write_run_metadata(args: argparse.Namespace, spec: object, topology: object)
         },
         "topology": topology.as_dict(),
     }
-    (args.output_dir / f"run-metadata-{args.stage}.json").write_text(
-        json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    encoded = json.dumps(metadata, indent=2, ensure_ascii=False) + "\n"
+    (args.output_dir / f"run-metadata-{args.stage}-rank-{rank()}.json").write_text(
+        encoded, encoding="utf-8"
     )
+    if rank() == 0:
+        (args.output_dir / f"run-metadata-{args.stage}.json").write_text(
+            encoded, encoding="utf-8"
+        )
 
 
 def main() -> None:

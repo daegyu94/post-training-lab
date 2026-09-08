@@ -45,10 +45,11 @@ def test_cluster_identity_is_required(monkeypatch, tmp_path, capsys, flag):
 
 
 @pytest.mark.parametrize("stage", ["base", "train", "resume", "tuned"])
-def test_default_cli_dispatches_cluster_stage_with_metadata(monkeypatch, tmp_path, stage):
+@pytest.mark.parametrize("global_rank", [0, 1])
+def test_default_cli_dispatches_cluster_stage_with_metadata(monkeypatch, tmp_path, stage, global_rank):
     monkeypatch.setattr(sys, "argv", stage_argv(tmp_path, stage))
     monkeypatch.delenv("RANK_LOG_DIR", raising=False)
-    for key, value in {"RANK": "0", "NNODES": "2", "NODE_RANK": "0", "NPROC_PER_NODE": "1"}.items():
+    for key, value in {"RANK": str(global_rank), "NNODES": "2", "NODE_RANK": str(global_rank), "NPROC_PER_NODE": "1"}.items():
         monkeypatch.setenv(key, value)
     monkeypatch.setattr(sft, "validate_snapshot", lambda *args: {"verified": True})
     config = object()
@@ -72,7 +73,7 @@ def test_default_cli_dispatches_cluster_stage_with_metadata(monkeypatch, tmp_pat
     sft.main()
 
     assert calls == [{"config": config, "forward_step_func": step.forward_step}]
-    metadata = json.loads((tmp_path / "output" / f"run-metadata-{stage}.json").read_text())
+    metadata = json.loads((tmp_path / "output" / f"run-metadata-{stage}-rank-{global_rank}.json").read_text())
     assert metadata["setup"] == "spark-cluster"
     assert metadata["model_id"] == "Qwen/Qwen2.5-0.5B-Instruct"
     assert metadata["model_revision"] == "a" * 40
