@@ -66,7 +66,8 @@ PYTHON='<backend-python>' bash scripts/prepare_public_data.sh \
 
 성공하면 마지막 출력에 `train=8 validation=2 overlap=0`이 표시됩니다.
 `manifest.json`의 `dataset`, `dataset_revision`, `train_count`, `eval_count`, `files`를 확인합니다.
-파일을 공유하지 않는다면 JSONL 두 개와 manifest를 함께 각 노드에 복사합니다.
+**이 명령은 한 노드에서만 실행합니다.** 나머지 노드에는 같은 명령을 다시 실행하는 대신 생성된 JSONL 두 개와 manifest를 그대로 복사합니다.
+각 노드가 Hub에서 독립적으로 다시 만들면 (a) venv 간 라이브러리 버전 차이로 같은 seed에서도 내용이 미묘하게 갈릴 수 있고 — `validate_dataset_manifest()`는 `dataset_id`·`revision`만 비교해 이런 차이를 못 잡습니다 — (b) `huggingface_hub`/`datasets` 라이브러리의 재시도 로직이 환경에 따라 실패할 수 있습니다(이 저장소에서 실제로 관측: `RuntimeError: Cannot send a request, as the client has been closed.`). 이미 검증된 결과물을 복사하는 쪽이 더 안전하고 빠릅니다.
 
 ### 옵션과 주의점
 
@@ -77,6 +78,8 @@ PYTHON='<backend-python>' bash scripts/prepare_public_data.sh \
 
 Megatron의 `prepare_spark_data.sh`는 별도의 UltraChat 전용 이전 경로입니다.
 Viewer 기반 경로는 `megatron_lab.prepare_data`에서 revision을 생략한 경우이며 `prepare_public_data.sh`의 동작이 아닙니다.
+
+Spark 노드에서 `RuntimeError: Cannot send a request, as the client has been closed.`가 나면 실제 원인은 대부분 그 앞에 찍히는 `[SSL: CERTIFICATE_VERIFY_FAILED] ... unable to get local issuer certificate`입니다 — venv에 설치된 `certifi`의 CA 번들이 이 시스템의 실제 root CA와 안 맞을 때 발생하며, `huggingface_hub`가 이 SSL 실패를 재시도하다 client를 닫고 못 살리는 게 뒤에 나오는 오류입니다. `SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt`를 지정해 시스템 CA 번들을 쓰게 하면 해결됩니다.
 
 <a id="internal-data"></a>
 

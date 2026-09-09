@@ -2,7 +2,7 @@
 
 이 저장소의 실행 환경은 controller 한 대와 NVIDIA DGX Spark 노드 `spark1`, `spark2`로 구성됩니다.
 Controller는 Git checkout, 설정, 실행 기록을 관리하고 GPU 학습 process를 실행하지 않습니다.
-각 Spark 노드는 자체 CUDA Python 환경과 node-local 모델 snapshot을 가지며 실제 rank process를 실행합니다.
+각 Spark 노드는 자체 CUDA Python 환경, node-local 모델 snapshot과 node-local 학습 데이터(`data_dir`)를 가지며 실제 rank process를 실행합니다. 이 PoC에는 별도 storage cluster가 없어서, 노드가 학습 중 직접 읽는 무거운 자원(모델·데이터)은 NFS를 거치지 않고 각 노드에 둡니다 — 왜 그런지는 [30B NVMe 실습](../../labs/nvme-30b/README.md#training-data-storage-general-principle-vs-this-poc)을 따릅니다.
 
 ```text
                            SSH control plane

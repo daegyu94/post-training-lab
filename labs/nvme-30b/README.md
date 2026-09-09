@@ -110,6 +110,19 @@ Arrow dataset은 memory map과 운영체제 page cache를 사용하므로 동일
 - Megatron 백엔드의 async·fully-reshardable checkpoint 작업(`docs/verification.md`)은 이미 "checkpoint가 특정 rank·특정 노드에 종속되지 않아야 한다"는 전제로 설계돼 있어서, 이 방향과 이미 맞닿아 있습니다.
 - 실제 distributed filesystem 선택(pNFS, 3FS 등)과 그 성능 검증은 로드맵 Step 2-1의 몫으로 남겨둡니다.
 
+### Training Data Storage: General Principle vs. This PoC
+
+**일반적인 대규모 환경의 원칙**은 계층을 나누는 것입니다: object storage(S3/GCS 등)가 정본(source of truth)이고, parallel/distributed filesystem(pNFS, 3FS 등)이 학습 시점의 실제 읽기 경로이며, node-local NVMe는 정본이 아니라 다음에 필요한 shard를 미리 당겨두는 prefetch cache로만 씁니다. 데이터는 "노드마다 독립적으로 다시 만드는" 게 아니라 **한 곳에서 한 번 만들고 그 결과물을 checksum 검증하며 배포**합니다 — 노드마다 독립적으로 재준비하면 venv 간 라이브러리 버전 차이 등으로 같은 seed를 줘도 미묘하게 다른 결과가 나올 수 있고, 지금 있는 `validate_dataset_manifest()`는 dataset_id·revision만 비교해 이런 내용물 수준의 drift는 잡지 못합니다.
+
+**이 Spark cluster는 이 원칙을 그대로 적용하기엔 구성이 다릅니다.** 별도의 object storage나 parallel filesystem이 없는 2노드 PoC이고, controller가 NFS 공유(`AGENTS.md`)를 통해 코드 checkout을 두 노드에 내주는 정도의 역할만 합니다. 학습에 실제로 쓰는 무거운 자원(모델 가중치, 학습 데이터)까지 controller의 NFS를 거치게 하면 그 한 대가 병목이자 단일 장애점이 됩니다.
+
+그래서 이 PoC에서는 **모델 가중치와 학습 데이터 둘 다 node-local**로 둡니다:
+
+- **모델 가중치**는 원래부터 node-local이었습니다(`setups/spark/local.json`의 `model_dirs`, `/home/spark/.local/ptl/cache/...`).
+- **학습 데이터도 node-local로 옮겼습니다**(`data_dir` → `/home/spark/.local/ptl/data/...`). 방법은 "각 노드가 Hub에서 독립적으로 다시 준비"가 아니라 **한 노드에서 한 번 준비한 뒤, 이미 검증된 결과물(JSONL 2개 + manifest)을 다른 노드에 그대로 복사**하는 방식입니다 — 노드별 독립 재준비는 실제로 시도해보니 이 저장소의 venv에서 `huggingface_hub`/`datasets`의 재시도 로직이 `RuntimeError: Cannot send a request, as the client has been closed.`로 실패하는 걸 직접 겪었고, 설령 성공하더라도 venv 간 라이브러리 버전 차이로 같은 seed에서 미묘하게 다른 결과가 나올 drift 위험이 있습니다. "한 번 만들고 검증된 걸 배포"가 이 PoC 규모에서도 이미 더 안전한 선택입니다.
+
+**이건 "모든 걸 로컬로 복제"가 답이라는 뜻이 아닙니다.** 데이터가 32KB 수준이라 노드마다 복사해도 비용이 0에 가까울 뿐입니다. **실제 대규모 post-training 프로젝트로 가면, 데이터 크기가 이 PoC의 단순 복제(모든 노드에 전체 복사)로 감당이 안 되는 지점부터는 위에서 설명한 일반 원칙(object storage 정본 + parallel/distributed filesystem hot path + node-local NVMe prefetch cache, 전체 복제가 아니라 필요한 shard만 당겨오는 방식)을 적용해야 합니다.** "한 번 만들고 검증해서 배포한다"는 원칙 자체는 그대로 유지되지만, 배포 방식이 "노드마다 전체 사본"에서 "PFS + 부분 prefetch"로 바뀌는 것이 로드맵 Step 2-1이 다룰 몫입니다.
+
 ## Cleanup
 
 실행이 끝나고 보존할 로그·요약을 옮긴 뒤 run 디렉터리만 삭제합니다.

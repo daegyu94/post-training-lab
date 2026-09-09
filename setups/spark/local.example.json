@@ -20,7 +20,7 @@
         "Qwen/Qwen3-30B-A3B": "/path/to/Qwen3-30B-A3B",
         "zai-org/GLM-4.7-Flash": "/path/to/GLM-4.7-Flash"
       },
-      "data_dir": "/path/to/shared/prepared-data",
+      "data_dir": "/path/to/ptl/data/prepared-data",
       "output_root": {
         "trl": "/path/to/trl-run-results",
         "megatron": "/path/to/megatron-run-results"
@@ -39,7 +39,7 @@
         "Qwen/Qwen3-30B-A3B": "/path/to/Qwen3-30B-A3B",
         "zai-org/GLM-4.7-Flash": "/path/to/GLM-4.7-Flash"
       },
-      "data_dir": "/path/to/shared/prepared-data",
+      "data_dir": "/path/to/ptl/data/prepared-data",
       "output_root": {
         "trl": "/path/to/trl-run-results",
         "megatron": "/path/to/megatron-run-results"
