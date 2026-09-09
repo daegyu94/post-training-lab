@@ -52,6 +52,15 @@ def test_process_group_cleanup_is_noop_without_initialized_group(monkeypatch) ->
     spark_train._destroy_process_group_if_initialized()
 
 
+def test_rank_log_preserves_stdout_and_stderr_file_descriptors(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("RANK_LOG_DIR", str(tmp_path))
+    args = argparse.Namespace(stage="train")
+
+    with spark_train._write_log(args):
+        assert sys.stdout.fileno() == sys.__stdout__.fileno()
+        assert sys.stderr.fileno() == sys.__stderr__.fileno()
+
+
 class FakeTensor:
     dtype = "torch.bfloat16"
     requires_grad = True

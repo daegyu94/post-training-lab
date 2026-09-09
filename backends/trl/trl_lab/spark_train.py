@@ -87,22 +87,28 @@ def _write_log(args: argparse.Namespace) -> Any:
     stream = (path / f"rank-{_rank()}-{args.stage}.log").open("a", encoding="utf-8")
 
     class Tee:
+        def __init__(self, console: Any) -> None:
+            self.console = console
+
         def write(self, value: str) -> int:
-            sys.__stdout__.write(value)
+            self.console.write(value)
             stream.write(value)
-            sys.__stdout__.flush()
+            self.console.flush()
             stream.flush()
             return len(value)
 
         def flush(self) -> None:
-            sys.__stdout__.flush()
+            self.console.flush()
             stream.flush()
+
+        def fileno(self) -> int:
+            return self.console.fileno()
 
     class Context:
         def __enter__(self):
             self.old_out, self.old_err = sys.stdout, sys.stderr
-            sys.stdout = Tee()
-            sys.stderr = Tee()
+            sys.stdout = Tee(sys.__stdout__)
+            sys.stderr = Tee(sys.__stderr__)
             return self
 
         def __exit__(self, *_):

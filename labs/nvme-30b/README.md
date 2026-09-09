@@ -20,7 +20,7 @@ Controller에서 확인한 2026-09-09 상태에서는 각 노드의 `/dev/nvme0n
 ```bash
 sudo install -d -o spark -g spark -m 700 \
   /mnt/post-training/trl /mnt/post-training/megatron
-sudo apt-get install libaio-dev
+sudo apt-get install libaio-dev python3-dev
 ```
 
 TRL Python 환경에는 `requirements-spark.txt`에 고정된 `ninja`도 필요합니다.
@@ -33,7 +33,7 @@ for host in spark1 spark2; do
   ssh "spark@$host" \
     'findmnt -T /mnt/post-training/trl; test -w /mnt/post-training/trl; test -w /mnt/post-training/megatron'
   ssh "spark@$host" \
-    '/home/spark/ptl-envs/trl/bin/python -c "from deepspeed.ops.op_builder import AsyncIOBuilder; assert AsyncIOBuilder().is_compatible(verbose=True)"'
+    '/home/spark/ptl-envs/trl/bin/python -c "from deepspeed.ops.op_builder import AsyncIOBuilder; AsyncIOBuilder().load(verbose=True)"'
 done
 ```
 
