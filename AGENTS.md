@@ -14,6 +14,12 @@
 - controller의 `/home/daegyu/shared/<relative-path>`와 각 Spark 노드의 `/home/spark/shared/<relative-path>`는 같은 공유 파일을 가리킵니다.
 - 명령과 설정에 공유 파일 경로를 넣을 때는 실제로 해당 경로를 사용하는 노드의 마운트 경로를 사용합니다.
 
+## Git 실행 위치
+
+- branch 생성·전환, 상태·diff·log 확인, stage, commit, fetch, pull과 push를 포함한 모든 Git 명령은 controller에서만 실행합니다.
+- `spark1`, `spark2`에서는 Git 명령을 실행하지 않습니다. 두 노드는 NFS를 통해 controller와 같은 worktree를 보므로 별도 Git 작업이 필요하지 않습니다.
+- Spark 노드는 실제 workload와 해당 노드에서 필요한 실행 검증에만 사용합니다.
+
 ## 검증과 실행 증거
 
 - 기본 저장소 검사는 `python -m pytest -q`, `python -m compileall -q backends experiments observability tests run_summary.py`와 `backends/*/scripts/*.sh`, `observability/scripts/*.sh`, `setups/spark/*.sh`의 `bash -n`입니다.
