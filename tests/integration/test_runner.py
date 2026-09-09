@@ -12,6 +12,7 @@ from experiments import run
 
 MODEL_REVISION = "a" * 40
 DATASET_REVISION = "b" * 40
+REPOSITORY_ROOT = Path(__file__).parents[2]
 
 
 def config_files(tmp_path: Path, *, backend: str = "trl", nnodes: int = 2) -> tuple[Path, Path]:
@@ -69,6 +70,21 @@ def test_megatron_padding_env_is_accepted_and_normalized(tmp_path: Path) -> None
     experiment_path.write_text(json.dumps(experiment))
     loaded = run.load_experiment(experiment_path)
     assert loaded["env"]["PAD_TO_MAX_LENGTH"] == "true"
+
+
+@pytest.mark.parametrize(
+    ("name", "model_id"),
+    (
+        ("qwen3-30b-lora.json", "Qwen/Qwen3-30B-A3B"),
+        ("glm-4.7-flash-30b-lora.json", "zai-org/GLM-4.7-Flash"),
+    ),
+)
+def test_megatron_30b_presets_are_runnable(name: str, model_id: str) -> None:
+    experiment = run.load_experiment(REPOSITORY_ROOT / "experiments" / "megatron" / name)
+
+    assert experiment["env"]["MODEL_ID"] == model_id
+    assert experiment["env"]["FINETUNING_MODE"] == "lora"
+    assert experiment["env"]["MAX_STEPS"] == "1"
 
 
 def test_dataset_id_is_required(tmp_path: Path) -> None:

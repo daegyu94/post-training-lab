@@ -29,12 +29,15 @@
 | `experiments/megatron/smoke.json` | 2노드 full SFT, 2 step | base/train/tuned |
 | `experiments/megatron/resume-smoke.json` | 2노드 full SFT, 2→3 step | base/train/resume/tuned |
 | `experiments/trl/nvme-offload-30b.json` | 2노드 Qwen3 30B full SFT, ZeRO-3 NVMe state offload | train |
-| `experiments/megatron/nvme-checkpoint-30b.json` | 2노드 Qwen3 30B LoRA, node-local NVMe async checkpoint | train |
+| `experiments/megatron/qwen3-30b-lora.json` | 2노드 Qwen3 30B MoE LoRA, 평가와 node-local NVMe async checkpoint | train |
+| `experiments/megatron/glm-4.7-flash-30b-lora.json` | 2노드 GLM-4.7-Flash 30B MoE LoRA, 평가와 node-local NVMe async checkpoint | train |
 
 앞의 smoke 네 개는 작은 Qwen2.5-0.5B와 고정 No Robots 입력을 사용합니다.
 모델 품질·장기 수렴·일반적인 성능 비교용 preset은 아닙니다.
 
-두 NVMe preset은 30B Qwen3 모델을 사용하며 작은 smoke 네 개에 포함되지 않습니다.
+TRL NVMe preset과 두 Megatron 30B preset은 작은 smoke 네 개에 포함되지 않습니다.
+Megatron의 Qwen과 GLM preset은 검증 당시와 같은 TP=1, PP=1, EP=2 구성으로 1 step, 평가 1회와 async checkpoint를 실행합니다.
+GLM preset의 `TRANSFORMER_IMPL=auto`는 Transformer Engine 구현을 선택합니다.
 준비 조건과 두 backend에서 `NVMe`가 뜻하는 범위는 [30B NVMe 실습](../labs/nvme-30b/README.md)을 따릅니다.
 
 `experiments/run.py`는 `--backend`, `--setup`, `--experiment`, `--output`을 요구합니다.

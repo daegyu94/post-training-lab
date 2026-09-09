@@ -47,6 +47,7 @@ ZeRO-3 과거 summary의 parameter count 0은 placeholder 계측 문제이며 �
 
 Megatron은 `TP=1`, `PP=1`, `EP=2`, `DP=2`, BF16, sequence length 2048, global batch 2와 attention LoRA를 사용했습니다.
 Qwen3-30B-A3B와 GLM-4.7-Flash 모두 1 optimizer step, 평가, async `torch_dist` checkpoint와 양 rank exit 0을 확인했습니다.
+같은 조건은 `experiments/megatron/qwen3-30b-lora.json`과 `experiments/megatron/glm-4.7-flash-30b-lora.json`으로 다시 실행할 수 있습니다.
 
 | Model | Train result | Peak allocated |
 | --- | --- | --- |

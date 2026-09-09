@@ -61,7 +61,7 @@ python experiments/run.py \
 python experiments/run.py \
   --backend megatron \
   --setup setups/spark/local.json \
-  --experiment experiments/megatron/nvme-checkpoint-30b.json \
+  --experiment experiments/megatron/qwen3-30b-lora.json \
   --output results/megatron-nvme-30b
 ```
 

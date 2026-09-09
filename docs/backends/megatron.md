@@ -87,7 +87,7 @@ Async checkpoint는 train/resume stage의 `torch_dist`와 persistent worker를 �
 종료 전에 pending save의 finalization과 필요한 모든 shard를 확인합니다.
 파일이 보이거나 save 호출이 끝났다는 사실만으로 장애 후 durability를 주장하지 않습니다.
 
-`experiments/megatron/nvme-checkpoint-30b.json`은 backend별 `output_root`를 `/mnt/post-training/megatron`으로 지정해 30B checkpoint를 각 노드의 로컬 NVMe에 기록합니다.
+`experiments/megatron/qwen3-30b-lora.json`과 `experiments/megatron/glm-4.7-flash-30b-lora.json`은 backend별 `output_root`를 `/mnt/post-training/megatron`으로 지정해 30B checkpoint를 각 노드의 로컬 NVMe에 기록합니다.
 이는 parameter·optimizer·activation의 실행 중 NVMe offload가 아니라 checkpoint I/O 실습입니다.
 같은 run의 전처리 JSONL과 Arrow cache도 이 NVMe output 아래에 생성되므로 input batch 경로의 storage I/O도 함께 관찰할 수 있습니다.
 Node-local shard를 다른 topology나 노드에서 재개하려면 필요한 shard와 metadata를 공유 저장소로 모으는 별도 단계가 필요합니다.

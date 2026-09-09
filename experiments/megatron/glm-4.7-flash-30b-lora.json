@@ -1,0 +1,29 @@
+{
+  "backend": "megatron",
+  "setup": "spark",
+  "nnodes": 2,
+  "nproc_per_node": 1,
+  "env": {
+    "MODEL_ID": "zai-org/GLM-4.7-Flash",
+    "MODEL_REVISION": "7dd20894a642a0aa287e9827cb1a1f7f91386b67",
+    "DATASET_ID": "HuggingFaceH4/no_robots",
+    "DATASET_REVISION": "e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b",
+    "FINETUNING_MODE": "lora",
+    "MAX_STEPS": 1,
+    "SCHEDULE_STEPS": 1,
+    "MAX_LENGTH": 2048,
+    "GLOBAL_BATCH_SIZE": 2,
+    "MICRO_BATCH_SIZE": 1,
+    "TP": 1,
+    "PP": 1,
+    "EP": 2,
+    "EVAL_ITERS": 1,
+    "SAVE_INTERVAL": 1,
+    "CHECKPOINT_MODE": "async",
+    "SAVE_OPTIMIZER": true,
+    "MEASURE_TIMING": true,
+    "TRANSFORMER_IMPL": "auto",
+    "SEED": 42,
+    "STAGE": "train"
+  }
+}
