@@ -1,5 +1,8 @@
 # Architecture
 
+이 문서는 구성 요소별 책임과 설정 계약을 정의하는 참조 문서입니다.
+실행 절차를 따라 하려면 [Getting Started](getting-started.md)를 봅니다.
+
 이 저장소는 실행 환경과 실험 조건을 분리합니다.
 Setup은 어디서 실행할지, experiment는 무엇을 실행할지, backend는 어떻게 학습·저장할지를 담당합니다.
 
@@ -44,7 +47,7 @@ TRL은 stage와 분산 backend 조합을, Megatron은 topology와 batch의 나�
 
 ## Run Lifecycle
 
-Dry-run은 설정 파일을 읽고 계획만 출력하며 원격 파일 가용성이나 SSH를 검사하지 않습니다.
+Dry-run으로 계획을 먼저 확인하는 절차는 [Getting Started](getting-started.md#check-the-execution-plan)를 따릅니다.
 정상 Git checkout에서 실행하면 원격 checkout이 깨끗하고 controller와 같은 commit인지 확인합니다.
 Controller commit이 `unknown`이면 현재 구현은 commit 일치 검사를 생략하므로 실제 실행은 반드시 Git checkout에서 수행합니다.
 참여 rank는 run별 출력을 claim하며 기존 출력은 덮어쓰지 않습니다.
