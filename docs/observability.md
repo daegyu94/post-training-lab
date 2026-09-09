@@ -1,13 +1,13 @@
 # Observability
 
-`observability/`는 host·GPU 계측, monitoring stack 검사, 통신·저장소 baseline과 PyTorch trace 예제를 제공합니다.
+`observability/`는 host·GPU 계측, Spark monitoring, 통신·저장소 baseline과 PyTorch trace 예제를 제공합니다.
 먼저 상시 지표로 이상 구간을 찾고 필요한 rank만 짧게 trace합니다.
 Synthetic workload와 실제 LLM 학습 결과는 구분합니다.
 
 ## CPU Checks
 
 저장소 루트에서 아래 순서로 실행합니다.
-Setup은 `.venv`를 만들고 pytest를 설치하지만 CUDA PyTorch, Docker, NCCL Tests, fio나 Python package 자체를 설치하지 않습니다.
+Setup은 `.venv`를 만들고 pytest를 설치하지만 CUDA PyTorch, NCCL Tests, fio나 Python package 자체를 설치하지 않습니다.
 모듈은 `observability`를 작업 디렉터리로 사용해 import합니다.
 
 ```bash
@@ -21,38 +21,7 @@ python -m pytest -q ../tests/observability
 도구 검사에서 미설치 도구가 표시되면 해당 기능의 준비가 안 된 것이며 전체 기능 실패로 해석하지 않습니다.
 지표 이름·단위·수집 범위와 framework 연결은 [Observability Reference](observability-reference.md)를 확인합니다.
 
-## Monitoring with Docker Compose
-
-`observability`에서 `examples/observability/targets/`의 node·GPU·application endpoint를 실제 환경에 맞춥니다.
-파일 형식 검사는 네트워크나 Docker 없이 실행할 수 있습니다.
-
-```bash
-python -m profiling_lab.observability check-targets \
-  --target-dir examples/observability/targets
-```
-
-Stack 실행에는 Docker 접근 권한과 Compose v2가 필요합니다.
-다음 명령은 이미지를 내려받고 서비스를 시작하며 검사가 끝나도 계속 실행합니다.
-제공된 Compose는 Prometheus 9090과 Grafana 3000 포트를 host에 공개하므로 접근 제어를 먼저 확인합니다.
-비밀번호는 대화형으로 입력하며 저장소에 기록하지 않습니다.
-
-```bash
-read -r -s -p 'Grafana admin password: ' GRAFANA_ADMIN_PASSWORD
-export GRAFANA_ADMIN_PASSWORD
-bash scripts/validate_observability.sh
-```
-
-기본 검사는 target이 down이어도 stack readiness·health를 확인합니다.
-Target도 모두 up이어야 하면 `REQUIRE_TARGETS_UP=1 bash scripts/validate_observability.sh`를 사용합니다.
-결과는 기본 `artifacts/observability-validation/summary.json`에 기록합니다.
-서비스를 중지하려면 같은 `observability` 디렉터리에서 다음을 실행합니다.
-이 명령은 Compose 서비스를 중지·제거하지만 named volume은 삭제하지 않습니다.
-
-```bash
-(cd examples/observability && docker compose down)
-```
-
-## Spark Without Docker
+## Spark Monitoring
 
 `scripts/install_spark_tools.sh`는 ARM64 userspace 도구를 다운로드합니다.
 실제 설치 경로는 `TOOLS_DIR`로 지정할 수 있으며 driver나 system package 설치를 대신하지 않습니다.
@@ -65,7 +34,7 @@ NODE_ADDR='<node-management-address>' \
 ```
 
 도구가 설치된 ARM64 monitoring host에서는 server role을 별도 실행합니다.
-앞 절처럼 `GRAFANA_ADMIN_PASSWORD`를 설정하고 실제 두 주소를 지정합니다.
+`GRAFANA_ADMIN_PASSWORD`를 설정하고 실제 두 주소를 지정합니다.
 
 ```bash
 SPARK1_ADDR='<first-node-management-address>' \
@@ -73,10 +42,33 @@ SPARK2_ADDR='<second-node-management-address>' \
   bash scripts/run_spark_observability.sh server
 ```
 
-이 경로는 Compose와 달리 Prometheus를 loopback 19090, Grafana를 loopback 13000에 바인딩합니다.
+Prometheus는 loopback 19090, Grafana는 loopback 13000에 바인딩합니다.
 Server는 종료할 때까지 실행하므로 작업을 마치면 해당 세션을 종료합니다.
 일부 GB10 NVML 값은 unavailable/null이며 이를 사용량 0으로 해석하지 않습니다.
 시스템 메모리와 학습 process의 CUDA allocated/reserved peak도 구분합니다.
+
+## Controller에서 결과 수집과 표시
+
+각 Spark 노드의 GPU sampler는 원본 값을 JSONL로 저장하고 Node Exporter가 읽을 지표 파일도 갱신합니다.
+학습 launcher는 같은 `run_id` 아래에 rank별 로그, summary와 measurement JSONL을 남깁니다.
+
+```text
+spark1 telemetry --+
+                  +--> controller collector --> SQLite --> 실시간 확인
+spark2 telemetry --+                            |
+                                                +--> JSON export --> GitHub Pages
+```
+
+[Post-Training Lab Observatory](https://github.com/daegyu94/post-training-lab-observatory)는 Python 표준 라이브러리로 만든 controller collector를 제공합니다.
+Spark 노드는 SSH reverse tunnel을 통해 측정값을 보내므로 collector port를 외부에 열지 않고도 controller 화면에서 최신 값을 확인할 수 있습니다.
+
+GitHub Pages는 정적 사이트라 측정값을 직접 받을 수 없습니다.
+공개할 run은 controller에서 JSON snapshot으로 내보내 Observatory 저장소에 반영한 뒤 Pages에서 확인합니다.
+
+현재 collector가 자동으로 받는 값은 노드 전체 CPU·메모리·NIC입니다.
+TRL과 Megatron의 loss, step time, tokens/s와 rank timer를 실시간 화면에 넣으려면 같은 `run_id`를 사용하는 framework adapter가 추가로 필요합니다.
+
+Adapter가 없어도 학습 결과는 각 backend가 생성한 rank 로그와 summary·measurement JSONL에 보존됩니다.
 
 ## Distributed Trace
 

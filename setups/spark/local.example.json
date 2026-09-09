@@ -18,8 +18,8 @@
       "model_dirs": {
         "Qwen/Qwen2.5-0.5B-Instruct": "/path/to/Qwen2.5-0.5B-Instruct"
       },
-      "data_dir": "/path/to/shared-prepared-data",
-      "output_root": "/path/to/shared-run-results"
+      "data_dir": "/path/to/shared/prepared-data",
+      "output_root": "/path/to/shared/run-results"
     },
     {
       "host": "spark2",
@@ -32,8 +32,8 @@
       "model_dirs": {
         "Qwen/Qwen2.5-0.5B-Instruct": "/path/to/Qwen2.5-0.5B-Instruct"
       },
-      "data_dir": "/path/to/shared-prepared-data",
-      "output_root": "/path/to/shared-run-results"
+      "data_dir": "/path/to/shared/prepared-data",
+      "output_root": "/path/to/shared/run-results"
     }
   ]
 }

@@ -13,11 +13,11 @@ Controller는 Git checkout, 설정, 실행 기록을 관리하고 GPU 학습 pro
  | controller logs    |                              |
  +--------------------+                              | rendezvous + NCCL
           |                                          | (MASTER_ADDR and
-          | NFS: /home/daegyu/shared                 |  configured interface)
+          | shared NFS: /path/to/shared              |  configured interface)
           |                                          v
           |                              +--------------------+
           +----------------------------> | spark2             |
-             NFS: /home/spark/shared     | rank 1 / GPU work  |
+             same shared files           | rank 1 / GPU work  |
                                          +--------------------+
 ```
 
@@ -25,5 +25,6 @@ Controller는 Git checkout, 설정, 실행 기록을 관리하고 GPU 학습 pro
 분산 학습 process는 `MASTER_ADDR`와 `MASTER_PORT`로 rendezvous한 뒤 NCCL이 setup에 지정된 통신 interface를 사용합니다.
 물리 NIC, IP 대역, RoCE·InfiniBand 구성은 노드 환경마다 다르므로 `local.json`의 host, rendezvous 주소와 `NCCL_*` 변수를 실제 구성에 맞춰 설정합니다.
 
-공유 저장소와 공유 데이터·출력은 controller에서 `/home/daegyu/shared`, Spark 노드에서 `/home/spark/shared`로 보입니다.
+`/path/to/shared`는 NFS 공유 디렉터리를 나타내는 예시 절대 경로이며 실제 환경의 경로로 바꿉니다.
+같은 공유 파일도 controller와 Spark 노드에서 서로 다른 절대 경로로 보일 수 있으므로 각 노드에서 보이는 경로를 사용합니다.
 설정 파일의 `checkout`, `model_dirs`, `data_dir`, `output_root`에는 명령을 실행하는 노드에서 보이는 절대 경로를 적습니다.

@@ -4,6 +4,22 @@
 공통 runner가 두 파일을 결합하며 `--execute`가 있을 때만 SSH 학습을 시작합니다.
 첫 실행 명령은 [Getting Started](getting-started.md), 설정 책임은 [Architecture](architecture.md)를 따릅니다.
 
+## 현재 프로젝트 목표
+
+현재 목표는 Spark 두 노드에서 다음 30B 모델의 SFT 실행 경로를 확인하는 것입니다.
+
+| 모델 | 확인할 경로 |
+| --- | --- |
+| `Qwen/Qwen3-30B-A3B` | TRL LoRA와 Megatron MoE |
+| `zai-org/GLM-4.7-Flash` | Megatron MoE |
+
+30B 실행에서는 모델별 준비, 메모리 배치, 2노드 통신, checkpoint와 재로딩을 확인합니다.
+구체적인 지원 범위와 제한은 [TRL](backends/trl.md)과 [Megatron](backends/megatron.md) 문서에서 관리합니다.
+
+아래 0.5B preset은 이 목표를 대신하는 실험이 아닙니다.
+다운로드와 반복 실행 비용을 낮춰 runner, 데이터 전처리, 저장·재로딩 같은 기본 동작을 빠르게 검사하는 smoke입니다.
+30B 통합 결과와 0.5B smoke 결과는 서로 다른 범위로 기록하고 해석합니다.
+
 ## Presets
 
 | 파일 | 노드·학습 | 단계 |
@@ -23,6 +39,10 @@
 백엔드가 지원하는 모든 직접 CLI 옵션이 공통 runner에 노출된 것은 아닙니다.
 
 ## Repeated Megatron Measurements
+
+이 반복 측정도 `Qwen/Qwen2.5-0.5B-Instruct`와 No Robots를 고정한 저비용 A/B 비교입니다.
+모델과 데이터를 고정해야 설정 하나의 영향만 비교할 수 있고, 여덟 조건을 30B 모델로 반복하는 비용도 피할 수 있습니다.
+따라서 여기서 얻은 시간·메모리 차이를 30B 모델의 성능으로 일반화하지 않습니다.
 
 `experiments/benchmarks.py`는 [benchmark plan](../experiments/megatron/benchmark-plan.json)의 cell과 두 variant를 읽습니다.
 저장소 루트의 실제 Git checkout에서 실행하며 기본값은 dry-run입니다.

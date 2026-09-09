@@ -1,13 +1,19 @@
-# Datasets
+# SFT 데이터 준비 가이드
 
-이 문서는 공개 데이터와 승인된 서비스 기록을 대화형 SFT JSONL로 변환하는 방법을 설명합니다.
-JSONL은 한 줄에 예제 하나를 저장하며, 마지막 메시지가 학습할 목표 응답입니다.
+SFT는 사용자 요청과 모델이 배워야 할 목표 응답을 짝지어 학습합니다.
+이 문서는 원본 데이터를 TRL과 Megatron이 읽을 수 있는 대화형 JSONL로 바꾸고 학습에 연결하는 방법을 설명합니다.
+공개 데이터는 고정된 버전과 변환 조건을 기록해 다시 만들 수 있게 합니다.
+내부 대화는 학습에 써도 되는지 확인하고 응답을 검수한 예제만 변환합니다.
 
-## Output Formats
+1. 목적에 맞는 원본 데이터를 선택하고 학습 이용 조건을 확인합니다.
+2. 학습·검증·평가 파일로 변환한 뒤 내용과 `manifest.json`을 검사합니다.
+3. 선택한 backend에 연결하고 작은 학습으로 데이터 로딩과 loss 계산을 확인합니다.
 
-| 파일 | 공개 데이터 | 서비스 기록 |
+## 생성되는 파일
+
+| 파일 | 공개 데이터 | 검수한 내부 대화 |
 | --- | --- | --- |
-| `training.jsonl` | `messages`, `prompt_id`, `provenance` | 승인된 학습 대화 |
+| `training.jsonl` | `messages`, `prompt_id`, `provenance` | 모델이 배울 요청과 목표 응답 |
 | `validation.jsonl` | 원본 학습 split의 결정적 holdout | 세션 단위 검증 대화 |
 | `test.jsonl` | 생성하지 않음 | 응답을 `reference_answer`로 분리한 평가 입력 |
 | `manifest.json` | 원본 ID·revision, seed, 선택 ID, 개수, 출력 해시 | 입력 해시, seed, 개수와 제외 사유 |
@@ -15,7 +21,9 @@ JSONL은 한 줄에 예제 하나를 저장하며, 마지막 메시지가 학습
 공개 데이터 변환기는 원본 test split을 읽지 않습니다.
 두 manifest 형식은 다르므로 서로 교환해서 사용할 수 없습니다.
 
-## Public Data
+<a id="public-data"></a>
+
+## 공개 데이터 준비
 
 두 백엔드의 `scripts/prepare_public_data.sh`는 같은 네 preset과 CLI를 제공합니다.
 변환 규칙과 고정 revision은 각 백엔드의 `public_data.py`가 정의합니다.
@@ -57,10 +65,14 @@ PYTHON='<backend-python>' bash scripts/prepare_public_data.sh \
 Megatron의 `prepare_spark_data.sh`는 별도의 UltraChat 전용 이전 경로입니다.
 Viewer 기반 경로는 `megatron_lab.prepare_data`에서 revision을 생략한 경우이며 `prepare_public_data.sh`의 동작이 아닙니다.
 
-## Reviewed Service Traces
+<a id="internal-data"></a>
 
-서비스 기록은 학습 이용 권한을 확인하고 민감정보를 제거한 뒤 승인된 응답만 변환합니다.
-다음은 입력 한 줄을 펼친 예시입니다.
+## 검수한 내부 대화 준비
+
+서비스에서 나온 대화는 바로 학습 정답으로 사용할 수 있는 데이터가 아니라 학습 예제를 만들기 위한 원본입니다.
+과거 모델 응답을 그대로 복사하지 말고 앞으로 모델이 해야 할 응답으로 고쳐 검수합니다.
+학습 이용 권한을 확인하고 개인정보, 비밀 키와 내부 주소 같은 민감정보를 제거한 예제만 변환합니다.
+다음은 검수를 마친 입력 한 줄을 읽기 쉽게 펼친 예시입니다.
 
 ```json
 {
@@ -99,14 +111,14 @@ Megatron은 `PYTHONPATH=backends/megatron`과 `megatron_lab.prepare_service_data
 `test.jsonl`의 `grader`는 평가 정보를 담지만 평가기를 자동 실행하지 않습니다.
 `prepare_service_data.sh` 래퍼는 `.venv/bin/python`을 사용하므로 다른 Python을 쓰려면 위 모듈 진입점을 사용합니다.
 
-## Connect to Training
+## 학습에 연결
 
 | 실행 경로 | 입력 연결 | 제한 |
 | --- | --- | --- |
 | TRL Spark | setup의 `nodes[].data_dir` | 공개 데이터 형식 manifest와 `prompt_id` 필요 |
 | Megatron Spark | setup의 `nodes[].data_dir` | 고정 데이터 ID·revision과 native completion 전처리 필요 |
 
-서비스 변환 결과는 두 Spark 백엔드의 manifest 검증을 그대로 통과하지 못합니다.
+내부 대화 변환 결과는 두 Spark 백엔드의 manifest 검증을 그대로 통과하지 못합니다.
 임의 revision을 채워 우회하지 말고 불변 버전과 호환 manifest를 만드는 구현이 별도로 필요하다는 제한으로 취급합니다.
 Spark 전처리는 모델의 native template으로 마지막 assistant 이전 prompt와 마지막 응답·EOS를 분리합니다.
 토큰 경계와 supervised token을 검사하며 길이를 초과하면 조용히 자르지 않고 중단합니다.

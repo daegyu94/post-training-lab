@@ -9,7 +9,8 @@ Controller와 `spark1`·`spark2`의 역할, SSH 실행 흐름, NFS 경로는 [Sp
 
 Controller에는 Python 3.10 이상과 Git이 필요합니다.
 아래 명령은 저장소 루트에서 실행해 setup과 experiment를 결합한 실행 계획을 출력합니다.
-예제 setup의 경로는 자리표시자이며 이 검토 단계는 SSH나 원격 파일을 검사하지 않습니다.
+예제 setup에는 실제 환경과 무관한 예시 경로가 들어 있습니다.
+이 검토 단계는 SSH로 접속하거나 원격 파일의 존재를 확인하지 않습니다.
 
 ```bash
 python experiments/run.py \
@@ -36,8 +37,8 @@ python experiments/run.py \
 - 미리 생성한 쓰기 가능한 출력 부모 디렉터리
 
 설치는 [TRL](backends/trl.md#spark-environment) 또는 [Megatron](backends/megatron.md#spark-environment)을 따릅니다.
-두 backend requirements는 서로 다른 Spark 환경을 대상으로 하며 단일 설치 스크립트가 환경 준비를 완결한다고 가정하지 않습니다.
-특히 Megatron은 새 환경의 전체 의존성 설치가 검증되지 않았다는 제한이 있습니다.
+두 backend requirements는 서로 다른 Spark 환경을 대상으로 하므로 각각의 Python 환경을 준비합니다.
+Megatron은 기존 Spark 환경에서 2노드 smoke를 다시 통과했지만, 새 환경에 전체 의존성을 처음부터 설치하는 과정은 아직 검증되지 않았습니다.
 
 Controller에는 OpenSSH client가 필요하고 노드에는 Git, Bash, GNU `timeout`, `setsid`가 필요합니다.
 각 노드에 대한 `ssh -o BatchMode=yes '<ssh-host>' true`가 비대화형으로 성공하는지 확인합니다.
@@ -45,13 +46,19 @@ Rendezvous 주소·포트와 NCCL 통신 경로도 노드 사이에서 접근 �
 
 ## Prepare the Inputs
 
-제공된 smoke 네 개는 `Qwen/Qwen2.5-0.5B-Instruct` revision `7ae557604adf67be50417f59c2c2f167def9a775`와 No Robots revision `e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b`를 사용합니다.
-모델은 각 노드에 가중치와 tokenizer를 포함한 동일 snapshot을 준비하고 절대 경로를 setup에 기록합니다.
-한 노드의 cache만 채워서는 안 되며 setup 스크립트는 모델 다운로드를 보장하지 않습니다.
+제공된 네 smoke preset은 실행 경로를 빠르게 확인하기 위해 다음 입력을 고정해서 사용합니다.
 
-각 노드에서 백엔드 환경의 Python을 지정한 뒤 다음 예시로 고정 모델을 내려받을 수 있습니다.
-명령은 Hugging Face Hub에 접속하고 node-local cache에 가중치·tokenizer를 저장합니다.
-출력된 snapshot 절대 경로를 해당 노드의 `model_dirs`에 사용합니다.
+| 입력 | 고정 버전 |
+| --- | --- |
+| 모델 | `Qwen/Qwen2.5-0.5B-Instruct` revision `7ae557604adf67be50417f59c2c2f167def9a775` |
+| 데이터 | `HuggingFaceH4/no_robots` revision `e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b` |
+
+먼저 모델을 **각 Spark 노드에 따로** 준비합니다.
+모델 snapshot은 가중치, tokenizer와 설정 파일이 모두 들어 있는 디렉터리입니다.
+한 노드의 cache만 채우면 다른 노드에서는 모델을 읽을 수 없으며 setup 스크립트가 대신 다운로드하지도 않습니다.
+
+각 노드에서 사용할 백엔드 Python을 지정하고 아래 명령을 실행합니다.
+명령이 출력하는 snapshot 절대 경로를 해당 노드의 `model_dirs`에 기록합니다.
 
 ```bash
 export PYTHON='<backend-python>'
@@ -64,8 +71,8 @@ print(snapshot_download(
 PY
 ```
 
-[공개 데이터 준비](datasets.md#public-data)로 No Robots 8 train / 2 validation 예제를 생성합니다.
-JSONL과 manifest를 모든 참여 노드에서 읽을 수 있게 하고 `data_dir`은 해당 노드 기준 경로로 지정합니다.
+다음으로 [공개 데이터 준비](datasets.md#public-data)에 따라 No Robots 학습 예제 8개와 검증 예제 2개를 만듭니다.
+데이터를 NFS 공유 디렉터리에 한 번 준비한 뒤 두 노드의 `data_dir`이 같은 JSONL과 manifest를 가리키게 합니다.
 
 ## Configure the Setup
 
