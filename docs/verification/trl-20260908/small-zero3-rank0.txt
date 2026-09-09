@@ -1,262 +1,0 @@
-[workflow] stage=train rank=0/2 model=Qwen/Qwen2.5-0.5B-Instruct model_dir=/home/spark/shared/post-training-lab/models/Qwen2.5-0.5B-Instruct backend=deepspeed
-[workflow] running stage=train rank=0/2
-/home/spark/ptl-envs/trl/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
-    Found GPU0 NVIDIA GB10 which is of cuda capability 12.1.
-    Minimum and Maximum cuda capability supported by this version of PyTorch is
-    (8.0) - (12.0)
-    
-  queued_call()
-spark1:1192785:1192785 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
-spark1:1192785:1192785 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
-spark1:1192785:1192785 [0] NCCL INFO Bootstrap: Using enp1s0f0np0:12.201.48.11<0>
-spark1:1192785:1192785 [0] NCCL INFO cudaDriverVersion 13000
-spark1:1192785:1192785 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
-spark1:1192785:1192785 [0] NCCL INFO Comm config Blocking set to 1
-spark1:1192785:1192785 [0] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
-spark1:1192785:1192785 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to enp1s0f0np0
-spark1:1192785:1192785 [0] NCCL INFO NCCL_IB_HCA set to rocep1s0f0
-spark1:1192785:1192785 [0] NCCL INFO NET/IB : Using [0]rocep1s0f0:1/RoCE [RO]; OOB enp1s0f0np0:12.201.48.11<0>
-spark1:1192785:1192785 [0] NCCL INFO Initialized NET plugin IB
-spark1:1192785:1192785 [0] NCCL INFO Assigned NET plugin IB to comm
-spark1:1192785:1192785 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
-spark1:1192785:1192785 [0] NCCL INFO Using network IB
-spark1:1192785:1192785 [0] NCCL INFO ncclCommInitRankConfig comm 0x4f0fd5e0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x2934d628331d1244 - Init START
-spark1:1192785:1192785 [0] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
-spark1:1192785:1192785 [0] NCCL INFO Bootstrap timings total 0.092540 (create 0.000025, send 0.000109, recv 0.089990, ring 0.000039, delay 0.000000)
-spark1:1192785:1192785 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
-spark1:1192785:1192785 [0] NCCL INFO comm 0x4f0fd5e0 rank 0 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
-spark1:1192785:1192785 [0] NCCL INFO Channel 00/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Channel 01/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Channel 02/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Channel 03/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Channel 04/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Channel 05/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Channel 06/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Channel 07/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] 1/-1/-1->0->-1 [2] 1/-1/-1->0->-1 [3] 1/-1/-1->0->-1 [4] -1/-1/-1->0->1 [5] -1/-1/-1->0->1 [6] -1/-1/-1->0->1 [7] -1/-1/-1->0->1
-spark1:1192785:1192785 [0] NCCL INFO P2P Chunksize set to 131072
-spark1:1192785:1192785 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
-spark1:1192785:1192785 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
-spark1:1192785:1192972 [0] NCCL INFO [Proxy Service] Device 0 CPU core 19
-spark1:1192785:1192973 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 10
-spark1:1192785:1192785 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
-spark1:1192785:1192785 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
-spark1:1192785:1192785 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
-spark1:1192785:1192785 [0] NCCL INFO CC Off, workFifoBytes 1048576
-spark1:1192785:1192785 [0] NCCL INFO ncclCommInitRankConfig comm 0x4f0fd5e0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 commId 0x2934d628331d1244 - Init COMPLETE
-spark1:1192785:1192785 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 2 total 0.28 (kernels 0.16, alloc 0.02, bootstrap 0.09, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.00)
-spark1:1192785:1192785 [0] NCCL INFO Channel 00/0 : 1[0] -> 0[0] [receive] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Channel 01/0 : 1[0] -> 0[0] [receive] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Channel 02/0 : 1[0] -> 0[0] [receive] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Channel 03/0 : 1[0] -> 0[0] [receive] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Channel 04/0 : 1[0] -> 0[0] [receive] via NET/IB/0
-spark1:1192785:1192976 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 6
-spark1:1192785:1192785 [0] NCCL INFO Channel 05/0 : 1[0] -> 0[0] [receive] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Channel 06/0 : 1[0] -> 0[0] [receive] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Channel 07/0 : 1[0] -> 0[0] [receive] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[0] [send] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[0] [send] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[0] [send] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[0] [send] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[0] [send] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[0] [send] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[0] [send] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[0] [send] via NET/IB/0
-spark1:1192785:1192785 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 0
-Adding EOS to train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Adding EOS to train dataset: 100%|##########| 4/4 [00:00<00:00, 3560.53 examples/s]
-Tokenizing train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Tokenizing train dataset: 100%|##########| 4/4 [00:00<00:00, 949.53 examples/s]
-Building labels for train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Building labels for train dataset: 100%|##########| 4/4 [00:00<00:00, 2967.84 examples/s]
-Truncating train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Truncating train dataset: 100%|##########| 4/4 [00:00<00:00, 3427.42 examples/s]
-Dropping fully masked examples from train dataset:   0%|          | 0/4 [00:00<?, ? examples/s]Dropping fully masked examples from train dataset: 100%|##########| 4/4 [00:00<00:00, 5823.40 examples/s]
-Adding EOS to eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Adding EOS to eval dataset: 100%|##########| 2/2 [00:00<00:00, 3440.77 examples/s]
-Tokenizing eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Tokenizing eval dataset: 100%|##########| 2/2 [00:00<00:00, 474.60 examples/s]
-Building labels for eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Building labels for eval dataset: 100%|##########| 2/2 [00:00<00:00, 1432.97 examples/s]
-Truncating eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Truncating eval dataset: 100%|##########| 2/2 [00:00<00:00, 1815.32 examples/s]
-Dropping fully masked examples from eval dataset:   0%|          | 0/2 [00:00<?, ? examples/s]Dropping fully masked examples from eval dataset: 100%|##########| 2/2 [00:00<00:00, 2812.14 examples/s]
-[transformers] The tokenizer has new PAD/BOS/EOS tokens that differ from the model config and generation config. The model config and generation config were aligned accordingly, being updated with the tokenizer's values. Updated tokens: {'bos_token_id': None, 'pad_token_id': 151643}.
-spark1:1192785:1192785 [0] NCCL INFO Comm config Blocking set to 1
-spark1:1192785:1192785 [0] NCCL INFO Initialized NET plugin IB
-spark1:1192785:1192785 [0] NCCL INFO Assigned NET plugin IB to comm
-spark1:1192785:1192785 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
-spark1:1192785:1192785 [0] NCCL INFO Using network IB
-spark1:1192785:1192785 [0] NCCL INFO ncclCommSplit comm 0x5acbd5f0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 parent 0x4f0fd5e0 splitCount 1 color 2130503744 key 0- Init START
-spark1:1192785:1192785 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-19).
-spark1:1192785:1192785 [0] NCCL INFO comm 0x5acbd5f0 rank 0 nRanks 2 nNodes 2 localRanks 1 localRank 0 MNNVL 0
-spark1:1192785:1192785 [0] NCCL INFO Channel 00/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Channel 01/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Channel 02/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Channel 03/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Channel 04/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Channel 05/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Channel 06/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Channel 07/08 : 0 1
-spark1:1192785:1192785 [0] NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] 1/-1/-1->0->-1 [2] 1/-1/-1->0->-1 [3] 1/-1/-1->0->-1 [4] -1/-1/-1->0->1 [5] -1/-1/-1->0->1 [6] -1/-1/-1->0->1 [7] -1/-1/-1->0->1
-spark1:1192785:1192785 [0] NCCL INFO P2P Chunksize set to 131072
-spark1:1192785:1192785 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
-spark1:1192785:1193157 [0] NCCL INFO [Proxy Service] Device 0 CPU core 3
-spark1:1192785:1193158 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 0
-spark1:1192785:1192785 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
-spark1:1192785:1192785 [0] NCCL INFO 8 coll channels, 8 collnet channels, 0 nvls channels, 8 p2p channels, 2 p2p channels per peer
-spark1:1192785:1192785 [0] NCCL INFO CC Off, workFifoBytes 1048576
-spark1:1192785:1192785 [0] NCCL INFO ncclCommSplit comm 0x5acbd5f0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId f01000 parent 0x4f0fd5e0 splitCount 1 color 2130503744 key 0 - Init COMPLETE
-spark1:1192785:1192785 [0] NCCL INFO Init timings - ncclCommSplit: rank 0 nranks 2 total 0.86 (kernels 0.00, alloc 0.00, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.00, rest 0.85)
-[2026-09-08 15:56:23,958] [WARNING] [engine.py:2079:_do_optimizer_sanity_check] **** You are using ZeRO with an untested optimizer, proceed with caution *****
-  0%|          | 0/1 [00:00<?, ?it/s]100%|##########| 1/1 [00:01<00:00,  1.34s/it]                                             {'loss': '2.828', 'grad_norm': '23.39', 'learning_rate': '2e-05', 'entropy': '2.343', 'num_tokens': '569', 'mean_token_accuracy': '0.4459', 'epoch': '0.5'}
-100%|##########| 1/1 [00:01<00:00,  1.34s/it][transformers]  stage3_gather_16bit_weights_on_model_save=false. Saving the full checkpoint instead, use zero_to_fp32.py to recover weights
-
-Writing model shards: 0it [00:00, ?it/s][AWriting model shards: 0it [00:00, ?it/s]
-                                             {'train_runtime': '52.69', 'train_samples_per_second': '0.038', 'train_steps_per_second': '0.019', 'train_loss': '2.828', 'epoch': '0.5'}
-100%|##########| 1/1 [00:52<00:00,  1.34s/it]100%|##########| 1/1 [00:52<00:00, 52.72s/it]
-[transformers]  stage3_gather_16bit_weights_on_model_save=false. Saving the full checkpoint instead, use zero_to_fp32.py to recover weights
-Writing model shards: 0it [00:00, ?it/s]Writing model shards: 0it [00:00, ?it/s]
-  0%|          | 0/1 [00:00<?, ?it/s]100%|##########| 1/1 [00:00<00:00, 2098.20it/s]
-{
-  "stage": "train",
-  "rank": 0,
-  "world_size": 2,
-  "node_rank": 0,
-  "distributed_backend": "deepspeed",
-  "deepspeed_config": "configs/deepspeed-zero3.json",
-  "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
-  "model_family": "qwen2",
-  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
-  "model_snapshot_evidence": {
-    "config_json_present": true,
-    "config_json_sha256": "18e18afcaccafade98daf13a54092927904649e1dd4eba8299ab717d5d94ff45",
-    "weight_index_present": false,
-    "weight_index_sha256": null,
-    "indexed_tensor_count": null,
-    "indexed_shard_count": null,
-    "weight_file_count": 1,
-    "snapshot_path_revision": null,
-    "verification": "complete local files observed"
-  },
-  "dataset_id": "HuggingFaceH4/no_robots",
-  "dataset_revision": "e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b",
-  "finetuning_mode": "full",
-  "optimizer": "sgd",
-  "learning_rate": 2e-05,
-  "precision": "bf16",
-  "gradient_checkpointing": {
-    "enabled": true,
-    "use_reentrant": false,
-    "fsdp_activation_checkpointing": false
-  },
-  "optimizer_state_estimate_bytes": 0,
-  "optimizer_state_actual_bytes": 0,
-  "optimizer_state_scope": "rank-local shard",
-  "optimizer_state_dtypes": [],
-  "memory_components_scope": "pre-wrap logical model view; not a rank-local sharded allocation",
-  "memory_components_bytes": {
-    "parameters_by_dtype": {
-      "torch.bfloat16": 988065536
-    },
-    "trainable_gradients_by_dtype": {
-      "torch.bfloat16": 988065536
-    },
-    "optimizer_state_estimate": 0,
-    "optimizer_state_actual": 0
-  },
-  "max_steps": 1,
-  "actual_optimizer_steps": 1,
-  "train_seconds": 87.67566119134426,
-  "train_metrics": {
-    "train_runtime": 52.6902,
-    "train_samples_per_second": 0.038,
-    "train_steps_per_second": 0.019,
-    "total_flos": 244278528.0,
-    "train_loss": 2.828331708908081,
-    "epoch": 0.5
-  },
-  "trainable_parameter_count": 0,
-  "total_parameter_count": 0,
-  "trainable_parameter_fraction": 0.0,
-  "sampled_parameter_names": [],
-  "sampled_parameter_update_max_abs": {},
-  "peak_cuda_memory_allocated_gib": 4.3675384521484375,
-  "peak_cuda_memory_reserved_gib": 7.298828125,
-  "data": {
-    "manifest": {
-      "manifest_version": 1,
-      "adapter_version": "public-sft-v1",
-      "preset": "no_robots",
-      "dataset": "HuggingFaceH4/no_robots",
-      "config": "default",
-      "dataset_revision": "e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b",
-      "source_split": "train",
-      "validation_policy": "deterministic holdout from source train split; source test split not read",
-      "source_schema": "messages",
-      "license": "cc-by-nc-4.0",
-      "seed": 42,
-      "max_scan": 200,
-      "train_count": 8,
-      "eval_count": 2,
-      "train_prompt_ids": [
-        "627a77298cf96a309aa35a62207c4164e22a66f6db79119506228f28ddc0f947",
-        "7d443ef2cc3e34d9dc6ffcdf748c1d2a9880cd48be9c9887df29d25be90123f4",
-        "16d804af359db7823c457b7d82809eddaad9a5ea3c91ef3b192a04fee18ff7c6",
-        "a44e058dd0b58174a0e3bed67333b9f2e7bf1733041b308d16a7f23d11bd1934",
-        "2d8e4cc7524017dd3ab34bc542f3f706279f49b8baa8aac1c7af57d515a34551",
-        "5dce7ab02c8211fba9434d2ea31bc12fc9f5cb419832cdeae81c4a4ca8f709d6",
-        "dca7c1d32f891269b28bd65041b77eb3e61cfd0706941ff5de7ca563b296bdde",
-        "98153809e99610d9274fd3cc5c50bfa12baa0e5ea1ee8bcb38df7c77f8949e68"
-      ],
-      "eval_prompt_ids": [
-        "3c975b349494dea76dbbb9c01a2bb925a248efb8ca0944d4034bf6d23040f332",
-        "e9da2fa3a6d496c5a5ee500e58e5477362698aaa08e74ceeffd3fa89d0f806cb"
-      ],
-      "files": {
-        "training": {
-          "path": "training.jsonl",
-          "sha256": "b8fe53046c26bc02826be2606506d35da2d4d1b432ba9c80803f9ae3436707ab"
-        },
-        "validation": {
-          "path": "validation.jsonl",
-          "sha256": "d38e1f7bb39f154b607b5fd3d0b8878aa3354f57c3a41d1e175c9b7e813f6c5f"
-        }
-      }
-    },
-    "train_count": 4,
-    "eval_count": 2,
-    "actual_selected_rows": {
-      "train": [
-        "627a77298cf96a309aa35a62207c4164e22a66f6db79119506228f28ddc0f947",
-        "7d443ef2cc3e34d9dc6ffcdf748c1d2a9880cd48be9c9887df29d25be90123f4",
-        "16d804af359db7823c457b7d82809eddaad9a5ea3c91ef3b192a04fee18ff7c6",
-        "a44e058dd0b58174a0e3bed67333b9f2e7bf1733041b308d16a7f23d11bd1934"
-      ],
-      "validation": [
-        "3c975b349494dea76dbbb9c01a2bb925a248efb8ca0944d4034bf6d23040f332",
-        "e9da2fa3a6d496c5a5ee500e58e5477362698aaa08e74ceeffd3fa89d0f806cb"
-      ]
-    },
-    "supervised_tokens": {
-      "train": 680,
-      "validation": 986
-    },
-    "data_sha256": "604eb9f7ff623aba031dcdd328e44ae6bbd2b0f83b6c3cbad7a95c907b1f0965"
-  },
-  "evaluation": {
-    "eval_loss": 2.2433578968048096,
-    "eval_runtime": 0.7789,
-    "eval_samples_per_second": 2.568,
-    "eval_steps_per_second": 1.284,
-    "eval_entropy": 1.9749107360839844,
-    "eval_num_tokens": 569.0,
-    "eval_mean_token_accuracy": 0.545638918876648,
-    "epoch": 0.5
-  },
-  "validation": {
-    "summary_writer_rank": 0,
-    "finite_eval_loss": true,
-    "finite_train_loss": true,
-    "supervision_policy": "native chat-template prompt plus final assistant completion and EOS",
-    "parameter_update_evidence": "optimizer steps only; sharded parameter delta not collected",
-    "sampled_nonzero_update": false,
-    "training_result_verified": true,
-    "failure_reasons": []
-  }
-}
-spark1:1192785:1192785 [0] NCCL INFO comm 0x5acbd5f0 rank 0 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
-spark1:1192785:1192785 [0] NCCL INFO comm 0x4f0fd5e0 rank 0 nranks 2 cudaDev 0 busId f01000 - Destroy COMPLETE
-spark1:1192785:1192785 [0] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault

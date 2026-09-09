@@ -28,7 +28,6 @@ Controller에는 Python 3.10 이상과 Git이 필요하며 학습에는 준비�
 | `backends/` | 백엔드별 학습·데이터·환경 |
 | `observability/` | 계측·baseline·trace 도구 |
 | `docs/` | 사용자 가이드·reference·설계 |
-| `docs/verification/` | 과거 실행 증거와 해설 |
 | `tests/` | CPU·실행 계약 회귀 검사 |
 
 DPO, RL trainer, registry와 serving 배포는 구현되어 있지 않습니다.

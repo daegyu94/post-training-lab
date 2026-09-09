@@ -88,7 +88,7 @@ DeepSpeed는 [ZeRO-2](../../backends/trl/configs/deepspeed-zero2.json) 또는 [Z
 `deepspeed-zero3-nvme.json`은 `/mnt/post-training/trl`로 parameter와 optimizer state를 offload하는 30B 실습 전용 설정입니다.
 일반 ZeRO-3와 달리 두 노드에 쓰기 가능한 로컬 디렉터리와 DeepSpeed async I/O build가 필요합니다.
 
-모델과 backend별 실행 결과와 실패 원인은 [TRL Spark verification](../verification/trl-20260908/README.md)에 보존합니다.
+모델과 backend별 실행 결과와 실패 원인은 [Verification](../verification.md)에 요약합니다.
 0.5B smoke 성공을 30B full SFT의 메모리 적합성이나 장기 수렴 증거로 해석해서는 안 됩니다.
 
 ## Verify a Run

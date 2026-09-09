@@ -40,23 +40,38 @@ done
 Sharded backend의 optimizer-step 증거를 전체 parameter checksum 검증으로 읽지 않습니다.
 ZeRO-3 과거 summary의 parameter count 0은 placeholder 계측 문제이며 모델 크기 0이 아닙니다.
 
-## Historical Evidence
+## 30B GPU Results
 
-| 기록 | 범위 |
-| --- | --- |
-| [TRL Spark](verification/trl-20260908/README.md) | 모델·백엔드별 성공, OOM·NVML·state-dict 실패 |
-| [Megatron 통합 전 해설](verification/megatron-20260908.md) | 30B LoRA와 작은 모델의 제한된 checkpoint 비교 |
-| [구조 통합·공통 runner](verification/integration-20260908/README.md) | 실행 commit, 환경, 수정 이력과 raw evidence |
-| [반복 측정](verification/integration-20260908/benchmarks/README.md) | 실제 축소 실행안, 실패·생략과 측정 해석 |
-| [통합 전 보존 위치](verification/migration/preserved-branches.json) | 과거 브랜치·worktree 보존 정보 |
+2026-09-09에 commit `54a5fe0b69d168a86746d7de576d5dcae61c36b9`의 깨끗한 checkout으로 `spark1`과 `spark2`에서 GPU당 process 하나를 실행했습니다.
+모든 결과는 1-step 실행 가능성만 보여주며 장기 안정성이나 학습 품질을 뜻하지 않습니다.
 
-기록의 원래 host·경로·수치는 당시 provenance이며 재사용 가능한 현재 설정 예제가 아닙니다.
-대형 가중치·checkpoint와 일부 통합 전 로그는 Git에 포함되지 않습니다.
-이번 문서 정리에서 과거 raw manifest·log·measurement의 내용은 변경하지 않았습니다.
+Megatron은 `TP=1`, `PP=1`, `EP=2`, `DP=2`, BF16, sequence length 2048, global batch 2와 attention LoRA를 사용했습니다.
+Qwen3-30B-A3B와 GLM-4.7-Flash 모두 1 optimizer step, 평가, async `torch_dist` checkpoint와 양 rank exit 0을 확인했습니다.
 
-## Documentation Review
+| Model | Train result | Peak allocated |
+| --- | --- | --- |
+| Qwen3-30B-A3B | loss `4.110986`, grad norm `15.480`, step `7.28 s` | `34.759 GiB` |
+| GLM-4.7-Flash | loss `2.497179`, grad norm `7.883`, step `6.37 s` | `34.671 GiB` |
 
-이번 정리의 구조 변경과 실제 검사 범위는 [문서 검토 기록](verification/documentation-20260908.md)에 남깁니다.
+TRL은 Qwen3-30B-A3B, BF16, sequence length 2048, global batch 2와 attention LoRA를 사용했습니다.
+DDP와 FSDP2 모두 1 optimizer step, finite train/eval loss, checkpoint와 양 rank exit 0을 확인했습니다.
+
+| Backend | Train / eval loss | Peak allocated / reserved | Update evidence |
+| --- | --- | --- | --- |
+| DDP | `3.156563` / `2.587339` | `58.825 / 58.971 GiB` | sampled parameter delta가 0이 아님 |
+| FSDP2 | `3.156250` / `2.566406` | `32.147 / 34.188 GiB` | optimizer step과 sharded checkpoint |
+
+## NVMe and Full SFT
+
+두 Spark 노드의 `/mnt/post-training`은 로컬 NVMe root filesystem에 있고 backend별 디렉터리에 `spark` 쓰기 권한이 있습니다.
+Megatron Qwen3-30B LoRA는 `/mnt/post-training/megatron`에서 1 step과 async checkpoint를 완료했으며 각 노드에 rank별 shard가 생성됐습니다.
+
+Megatron은 NVMe를 native training state offload 대상으로 지원하지 않으므로 이 결과는 dataset cache와 checkpoint I/O 검증입니다.
+TRL의 ZeRO-3 NVMe offload는 별도의 DeepSpeed AIO extension build와 실제 1-step 완료를 성공 조건으로 사용합니다.
+
+30B full SFT의 기존 DDP와 FSDP2 실패는 dataset 전체 적재가 원인이 아닙니다.
+DDP는 parameter와 gradient가 unified memory 한도에 근접하고, 설치된 Accelerate의 FSDP2 준비 과정은 sharding 전에 trainable BF16 parameter를 FP32로 올립니다.
+현재 하드웨어에서 남은 full-SFT 후보는 TRL의 DeepSpeed ZeRO-3 NVMe parameter·optimizer offload이며 실제 실행 결과로 가능 여부를 판정해야 합니다.
 
 ## Known Implementation Limits
 
@@ -66,5 +81,4 @@ ZeRO-3 과거 summary의 parameter count 0은 placeholder 계측 문제이며 �
 - 서비스 변환 manifest는 두 Spark validator의 고정 데이터 형식과 다릅니다.
 - Sharded export·resume와 parameter 계측은 백엔드별 제한이 있으므로 학습 성공과 별도 검증해야 합니다.
 
-문서의 명령을 맞추기 위해 위 구현을 변경하지 않았습니다.
 실패를 지원 불가능으로 일반화하거나 임의의 revision·버전으로 우회하지 않습니다.

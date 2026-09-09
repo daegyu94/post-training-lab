@@ -21,7 +21,7 @@
 
 ## Information Boundaries
 
-설치·현재 실행 절차는 task guide에, 지표 계약은 reference에, 측정 당시 조건은 `verification/`에 둡니다.
+설치·현재 실행 절차는 task guide에, 지표 계약은 reference에, 실행 판정 기준과 최신 결과 요약은 [Verification](verification.md)에 둡니다.
 과거 기록의 수치는 새 실행의 성능·품질을 보증하지 않습니다.
 대형 checkpoint·모델 가중치는 Git에 포함되지 않습니다.
 

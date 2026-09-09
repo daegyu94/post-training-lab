@@ -1,8 +1,0 @@
-{"event": "finalize_async_saves", "seconds": 2.719927579164505e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
-{"event": "finalize_async_saves", "seconds": 2.719927579164505e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
-{"event": "finalize_async_saves", "seconds": 2.6240013539791107e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
-{"event": "finalize_async_saves", "seconds": 2.6081688702106476e-06, "success": true, "stage": "train", "blocking": false, "terminate": false}
-{"event": "save", "seconds": 63.57546782726422, "success": true, "stage": "train"}
-{"event": "finalize_async_saves", "seconds": 4.047993570566177e-06, "success": true, "stage": "train", "blocking": true, "terminate": true}
-{"event": "finalize_async_saves", "seconds": 3.2959505915641785e-06, "success": true, "stage": "train", "blocking": true, "terminate": true}
-{"event": "stage", "stage": "train", "success": true, "seconds": 75.28171403286979, "peak_cuda_allocated_bytes": 7050689536, "peak_cuda_reserved_bytes": 8145338368}

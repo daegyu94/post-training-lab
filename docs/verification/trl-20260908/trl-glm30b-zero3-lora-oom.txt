@@ -1,2 +1,0 @@
-Sep 08 16:59:00 spark1 kernel: oom-kill:constraint=CONSTRAINT_NONE,nodemask=(null),cpuset=systemd-journald.service,mems_allowed=0,global_oom,task_memcg=/user.slice/user-1000.slice/session-6676.scope,task=python,pid=1214575,uid=1000
-Sep 08 16:59:00 spark1 kernel: Out of memory: Killed process 1214575 (python) total-vm:459492872kB, anon-rss:35293572kB, file-rss:113020kB, shmem-rss:40188kB, UID:1000 pgtables:113096kB oom_score_adj:0

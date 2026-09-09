@@ -90,4 +90,4 @@ Whole-run 시간은 원격 시작·초기화·평가·정리를 포함합니다.
 CUDA allocator peak는 전체 장치 사용량이 아닙니다.
 Checkpoint save와 blocking finalization은 host 호출 시간이며 native step timer와 별도입니다.
 Async background I/O의 자원 경쟁은 학습 시간에 영향을 줄 수 있습니다.
-실제 축소 실행의 42 passed / 2 failed / 4 skipped와 해석은 [반복 측정 기록](verification/integration-20260908/benchmarks/README.md)을 확인합니다.
+반복 결과는 각 실행의 manifest와 `records.jsonl`에서 판정하고, 저장소에는 과거 run log를 복제해 보관하지 않습니다.

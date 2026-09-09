@@ -47,7 +47,6 @@ source scripts/spark_runtime_env.sh
 
 Helper는 venv의 userspace library 경로와 extension suffix를 설정하며 driver나 system package를 설치하지 않습니다.
 Import 성공은 CUDA kernel·NCCL·학습 성공과 구분합니다.
-설치 당시 기록은 [통합 실행 환경](../verification/integration-20260908/README.md#runtime)을 확인합니다.
 
 ## Spark SFT
 
@@ -92,7 +91,7 @@ Node-local shard를 다른 topology나 노드에서 재개하려면 필요한 sh
 TP/PP를 바꾸는 optimizer 재분할은 기본 `dp_reshardable` format으로 해결되지 않습니다.
 `DIST_CKPT_OPTIM_FULLY_RESHARDABLE=true`인 별도 source checkpoint와 optimizer 저장·로드 조건이 필요합니다.
 `FULLY_PARALLEL_SAVE=true`만으로 이 format이 활성화되지는 않습니다.
-과거의 제한된 재개·tensor 비교는 [Megatron 검증 해설](../verification/megatron-20260908.md)을 확인합니다.
+현재 검증 범위와 남은 제한은 [Verification](../verification.md)을 확인합니다.
 
 ## Measurements and Known Limits
 
