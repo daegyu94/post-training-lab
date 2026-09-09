@@ -11,7 +11,7 @@
     "DISTRIBUTED_BACKEND": "deepspeed",
     "DEEPSPEED_CONFIG": "configs/deepspeed-zero3-nvme.json",
     "FINETUNING_MODE": "full",
-    "OPTIMIZER": "adamw",
+    "OPTIMIZER": "sgd",
     "MAX_STEPS": 1,
     "MAX_LENGTH": 2048,
     "TRAIN_SAMPLES": 4,
