@@ -4,6 +4,7 @@
 이 디렉터리는 [새 실습 템플릿](template/README.md)을 제공하며 학습 구현이나 실행 preset을 복제하지 않습니다.
 
 - [30B NVMe data movement](nvme-30b/README.md): TRL ZeRO-Infinity offload와 Megatron checkpoint I/O
+- [Sandbox resource limits](sandbox-resource-limits/README.md): cgroup v2 CPU/memory 상한 검증과 unified memory 한계
 
 ## Responsibilities
 
