@@ -18,9 +18,9 @@
       "device": "nvme",
       "nvme_path": "/mnt/post-training/trl",
       "pin_memory": true,
-      "buffer_count": 3,
-      "pipeline_read": true,
-      "pipeline_write": true
+      "buffer_count": 2,
+      "pipeline_read": false,
+      "pipeline_write": false
     }
   },
   "gradient_accumulation_steps": "auto",
