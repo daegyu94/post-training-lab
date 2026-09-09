@@ -7,7 +7,7 @@ from pathlib import Path
 def test_launcher_uses_explicit_torchrun_and_forwards_topology(tmp_path: Path) -> None:
     calls = tmp_path / "calls.jsonl"
     fake = tmp_path / "python"
-    fake.write_text("#!/usr/bin/env python3\nimport json, os, sys\nopen(%r, 'a').write(json.dumps({'argv': sys.argv[1:], 'rank': os.environ.get('NODE_RANK')})+'\\n')\n" % str(calls), encoding="utf-8")
+    fake.write_text("#!/usr/bin/env python3\nimport json, os, sys\nopen(%r, 'a').write(json.dumps({'argv': sys.argv[1:], 'rank': os.environ.get('NODE_RANK'), 'path': os.environ['PATH']})+'\\n')\n" % str(calls), encoding="utf-8")
     fake.chmod(0o755)
     model = tmp_path / "model"
     model.mkdir()
@@ -19,6 +19,7 @@ def test_launcher_uses_explicit_torchrun_and_forwards_topology(tmp_path: Path) -
     assert "torch.distributed.run" in call["argv"]
     assert "--standalone" not in call["argv"]
     assert call["rank"] == "1"
+    assert call["path"].split(os.pathsep)[0] == str(tmp_path)
     payload = call["argv"][call["argv"].index("trl_lab.spark_train") + 1 :]
     assert payload.count("base") == 1
     assert payload[payload.index("--distributed-backend") + 1] == "ddp"

@@ -23,6 +23,9 @@ sudo install -d -o spark -g spark -m 700 \
 sudo apt-get install libaio-dev
 ```
 
+TRL Python 환경에는 `requirements-spark.txt`에 고정된 `ninja`도 필요합니다.
+Launcher는 `PYTHON`이 가리키는 환경의 `bin`을 `PATH`에 추가하므로 DeepSpeed JIT가 같은 환경의 `ninja`를 사용합니다.
+
 그다음 controller에서 경로와 DeepSpeed async I/O를 확인합니다.
 
 ```bash
