@@ -72,6 +72,31 @@ Observatory node agent에 같은 `run_id`와 `--framework-metrics-dir <output>/f
 학습 process는 collector에 직접 접속하지 않으므로 collector 또는 tunnel 장애가 학습 step을 막지 않습니다.
 직접 backend launcher를 실행할 때에는 `OBSERVATORY_RUN_ID`와 `FRAMEWORK_METRICS_DIR`를 함께 설정해야 adapter가 활성화됩니다. 공통 runner를 쓰면 두 값을 자동으로 설정하므로 따로 지정할 필요가 없습니다.
 
+### Lightweight Local Viewer (History Server Pattern)
+
+위 Observatory 경로는 SSH reverse tunnel과 별도 collector 프로세스가 필요합니다.
+Controller와 두 Spark 노드가 이미 같은 NFS 공유 디렉터리를 보고 있으므로(`AGENTS.md`의 NFS 절 참고), `FRAMEWORK_METRICS_DIR`를 node-local NVMe 대신 그 공유 경로로 지정하면 collector나 SSH tunnel 없이도 controller가 파일을 직접 읽을 수 있습니다.
+Apache Spark나 MapReduce의 History Server와 같은 pull 방식입니다: 애플리케이션은 잘 알려진 공유 경로에 쓰기만 하고, 뷰어는 그 경로를 그냥 읽습니다.
+
+```text
+Observatory (push, 위 경로)                   Local viewer (pull, 이 경로)
+
+spark1 --SSH tunnel--> collector --> SQLite    spark1 --+
+spark2 --SSH tunnel--> collector       |                +--> NFS 공유 경로 (같은 파일, 복사 없음)
+                        |                       spark2 --+          |
+                        +--> JSON export                            v
+                             --> GitHub Pages          controller가 직접 읽음 (SSH·tunnel·token 불필요)
+                                                                     |
+                                                                     v
+                                                     정적 HTTP server + 브라우저 polling
+```
+
+`backends/trl/scripts/run_spark_cluster.sh`와 `backends/megatron/scripts/run_spark_cluster.sh`는 `FRAMEWORK_METRICS_DIR`가 이미 설정돼 있으면 그 값을 그대로 쓰고, 없으면 기존처럼 `<output>/framework-metrics`(node-local NVMe)를 기본값으로 씁니다.
+공유 경로를 가리키게 하려면 launcher 호출 전에 `FRAMEWORK_METRICS_DIR`를 NFS 경로로 export하면 됩니다. `<output>/model`처럼 checkpoint 저장 경로는 이 값의 영향을 받지 않으므로 30B NVMe 실습처럼 checkpoint 자체는 node-local NVMe에 남기고 metric만 공유 경로로 보낼 수 있습니다.
+뷰어는 그 경로의 `<framework>-rank-<rank>.json`을 주기적으로 `fetch`하는 간단한 정적 HTML이면 충분하며, 저장소에는 포함돼 있지 않습니다.
+이 경로는 GitHub Pages에 값을 공개하지 않으며 controller에서만 보입니다. 외부에 공개하려면 위 Observatory push·export 절차를 그대로 따릅니다.
+2026-09-09에 Qwen2.5-0.5B DDP smoke를 60 step으로 돌리며 이 방식을 실제로 검증했습니다: launcher가 공유 경로에 쓴 `trl-rank-0.json`을 controller가 SSH 없이 직접 읽었고, 약 8초 동안 step 4→60까지 13번의 서로 다른 값을 관찰했습니다.
+
 ## Distributed Trace
 
 각 Spark 노드의 `observability`에서 CUDA Python과 같은 `PROFILE_RUN_ID`를 지정합니다.
