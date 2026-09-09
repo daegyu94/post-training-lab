@@ -11,7 +11,7 @@
       "device": "nvme",
       "nvme_path": "/mnt/post-training/trl",
       "pin_memory": true,
-      "buffer_count": 32,
+      "buffer_count": 8,
       "buffer_size": 210000000
     },
     "offload_optimizer": {

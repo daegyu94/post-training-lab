@@ -10,7 +10,7 @@
     "DATASET_REVISION": "e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b",
     "DISTRIBUTED_BACKEND": "deepspeed",
     "DEEPSPEED_CONFIG": "configs/deepspeed-zero3-nvme.json",
-    "FINETUNING_MODE": "lora",
+    "FINETUNING_MODE": "full",
     "OPTIMIZER": "adamw",
     "MAX_STEPS": 1,
     "MAX_LENGTH": 2048,

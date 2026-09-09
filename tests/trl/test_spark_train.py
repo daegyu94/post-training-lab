@@ -266,8 +266,3 @@ def test_sharded_backend_training_arguments_are_explicit(tmp_path: Path) -> None
     assert deepspeed["deepspeed"] == str(profile)
     assert deepspeed["gradient_checkpointing"] is True
     assert "fsdp" not in deepspeed
-
-    profile.write_text('{"zero_optimization": {"offload_param": {"device": "nvme"}}}', encoding="utf-8")
-    deepspeed_nvme = spark_train._sft_config_kwargs(config, base)
-    assert deepspeed_nvme["gradient_checkpointing"] is False
-    assert deepspeed_nvme["gradient_checkpointing_kwargs"] is None

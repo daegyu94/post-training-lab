@@ -71,7 +71,8 @@ Dry-run의 각 rank에서 TRL output이 `/mnt/post-training/trl/trl-nvme-30b`, M
 ## Expected Results and Verification
 
 TRL 성공 조건은 두 rank의 정상 종료, 1 optimizer step과 `/mnt/post-training/trl`의 DeepSpeed NVMe read/write 발생입니다.
-LoRA에서는 optimizer state가 작으므로 parameter offload가 주된 NVMe 이동량입니다.
+이 preset은 전체 parameter와 optimizer state를 NVMe training-time memory tier로 사용하는 full SFT입니다.
+현재 고정된 TRL·DeepSpeed 조합에서 LoRA와 ZeRO-3 NVMe parameter offload를 함께 쓰면 reentrant gradient checkpointing이 여러 MoE layer의 swap buffer를 계속 점유하므로 지원하지 않습니다.
 전처리 JSONL과 Hugging Face Arrow cache도 run output 아래에 남으며 dataset 전체를 Python list로 적재하지 않습니다.
 
 Megatron 성공 조건은 두 rank의 정상 종료, 1 optimizer step, async save finalization과 각 노드의 `/mnt/post-training/megatron/megatron-nvme-30b/checkpoints` shard 생성입니다.

@@ -172,17 +172,10 @@ def _optimizer_state_dtypes(optimizer: Any, torch: Any) -> list[str]:
     return sorted({str(value.dtype) for item in _optimizer_state(optimizer).values() for value in item.values() if torch.is_tensor(value)})
 
 
-def _uses_nvme_parameter_offload(config: SparkConfig) -> bool:
-    if config.distributed_backend != "deepspeed" or config.deepspeed_config is None:
-        return False
-    profile = json.loads(config.deepspeed_config.read_text(encoding="utf-8"))
-    return profile.get("zero_optimization", {}).get("offload_param", {}).get("device") == "nvme"
-
-
 def _sft_config_kwargs(config: SparkConfig, args: argparse.Namespace) -> dict[str, Any]:
     """Build Trainer arguments before model load so sharded init can take effect."""
 
-    use_gradient_checkpointing = config.distributed_backend != "fsdp2" and not _uses_nvme_parameter_offload(config)
+    use_gradient_checkpointing = config.distributed_backend != "fsdp2"
     kwargs: dict[str, Any] = {
         "output_dir": str(config.output_dir / "checkpoints"),
         "max_steps": args.max_steps,

@@ -28,7 +28,7 @@
 | `experiments/trl/smoke.json` | 2노드 DDP LoRA, 1 step | base/train/tuned |
 | `experiments/megatron/smoke.json` | 2노드 full SFT, 2 step | base/train/tuned |
 | `experiments/megatron/resume-smoke.json` | 2노드 full SFT, 2→3 step | base/train/resume/tuned |
-| `experiments/trl/nvme-offload-30b.json` | 2노드 Qwen3 30B LoRA, ZeRO-3 NVMe state offload | train |
+| `experiments/trl/nvme-offload-30b.json` | 2노드 Qwen3 30B full SFT, ZeRO-3 NVMe state offload | train |
 | `experiments/megatron/nvme-checkpoint-30b.json` | 2노드 Qwen3 30B LoRA, node-local NVMe async checkpoint | train |
 
 앞의 smoke 네 개는 작은 Qwen2.5-0.5B와 고정 No Robots 입력을 사용합니다.
