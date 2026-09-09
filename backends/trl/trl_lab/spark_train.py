@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from contextlib import nullcontext
+import gc
 import json
 import math
 import os
@@ -137,7 +138,25 @@ def _load_tokenizer(config: SparkConfig, transformers: Any) -> Any:
 
 def _load_model(config: SparkConfig, torch: Any, transformers: Any, peft: Any, load_tuned: bool = False) -> Any:
     model_path = config.output_dir / "model" if load_tuned and config.finetuning_mode == "full" else config.model_dir
-    model = transformers.AutoModelForCausalLM.from_pretrained(str(model_path), dtype=torch.bfloat16, local_files_only=True, revision=config.model_revision)
+    index_path = model_path / "model.safetensors.index.json"
+    if config.distributed_backend == "deepspeed" and index_path.is_file():
+        from safetensors.torch import load_file
+        from transformers.integrations.deepspeed import _load_state_dict_into_zero3_model
+
+        model_config = transformers.AutoConfig.from_pretrained(
+            str(model_path), local_files_only=True, revision=config.model_revision
+        )
+        model = transformers.AutoModelForCausalLM.from_config(model_config, dtype=torch.bfloat16)
+        shard_names = dict.fromkeys(json.loads(index_path.read_text(encoding="utf-8"))["weight_map"].values())
+        for shard_name in shard_names:
+            state_dict = load_file(model_path / shard_name, device="cpu")
+            errors, _ = _load_state_dict_into_zero3_model(model, state_dict)
+            if errors:
+                raise RuntimeError("failed to load ZeRO-3 checkpoint shard: " + "; ".join(errors))
+            del state_dict
+            gc.collect()
+    else:
+        model = transformers.AutoModelForCausalLM.from_pretrained(str(model_path), dtype=torch.bfloat16, local_files_only=True, revision=config.model_revision)
     if load_tuned and config.finetuning_mode == "lora":
         model = peft.PeftModel.from_pretrained(model, str(config.output_dir / "adapter"), is_trainable=False)
     model.config.use_cache = False

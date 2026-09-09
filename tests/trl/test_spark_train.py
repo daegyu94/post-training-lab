@@ -127,6 +127,38 @@ class FakeModel:
         self.parameter.requires_grad = value
 
 
+def test_deepspeed_model_loads_safetensor_shards_one_at_a_time(monkeypatch, tmp_path: Path) -> None:
+    model_dir = tmp_path / "model"
+    model_dir.mkdir()
+    (model_dir / "model.safetensors.index.json").write_text(
+        json.dumps({"weight_map": {"a": "first.safetensors", "b": "second.safetensors"}}),
+        encoding="utf-8",
+    )
+    loaded = []
+    model = FakeModel()
+    fake_transformers = types.SimpleNamespace(
+        AutoConfig=types.SimpleNamespace(from_pretrained=lambda *_args, **_kwargs: object()),
+        AutoModelForCausalLM=types.SimpleNamespace(from_config=lambda *_args, **_kwargs: model),
+    )
+    safetensors = types.ModuleType("safetensors")
+    safetensors_torch = types.ModuleType("safetensors.torch")
+    safetensors_torch.load_file = lambda path, **_kwargs: {Path(path).name: FakeTensor()}
+    integrations = types.ModuleType("transformers.integrations")
+    deepspeed = types.ModuleType("transformers.integrations.deepspeed")
+    deepspeed._load_state_dict_into_zero3_model = lambda _model, state: (loaded.append(next(iter(state))) or [], set())
+    monkeypatch.setitem(sys.modules, "safetensors", safetensors)
+    monkeypatch.setitem(sys.modules, "safetensors.torch", safetensors_torch)
+    monkeypatch.setitem(sys.modules, "transformers.integrations", integrations)
+    monkeypatch.setitem(sys.modules, "transformers.integrations.deepspeed", deepspeed)
+    config = types.SimpleNamespace(
+        distributed_backend="deepspeed", model_dir=model_dir, output_dir=tmp_path / "out",
+        finetuning_mode="full", model_revision="a" * 40,
+    )
+
+    assert spark_train._load_model(config, types.SimpleNamespace(bfloat16="bf16"), fake_transformers, object()) is model
+    assert loaded == ["first.safetensors", "second.safetensors"]
+
+
 def test_parameter_sampling_keeps_representative_update_evidence() -> None:
     parameter = FakeTensor()
     selected = spark_train._sample_trainable_parameters([
