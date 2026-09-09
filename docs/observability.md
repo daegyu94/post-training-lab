@@ -70,7 +70,7 @@ TRL은 Trainer가 집계한 loss와 실제 누적 입력 token 차이를 사용�
 
 Observatory node agent에 같은 `run_id`와 `--framework-metrics-dir <output>/framework-metrics`를 주면 노드 전체 CPU·메모리·NIC와 framework metric이 함께 collector로 전송됩니다.
 학습 process는 collector에 직접 접속하지 않으므로 collector 또는 tunnel 장애가 학습 step을 막지 않습니다.
-직접 backend launcher를 실행할 때에는 `OBSERVATORY_RUN_ID`를 설정해야 adapter가 활성화됩니다.
+직접 backend launcher를 실행할 때에는 `OBSERVATORY_RUN_ID`와 `FRAMEWORK_METRICS_DIR`를 함께 설정해야 adapter가 활성화됩니다. 공통 runner를 쓰면 두 값을 자동으로 설정하므로 따로 지정할 필요가 없습니다.
 
 ## Distributed Trace
 
