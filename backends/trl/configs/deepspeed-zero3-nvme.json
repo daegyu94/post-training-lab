@@ -6,14 +6,12 @@
     "stage": 3,
     "overlap_comm": true,
     "contiguous_gradients": true,
-    "stage3_prefetch_bucket_size": 0,
-    "stage3_max_reuse_distance": 0,
     "stage3_gather_16bit_weights_on_model_save": false,
     "offload_param": {
       "device": "nvme",
       "nvme_path": "/mnt/post-training/trl",
       "pin_memory": true,
-      "buffer_count": 16,
+      "buffer_count": 32,
       "buffer_size": 210000000
     },
     "offload_optimizer": {
