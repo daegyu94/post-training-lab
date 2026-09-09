@@ -99,6 +99,17 @@ Arrow dataset은 memory map과 운영체제 page cache를 사용하므로 동일
 즉 "간접적이지만 정량적인 근거"이며, "실패를 직접 재현한 근거"는 아닙니다. 그 control 실행은 아직 하지 않았고, 필요하면 별도로 계획합니다.
 또한 이 수치는 이 모델 크기·optimizer·병렬 구성에 한정되며, 다른 모델 크기나 optimizer(AdamW 등)로 일반화하지 않습니다.
 
+### Direction at Larger Scale: Local Offload, Remote Checkpoint
+
+이 절은 실측 비교가 아니라 **방향성 논의**입니다. Local NVMe와 NFS의 실제 throughput·latency 비교, 여러 노드가 동시에 shared storage에 쓸 때의 contention 측정은 지금 규모(2노드, 30B)에서는 결론에 큰 의미가 없다고 보고 보류했습니다 — 이런 질문은 checkpoint 크기와 node 수가 훨씬 커지는 GB300급 이상(로드맵 Step 3)에서 다시 다루는 게 맞습니다.
+
+다만 이번 실습에서 확인한 사실들은 하나의 방향을 가리킵니다: **runtime offload는 node-local storage에, checkpoint는 remote shared filesystem에 두는 쪽으로 가야 합니다.**
+
+- **Runtime offload(ZeRO-3 NVMe parameter·optimizer swap)는 node-local이 맞습니다.** 매 step마다 접근하는 고빈도·latency-sensitive I/O이고, 각 rank의 shard는 애초에 다른 노드와 공유할 이유가 없습니다. DeepSpeed 자체가 이미 "Offloading to NVMe can generate heavy write traffic ... Prefer enterprise/datacenter SSDs for sustained offloading workloads"라고 경고할 만큼 이 트래픽은 무겁습니다 — network filesystem을 얹으면 이 경로가 그대로 병목이 될 가능성이 큽니다.
+- **Checkpoint는 remote shared filesystem 쪽으로 가야 합니다.** 쓰는 빈도는 훨씬 낮지만(N step마다 1회), node-local에만 있으면 그 노드가 죽었을 때 checkpoint도 같이 사라져 다른 노드에서 재개할 수 없습니다. 모델이 커질수록 checkpoint 자체 크기도 커져 언젠가 node-local 디스크 용량(이번 세션 기준 노드당 3.7TB 중 30B 학습에서는 다 합쳐도 1TB 이내만 사용 — 아직 여유 있음)을 넘어설 수 있고, 그 시점은 모델 크기에 달려 있어 지금 이 클러스터로는 답할 수 없습니다.
+- Megatron 백엔드의 async·fully-reshardable checkpoint 작업(`docs/verification.md`)은 이미 "checkpoint가 특정 rank·특정 노드에 종속되지 않아야 한다"는 전제로 설계돼 있어서, 이 방향과 이미 맞닿아 있습니다.
+- 실제 distributed filesystem 선택(pNFS, 3FS 등)과 그 성능 검증은 로드맵 Step 2-1의 몫으로 남겨둡니다.
+
 ## Cleanup
 
 실행이 끝나고 보존할 로그·요약을 옮긴 뒤 run 디렉터리만 삭제합니다.
