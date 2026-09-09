@@ -36,3 +36,38 @@ Controller는 Git checkout, 설정, 실행 기록을 관리하고 GPU 학습 pro
   "megatron": "/path/to/megatron-run-results"
 }
 ```
+
+## Prepare Each Spark Node
+
+프로젝트 checkout과 프로젝트 전용 cache는 다음처럼 `$HOME/.local/ptl` 아래에 모으는 것을 권장합니다.
+학습 결과와 NVMe offload 파일은 용량과 수명이 다르므로 이 디렉터리가 아니라 setup의 `output_root`에 둡니다.
+
+| 용도 | 권장 경로 |
+| --- | --- |
+| Git checkout | `$HOME/.local/ptl/repo` |
+| TRL 가상환경 | `$HOME/.local/ptl/repo/backends/trl/.venv` |
+| Megatron 가상환경 | `$HOME/.local/ptl/repo/backends/megatron/.venv` |
+| Hugging Face cache | `$HOME/.local/ptl/cache/huggingface` |
+| Torch extension cache | `$HOME/.local/ptl/cache/torch_extensions` |
+
+TRL과 Megatron의 고정 의존성이 다르므로 하나의 공용 가상환경을 공유하지 않습니다.
+Launcher는 각 backend의 `.venv`를 기본으로 사용하고 cache 환경변수도 위 경로로 설정합니다.
+
+저장소를 권장 경로에 clone한 뒤 각 노드에서 다음 스크립트를 한 번 실행합니다.
+이 스크립트는 compiler, Python headers, `libaio-dev`, `ninja-build` 등 native extension과 DeepSpeed async I/O에 필요한 system package를 설치하고 두 `.venv`를 만듭니다.
+또한 TRL 30B NVMe 실습에 필요한 `spark` 사용자의 memlock 한도를 32GiB로 설정합니다.
+
+```bash
+cd "$HOME/.local/ptl/repo"
+./setups/spark/prepare_node.sh
+```
+
+`sudo` 권한이 필요하며 완료 후 새 SSH session으로 다시 접속해야 memlock 설정이 적용됩니다.
+
+```bash
+ulimit -l
+test "$(ulimit -l)" -ge 33554432
+```
+
+스크립트는 backend Python package를 설치하지 않습니다.
+TRL은 [TRL Spark environment](../../docs/backends/trl.md#prepare-the-spark-environment)를 따르고, Megatron은 [Megatron Spark environment](../../docs/backends/megatron.md#spark-environment)의 현재 설치 제한을 확인합니다.

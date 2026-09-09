@@ -36,8 +36,9 @@ python experiments/run.py \
 - 같은 JSONL과 manifest가 보이는 데이터 디렉터리
 - 미리 생성한 쓰기 가능한 출력 부모 디렉터리
 
-설치는 [TRL](backends/trl.md#spark-environment) 또는 [Megatron](backends/megatron.md#spark-environment)을 따릅니다.
-두 backend requirements는 서로 다른 Spark 환경을 대상으로 하므로 각각의 Python 환경을 준비합니다.
+먼저 [Spark cluster setup](../setups/spark/README.md#prepare-each-spark-node)의 공통 준비 스크립트로 system package와 backend별 `.venv`를 만듭니다.
+그다음 [TRL](backends/trl.md#prepare-the-spark-environment) 또는 [Megatron](backends/megatron.md#spark-environment)의 Python 의존성을 해당 `.venv`에 설치합니다.
+두 backend requirements는 서로 다르므로 하나의 가상환경을 공유하지 않습니다.
 Megatron은 기존 Spark 환경에서 2노드 smoke를 다시 통과했지만, 새 환경에 전체 의존성을 처음부터 설치하는 과정은 아직 검증되지 않았습니다.
 
 Controller에는 OpenSSH client가 필요하고 노드에는 Git, Bash, GNU `timeout`, `setsid`가 필요합니다.
@@ -57,12 +58,13 @@ Rendezvous 주소·포트와 NCCL 통신 경로도 노드 사이에서 접근 �
 모델 snapshot은 가중치, tokenizer와 설정 파일이 모두 들어 있는 디렉터리입니다.
 한 노드의 cache만 채우면 다른 노드에서는 모델을 읽을 수 없으며 setup 스크립트가 대신 다운로드하지도 않습니다.
 
-각 노드에서 사용할 백엔드 Python을 지정하고 아래 명령을 실행합니다.
+각 노드에서 사용할 backend의 `.venv`를 활성화하고 아래 명령을 실행합니다.
 명령이 출력하는 snapshot 절대 경로를 해당 노드의 `model_dirs`에 기록합니다.
 
 ```bash
-export PYTHON='<backend-python>'
-"$PYTHON" - <<'PY'
+cd "$HOME/.local/ptl/repo/backends/trl"  # 또는 backends/megatron
+. .venv/bin/activate
+python - <<'PY'
 from huggingface_hub import snapshot_download
 print(snapshot_download(
     repo_id="Qwen/Qwen2.5-0.5B-Instruct",
