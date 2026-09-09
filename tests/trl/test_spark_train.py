@@ -258,6 +258,7 @@ def test_main_passes_cli_optimizer_and_sft_config_to_trainer(monkeypatch, tmp_pa
     assert captured["sft_config"]["ddp_find_unused_parameters"] is False
     assert captured["sft_config"]["gradient_checkpointing"] is True
     assert captured["sft_config"]["gradient_checkpointing_kwargs"] == {"use_reentrant": False}
+    assert captured["sft_config"]["save_strategy"] == "no"
     assert captured["load_dataset"]["kwargs"]["cache_dir"].endswith("hf-cache")
     assert model.checkpointing_kwargs == {"gradient_checkpointing_kwargs": {"use_reentrant": False}}
     summary = json.loads((args.output_dir / "summary-train.json").read_text(encoding="utf-8"))
