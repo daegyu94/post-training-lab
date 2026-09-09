@@ -1,4 +1,0 @@
-# Preserve raw historical execution evidence without rewriting whitespace.
-docs/backends/trl/verification-20260908/*.txt -whitespace
-docs/verification/**/*.txt -whitespace
-docs/verification/**/*.log -whitespace

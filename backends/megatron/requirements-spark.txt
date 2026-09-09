@@ -15,4 +15,4 @@ pytest>=8,<10
 # Transformer Engine 2.18.0 was built from source for ARM64 with
 # NVTE_WITH_NCCL_EP=0 because the installed Torch tree lacks the optional
 # symm_mem/nccl_dev_cap.hpp header. It is not asserted as a portable pip
-# requirement here; see docs/spark-cluster.md and scripts/spark_runtime_env.sh.
+# requirement here; see docs/backends/megatron.md and scripts/spark_runtime_env.sh.

@@ -166,7 +166,7 @@ def load_experiment(path: Path) -> dict[str, Any]:
         if key not in allowed:
             raise ConfigError(f"experiment.env.{key} is unsupported for backend {backend}")
     value["env"] = {key: _scalar_env(raw, f"experiment.env.{key}") for key, raw in env.items()}
-    for name in ("MODEL_ID", "MODEL_REVISION", "DATASET_REVISION"):
+    for name in ("MODEL_ID", "MODEL_REVISION", "DATASET_ID", "DATASET_REVISION"):
         if not value["env"].get(name):
             raise ConfigError(f"experiment.env.{name} is required")
     for name in ("MODEL_REVISION", "DATASET_REVISION"):

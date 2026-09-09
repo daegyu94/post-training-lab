@@ -522,6 +522,7 @@ def test_cluster_launcher_passes_explicit_ranks_and_resume_horizon(tmp_path: Pat
         "OUTPUT_DIR": str(output_dir),
         "MODEL_ID": "Qwen/Qwen3-30B-A3B",
         "MODEL_REVISION": "model-rev",
+        "DATASET_ID": "dataset/id",
         "DATASET_REVISION": "data-rev",
         "TRANSFORMER_IMPL": "transformer_engine",
         "RESUME_AFTER_TRAIN": "true",

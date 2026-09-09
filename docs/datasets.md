@@ -109,7 +109,7 @@ python -m json.tool "$trace_output/manifest.json"
 예상 결과는 학습 2개, 검증 1개, test 1개와 미승인 기록 제외 1개입니다.
 Megatron은 `PYTHONPATH=backends/megatron`과 `megatron_lab.prepare_service_data`로 같은 예제를 실행할 수 있습니다.
 `test.jsonl`의 `grader`는 평가 정보를 담지만 평가기를 자동 실행하지 않습니다.
-`prepare_service_data.sh` 래퍼는 `.venv/bin/python`을 사용하므로 다른 Python을 쓰려면 위 모듈 진입점을 사용합니다.
+`prepare_service_data.sh` 래퍼는 기본적으로 `.venv/bin/python`을 사용하며 `PYTHON`으로 다른 interpreter를 지정할 수 있습니다.
 
 ## 학습에 연결
 

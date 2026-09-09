@@ -42,8 +42,10 @@ case "$model_id" in
     model_revision="${MODEL_REVISION:?set MODEL_REVISION for a non-PoC feature model}"
     ;;
 esac
-dataset_revision="${DATASET_REVISION:-e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b}"
-dataset_id="${DATASET_ID:-HuggingFaceH4/no_robots}"
+: "${DATASET_ID:?set DATASET_ID to the prepared dataset ID}"
+: "${DATASET_REVISION:?set DATASET_REVISION to a 40-hex manifest revision}"
+dataset_id="$DATASET_ID"
+dataset_revision="$DATASET_REVISION"
 
 model_dir_args=()
 if [[ -n "${MODEL_DIR:-}" ]]; then

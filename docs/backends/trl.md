@@ -88,6 +88,7 @@ FSDP2와 DeepSpeed는 현재 `base` 또는 `train` 단계만 지원합니다.
 Sharded export, 별도 process의 tuned reload, optimizer resume이 검증된다는 뜻이 아닙니다.
 DeepSpeed는 [ZeRO-2](../../backends/trl/configs/deepspeed-zero2.json) 또는 [ZeRO-3](../../backends/trl/configs/deepspeed-zero3.json) 설정 파일을 요구합니다.
 `deepspeed-zero3-nvme.json`은 `/mnt/post-training/trl`로 parameter와 optimizer state를 offload하는 30B 실습 전용 설정입니다.
+이 경로는 설정 파일에 고정되어 있으므로 다른 mount를 사용하려면 설정 사본의 두 `nvme_path`를 바꿔야 합니다.
 일반 ZeRO-3와 달리 두 노드에 쓰기 가능한 로컬 디렉터리와 DeepSpeed async I/O build가 필요합니다.
 
 모델과 backend별 실행 결과와 실패 원인은 [Verification](../verification.md)에 요약합니다.

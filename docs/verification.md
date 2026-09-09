@@ -6,17 +6,17 @@
 ## Repository Checks
 
 저장소 루트에서 CPU 테스트를 실행합니다.
-최소 테스트 의존성은 pytest와 datasets이며 전체 GPU 학습 stack은 이 CPU 테스트의 필수 조건이 아닙니다.
+최소 테스트 의존성은 `requirements-dev.txt`에서 관리하며 전체 GPU 학습 stack은 이 CPU 테스트의 필수 조건이 아닙니다.
 새 테스트 환경이 필요하면 다음 명령으로 준비합니다.
 명령은 패키지를 다운로드하고 별도 venv를 생성합니다.
 
 ```bash
 python -m venv .venv-check
 . .venv-check/bin/activate
-python -m pip install 'pytest>=8,<10' 'datasets==5.0.0'
+python -m pip install -r requirements-dev.txt
 python -m pytest -q
 python -m compileall -q backends experiments observability tests run_summary.py
-for script in backends/*/scripts/*.sh observability/scripts/*.sh; do
+for script in backends/*/scripts/*.sh observability/scripts/*.sh setups/spark/*.sh; do
   bash -n "$script" || exit 1
 done
 ```

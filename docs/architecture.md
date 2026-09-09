@@ -26,8 +26,8 @@ flowchart TD
 | `observability/` | 계측·baseline·trace helper | 모든 학습 loop에 자동 hook 설치 |
 | `tests/` | CPU 회귀와 mock 기반 실행 계약 검사 | 실제 GPU 실행 보장 |
 
-`run_summary.py` 계열은 공통 summary helper를 제공하지만 모든 진입점이 동일 schema를 사용하는 것은 아닙니다.
-TRL Spark와 Megatron summary는 각각 실제 생성 코드를 기준으로 읽습니다.
+`run_summary.py` 계열은 공통 summary helper를 제공하지만 TRL Spark는 이 helper 대신 자체 stage summary를 생성합니다.
+TRL과 Megatron summary는 각각 실제 생성 코드를 기준으로 읽습니다.
 공통 runner는 backend summary나 가중치를 controller로 자동 수집하지 않습니다.
 
 ## Configuration Contract
@@ -38,7 +38,7 @@ Experiment에서 덮어쓸 수 없습니다.
 `PYTHON_HEADERS`와 `CPATH`도 허용됩니다.
 
 현재 setup은 `spark`, 노드 수는 1 또는 2, `nproc_per_node`는 정확히 1입니다.
-모델·데이터 revision은 40자리 SHA여야 합니다.
+모델·데이터 ID는 experiment에 명시해야 하며 revision은 40자리 SHA여야 합니다.
 TRL은 stage와 분산 backend 조합을, Megatron은 topology와 batch의 나눗셈 조건을 추가 검사합니다.
 자세한 필드 입력은 [Getting Started](getting-started.md#configure-the-setup)를 따릅니다.
 

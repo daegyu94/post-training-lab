@@ -5,8 +5,6 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
-setups/spark/local.json
-setups/spark/*.local.json
 models/
 artifacts/
 setups/**/local*.json

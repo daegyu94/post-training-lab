@@ -41,6 +41,7 @@
 기본은 dry-run이고 실제 실행의 `--timeout`은 기본 900초이며 양의 정수여야 합니다.
 기존 출력 디렉터리는 재사용할 수 없습니다.
 허용된 환경변수는 [runner](../experiments/run.py)의 `TRL_ENV`와 `MEGATRON_ENV`에서 확인합니다.
+모든 preset은 `MODEL_ID`, `MODEL_REVISION`, `DATASET_ID`, `DATASET_REVISION`을 명시해야 합니다.
 백엔드가 지원하는 모든 직접 CLI 옵션이 공통 runner에 노출된 것은 아닙니다.
 
 ## Repeated Megatron Measurements

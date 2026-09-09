@@ -13,7 +13,7 @@ def test_launcher_uses_explicit_torchrun_and_forwards_topology(tmp_path: Path) -
     model.mkdir()
     data = tmp_path / "data"
     data.mkdir()
-    env = {**os.environ, "PYTHON": str(fake), "NODE_RANK": "1", "NNODES": "2", "NPROC_PER_NODE": "1", "MASTER_ADDR": "spark1", "MODEL_DIR": str(model), "MODEL_REVISION": "a" * 40, "DATASET_REVISION": "b" * 40, "DATA_DIR": str(data), "OUTPUT_DIR": str(tmp_path / "out"), "STAGE": "base"}
+    env = {**os.environ, "PYTHON": str(fake), "NODE_RANK": "1", "NNODES": "2", "NPROC_PER_NODE": "1", "MASTER_ADDR": "spark1", "MODEL_DIR": str(model), "MODEL_REVISION": "a" * 40, "DATASET_ID": "dataset/id", "DATASET_REVISION": "b" * 40, "DATA_DIR": str(data), "OUTPUT_DIR": str(tmp_path / "out"), "STAGE": "base"}
     subprocess.run(["bash", "scripts/run_spark_cluster.sh"], cwd=Path(__file__).parents[2] / "backends" / "trl", env=env, check=True, capture_output=True, text=True)
     call = json.loads(calls.read_text().splitlines()[0])
     assert "torch.distributed.run" in call["argv"]
@@ -51,6 +51,7 @@ def test_launcher_resolves_default_node_local_hub_snapshot(tmp_path: Path) -> No
         "NNODES": "1",
         "MASTER_ADDR": "127.0.0.1",
         "MODEL_REVISION": revision,
+        "DATASET_ID": "dataset/id",
         "DATASET_REVISION": "b" * 40,
         "DATA_DIR": str(data),
         "OUTPUT_DIR": str(tmp_path / "out"),
@@ -90,6 +91,7 @@ def test_launcher_forwards_fsdp2_and_deepspeed_profiles(tmp_path: Path) -> None:
         "MASTER_ADDR": "spark1",
         "MODEL_DIR": str(model),
         "MODEL_REVISION": "a" * 40,
+        "DATASET_ID": "dataset/id",
         "DATASET_REVISION": "b" * 40,
         "DATA_DIR": str(data),
         "STAGE": "train",
@@ -137,6 +139,7 @@ def test_launcher_rejects_unverified_sharded_reload_workflow(tmp_path: Path) -> 
         "MASTER_ADDR": "spark1",
         "MODEL_DIR": str(model),
         "MODEL_REVISION": "a" * 40,
+        "DATASET_ID": "dataset/id",
         "DATASET_REVISION": "b" * 40,
         "DATA_DIR": str(data),
         "OUTPUT_DIR": str(tmp_path / "out"),

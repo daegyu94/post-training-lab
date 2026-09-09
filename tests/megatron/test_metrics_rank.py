@@ -16,7 +16,8 @@ def test_comparison_reads_last_rank_logs_on_their_node(tmp_path, node_rank, stag
     fake.chmod(0o755)
     env = os.environ | dict(PYTHON=str(fake), NODE_RANK=str(node_rank), NNODES='2',
                            NPROC_PER_NODE='1', MASTER_ADDR='example', STAGE=stage,
-                           OUTPUT_DIR=str(tmp_path / 'out'), MICRO_BATCH_SIZE='2')
+                           OUTPUT_DIR=str(tmp_path / 'out'), MICRO_BATCH_SIZE='2',
+                           DATASET_ID='dataset/id', DATASET_REVISION='data-rev')
     subprocess.run(['bash', 'scripts/run_spark_cluster.sh'],
                    cwd=Path(__file__).parents[2] / 'backends' / 'megatron',
                    env=env, check=True, capture_output=True)

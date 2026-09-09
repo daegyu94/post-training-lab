@@ -13,3 +13,10 @@
 - controller의 `/home/daegyu/shared` 디렉토리는 각 Spark 노드에서 NFS client를 통해 `/home/spark/shared`에 마운트하여 사용합니다.
 - controller의 `/home/daegyu/shared/<relative-path>`와 각 Spark 노드의 `/home/spark/shared/<relative-path>`는 같은 공유 파일을 가리킵니다.
 - 명령과 설정에 공유 파일 경로를 넣을 때는 실제로 해당 경로를 사용하는 노드의 마운트 경로를 사용합니다.
+
+## 검증과 실행 증거
+
+- 기본 저장소 검사는 `python -m pytest -q`, `python -m compileall -q backends experiments observability tests run_summary.py`와 `backends/*/scripts/*.sh`, `observability/scripts/*.sh`, `setups/spark/*.sh`의 `bash -n`입니다.
+- 정적 검사, CPU 테스트, dry-run과 실제 GPU 실행을 구분하고 한 단계의 성공을 다른 단계의 증거로 사용하지 않습니다.
+- 설정 allowlist를 바꾸면 `docs/architecture.md`와 `docs/experiments.md`의 설정 계약도 함께 확인합니다.
+- `setups/spark/local.json`, 모델 가중치, 실행 산출물과 과거 run log는 커밋하지 않습니다.

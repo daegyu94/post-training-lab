@@ -17,7 +17,8 @@ model_dir="${MODEL_DIR:-}"
 if [[ -z "$model_dir" ]]; then
   model_dir="$($python_bin -m trl_lab.spark_config --resolve-model-id "$model_id" --revision "$model_revision")"
 fi
-dataset_id="${DATASET_ID:-HuggingFaceH4/ultrachat_200k}"
+: "${DATASET_ID:?set DATASET_ID to the prepared dataset ID}"
+dataset_id="$DATASET_ID"
 dataset_revision="${DATASET_REVISION:?set DATASET_REVISION to a 40-hex manifest revision}"
 data_dir="${DATA_DIR:?set DATA_DIR to a prepared canonical JSONL directory}"
 distributed_backend="${DISTRIBUTED_BACKEND:-ddp}"

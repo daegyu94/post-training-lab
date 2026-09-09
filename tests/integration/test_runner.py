@@ -71,6 +71,16 @@ def test_megatron_padding_env_is_accepted_and_normalized(tmp_path: Path) -> None
     assert loaded["env"]["PAD_TO_MAX_LENGTH"] == "true"
 
 
+def test_dataset_id_is_required(tmp_path: Path) -> None:
+    _, experiment_path = config_files(tmp_path)
+    experiment = json.loads(experiment_path.read_text())
+    experiment["env"].pop("DATASET_ID")
+    experiment_path.write_text(json.dumps(experiment))
+
+    with pytest.raises(run.ConfigError, match="DATASET_ID is required"):
+        run.load_experiment(experiment_path)
+
+
 def test_backend_specific_output_roots(tmp_path: Path) -> None:
     setup_path, experiment_path = config_files(tmp_path, backend="megatron")
     setup = json.loads(setup_path.read_text())
