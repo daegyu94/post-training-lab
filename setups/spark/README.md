@@ -28,3 +28,11 @@ Controller는 Git checkout, 설정, 실행 기록을 관리하고 GPU 학습 pro
 `/path/to/shared`는 NFS 공유 디렉터리를 나타내는 예시 절대 경로이며 실제 환경의 경로로 바꿉니다.
 같은 공유 파일도 controller와 Spark 노드에서 서로 다른 절대 경로로 보일 수 있으므로 각 노드에서 보이는 경로를 사용합니다.
 설정 파일의 `checkout`, `model_dirs`, `data_dir`, `output_root`에는 명령을 실행하는 노드에서 보이는 절대 경로를 적습니다.
+`output_root`는 모든 backend가 같은 경로를 쓸 때 문자열로 지정하고, 서로 다른 저장장치를 쓸 때는 `trl`과 `megatron` 경로를 가진 객체로 지정합니다.
+
+```json
+"output_root": {
+  "trl": "/path/to/trl-run-results",
+  "megatron": "/path/to/megatron-run-results"
+}
+```

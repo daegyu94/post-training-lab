@@ -71,6 +71,30 @@ def test_megatron_padding_env_is_accepted_and_normalized(tmp_path: Path) -> None
     assert loaded["env"]["PAD_TO_MAX_LENGTH"] == "true"
 
 
+def test_backend_specific_output_roots(tmp_path: Path) -> None:
+    setup_path, experiment_path = config_files(tmp_path, backend="megatron")
+    setup = json.loads(setup_path.read_text())
+    for node in setup["nodes"]:
+        node["output_root"] = {
+            "trl": "/mnt/post-training/trl",
+            "megatron": "/mnt/post-training/megatron",
+        }
+    setup_path.write_text(json.dumps(setup))
+
+    plan = run.build_plan(
+        run.load_setup(setup_path),
+        run.load_experiment(experiment_path),
+        setup_path,
+        experiment_path,
+        tmp_path / "nvme-run",
+        tmp_path,
+    )
+
+    assert {rank["output"] for rank in plan["ranks"]} == {
+        "/mnt/post-training/megatron/nvme-run"
+    }
+
+
 def test_rejects_reserved_and_invalid_topology(tmp_path: Path) -> None:
     setup_path, experiment_path = config_files(tmp_path, backend="megatron")
     experiment = json.loads(experiment_path.read_text())

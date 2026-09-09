@@ -1,0 +1,29 @@
+{
+  "bf16": {
+    "enabled": "auto"
+  },
+  "zero_optimization": {
+    "stage": 3,
+    "overlap_comm": true,
+    "contiguous_gradients": true,
+    "stage3_gather_16bit_weights_on_model_save": false,
+    "offload_param": {
+      "device": "nvme",
+      "nvme_path": "/mnt/post-training/trl",
+      "pin_memory": true,
+      "buffer_count": 5
+    },
+    "offload_optimizer": {
+      "device": "nvme",
+      "nvme_path": "/mnt/post-training/trl",
+      "pin_memory": true,
+      "buffer_count": 4,
+      "pipeline_read": true,
+      "pipeline_write": true
+    }
+  },
+  "gradient_accumulation_steps": "auto",
+  "gradient_clipping": "auto",
+  "train_batch_size": "auto",
+  "train_micro_batch_size_per_gpu": "auto"
+}

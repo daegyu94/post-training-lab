@@ -94,9 +94,17 @@ def load_setup(path: Path) -> dict[str, Any]:
         if not isinstance(node, dict):
             raise ConfigError(f"setup.nodes[{index}] must be an object")
         _keys(node, {"host", "checkout", "python", "env", "model_dirs", "data_dir", "output_root"}, f"node[{index}]")
-        for field in ("host", "checkout", "data_dir", "output_root"):
+        for field in ("host", "checkout", "data_dir"):
             if not isinstance(node.get(field), str) or not node[field]:
                 raise ConfigError(f"node[{index}].{field} must be a non-empty string")
+        output_root = node.get("output_root")
+        if isinstance(output_root, dict):
+            if set(output_root) != {"trl", "megatron"} or any(
+                not isinstance(item, str) or not item for item in output_root.values()
+            ):
+                raise ConfigError(f"node[{index}].output_root must map trl and megatron to paths")
+        elif not isinstance(output_root, str) or not output_root:
+            raise ConfigError(f"node[{index}].output_root must be a path or backend path map")
         if node["host"].startswith("-"):
             raise ConfigError(f"node[{index}].host cannot start with '-'")
         python = node.get("python")
@@ -234,7 +242,10 @@ def build_plan(setup: dict[str, Any], experiment: dict[str, Any], setup_path: Pa
         hosts.add(node["host"])
         if model_id not in node["model_dirs"]:
             raise ConfigError(f"node[{rank}] has no model_dirs entry for {model_id}")
-        remote_output = os.path.join(node["output_root"], run_id)
+        output_root = node["output_root"]
+        if isinstance(output_root, dict):
+            output_root = output_root[experiment["backend"]]
+        remote_output = os.path.join(output_root, run_id)
         env = dict(setup["env"])
         env.update(node["env"])
         env.update(experiment["env"])

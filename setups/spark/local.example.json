@@ -16,10 +16,15 @@
       },
       "env": {},
       "model_dirs": {
-        "Qwen/Qwen2.5-0.5B-Instruct": "/path/to/Qwen2.5-0.5B-Instruct"
+        "Qwen/Qwen2.5-0.5B-Instruct": "/path/to/Qwen2.5-0.5B-Instruct",
+        "Qwen/Qwen3-30B-A3B": "/path/to/Qwen3-30B-A3B",
+        "zai-org/GLM-4.7-Flash": "/path/to/GLM-4.7-Flash"
       },
       "data_dir": "/path/to/shared/prepared-data",
-      "output_root": "/path/to/shared/run-results"
+      "output_root": {
+        "trl": "/path/to/trl-run-results",
+        "megatron": "/path/to/megatron-run-results"
+      }
     },
     {
       "host": "spark2",
@@ -30,10 +35,15 @@
       },
       "env": {},
       "model_dirs": {
-        "Qwen/Qwen2.5-0.5B-Instruct": "/path/to/Qwen2.5-0.5B-Instruct"
+        "Qwen/Qwen2.5-0.5B-Instruct": "/path/to/Qwen2.5-0.5B-Instruct",
+        "Qwen/Qwen3-30B-A3B": "/path/to/Qwen3-30B-A3B",
+        "zai-org/GLM-4.7-Flash": "/path/to/GLM-4.7-Flash"
       },
       "data_dir": "/path/to/shared/prepared-data",
-      "output_root": "/path/to/shared/run-results"
+      "output_root": {
+        "trl": "/path/to/trl-run-results",
+        "megatron": "/path/to/megatron-run-results"
+      }
     }
   ]
 }

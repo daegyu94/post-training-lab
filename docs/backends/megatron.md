@@ -62,6 +62,12 @@ Launcher 기본값인 30B MoE·EP=2·LoRA와 혼동하지 않습니다.
 `SEQUENCE_PARALLEL=true`에는 TP>=2와 `TRANSFORMER_IMPL=transformer_engine`이 필요합니다.
 비교하려면 off/on 두 variant 모두 같은 Transformer Engine 경로를 사용합니다.
 
+## CPU Offload
+
+Megatron Core가 native training offload 대상으로 지원하는 저장 계층은 CPU memory입니다.
+Optimizer state와 계산을 CPU로 옮기는 optimizer CPU offload와 activation을 비동기로 CPU에 옮기는 activation offload가 있지만, NVMe를 parameter·optimizer·activation의 실행 중 저장 계층으로 사용하는 기능은 native하게 지원하지 않습니다.
+현재 이 저장소의 Bridge wrapper는 CPU offload 옵션도 아직 노출하지 않으며 `RECOMPUTE`는 activation offload가 아니라 activation 재계산입니다.
+
 ## Checkpoint and Resume
 
 | 목적 | 설정·진입점 | 검증할 것 |
@@ -74,6 +80,10 @@ Launcher 기본값인 30B MoE·EP=2·LoRA와 혼동하지 않습니다.
 Async checkpoint는 train/resume stage의 `torch_dist`와 persistent worker를 사용합니다.
 종료 전에 pending save의 finalization과 필요한 모든 shard를 확인합니다.
 파일이 보이거나 save 호출이 끝났다는 사실만으로 장애 후 durability를 주장하지 않습니다.
+
+`experiments/megatron/nvme-checkpoint-30b.json`은 backend별 `output_root`를 `/mnt/post-training/megatron`으로 지정해 30B checkpoint를 각 노드의 로컬 NVMe에 기록합니다.
+이는 parameter·optimizer·activation의 실행 중 NVMe offload가 아니라 checkpoint I/O 실습입니다.
+Node-local shard를 다른 topology나 노드에서 재개하려면 필요한 shard와 metadata를 공유 저장소로 모으는 별도 단계가 필요합니다.
 
 TP/PP를 바꾸는 optimizer 재분할은 기본 `dp_reshardable` format으로 해결되지 않습니다.
 `DIST_CKPT_OPTIM_FULLY_RESHARDABLE=true`인 별도 source checkpoint와 optimizer 저장·로드 조건이 필요합니다.

@@ -177,6 +177,7 @@ def test_sharded_backend_rejects_unverified_tuned_reload(tmp_path: Path) -> None
 @pytest.mark.parametrize("name, stage", [
     ("deepspeed-zero2.json", 2),
     ("deepspeed-zero3.json", 3),
+    ("deepspeed-zero3-nvme.json", 3),
 ])
 def test_shipped_deepspeed_profiles_are_valid(name: str, stage: int) -> None:
     profile = Path(__file__).parents[2] / "backends" / "trl" / "configs" / name

@@ -28,9 +28,14 @@
 | `experiments/trl/smoke.json` | 2노드 DDP LoRA, 1 step | base/train/tuned |
 | `experiments/megatron/smoke.json` | 2노드 full SFT, 2 step | base/train/tuned |
 | `experiments/megatron/resume-smoke.json` | 2노드 full SFT, 2→3 step | base/train/resume/tuned |
+| `experiments/trl/nvme-offload-30b.json` | 2노드 Qwen3 30B LoRA, ZeRO-3 NVMe state offload | train |
+| `experiments/megatron/nvme-checkpoint-30b.json` | 2노드 Qwen3 30B LoRA, node-local NVMe async checkpoint | train |
 
-모두 작은 Qwen2.5-0.5B와 고정 No Robots 입력을 사용하는 smoke입니다.
+앞의 smoke 네 개는 작은 Qwen2.5-0.5B와 고정 No Robots 입력을 사용합니다.
 모델 품질·장기 수렴·일반적인 성능 비교용 preset은 아닙니다.
+
+두 NVMe preset은 30B Qwen3 모델을 사용하며 작은 smoke 네 개에 포함되지 않습니다.
+준비 조건과 두 backend에서 `NVMe`가 뜻하는 범위는 [30B NVMe 실습](../labs/nvme-30b/README.md)을 따릅니다.
 
 `experiments/run.py`는 `--backend`, `--setup`, `--experiment`, `--output`을 요구합니다.
 기본은 dry-run이고 실제 실행의 `--timeout`은 기본 900초이며 양의 정수여야 합니다.

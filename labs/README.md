@@ -3,6 +3,8 @@
 현재 실행 가능한 실습은 [문서 안내](../docs/README.md)에서 시작합니다.
 이 디렉터리는 [새 실습 템플릿](template/README.md)을 제공하며 학습 구현이나 실행 preset을 복제하지 않습니다.
 
+- [30B NVMe data movement](nvme-30b/README.md): TRL ZeRO-Infinity offload와 Megatron checkpoint I/O
+
 ## Responsibilities
 
 | 영역 | 책임 |

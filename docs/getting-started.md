@@ -94,7 +94,7 @@ cp -n setups/spark/local.example.json setups/spark/local.json
 | `nodes[].python.trl`, `nodes[].python.megatron` | 백엔드 Python 절대 경로 |
 | `nodes[].model_dirs` | 모델 ID → snapshot 절대 경로 |
 | `nodes[].data_dir` | JSONL과 manifest 디렉터리 |
-| `nodes[].output_root` | 미리 생성한 출력 부모 디렉터리 |
+| `nodes[].output_root` | 미리 생성한 출력 부모 디렉터리 또는 `trl`·`megatron`별 부모 디렉터리 |
 | `env`, `nodes[].env` | 허용된 NCCL·OMP·HF 등 환경별 변수 |
 
 현재 검증은 TRL만 실행해도 `python` 사전에 두 백엔드 key를 요구합니다.

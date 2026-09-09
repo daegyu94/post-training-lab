@@ -81,6 +81,8 @@ DDP는 `base`, `train`, `tuned`, `all` workflow를 지원하는 기본 선택입
 FSDP2와 DeepSpeed는 현재 `base` 또는 `train` 단계만 지원합니다.
 Sharded export, 별도 process의 tuned reload, optimizer resume이 검증된다는 뜻이 아닙니다.
 DeepSpeed는 [ZeRO-2](../../backends/trl/configs/deepspeed-zero2.json) 또는 [ZeRO-3](../../backends/trl/configs/deepspeed-zero3.json) 설정 파일을 요구합니다.
+`deepspeed-zero3-nvme.json`은 `/mnt/post-training/trl`로 parameter와 optimizer state를 offload하는 30B 실습 전용 설정입니다.
+일반 ZeRO-3와 달리 두 노드에 쓰기 가능한 로컬 디렉터리와 DeepSpeed async I/O build가 필요합니다.
 
 모델과 backend별 실행 결과와 실패 원인은 [TRL Spark verification](../verification/trl-20260908/README.md)에 보존합니다.
 0.5B smoke 성공을 30B full SFT의 메모리 적합성이나 장기 수렴 증거로 해석해서는 안 됩니다.
