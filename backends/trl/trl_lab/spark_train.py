@@ -29,7 +29,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--finetuning-mode", choices=("lora", "full"), default="lora")
     parser.add_argument("--optimizer", choices=("adamw", "sgd"), default="adamw")
     parser.add_argument("--learning-rate", type=float, default=2e-5)
-    parser.add_argument("--max-steps", type=int, default=5)
+    parser.add_argument("--max-steps", type=int, default=None)
+    parser.add_argument("--epochs", type=float, default=None)
     parser.add_argument("--max-length", type=int, default=512)
     parser.add_argument("--gradient-accumulation-steps", type=int, default=8)
     parser.add_argument("--train-samples", type=int)
@@ -43,7 +44,12 @@ def parse_args() -> argparse.Namespace:
         default="ddp",
     )
     parser.add_argument("--deepspeed-config", type=Path)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.epochs is not None and args.max_steps is not None:
+        parser.error("--epochs and --max-steps are mutually exclusive")
+    if args.epochs is None and args.max_steps is None:
+        args.max_steps = 5
+    return args
 
 
 def _rank() -> int:
@@ -204,7 +210,8 @@ def _sft_config_kwargs(config: SparkConfig, args: argparse.Namespace) -> dict[st
     use_gradient_checkpointing = config.distributed_backend != "fsdp2"
     kwargs: dict[str, Any] = {
         "output_dir": str(config.output_dir / "checkpoints"),
-        "max_steps": args.max_steps,
+        "max_steps": args.max_steps if args.epochs is None else -1,
+        "num_train_epochs": args.epochs if args.epochs is not None else 1,
         "learning_rate": args.learning_rate,
         "per_device_train_batch_size": 1,
         "per_device_eval_batch_size": 1,
@@ -299,7 +306,8 @@ def main() -> None:
         model_id=args.model_id, model_dir=args.model_dir, model_revision=args.model_revision,
         dataset_id=args.dataset_id, dataset_revision=args.dataset_revision, data_dir=args.data_dir,
         output_dir=args.output_dir, stage=args.stage, finetuning_mode=args.finetuning_mode,
-        optimizer=args.optimizer, learning_rate=args.learning_rate, max_steps=args.max_steps,
+        optimizer=args.optimizer, learning_rate=args.learning_rate,
+        max_steps=args.max_steps if args.max_steps is not None else -1,
         max_length=args.max_length, gradient_accumulation_steps=args.gradient_accumulation_steps,
         seed=args.seed, distributed_backend=args.distributed_backend,
         deepspeed_config=args.deepspeed_config,
@@ -429,7 +437,7 @@ def main() -> None:
                 validation_errors.append("trainer reported no optimizer steps")
             if args.stage == "train" and config.distributed_backend == "ddp" and not sampled_nonzero_update:
                 validation_errors.append("no sampled trainable parameter changed")
-            summary = {"stage": args.stage, "rank": _rank(), "world_size": int(os.environ.get("WORLD_SIZE", "1")), "node_rank": int(os.environ.get("NODE_RANK", "0")), "distributed_backend": config.distributed_backend, "deepspeed_config": str(config.deepspeed_config) if config.deepspeed_config else None, "model_id": args.model_id, "model_family": family, "model_revision": args.model_revision, "model_snapshot_evidence": model_snapshot_evidence(config.model_dir), "dataset_id": args.dataset_id, "dataset_revision": args.dataset_revision, "finetuning_mode": args.finetuning_mode, "optimizer": args.optimizer, "learning_rate": args.learning_rate, "precision": "bf16", "gradient_checkpointing": {"enabled": training_args.gradient_checkpointing, "use_reentrant": False if training_args.gradient_checkpointing else None, "fsdp_activation_checkpointing": config.distributed_backend == "fsdp2"}, "optimizer_state_estimate_bytes": _estimated_optimizer_state_bytes(trainable, args.optimizer) if args.stage == "train" else None, "optimizer_state_actual_bytes": optimizer_actual_bytes, "optimizer_state_scope": "rank-local shard" if config.distributed_backend != "ddp" else "replicated rank-local optimizer", "optimizer_state_dtypes": optimizer_dtypes, "memory_components_scope": "pre-wrap logical model view; not a rank-local sharded allocation" if config.distributed_backend != "ddp" else "replicated model view", "memory_components_bytes": {"parameters_by_dtype": _parameter_bytes(all_parameters), "trainable_gradients_by_dtype": _parameter_bytes(trainable), "optimizer_state_estimate": _estimated_optimizer_state_bytes(trainable, args.optimizer) if args.stage == "train" else 0, "optimizer_state_actual": optimizer_actual_bytes}, "max_steps": args.max_steps, "actual_optimizer_steps": update_count, "train_seconds": train_seconds, "train_metrics": train_metrics, "trainable_parameter_count": trainable_parameter_count, "total_parameter_count": total_parameter_count, "trainable_parameter_fraction": trainable_parameter_count / total_parameter_count if total_parameter_count else 0.0, "sampled_parameter_names": [name for name, _ in sample_candidates], "sampled_parameter_update_max_abs": update_deltas, "peak_cuda_memory_allocated_gib": allocated, "peak_cuda_memory_reserved_gib": reserved, "data": data_meta, "evaluation": evaluation, "validation": {"summary_writer_rank": 0, "evaluation_completed": evaluation_completed, "finite_eval_loss": finite_eval_loss, "finite_train_loss": finite_train_loss, "supervision_policy": "native chat-template prompt plus final assistant completion and EOS", "parameter_update_evidence": "sampled parameter delta" if config.distributed_backend == "ddp" else "optimizer steps only; sharded parameter delta not collected", "sampled_nonzero_update": sampled_nonzero_update, "training_result_verified": not validation_errors, "failure_reasons": validation_errors}}
+            summary = {"stage": args.stage, "rank": _rank(), "world_size": int(os.environ.get("WORLD_SIZE", "1")), "node_rank": int(os.environ.get("NODE_RANK", "0")), "distributed_backend": config.distributed_backend, "deepspeed_config": str(config.deepspeed_config) if config.deepspeed_config else None, "model_id": args.model_id, "model_family": family, "model_revision": args.model_revision, "model_snapshot_evidence": model_snapshot_evidence(config.model_dir), "dataset_id": args.dataset_id, "dataset_revision": args.dataset_revision, "finetuning_mode": args.finetuning_mode, "optimizer": args.optimizer, "learning_rate": args.learning_rate, "precision": "bf16", "gradient_checkpointing": {"enabled": training_args.gradient_checkpointing, "use_reentrant": False if training_args.gradient_checkpointing else None, "fsdp_activation_checkpointing": config.distributed_backend == "fsdp2"}, "optimizer_state_estimate_bytes": _estimated_optimizer_state_bytes(trainable, args.optimizer) if args.stage == "train" else None, "optimizer_state_actual_bytes": optimizer_actual_bytes, "optimizer_state_scope": "rank-local shard" if config.distributed_backend != "ddp" else "replicated rank-local optimizer", "optimizer_state_dtypes": optimizer_dtypes, "memory_components_scope": "pre-wrap logical model view; not a rank-local sharded allocation" if config.distributed_backend != "ddp" else "replicated model view", "memory_components_bytes": {"parameters_by_dtype": _parameter_bytes(all_parameters), "trainable_gradients_by_dtype": _parameter_bytes(trainable), "optimizer_state_estimate": _estimated_optimizer_state_bytes(trainable, args.optimizer) if args.stage == "train" else 0, "optimizer_state_actual": optimizer_actual_bytes}, "max_steps": args.max_steps, "requested_epochs": args.epochs, "actual_optimizer_steps": update_count, "train_seconds": train_seconds, "train_metrics": train_metrics, "trainable_parameter_count": trainable_parameter_count, "total_parameter_count": total_parameter_count, "trainable_parameter_fraction": trainable_parameter_count / total_parameter_count if total_parameter_count else 0.0, "sampled_parameter_names": [name for name, _ in sample_candidates], "sampled_parameter_update_max_abs": update_deltas, "peak_cuda_memory_allocated_gib": allocated, "peak_cuda_memory_reserved_gib": reserved, "data": data_meta, "evaluation": evaluation, "validation": {"summary_writer_rank": 0, "evaluation_completed": evaluation_completed, "finite_eval_loss": finite_eval_loss, "finite_train_loss": finite_train_loss, "supervision_policy": "native chat-template prompt plus final assistant completion and EOS", "parameter_update_evidence": "sampled parameter delta" if config.distributed_backend == "ddp" else "optimizer steps only; sharded parameter delta not collected", "sampled_nonzero_update": sampled_nonzero_update, "training_result_verified": not validation_errors, "failure_reasons": validation_errors}}
             (config.output_dir / f"summary-{args.stage}.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             print(json.dumps(summary, indent=2, ensure_ascii=False), flush=True)
         if finite_eval_loss is False or not finite_train_loss or (args.stage == "train" and update_count < 1) or (args.stage == "train" and config.distributed_backend == "ddp" and not any(value > 0.0 for value in update_deltas.values())):

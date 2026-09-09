@@ -38,6 +38,13 @@ def test_model_family_and_manifest_are_explicit(tmp_path: Path) -> None:
     assert validate_config(config) == "qwen3_moe"
 
 
+def test_max_steps_accepts_epoch_driven_sentinel(tmp_path: Path) -> None:
+    config = make_inputs(tmp_path)
+    validate_config(SparkConfig(**{**config.__dict__, "max_steps": -1}))
+    with pytest.raises(ValueError, match="epoch-driven"):
+        validate_config(SparkConfig(**{**config.__dict__, "max_steps": 0}))
+
+
 def test_standard_hub_cache_resolution_honors_environment(monkeypatch, tmp_path: Path) -> None:
     revision = "a" * 40
     hub = tmp_path / "hub"
@@ -192,6 +199,7 @@ def test_deepspeed_backend_allows_tuned_reload(tmp_path: Path) -> None:
     ("deepspeed-zero2.json", 2),
     ("deepspeed-zero3.json", 3),
     ("deepspeed-zero3-nvme.json", 3),
+    ("deepspeed-zero3-cpu.json", 3),
 ])
 def test_shipped_deepspeed_profiles_are_valid(name: str, stage: int) -> None:
     profile = Path(__file__).parents[2] / "backends" / "trl" / "configs" / name

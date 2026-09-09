@@ -60,11 +60,16 @@ common_args=(
   --dataset-id "$dataset_id" --dataset-revision "$dataset_revision" --data-dir "$data_dir"
   --output-dir "$output_dir"
   --finetuning-mode "${FINETUNING_MODE:-lora}" --optimizer "${OPTIMIZER:-adamw}"
-  --learning-rate "${LEARNING_RATE:-2e-5}" --max-steps "${MAX_STEPS:-5}"
+  --learning-rate "${LEARNING_RATE:-2e-5}"
   --max-length "${MAX_LENGTH:-512}" --gradient-accumulation-steps "${GRADIENT_ACCUMULATION_STEPS:-8}"
   --distributed-backend "$distributed_backend"
   --seed "${SEED:-42}"
 )
+if [[ -n "${NUM_TRAIN_EPOCHS:-}" ]]; then
+  common_args+=(--epochs "$NUM_TRAIN_EPOCHS")
+else
+  common_args+=(--max-steps "${MAX_STEPS:-5}")
+fi
 if [[ -n "${TRAIN_SAMPLES:-}" ]]; then common_args+=(--train-samples "$TRAIN_SAMPLES"); fi
 if [[ -n "${EVAL_SAMPLES:-}" ]]; then common_args+=(--eval-samples "$EVAL_SAMPLES"); fi
 if [[ "$distributed_backend" == deepspeed ]]; then

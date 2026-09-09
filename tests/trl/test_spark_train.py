@@ -206,7 +206,7 @@ def test_main_passes_cli_optimizer_and_sft_config_to_trainer(monkeypatch, tmp_pa
         model_id="Qwen/Qwen3-30B-A3B", model_dir=tmp_path / "model", model_revision="a" * 40,
         dataset_id="public/data", dataset_revision="b" * 40, data_dir=tmp_path / "data", output_dir=tmp_path / "out",
         stage="train", finetuning_mode="full", optimizer="adamw", learning_rate=0.0003,
-        max_steps=1, max_length=32, gradient_accumulation_steps=2, seed=42,
+        max_steps=1, epochs=None, max_length=32, gradient_accumulation_steps=2, seed=42,
         distributed_backend="ddp", deepspeed_config=None,
         train_samples=None, eval_samples=None, lora_r=8, lora_alpha=16,
     )
@@ -303,7 +303,7 @@ def test_tuned_stage_reloads_deepspeed_checkpoint_before_evaluate(monkeypatch, t
         model_id="Qwen/Qwen3-30B-A3B", model_dir=tmp_path / "model", model_revision="a" * 40,
         dataset_id="public/data", dataset_revision="b" * 40, data_dir=tmp_path / "data", output_dir=tmp_path / "out",
         stage="tuned", finetuning_mode="full", optimizer="adamw", learning_rate=0.0003,
-        max_steps=1, max_length=32, gradient_accumulation_steps=2, seed=42,
+        max_steps=1, epochs=None, max_length=32, gradient_accumulation_steps=2, seed=42,
         distributed_backend="deepspeed", deepspeed_config=tmp_path / "ds.json",
         train_samples=None, eval_samples=None, lora_r=8, lora_alpha=16,
     )
@@ -407,6 +407,7 @@ def test_tuned_stage_reloads_deepspeed_checkpoint_before_evaluate(monkeypatch, t
 def test_sharded_backend_training_arguments_are_explicit(tmp_path: Path) -> None:
     base = argparse.Namespace(
         max_steps=3,
+        epochs=None,
         learning_rate=2e-5,
         gradient_accumulation_steps=4,
         optimizer="adamw",
@@ -438,3 +439,70 @@ def test_sharded_backend_training_arguments_are_explicit(tmp_path: Path) -> None
     assert deepspeed["deepspeed"] == str(profile)
     assert deepspeed["gradient_checkpointing"] is True
     assert "fsdp" not in deepspeed
+
+
+def test_sft_config_kwargs_epochs_sets_max_steps_sentinel(tmp_path: Path) -> None:
+    args = argparse.Namespace(
+        max_steps=None, epochs=2.5, learning_rate=2e-5, gradient_accumulation_steps=4,
+        optimizer="adamw", seed=42,
+    )
+    config = types.SimpleNamespace(
+        output_dir=tmp_path, max_length=512, distributed_backend="ddp", deepspeed_config=None,
+    )
+
+    kwargs = spark_train._sft_config_kwargs(config, args)
+
+    assert kwargs["max_steps"] == -1
+    assert kwargs["num_train_epochs"] == 2.5
+
+
+def test_sft_config_kwargs_steps_mode_ignores_epochs_field(tmp_path: Path) -> None:
+    args = argparse.Namespace(
+        max_steps=7, epochs=None, learning_rate=2e-5, gradient_accumulation_steps=4,
+        optimizer="adamw", seed=42,
+    )
+    config = types.SimpleNamespace(
+        output_dir=tmp_path, max_length=512, distributed_backend="ddp", deepspeed_config=None,
+    )
+
+    kwargs = spark_train._sft_config_kwargs(config, args)
+
+    assert kwargs["max_steps"] == 7
+    assert kwargs["num_train_epochs"] == 1
+
+
+def test_parse_args_rejects_epochs_and_max_steps_together(monkeypatch) -> None:
+    monkeypatch.setattr(sys, "argv", [
+        "spark_train", "--model-id", "m", "--model-dir", "/m", "--model-revision", "a" * 40,
+        "--dataset-id", "d", "--dataset-revision", "b" * 40, "--data-dir", "/d", "--output-dir", "/o",
+        "--stage", "train", "--max-steps", "3", "--epochs", "1",
+    ])
+
+    with pytest.raises(SystemExit):
+        spark_train.parse_args()
+
+
+def test_parse_args_defaults_to_five_steps_when_neither_given(monkeypatch) -> None:
+    monkeypatch.setattr(sys, "argv", [
+        "spark_train", "--model-id", "m", "--model-dir", "/m", "--model-revision", "a" * 40,
+        "--dataset-id", "d", "--dataset-revision", "b" * 40, "--data-dir", "/d", "--output-dir", "/o",
+        "--stage", "train",
+    ])
+
+    args = spark_train.parse_args()
+
+    assert args.max_steps == 5
+    assert args.epochs is None
+
+
+def test_parse_args_accepts_epochs_alone(monkeypatch) -> None:
+    monkeypatch.setattr(sys, "argv", [
+        "spark_train", "--model-id", "m", "--model-dir", "/m", "--model-revision", "a" * 40,
+        "--dataset-id", "d", "--dataset-revision", "b" * 40, "--data-dir", "/d", "--output-dir", "/o",
+        "--stage", "train", "--epochs", "3",
+    ])
+
+    args = spark_train.parse_args()
+
+    assert args.max_steps is None
+    assert args.epochs == 3.0

@@ -236,8 +236,8 @@ def validate_config(config: SparkConfig) -> str:
         raise ValueError("finetuning_mode must be lora or full")
     if config.optimizer not in {"adamw", "sgd"}:
         raise ValueError("optimizer must be adamw or sgd")
-    if config.max_steps < 1 or config.max_length < 1 or config.gradient_accumulation_steps < 1:
-        raise ValueError("steps, sequence length, and gradient accumulation must be positive")
+    if (config.max_steps < 1 and config.max_steps != -1) or config.max_length < 1 or config.gradient_accumulation_steps < 1:
+        raise ValueError("steps, sequence length, and gradient accumulation must be positive (-1 means epoch-driven)")
     if config.learning_rate <= 0:
         raise ValueError("learning_rate must be positive")
     if config.train_samples is not None and config.train_samples < 1:

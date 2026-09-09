@@ -50,6 +50,29 @@ TRL NVMe preset의 `train` stage는 학습 직후 같은 프로세스에서 평�
 백엔드가 지원하는 모든 직접 CLI 옵션이 공통 runner에 노출된 것은 아닙니다.
 Runner는 output 디렉터리 이름을 `OBSERVATORY_RUN_ID`로 예약해 framework metric과 host telemetry를 같은 실행에 연결합니다.
 
+## Build an Experiment from Knobs (`experiments/build.py`)
+
+매번 새 `experiments/*.json`을 손으로 작성하는 대신, `experiments/build.py`가 backend·dataset·model·offload·epoch 같은 간단한 knob을 그 스키마로 매핑해 `experiments/generated/<output 이름>.json`에 쓰고, 그 파일을 그대로 `experiments/run.py`의 `load_setup`/`load_experiment`/`build_plan`/`execute`에 넘깁니다. 검증·SSH 실행 로직은 전혀 새로 만들지 않고 재사용합니다.
+
+```bash
+python experiments/build.py \
+  --backend trl --dataset ultrachat \
+  --model-id Qwen/Qwen2.5-0.5B-Instruct --model-revision <40-hex> \
+  --setup setups/spark/local.json --output results/ultrachat-epoch1 \
+  --epochs 1 --train-samples 256 --eval-samples 32
+```
+
+기본값은 이 프로젝트의 실제 2노드 Spark 클러스터에 맞춰져 있습니다(`--nnodes 2`).
+`--dataset`의 선택지는 고정 목록이 아니라 선택한 `--backend`의 `trl_lab.public_data.PRESETS` 또는 `megatron_lab.public_data.PRESETS`에서 그대로 읽습니다(`reference_only`인 preset은 제외).
+
+`--epochs`는 `--max-steps`와 배타적입니다. TRL은 `spark_train.py`가 HF `SFTConfig`의 `num_train_epochs`/`max_steps=-1` sentinel로 직접 처리합니다. Megatron은 step 기반 scheduler라 `--epochs`를 `build.py`가 미리 `steps = ceil(epochs * train_count / global_batch_size)`로 계산해 `MAX_STEPS`/`SCHEDULE_STEPS`로 넣습니다 — 이 계산은 이미 준비된 dataset의 `manifest.json`(`train_count`)을 controller에서 직접 읽을 수 있을 때만 가능하며, 읽을 수 없으면(예: `data_dir`가 controller에서 안 보이는 Spark 쪽 경로일 때) 명확한 오류로 즉시 멈추고 `--max-steps`를 직접 쓰라고 안내합니다.
+
+`--offload {none,cpu,nvme}`는 TRL 전용입니다. `cpu`/`nvme`는 `--distributed-backend deepspeed`를 강제하고 `backends/trl/configs/deepspeed-zero3-{cpu,nvme}.json`을 선택합니다. `--backend megatron`과 함께 쓰면 즉시 오류입니다 — Megatron은 오늘 offload 경로가 없습니다.
+
+Megatron 전용 `--tp`/`--pp`/`--ep`/`--global-batch-size`/`--micro-batch-size`는 이 저장소에서 이미 검증된 30B preset의 기본값(TP=1, PP=1, EP=2)을 그대로 씁니다 — Megatron parallelism을 몰라도 일단 돌아가는 값입니다. 각 옵션의 뜻은 `python experiments/build.py --help`에서 확인합니다.
+
+Dataset 준비(`prepare_public_data.py`)는 `build.py`가 대신 실행하지 않습니다 — HF Hub 다운로드 같은 부수효과를 조립 단계에 숨기지 않기 위해서이며, 준비 절차는 [Datasets](datasets.md)를 그대로 따릅니다.
+
 ## Repeated Megatron Measurements
 
 이 반복 측정도 `Qwen/Qwen2.5-0.5B-Instruct`와 No Robots를 고정한 저비용 A/B 비교입니다.
