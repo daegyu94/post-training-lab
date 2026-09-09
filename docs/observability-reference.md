@@ -101,7 +101,12 @@ python -m pytest -q tests/observability/test_schema.py
 
 ## Framework Integration
 
-[Megatron metric hook](../observability/examples/megatron/metric_hook.py)은 사용자가 학습 loop에 연결하는 예제이며 공통 runner가 자동 설치하지 않습니다.
+공통 runner는 `OBSERVATORY_RUN_ID`를 실행 output 이름으로 설정합니다.
+TRL callback과 Megatron Bridge callback은 collector와 통신하지 않고 rank별 최신 JSON을 `<output>/framework-metrics/`에 atomic replace하며 Observatory node agent가 이를 비동기로 전송합니다.
+TRL tokens/s는 Trainer의 누적 입력 token 차이이고 Megatron tokens/s는 `global_batch_size * max_length`를 callback wall time으로 나눈 configured-token 처리율이므로 variable-length 실행의 실제 non-padding token 처리율로 해석하지 않습니다.
+Megatron timer는 `timing_log_level=1`에서 이미 계산한 timer의 rank-local `active_time` 차이를 읽으며 adapter 때문에 추가 collective를 실행하지 않습니다.
+
+[Megatron metric hook](../observability/examples/megatron/metric_hook.py)은 Node Exporter textfile collector를 직접 사용하는 별도 예제입니다.
 [verl profiler 설정](../observability/examples/verl/torch-profiler.yaml)은 외부 framework 연동 참고이며 이 저장소에 verl 학습 backend가 있다는 뜻은 아닙니다.
 실제 사용하는 framework 버전에 맞춰 설정을 검증한 후 적용합니다.
 

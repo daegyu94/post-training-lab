@@ -231,13 +231,19 @@ def main() -> None:
 
     from megatron.bridge.training.finetune import finetune
     from megatron.bridge.training.gpt_step import forward_step
+    from megatron_lab.observatory import make_megatron_callback
+
+    callback = make_megatron_callback(args.global_batch_size * args.max_length)
+    finetune_kwargs = {"config": config, "forward_step_func": forward_step}
+    if callback is not None:
+        finetune_kwargs["callbacks"] = [callback]
 
     if os.environ.get("MEASURE_TIMING", "false") == "true":
         from megatron_lab.measurement import measure_execution
         with measure_execution(args.output_dir, args.stage):
-            finetune(config=config, forward_step_func=forward_step)
+            finetune(**finetune_kwargs)
     else:
-        finetune(config=config, forward_step_func=forward_step)
+        finetune(**finetune_kwargs)
 
 
 if __name__ == "__main__":

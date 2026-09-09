@@ -195,6 +195,7 @@ def _sft_config_kwargs(config: SparkConfig, args: argparse.Namespace) -> dict[st
         "save_strategy": "steps",
         "save_steps": args.max_steps,
         "logging_steps": 1,
+        "include_num_input_tokens_seen": True,
         "report_to": "none",
         "seed": args.seed,
         "data_seed": args.seed,
@@ -325,7 +326,12 @@ def main() -> None:
         trainable_parameter_count = sum(parameter.numel() for parameter in trainable)
         sample_candidates = _sample_trainable_parameters(trainable_named) if config.distributed_backend == "ddp" else []
         before_sample = {name: parameter.detach().reshape(-1)[:16].float().cpu().clone() for name, parameter in sample_candidates} if args.stage == "train" else {}
-        trainer = SFTTrainer(model=model, args=training_args, train_dataset=datasets["train"], eval_dataset=datasets["validation"], processing_class=tokenizer)
+        from trl_lab.observatory import make_trl_callback
+        callback = make_trl_callback()
+        trainer_kwargs = dict(model=model, args=training_args, train_dataset=datasets["train"], eval_dataset=datasets["validation"], processing_class=tokenizer)
+        if callback is not None:
+            trainer_kwargs["callbacks"] = [callback]
+        trainer = SFTTrainer(**trainer_kwargs)
         train_metrics: dict[str, Any] = {}
         train_seconds = None
         if args.stage in {"base", "tuned"}:

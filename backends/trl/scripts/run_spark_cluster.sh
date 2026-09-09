@@ -11,6 +11,8 @@ export PATH="$(dirname "$python_bin"):$PATH"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.local/ptl/cache}"
 export HF_HOME="${HF_HOME:-$XDG_CACHE_HOME/huggingface}"
 export TORCH_EXTENSIONS_DIR="${TORCH_EXTENSIONS_DIR:-$XDG_CACHE_HOME/torch_extensions}"
+repo_root="$(cd "$(dirname "$0")/../../.." && pwd)"
+export PYTHONPATH="$repo_root/observability${PYTHONPATH:+:$PYTHONPATH}"
 model_id="${MODEL_ID:-Qwen/Qwen3-30B-A3B}"
 model_revision="${MODEL_REVISION:?set MODEL_REVISION to a 40-hex snapshot revision}"
 model_dir="${MODEL_DIR:-}"
@@ -78,7 +80,7 @@ run_stage() {
     exit 2
   fi
   echo "[workflow] running stage=$current_stage rank=$NODE_RANK/$nnodes"
-  RANK_LOG_DIR="$output_dir/logs" \
+  RANK_LOG_DIR="$output_dir/logs" FRAMEWORK_METRICS_DIR="$output_dir/framework-metrics" \
     "$python_bin" -m torch.distributed.run \
       --nnodes "$nnodes" --nproc-per-node "$nproc_per_node" --node-rank "$NODE_RANK" \
       --master-addr "$MASTER_ADDR" --master-port "$master_port" \

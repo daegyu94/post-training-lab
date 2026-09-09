@@ -65,10 +65,12 @@ Spark 노드는 SSH reverse tunnel을 통해 측정값을 보내므로 collector
 GitHub Pages는 정적 사이트라 측정값을 직접 받을 수 없습니다.
 공개할 run은 controller에서 JSON snapshot으로 내보내 Observatory 저장소에 반영한 뒤 Pages에서 확인합니다.
 
-현재 collector가 자동으로 받는 값은 노드 전체 CPU·메모리·NIC입니다.
-TRL과 Megatron의 loss, step time, tokens/s와 rank timer를 실시간 화면에 넣으려면 같은 `run_id`를 사용하는 framework adapter가 추가로 필요합니다.
+공통 runner는 output 이름을 `run_id`로 사용하고 TRL과 Megatron adapter가 rank별 최신 metric을 `<output>/framework-metrics/`에 atomic JSON으로 기록합니다.
+TRL은 Trainer가 집계한 loss와 실제 누적 입력 token 차이를 사용하고, Megatron은 callback loss, step wall time, 설정된 batch·sequence 상한 기반 tokens/s와 rank timer를 기록합니다.
 
-Adapter가 없어도 학습 결과는 각 backend가 생성한 rank 로그와 summary·measurement JSONL에 보존됩니다.
+Observatory node agent에 같은 `run_id`와 `--framework-metrics-dir <output>/framework-metrics`를 주면 노드 전체 CPU·메모리·NIC와 framework metric이 함께 collector로 전송됩니다.
+학습 process는 collector에 직접 접속하지 않으므로 collector 또는 tunnel 장애가 학습 step을 막지 않습니다.
+직접 backend launcher를 실행할 때에는 `OBSERVATORY_RUN_ID`를 설정해야 adapter가 활성화됩니다.
 
 ## Distributed Trace
 

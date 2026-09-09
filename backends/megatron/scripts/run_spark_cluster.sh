@@ -23,6 +23,8 @@ export PATH="$(dirname "$python_bin"):$PATH"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.local/ptl/cache}"
 export HF_HOME="${HF_HOME:-$XDG_CACHE_HOME/huggingface}"
 export TORCH_EXTENSIONS_DIR="${TORCH_EXTENSIONS_DIR:-$XDG_CACHE_HOME/torch_extensions}"
+repo_root="$(cd "$(dirname "$0")/../../.." && pwd)"
+export PYTHONPATH="$repo_root/observability${PYTHONPATH:+:$PYTHONPATH}"
 load_checkpoint="${LOAD_CHECKPOINT:-}"
 export NNODES="$nnodes" NPROC_PER_NODE="$nproc_per_node"
 
@@ -186,7 +188,7 @@ run_stage() {
     )
   fi
   echo "[workflow] stage=$stage node_rank=$NODE_RANK"
-  RANK_LOG_DIR="$output_dir/logs" \
+  RANK_LOG_DIR="$output_dir/logs" FRAMEWORK_METRICS_DIR="$output_dir/framework-metrics" \
     "$python_bin" -m torch.distributed.run \
       --nnodes "$nnodes" \
       --nproc-per-node "$nproc_per_node" \
