@@ -11,6 +11,10 @@ Controller는 실행을 조율하고 기록을 남기며, 모델 로딩과 GPU �
 LoRA 학습은 adapter를 `output_dir/adapter`에 저장하고 full SFT는 모델을 `output_dir/model`에 저장합니다.
 DPO와 RL trainer는 구현되어 있지 않습니다.
 
+Canonical JSONL은 순차 전처리하여 rank별 output 아래에 기록하고 Hugging Face Arrow cache도 같은 저장장치에 둡니다.
+Trainer는 전체 split을 Python list로 올리지 않고 memory-mapped dataset에서 batch를 읽습니다.
+운영체제 page cache가 데이터를 재사용할 수 있으므로 모든 batch가 반드시 물리 storage read를 발생시킨다는 의미는 아닙니다.
+
 ## Run the Standard Spark Workflow
 
 처음 실행할 때는 공통 runner를 사용합니다.

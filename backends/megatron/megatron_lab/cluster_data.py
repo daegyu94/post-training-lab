@@ -103,8 +103,7 @@ def render_prompt_completion(row: dict[str, Any], tokenizer: Any) -> dict[str, A
     }
 
 
-def _read_jsonl(path: Path) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
+def _iter_jsonl(path: Path):
     with path.open(encoding="utf-8") as source:
         for line_number, line in enumerate(source, 1):
             if not line.strip():
@@ -115,12 +114,61 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
                 raise ValueError(f"invalid JSON in {path}:{line_number}") from exc
             if not isinstance(row, dict):
                 raise ValueError(f"JSONL row must be an object: {path}:{line_number}")
-            rows.append(row)
-    return rows
+            yield row
 
 
 def _sha256_jsonl(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _prepare_split(
+    source_path: Path,
+    destination: Path,
+    split: str,
+    tokenizer: Any,
+    max_length: int,
+    forbidden_ids: set[str] | None = None,
+) -> tuple[int, set[str]]:
+    fd, temporary_name = tempfile.mkstemp(
+        prefix=f".{destination.name}.{os.getpid()}-",
+        dir=str(destination.parent),
+        text=True,
+    )
+    count = 0
+    prompt_ids: set[str] = set()
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as target:
+            for row in _iter_jsonl(source_path):
+                example = render_prompt_completion(row, tokenizer)
+                total_tokens = example["prompt_tokens"] + example["supervised_tokens"]
+                if total_tokens > max_length:
+                    raise ValueError(
+                        f"{split} example {example['prompt_id']} exceeds max_length={max_length}; "
+                        "native setup2 preparation never truncates"
+                    )
+                prompt_id = example["prompt_id"]
+                if forbidden_ids is not None and prompt_id in forbidden_ids:
+                    raise ValueError("train and validation prompt IDs overlap")
+                if forbidden_ids is None:
+                    prompt_ids.add(prompt_id)
+                target.write(json.dumps(example, ensure_ascii=False, sort_keys=True) + "\n")
+                count += 1
+            if count == 0:
+                raise ValueError(f"{split} split is empty: {source_path}")
+            target.flush()
+            os.fsync(target.fileno())
+        Path(temporary_name).replace(destination)
+    except BaseException:
+        try:
+            Path(temporary_name).unlink()
+        except FileNotFoundError:
+            pass
+        raise
+    return count, prompt_ids
 
 
 def _atomic_write(path: Path, content: str) -> None:
@@ -165,36 +213,23 @@ def prepare_cluster_data(
     ):
         raise ValueError("prepared output must be separate from canonical source files")
     output_dir.mkdir(parents=True, exist_ok=True)
-    prepared: dict[str, list[dict[str, Any]]] = {}
     source_paths = {"train": train_data, "validation": eval_data}
-    for split, source_path in source_paths.items():
-        rows = _read_jsonl(source_path)
-        if not rows:
-            raise ValueError(f"{split} split is empty: {source_path}")
-        rendered: list[dict[str, Any]] = []
-        for row in rows:
-            example = render_prompt_completion(row, tokenizer)
-            total_tokens = example["prompt_tokens"] + example["supervised_tokens"]
-            if total_tokens > max_length:
-                raise ValueError(
-                    f"{split} example {example['prompt_id']} exceeds max_length={max_length}; "
-                    "native setup2 preparation never truncates"
-                )
-            rendered.append(example)
-        prepared[split] = rendered
-
-    train_ids = {row["prompt_id"] for row in prepared["train"]}
-    eval_ids = {row["prompt_id"] for row in prepared["validation"]}
-    if train_ids & eval_ids:
-        raise ValueError("train and validation prompt IDs overlap")
-
-    for split, filename in (("train", "training.jsonl"), ("validation", "validation.jsonl")):
-        destination = output_dir / filename
-        content = "".join(
-            json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
-            for row in prepared[split]
-        )
-        _atomic_write(destination, content)
+    train_count, train_ids = _prepare_split(
+        train_data,
+        output_dir / "training.jsonl",
+        "train",
+        tokenizer,
+        max_length,
+    )
+    validation_count, _ = _prepare_split(
+        eval_data,
+        output_dir / "validation.jsonl",
+        "validation",
+        tokenizer,
+        max_length,
+        train_ids,
+    )
+    counts = {"train": train_count, "validation": validation_count}
 
     source_manifest = train_data.parent / "manifest.json"
     manifest = {
@@ -208,7 +243,8 @@ def prepare_cluster_data(
             split: {"path": str(path), "sha256": _sha256_jsonl(path)}
             for split, path in source_paths.items()
         },
-        "counts": {split: len(rows) for split, rows in prepared.items()},
+        "counts": counts,
+        "loading": "disk-backed Arrow cache; batches are paged from storage",
         "supervision": "final_assistant_completion_only",
         "max_length": max_length,
         "tokenizer_template": "model-native apply_chat_template(enable_thinking=False)",

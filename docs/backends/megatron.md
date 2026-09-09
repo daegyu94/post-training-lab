@@ -4,6 +4,9 @@
 기본 launcher는 LoRA를 사용하며 제공된 소형 smoke preset은 full SFT를 명시합니다.
 설정·실행·측정과 checkpoint 재개를 구분해서 사용합니다.
 
+Canonical JSONL은 전체 row를 RAM에 모으지 않고 rank별 output으로 순차 변환합니다.
+Bridge의 Hugging Face dataset cache도 같은 output 아래에 두며 DataLoader는 disk-backed Arrow dataset에서 batch를 읽습니다.
+
 ## Parallelism Concepts
 
 | 방식 | 나누는 대상 | 이 저장소의 범위 |
@@ -83,6 +86,7 @@ Async checkpoint는 train/resume stage의 `torch_dist`와 persistent worker를 �
 
 `experiments/megatron/nvme-checkpoint-30b.json`은 backend별 `output_root`를 `/mnt/post-training/megatron`으로 지정해 30B checkpoint를 각 노드의 로컬 NVMe에 기록합니다.
 이는 parameter·optimizer·activation의 실행 중 NVMe offload가 아니라 checkpoint I/O 실습입니다.
+같은 run의 전처리 JSONL과 Arrow cache도 이 NVMe output 아래에 생성되므로 input batch 경로의 storage I/O도 함께 관찰할 수 있습니다.
 Node-local shard를 다른 topology나 노드에서 재개하려면 필요한 shard와 metadata를 공유 저장소로 모으는 별도 단계가 필요합니다.
 
 TP/PP를 바꾸는 optimizer 재분할은 기본 `dp_reshardable` format으로 해결되지 않습니다.

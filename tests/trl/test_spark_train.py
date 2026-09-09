@@ -170,10 +170,9 @@ def test_main_passes_cli_optimizer_and_sft_config_to_trainer(monkeypatch, tmp_pa
         def save_model(self, _):
             return None
 
-    class FakeDataset:
-        @classmethod
-        def from_list(cls, rows):
-            return rows
+    def fake_load_dataset(*args, **kwargs):
+        captured["load_dataset"] = {"args": args, "kwargs": kwargs}
+        return {"train": [{"prompt": "p", "completion": "c"}], "validation": [{"prompt": "p", "completion": "c"}]}
 
     fake_torch = types.SimpleNamespace(
         bfloat16="bf16",
@@ -187,7 +186,7 @@ def test_main_passes_cli_optimizer_and_sft_config_to_trainer(monkeypatch, tmp_pa
     monkeypatch.setitem(sys.modules, "torch", fake_torch)
     monkeypatch.setitem(sys.modules, "transformers", types.SimpleNamespace())
     monkeypatch.setitem(sys.modules, "trl", types.SimpleNamespace(SFTConfig=FakeSFTConfig, SFTTrainer=FakeTrainer))
-    monkeypatch.setitem(sys.modules, "datasets", types.SimpleNamespace(Dataset=FakeDataset))
+    monkeypatch.setitem(sys.modules, "datasets", types.SimpleNamespace(load_dataset=fake_load_dataset))
     monkeypatch.setitem(sys.modules, "peft", fake_peft)
     monkeypatch.setattr(spark_train, "parse_args", lambda: args)
     monkeypatch.setattr(spark_train, "validate_config", lambda _: "qwen3_moe")
@@ -200,7 +199,14 @@ def test_main_passes_cli_optimizer_and_sft_config_to_trainer(monkeypatch, tmp_pa
     monkeypatch.setattr(spark_train, "_load_model", load_model)
     monkeypatch.setattr(spark_train, "model_snapshot_evidence", lambda *_: {})
     import trl_lab.spark_data as spark_data
-    monkeypatch.setattr(spark_data, "load_prompt_completion_data", lambda *_args: ([{"prompt": "p", "completion": "c"}], [{"prompt": "p", "completion": "c"}], {}))
+    monkeypatch.setattr(
+        spark_data,
+        "prepare_prompt_completion_data",
+        lambda *_args: (
+            {"train": tmp_path / "training.jsonl", "validation": tmp_path / "validation.jsonl"},
+            {},
+        ),
+    )
 
     spark_train.main()
 
@@ -210,6 +216,7 @@ def test_main_passes_cli_optimizer_and_sft_config_to_trainer(monkeypatch, tmp_pa
     assert captured["sft_config"]["ddp_find_unused_parameters"] is False
     assert captured["sft_config"]["gradient_checkpointing"] is True
     assert captured["sft_config"]["gradient_checkpointing_kwargs"] == {"use_reentrant": False}
+    assert captured["load_dataset"]["kwargs"]["cache_dir"].endswith("hf-cache")
     assert model.checkpointing_kwargs == {"gradient_checkpointing_kwargs": {"use_reentrant": False}}
     summary = json.loads((args.output_dir / "summary-train.json").read_text(encoding="utf-8"))
     assert summary["memory_components_scope"] == "replicated model view"

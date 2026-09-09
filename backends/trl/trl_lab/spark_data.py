@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
+import tempfile
 from typing import Any
 
 from trl_lab.spark_config import validate_dataset_manifest
@@ -76,15 +78,59 @@ def render_prompt_completion(row: dict[str, Any], tokenizer: Any) -> dict[str, A
     }
 
 
-def load_prompt_completion_data(
+def _sha256_files(paths: tuple[Path, ...]) -> str:
+    digest = hashlib.sha256()
+    for path in paths:
+        with path.open("rb") as source:
+            for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _iter_examples(
+    path: Path,
+    tokenizer: Any,
+    split: str,
+    max_length: int,
+    limit: int | None,
+):
+    count = 0
+    with path.open(encoding="utf-8") as source:
+        for line_number, line in enumerate(source, 1):
+            if not line.strip():
+                continue
+            if limit is not None and count >= limit:
+                break
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"invalid JSON in {path}:{line_number}") from exc
+            example = render_prompt_completion(row, tokenizer)
+            total_tokens = example["prompt_tokens"] + example["supervised_tokens"]
+            if total_tokens > max_length:
+                raise ValueError(
+                    f"{split} example {example['prompt_id']} exceeds max_length={max_length}"
+                )
+            count += 1
+            yield example
+    if count == 0:
+        raise ValueError(f"{split} split is empty")
+    if limit is not None and count != limit:
+        raise ValueError(f"{split} split has fewer than requested {limit} examples")
+
+
+def prepare_prompt_completion_data(
     data_dir: Path,
+    output_dir: Path,
     tokenizer: Any,
     dataset_id: str,
     dataset_revision: str,
     max_length: int,
     train_samples: int | None = None,
     eval_samples: int | None = None,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+) -> tuple[dict[str, Path], dict[str, Any]]:
+    """Stream canonical JSONL into disk-backed Trainer inputs."""
+
     manifest = validate_dataset_manifest(data_dir, dataset_id, dataset_revision)
     if max_length < 1:
         raise ValueError("max_length must be positive")
@@ -92,39 +138,71 @@ def load_prompt_completion_data(
         raise ValueError("train_samples must be positive when specified")
     if eval_samples is not None and eval_samples < 1:
         raise ValueError("eval_samples must be positive when specified")
-    prepared: dict[str, list[dict[str, Any]]] = {}
-    for name, filename, limit in (("train", "training.jsonl", train_samples), ("validation", "validation.jsonl", eval_samples)):
-        rows = []
-        with (data_dir / filename).open(encoding="utf-8") as source:
-            for line in source:
-                if limit is not None and len(rows) >= limit:
-                    break
-                row = json.loads(line)
-                example = render_prompt_completion(row, tokenizer)
-                total_tokens = len(_token_ids(tokenizer, example["prompt"] + example["completion"]))
-                if total_tokens > max_length:
-                    raise ValueError(f"{name} example {example['prompt_id']} exceeds max_length={max_length}")
-                rows.append(example)
-        if not rows:
-            raise ValueError(f"{name} split is empty")
-        if limit is not None and len(rows) != limit:
-            raise ValueError(f"{name} split has fewer than requested {limit} examples")
-        prepared[name] = rows
-    train_ids = {row["prompt_id"] for row in prepared["train"]}
-    eval_ids = {row["prompt_id"] for row in prepared["validation"]}
-    if train_ids & eval_ids:
-        raise ValueError("train and validation prompt IDs overlap")
-    return prepared["train"], prepared["validation"], {
+    output_dir.mkdir(parents=True, exist_ok=True)
+    paths: dict[str, Path] = {}
+    counts: dict[str, int] = {}
+    supervised_tokens: dict[str, int] = {}
+    selected: dict[str, list[str]] = {}
+    train_ids: set[str] = set()
+    for split, filename, limit in (
+        ("train", "training.jsonl", train_samples),
+        ("validation", "validation.jsonl", eval_samples),
+    ):
+        destination = output_dir / filename
+        fd, temporary_name = tempfile.mkstemp(
+            prefix=f".{filename}.{os.getpid()}-", dir=str(output_dir), text=True
+        )
+        count = 0
+        token_count = 0
+        ids: set[str] = set()
+        id_sample: list[str] = []
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as target:
+                for example in _iter_examples(
+                    data_dir / filename, tokenizer, split, max_length, limit
+                ):
+                    prompt_id = example["prompt_id"]
+                    if split == "validation" and prompt_id in train_ids:
+                        raise ValueError("train and validation prompt IDs overlap")
+                    if split == "train":
+                        ids.add(prompt_id)
+                    if len(id_sample) < 100:
+                        id_sample.append(prompt_id)
+                    count += 1
+                    token_count += example["supervised_tokens"]
+                    target.write(
+                        json.dumps(
+                            {key: example[key] for key in ("prompt", "completion")},
+                            ensure_ascii=False,
+                        )
+                        + "\n"
+                    )
+                target.flush()
+                os.fsync(target.fileno())
+            Path(temporary_name).replace(destination)
+        except BaseException:
+            try:
+                Path(temporary_name).unlink()
+            except FileNotFoundError:
+                pass
+            raise
+        paths[split] = destination
+        counts[split] = count
+        supervised_tokens[split] = token_count
+        selected[split] = id_sample
+        if split == "train":
+            train_ids = ids
+    return paths, {
         "manifest": manifest,
-        "train_count": len(prepared["train"]),
-        "eval_count": len(prepared["validation"]),
-        "actual_selected_rows": {
-            "train": [row["prompt_id"] for row in prepared["train"]],
-            "validation": [row["prompt_id"] for row in prepared["validation"]],
+        "train_count": counts["train"],
+        "eval_count": counts["validation"],
+        "actual_selected_rows": selected,
+        "actual_selected_rows_truncated": {
+            split: counts[split] > len(selected[split]) for split in selected
         },
-        "supervised_tokens": {
-            "train": sum(row["supervised_tokens"] for row in prepared["train"]),
-            "validation": sum(row["supervised_tokens"] for row in prepared["validation"]),
-        },
-        "data_sha256": hashlib.sha256((data_dir / "training.jsonl").read_bytes() + (data_dir / "validation.jsonl").read_bytes()).hexdigest(),
+        "supervised_tokens": supervised_tokens,
+        "data_sha256": _sha256_files(
+            (data_dir / "training.jsonl", data_dir / "validation.jsonl")
+        ),
+        "loading": "disk-backed Arrow cache; batches are paged from storage",
     }

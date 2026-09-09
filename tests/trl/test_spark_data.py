@@ -3,7 +3,10 @@ from pathlib import Path
 
 import pytest
 
-from trl_lab.spark_data import load_prompt_completion_data, render_prompt_completion
+from trl_lab.spark_data import (
+    prepare_prompt_completion_data,
+    render_prompt_completion,
+)
 
 
 class FakeTokenizer:
@@ -90,8 +93,15 @@ def test_loader_checks_manifest_and_split_disjointness(tmp_path: Path) -> None:
     (tmp_path / "training.jsonl").write_text(json.dumps(row("train")) + "\n", encoding="utf-8")
     (tmp_path / "validation.jsonl").write_text(json.dumps(row("eval")) + "\n", encoding="utf-8")
     (tmp_path / "manifest.json").write_text(json.dumps({"dataset": "public/data", "dataset_revision": "a" * 40}), encoding="utf-8")
-    train, evaluation, metadata = load_prompt_completion_data(tmp_path, FakeTokenizer(), "public/data", "a" * 40, 512)
-    assert len(train) == len(evaluation) == 1
+    paths, metadata = prepare_prompt_completion_data(
+        tmp_path,
+        tmp_path / "prepared",
+        FakeTokenizer(),
+        "public/data",
+        "a" * 40,
+        512,
+    )
+    assert paths["train"].is_file() and paths["validation"].is_file()
     assert metadata["supervised_tokens"]["train"] > 0
     assert metadata["actual_selected_rows"] == {"train": ["train"], "validation": ["eval"]}
 
@@ -101,4 +111,42 @@ def test_requested_rows_must_be_available(tmp_path: Path) -> None:
     (tmp_path / "validation.jsonl").write_text(json.dumps(row("eval")) + "\n", encoding="utf-8")
     (tmp_path / "manifest.json").write_text(json.dumps({"dataset": "public/data", "dataset_revision": "a" * 40}), encoding="utf-8")
     with pytest.raises(ValueError, match="fewer than requested"):
-        load_prompt_completion_data(tmp_path, FakeTokenizer(), "public/data", "a" * 40, 512, train_samples=2)
+        prepare_prompt_completion_data(
+            tmp_path,
+            tmp_path / "prepared",
+            FakeTokenizer(),
+            "public/data",
+            "a" * 40,
+            512,
+            train_samples=2,
+        )
+
+
+def test_preparation_streams_disk_backed_trainer_inputs(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "training.jsonl").write_text(json.dumps(row("train")) + "\n", encoding="utf-8")
+    (source / "validation.jsonl").write_text(json.dumps(row("eval")) + "\n", encoding="utf-8")
+    (source / "manifest.json").write_text(
+        json.dumps({"dataset": "public/data", "dataset_revision": "a" * 40}),
+        encoding="utf-8",
+    )
+
+    paths, metadata = prepare_prompt_completion_data(
+        source,
+        tmp_path / "prepared",
+        FakeTokenizer(),
+        "public/data",
+        "a" * 40,
+        512,
+    )
+
+    assert json.loads(paths["train"].read_text()) == {
+        "prompt": "user:Question|assistant:",
+        "completion": "Answer<eos>",
+    }
+    assert metadata["loading"].startswith("disk-backed Arrow")
+    assert metadata["actual_selected_rows_truncated"] == {
+        "train": False,
+        "validation": False,
+    }

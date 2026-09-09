@@ -271,10 +271,10 @@ def main() -> None:
         import torch
         import transformers
         import trl
-        from datasets import Dataset
+        from datasets import load_dataset
         from peft import LoraConfig, get_peft_model
         from trl import SFTConfig, SFTTrainer
-        from trl_lab.spark_data import load_prompt_completion_data
+        from trl_lab.spark_data import prepare_prompt_completion_data
 
         torch.manual_seed(args.seed)
         if not torch.cuda.is_available() or not torch.cuda.is_bf16_supported():
@@ -287,7 +287,22 @@ def main() -> None:
         tokenizer = _load_tokenizer(config, transformers)
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
-        train_rows, eval_rows, data_meta = load_prompt_completion_data(config.data_dir, tokenizer, config.dataset_id, config.dataset_revision, config.max_length, config.train_samples, config.eval_samples)
+        prepared_dir = config.output_dir / f"prepared-data-rank-{_rank()}"
+        prepared_paths, data_meta = prepare_prompt_completion_data(
+            config.data_dir,
+            prepared_dir,
+            tokenizer,
+            config.dataset_id,
+            config.dataset_revision,
+            config.max_length,
+            config.train_samples,
+            config.eval_samples,
+        )
+        datasets = load_dataset(
+            "json",
+            data_files={name: str(path) for name, path in prepared_paths.items()},
+            cache_dir=str(prepared_dir / "hf-cache"),
+        )
         model = _load_model(config, torch, transformers, __import__("peft"), load_tuned=args.stage == "tuned")
         if config.distributed_backend != "fsdp2":
             if not hasattr(model, "gradient_checkpointing_enable"):
@@ -304,7 +319,7 @@ def main() -> None:
         trainable_parameter_count = sum(parameter.numel() for parameter in trainable)
         sample_candidates = _sample_trainable_parameters(trainable_named) if config.distributed_backend == "ddp" else []
         before_sample = {name: parameter.detach().reshape(-1)[:16].float().cpu().clone() for name, parameter in sample_candidates} if args.stage == "train" else {}
-        trainer = SFTTrainer(model=model, args=training_args, train_dataset=Dataset.from_list([{key: row[key] for key in ("prompt", "completion")} for row in train_rows]), eval_dataset=Dataset.from_list([{key: row[key] for key in ("prompt", "completion")} for row in eval_rows]), processing_class=tokenizer)
+        trainer = SFTTrainer(model=model, args=training_args, train_dataset=datasets["train"], eval_dataset=datasets["validation"], processing_class=tokenizer)
         train_metrics: dict[str, Any] = {}
         train_seconds = None
         if args.stage in {"base", "tuned"}:

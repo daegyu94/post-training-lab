@@ -7,11 +7,13 @@ Status: `implemented, host preparation required`
 이 실습은 두 Spark 노드의 로컬 NVMe가 30B post-training 과정에 미치는 영향을 관찰합니다.
 TRL은 DeepSpeed ZeRO-3 parameter·optimizer state offload를 실행하고, Megatron은 async distributed checkpoint를 로컬 NVMe에 기록합니다.
 Megatron 경로는 학습 state offload가 아니라 checkpoint I/O라는 차이를 결과 해석에서 유지합니다.
+두 backend 모두 canonical JSONL을 로컬 NVMe에 순차 전처리하고 disk-backed Arrow cache에서 batch 단위로 읽습니다.
 
 ## Prerequisites
 
 두 노드 모두 `/`가 로컬 NVMe의 ext4 파일시스템인지 확인하고, `spark` 사용자가 backend별 디렉터리에 쓸 수 있어야 합니다.
 Controller에서 확인한 2026-09-09 상태에서는 각 노드의 `/dev/nvme0n1p2`가 `/`에 마운트되어 있었지만 디렉터리와 `libaio-dev`가 없었습니다.
+같은 날 두 노드에서 실제 Qwen3-30B tokenizer와 No Robots 입력을 순차 전처리했고, TRL과 Megatron dataset이 모두 Hugging Face `MemoryMappedTable`로 열리는 것까지 확인했습니다.
 
 각 노드에서 관리자가 한 번 실행합니다.
 
@@ -67,9 +69,11 @@ Dry-run의 각 rank에서 TRL output이 `/mnt/post-training/trl/trl-nvme-30b`, M
 
 TRL 성공 조건은 두 rank의 정상 종료, 1 optimizer step과 `/mnt/post-training/trl`의 DeepSpeed NVMe read/write 발생입니다.
 LoRA에서는 optimizer state가 작으므로 parameter offload가 주된 NVMe 이동량입니다.
+전처리 JSONL과 Hugging Face Arrow cache도 run output 아래에 남으며 dataset 전체를 Python list로 적재하지 않습니다.
 
 Megatron 성공 조건은 두 rank의 정상 종료, 1 optimizer step, async save finalization과 각 노드의 `/mnt/post-training/megatron/megatron-nvme-30b/checkpoints` shard 생성입니다.
 Controller manifest와 rank 로그를 함께 확인하고 실행 중 `iostat -dx 1 nvme0n1`로 장치 I/O를 관찰합니다.
+Arrow dataset은 memory map과 운영체제 page cache를 사용하므로 동일 batch를 다시 읽을 때 물리 NVMe I/O가 생략될 수 있습니다.
 
 ## Cleanup
 

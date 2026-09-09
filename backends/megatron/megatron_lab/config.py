@@ -245,12 +245,18 @@ def _build_cluster_dataset(args: Namespace):
         source=HFDatasetSourceConfig(
             path_or_dataset="json",
             split="train",
-            load_kwargs={"data_files": {"train": str(prepared_dir / "training.jsonl")}},
+            load_kwargs={
+                "data_files": {"train": str(prepared_dir / "training.jsonl")},
+                "cache_dir": str(prepared_dir / "hf-cache"),
+            },
         ),
         validation_source=HFDatasetSourceConfig(
             path_or_dataset="json",
             split="validation",
-            load_kwargs={"data_files": {"validation": str(prepared_dir / "validation.jsonl")}},
+            load_kwargs={
+                "data_files": {"validation": str(prepared_dir / "validation.jsonl")},
+                "cache_dir": str(prepared_dir / "hf-cache"),
+            },
         ),
         do_validation=True,
         do_test=False,
