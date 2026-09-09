@@ -202,14 +202,17 @@ def test_main_passes_cli_optimizer_and_sft_config_to_trainer(monkeypatch, tmp_pa
             self.optimizer = FakeOptimizer(self.model.parameters(), lr=args.learning_rate)
 
         def train(self):
+            captured.setdefault("calls", []).append("train")
             self.model.parameter.value += 1.0
             self.optimizer.state = {self.model.parameter: {"exp_avg": FakeTensor(), "exp_avg_sq": FakeTensor()}}
             return types.SimpleNamespace(metrics={"train_loss": 1.0}, global_step=1)
 
         def evaluate(self):
+            captured.setdefault("calls", []).append("evaluate")
             return {"eval_loss": 1.0}
 
         def save_model(self, _):
+            captured.setdefault("calls", []).append("save")
             return None
 
     def fake_load_dataset(*args, **kwargs):
@@ -259,6 +262,7 @@ def test_main_passes_cli_optimizer_and_sft_config_to_trainer(monkeypatch, tmp_pa
     assert captured["sft_config"]["gradient_checkpointing"] is True
     assert captured["sft_config"]["gradient_checkpointing_kwargs"] == {"use_reentrant": False}
     assert captured["sft_config"]["save_strategy"] == "no"
+    assert captured["calls"] == ["train", "evaluate", "save"]
     assert captured["load_dataset"]["kwargs"]["cache_dir"].endswith("hf-cache")
     assert model.checkpointing_kwargs == {"gradient_checkpointing_kwargs": {"use_reentrant": False}}
     summary = json.loads((args.output_dir / "summary-train.json").read_text(encoding="utf-8"))

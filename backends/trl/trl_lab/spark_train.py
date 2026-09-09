@@ -358,9 +358,9 @@ def main() -> None:
         else:
             started = time.perf_counter()
             result = trainer.train()
-            train_metrics = dict(result.metrics)
-            trainer.save_model(str(config.output_dir / "adapter" if args.finetuning_mode == "lora" else config.output_dir / "model"))
             evaluation = trainer.evaluate()
+            trainer.save_model(str(config.output_dir / "adapter" if args.finetuning_mode == "lora" else config.output_dir / "model"))
+            train_metrics = dict(result.metrics)
             update_count = int(result.global_step)
             train_seconds = time.perf_counter() - started
         optimizer_instance = getattr(trainer, "optimizer", None) if args.stage == "train" else None
