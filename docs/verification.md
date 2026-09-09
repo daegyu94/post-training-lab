@@ -72,7 +72,8 @@ TRL의 ZeRO-3 NVMe offload는 별도의 DeepSpeed AIO extension build와 실제 
 
 30B full SFT의 기존 DDP와 FSDP2 실패는 dataset 전체 적재가 원인이 아닙니다.
 DDP는 parameter와 gradient가 unified memory 한도에 근접하고, 설치된 Accelerate의 FSDP2 준비 과정은 sharding 전에 trainable BF16 parameter를 FP32로 올립니다.
-현재 하드웨어에서 남은 full-SFT 후보는 TRL의 DeepSpeed ZeRO-3 NVMe parameter·optimizer offload이며 실제 실행 결과로 가능 여부를 판정해야 합니다.
+남은 후보였던 TRL의 DeepSpeed ZeRO-3 NVMe parameter·optimizer offload는 2노드에서 1 optimizer step(train loss 약 13.21), 별도 `tuned` process에서의 평가(eval loss 약 11.96)와 복구 가능한 native ZeRO checkpoint까지 확인했습니다.
+같은 실행에서 두 노드 모두 `/mnt/post-training/trl/zero_stage_3` swap footprint가 약 256GiB로, 각 노드 물리 RAM 119GiB보다 컸습니다. NVMe offload가 없으면 이 구성은 노드 RAM만으로 담을 수 없다는 근거이며, 자세한 수치와 한계는 [30B NVMe 실습](../labs/nvme-30b/README.md#why-nvme-offload-is-necessary-here)을 따릅니다.
 
 ## Known Implementation Limits
 

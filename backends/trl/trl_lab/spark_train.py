@@ -370,9 +370,20 @@ def main() -> None:
             if args.stage == "tuned" and config.distributed_backend == "deepspeed" and args.finetuning_mode == "full":
                 from transformers.integrations.deepspeed import deepspeed_load_checkpoint
 
+                checkpoint_dir = config.output_dir / "model"
+                latest_marker = checkpoint_dir / "latest"
+                if not latest_marker.is_file():
+                    # DeepSpeed writes "latest" only on the node hosting global rank 0;
+                    # OUTPUT_DIR is node-local NVMe, not shared, so other nodes must derive
+                    # the same tag from their own global_step* shard directory.
+                    step_dirs = sorted(path.name for path in checkpoint_dir.glob("global_step*") if path.is_dir())
+                    if not step_dirs:
+                        raise RuntimeError(f"no global_step checkpoint directory found under {checkpoint_dir}")
+                    latest_marker.write_text(step_dirs[-1], encoding="utf-8")
+
                 train_dataloader = trainer.get_train_dataloader()
                 trainer._prepare_for_training(max_steps=1, train_dataloader=train_dataloader, resume_from_checkpoint=None)
-                deepspeed_load_checkpoint(trainer.model_wrapped, str(config.output_dir / "model"), load_module_strict=True)
+                deepspeed_load_checkpoint(trainer.model_wrapped, str(checkpoint_dir), load_module_strict=True)
             evaluation = trainer.evaluate()
             update_count = 0
         else:

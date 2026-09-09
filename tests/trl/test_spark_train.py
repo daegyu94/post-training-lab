@@ -388,6 +388,8 @@ def test_tuned_stage_reloads_deepspeed_checkpoint_before_evaluate(monkeypatch, t
         ),
     )
 
+    (args.output_dir / "model" / "global_step1").mkdir(parents=True)
+
     spark_train.main()
 
     assert captured["calls"] == ["get_train_dataloader", "prepare_for_training", "deepspeed_load_checkpoint", "evaluate"]
@@ -397,6 +399,7 @@ def test_tuned_stage_reloads_deepspeed_checkpoint_before_evaluate(monkeypatch, t
     assert captured["load_checkpoint_args"] == {
         "model_wrapped": model, "checkpoint_dir": str(args.output_dir / "model"), "load_module_strict": True,
     }
+    assert (args.output_dir / "model" / "latest").read_text(encoding="utf-8") == "global_step1"
     summary = json.loads((args.output_dir / "summary-tuned.json").read_text(encoding="utf-8"))
     assert summary["evaluation"] == {"eval_loss": 1.0}
 

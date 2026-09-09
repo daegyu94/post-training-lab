@@ -72,7 +72,8 @@ Dry-run의 각 rank에서 TRL output이 `/mnt/post-training/trl/trl-nvme-30b`, M
 
 TRL 성공 조건은 두 rank의 정상 종료, 1 optimizer step과 `/mnt/post-training/trl`의 DeepSpeed NVMe read/write 발생입니다.
 이 preset은 전체 parameter와 optimizer state를 NVMe training-time memory tier로 사용하는 full SFT입니다.
-현재 고정된 TRL·DeepSpeed 조합에서 LoRA와 ZeRO-3 NVMe parameter offload를 함께 쓰면 reentrant gradient checkpointing이 여러 MoE layer의 swap buffer를 계속 점유하므로 지원하지 않습니다.
+현재 고정된 TRL·DeepSpeed 조합에서 LoRA와 ZeRO-3 NVMe parameter offload를 함께 쓰는 것은 과거 관측된 실패를 근거로 권장하지 않습니다.
+다만 그 원인으로 적어뒀던 "reentrant gradient checkpointing이 swap buffer를 점유한다"는 설명은, 현재 `spark_train.py`가 gradient checkpointing을 항상 `use_reentrant=False`로만 켜도록 고정돼 있어 더 이상 코드와 맞지 않습니다(2026-09-09 기준). 이 조합은 이번 세션에서 다시 실행해 재확인하지 않았으므로, 제한 자체는 유지하되 원인 설명은 stale일 수 있다는 점만 표시해둡니다.
 각 Spark 노드에서 `spark` 사용자의 memlock soft/hard limit을 32GiB 이상으로 설정해야 parameter buffer 약 12.3GB와 optimizer tile 약 4.6GB를 함께 고정할 수 있습니다.
 
 `train` stage는 학습 직후 같은 프로세스에서 평가를 실행하지 않습니다.
@@ -87,6 +88,16 @@ DeepSpeed ZeRO-3의 parameter coordinator는 학습 forward+backward에서 기�
 Megatron 성공 조건은 두 rank의 정상 종료, 1 optimizer step, async save finalization과 각 노드의 `/mnt/post-training/megatron/megatron-nvme-30b/checkpoints` shard 생성입니다.
 Controller manifest와 rank 로그를 함께 확인하고 실행 중 `iostat -dx 1 nvme0n1`로 장치 I/O를 관찰합니다.
 Arrow dataset은 memory map과 운영체제 page cache를 사용하므로 동일 batch를 다시 읽을 때 물리 NVMe I/O가 생략될 수 있습니다.
+
+## Why NVMe Offload Is Necessary Here
+
+2026-09-09 실행(`trl-nvme-30b-tuned-eval-r3`)에서 두 노드 모두 `/mnt/post-training/trl/zero_stage_3`가 **약 256GiB**까지 자랐고, 같은 시점 각 노드의 물리 RAM은 `free -h` 기준 **119GiB**였습니다.
+즉 이 구성(Qwen3-30B-A3B full SFT, ZeRO-3, SGD optimizer, 이 setup의 2노드 world size)에서 parameter·optimizer state footprint는 노드 RAM보다 2배 이상 큽니다.
+이 구성에서는 `offload_param`/`offload_optimizer`의 `device: nvme`가 있어야 학습이 성립하며, NVMe offload는 처리량 최적화가 아니라 이 footprint를 RAM만으로 담을 수 없다는 사실 자체가 근거입니다.
+
+이 결론은 측정된 footprint와 노드 RAM 용량을 비교한 것이지, `device: cpu`나 `device: none`으로 같은 설정을 실제로 돌려 OOM을 관찰한 결과가 아닙니다.
+즉 "간접적이지만 정량적인 근거"이며, "실패를 직접 재현한 근거"는 아닙니다. 그 control 실행은 아직 하지 않았고, 필요하면 별도로 계획합니다.
+또한 이 수치는 이 모델 크기·optimizer·병렬 구성에 한정되며, 다른 모델 크기나 optimizer(AdamW 등)로 일반화하지 않습니다.
 
 ## Cleanup
 

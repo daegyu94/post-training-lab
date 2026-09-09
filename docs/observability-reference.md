@@ -10,7 +10,7 @@
 | --- | --- |
 | `config/metrics.json` | 수집·파생 metric, label, manifest field와 phase vocabulary의 canonical definition |
 | `config/metrics.schema.json` | metric object의 필수 field, category와 naming rule을 정의하는 JSON Schema |
-| `profiling_lab/schema.py` | 별도 dependency 없이 repository test와 script에서 수행하는 runtime validation |
+| `observability/profiling_lab/schema.py` | 별도 dependency 없이 repository test와 script에서 수행하는 runtime validation |
 
 `metrics.json`의 `schema_version`은 소비자가 이해하는 계약 version입니다.
 기존 metric의 의미나 단위를 바꾸는 호환성 파괴 변경이 있을 때만 version을 올리고, 새 metric을 추가하는 변경은 같은 version에서 수행합니다.

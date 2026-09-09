@@ -39,6 +39,7 @@ TRL NVMe preset과 두 Megatron 30B preset은 작은 smoke 네 개에 포함되�
 Megatron의 Qwen과 GLM preset은 검증 당시와 같은 TP=1, PP=1, EP=2 구성으로 1 step, 평가 1회와 async checkpoint를 실행합니다.
 GLM preset의 `TRANSFORMER_IMPL=auto`는 Transformer Engine 구현을 선택합니다.
 TRL NVMe preset의 `train` stage는 학습 직후 같은 프로세스에서 평가를 실행하지 않고, 평가는 `tuned` stage를 별도 프로세스로 실행해 학습이 남긴 native DeepSpeed ZeRO checkpoint를 새 엔진에 복원한 뒤에 수행합니다.
+이 preset에서 NVMe offload가 왜 필요한지(측정된 footprint와 노드 RAM 비교)는 [30B NVMe 실습](../labs/nvme-30b/README.md#why-nvme-offload-is-necessary-here)을 따릅니다.
 준비 조건과 두 backend에서 `NVMe`가 뜻하는 범위, `tuned` stage 실행 조건은 [30B NVMe 실습](../labs/nvme-30b/README.md)을 따릅니다.
 
 `experiments/run.py`는 `--backend`, `--setup`, `--experiment`, `--output`을 요구합니다.

@@ -17,7 +17,7 @@ python experiments/run.py \
   --backend trl \
   --setup setups/spark/local.example.json \
   --experiment experiments/trl/smoke.json \
-  --output artifacts/runs/trl-smoke
+  --output results/trl-smoke
 ```
 
 종료 코드 0과 JSON 계획이 예상 결과입니다.
@@ -115,7 +115,7 @@ python experiments/run.py \
   --backend trl \
   --setup setups/spark/local.json \
   --experiment experiments/trl/smoke.json \
-  --output artifacts/runs/trl-smoke \
+  --output results/trl-smoke \
   --timeout 900 \
   --execute
 ```
