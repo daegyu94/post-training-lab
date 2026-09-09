@@ -247,6 +247,13 @@ def _estimated_optimizer_state_bytes(parameters: list[Any], optimizer: str) -> i
     raise ValueError(f"unknown optimizer: {optimizer}")
 
 
+def _uses_deepspeed_nvme(config: SparkConfig) -> bool:
+    if config.distributed_backend != "deepspeed" or config.deepspeed_config is None:
+        return False
+    zero = json.loads(config.deepspeed_config.read_text(encoding="utf-8")).get("zero_optimization", {})
+    return any(zero.get(name, {}).get("device") == "nvme" for name in ("offload_param", "offload_optimizer"))
+
+
 def _sample_trainable_parameters(trainable_named: list[tuple[str, Any]], limit: int = 8) -> list[tuple[str, Any]]:
     """Prefer immediately-updatable LoRA B weights, then full-model output/norm weights."""
 
@@ -358,7 +365,11 @@ def main() -> None:
         else:
             started = time.perf_counter()
             result = trainer.train()
-            evaluation = trainer.evaluate()
+            evaluation = (
+                {"skipped": True, "reason": "DeepSpeed NVMe swap buffers are terminal after the optimizer step"}
+                if _uses_deepspeed_nvme(config)
+                else trainer.evaluate()
+            )
             trainer.save_model(str(config.output_dir / "adapter" if args.finetuning_mode == "lora" else config.output_dir / "model"))
             train_metrics = dict(result.metrics)
             update_count = int(result.global_step)
@@ -367,7 +378,8 @@ def main() -> None:
         after_sample = {name: parameter.detach().reshape(-1)[:16].float().cpu() for name, parameter in sample_candidates} if args.stage == "train" else {}
         update_deltas = {name: float((after_sample[name] - before_sample[name]).abs().max().item()) for name in before_sample}
         eval_loss = evaluation.get("eval_loss")
-        finite_eval_loss = isinstance(eval_loss, (int, float)) and math.isfinite(float(eval_loss))
+        evaluation_completed = not evaluation.get("skipped", False)
+        finite_eval_loss = isinstance(eval_loss, (int, float)) and math.isfinite(float(eval_loss)) if evaluation_completed else None
         train_loss = train_metrics.get("train_loss")
         finite_train_loss = args.stage != "train" or (isinstance(train_loss, (int, float)) and math.isfinite(float(train_loss)))
         sampled_nonzero_update = any(value > 0.0 for value in update_deltas.values()) if args.stage == "train" else None
@@ -385,7 +397,7 @@ def main() -> None:
                 optimizer_dtypes = _optimizer_state_dtypes(optimizer_instance, torch)
                 optimizer_actual_bytes = _optimizer_state_bytes(optimizer_instance, torch)
             validation_errors = []
-            if not finite_eval_loss:
+            if finite_eval_loss is False:
                 validation_errors.append("evaluation loss is not finite")
             if not finite_train_loss:
                 validation_errors.append("training loss is not finite")
@@ -393,10 +405,10 @@ def main() -> None:
                 validation_errors.append("trainer reported no optimizer steps")
             if args.stage == "train" and config.distributed_backend == "ddp" and not sampled_nonzero_update:
                 validation_errors.append("no sampled trainable parameter changed")
-            summary = {"stage": args.stage, "rank": _rank(), "world_size": int(os.environ.get("WORLD_SIZE", "1")), "node_rank": int(os.environ.get("NODE_RANK", "0")), "distributed_backend": config.distributed_backend, "deepspeed_config": str(config.deepspeed_config) if config.deepspeed_config else None, "model_id": args.model_id, "model_family": family, "model_revision": args.model_revision, "model_snapshot_evidence": model_snapshot_evidence(config.model_dir), "dataset_id": args.dataset_id, "dataset_revision": args.dataset_revision, "finetuning_mode": args.finetuning_mode, "optimizer": args.optimizer, "learning_rate": args.learning_rate, "precision": "bf16", "gradient_checkpointing": {"enabled": training_args.gradient_checkpointing, "use_reentrant": False if training_args.gradient_checkpointing else None, "fsdp_activation_checkpointing": config.distributed_backend == "fsdp2"}, "optimizer_state_estimate_bytes": _estimated_optimizer_state_bytes(trainable, args.optimizer) if args.stage == "train" else None, "optimizer_state_actual_bytes": optimizer_actual_bytes, "optimizer_state_scope": "rank-local shard" if config.distributed_backend != "ddp" else "replicated rank-local optimizer", "optimizer_state_dtypes": optimizer_dtypes, "memory_components_scope": "pre-wrap logical model view; not a rank-local sharded allocation" if config.distributed_backend != "ddp" else "replicated model view", "memory_components_bytes": {"parameters_by_dtype": _parameter_bytes(all_parameters), "trainable_gradients_by_dtype": _parameter_bytes(trainable), "optimizer_state_estimate": _estimated_optimizer_state_bytes(trainable, args.optimizer) if args.stage == "train" else 0, "optimizer_state_actual": optimizer_actual_bytes}, "max_steps": args.max_steps, "actual_optimizer_steps": update_count, "train_seconds": train_seconds, "train_metrics": train_metrics, "trainable_parameter_count": trainable_parameter_count, "total_parameter_count": total_parameter_count, "trainable_parameter_fraction": trainable_parameter_count / total_parameter_count if total_parameter_count else 0.0, "sampled_parameter_names": [name for name, _ in sample_candidates], "sampled_parameter_update_max_abs": update_deltas, "peak_cuda_memory_allocated_gib": allocated, "peak_cuda_memory_reserved_gib": reserved, "data": data_meta, "evaluation": evaluation, "validation": {"summary_writer_rank": 0, "finite_eval_loss": finite_eval_loss, "finite_train_loss": finite_train_loss, "supervision_policy": "native chat-template prompt plus final assistant completion and EOS", "parameter_update_evidence": "sampled parameter delta" if config.distributed_backend == "ddp" else "optimizer steps only; sharded parameter delta not collected", "sampled_nonzero_update": sampled_nonzero_update, "training_result_verified": not validation_errors, "failure_reasons": validation_errors}}
+            summary = {"stage": args.stage, "rank": _rank(), "world_size": int(os.environ.get("WORLD_SIZE", "1")), "node_rank": int(os.environ.get("NODE_RANK", "0")), "distributed_backend": config.distributed_backend, "deepspeed_config": str(config.deepspeed_config) if config.deepspeed_config else None, "model_id": args.model_id, "model_family": family, "model_revision": args.model_revision, "model_snapshot_evidence": model_snapshot_evidence(config.model_dir), "dataset_id": args.dataset_id, "dataset_revision": args.dataset_revision, "finetuning_mode": args.finetuning_mode, "optimizer": args.optimizer, "learning_rate": args.learning_rate, "precision": "bf16", "gradient_checkpointing": {"enabled": training_args.gradient_checkpointing, "use_reentrant": False if training_args.gradient_checkpointing else None, "fsdp_activation_checkpointing": config.distributed_backend == "fsdp2"}, "optimizer_state_estimate_bytes": _estimated_optimizer_state_bytes(trainable, args.optimizer) if args.stage == "train" else None, "optimizer_state_actual_bytes": optimizer_actual_bytes, "optimizer_state_scope": "rank-local shard" if config.distributed_backend != "ddp" else "replicated rank-local optimizer", "optimizer_state_dtypes": optimizer_dtypes, "memory_components_scope": "pre-wrap logical model view; not a rank-local sharded allocation" if config.distributed_backend != "ddp" else "replicated model view", "memory_components_bytes": {"parameters_by_dtype": _parameter_bytes(all_parameters), "trainable_gradients_by_dtype": _parameter_bytes(trainable), "optimizer_state_estimate": _estimated_optimizer_state_bytes(trainable, args.optimizer) if args.stage == "train" else 0, "optimizer_state_actual": optimizer_actual_bytes}, "max_steps": args.max_steps, "actual_optimizer_steps": update_count, "train_seconds": train_seconds, "train_metrics": train_metrics, "trainable_parameter_count": trainable_parameter_count, "total_parameter_count": total_parameter_count, "trainable_parameter_fraction": trainable_parameter_count / total_parameter_count if total_parameter_count else 0.0, "sampled_parameter_names": [name for name, _ in sample_candidates], "sampled_parameter_update_max_abs": update_deltas, "peak_cuda_memory_allocated_gib": allocated, "peak_cuda_memory_reserved_gib": reserved, "data": data_meta, "evaluation": evaluation, "validation": {"summary_writer_rank": 0, "evaluation_completed": evaluation_completed, "finite_eval_loss": finite_eval_loss, "finite_train_loss": finite_train_loss, "supervision_policy": "native chat-template prompt plus final assistant completion and EOS", "parameter_update_evidence": "sampled parameter delta" if config.distributed_backend == "ddp" else "optimizer steps only; sharded parameter delta not collected", "sampled_nonzero_update": sampled_nonzero_update, "training_result_verified": not validation_errors, "failure_reasons": validation_errors}}
             (config.output_dir / f"summary-{args.stage}.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             print(json.dumps(summary, indent=2, ensure_ascii=False), flush=True)
-        if not finite_eval_loss or not finite_train_loss or (args.stage == "train" and update_count < 1) or (args.stage == "train" and config.distributed_backend == "ddp" and not any(value > 0.0 for value in update_deltas.values())):
+        if finite_eval_loss is False or not finite_train_loss or (args.stage == "train" and update_count < 1) or (args.stage == "train" and config.distributed_backend == "ddp" and not any(value > 0.0 for value in update_deltas.values())):
             raise RuntimeError("training result is unverified: non-finite loss or no observed trainable update")
 
 

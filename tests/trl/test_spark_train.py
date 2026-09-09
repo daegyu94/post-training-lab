@@ -159,6 +159,14 @@ def test_deepspeed_model_loads_safetensor_shards_one_at_a_time(monkeypatch, tmp_
     assert loaded == ["first.safetensors", "second.safetensors"]
 
 
+def test_deepspeed_nvme_profile_is_detected(tmp_path: Path) -> None:
+    profile = tmp_path / "deepspeed.json"
+    profile.write_text(json.dumps({"zero_optimization": {"offload_param": {"device": "nvme"}}}))
+    config = types.SimpleNamespace(distributed_backend="deepspeed", deepspeed_config=profile)
+
+    assert spark_train._uses_deepspeed_nvme(config)
+
+
 def test_parameter_sampling_keeps_representative_update_evidence() -> None:
     parameter = FakeTensor()
     selected = spark_train._sample_trainable_parameters([
