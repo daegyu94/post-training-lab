@@ -73,7 +73,14 @@ Dry-run의 각 rank에서 TRL output이 `/mnt/post-training/trl/trl-nvme-30b`, M
 TRL 성공 조건은 두 rank의 정상 종료, 1 optimizer step과 `/mnt/post-training/trl`의 DeepSpeed NVMe read/write 발생입니다.
 이 preset은 전체 parameter와 optimizer state를 NVMe training-time memory tier로 사용하는 full SFT입니다.
 현재 고정된 TRL·DeepSpeed 조합에서 LoRA와 ZeRO-3 NVMe parameter offload를 함께 쓰면 reentrant gradient checkpointing이 여러 MoE layer의 swap buffer를 계속 점유하므로 지원하지 않습니다.
-Spark 노드의 128GB 통합 메모리에서는 수 GB optimizer buffer를 `mlock`할 여유가 부족하므로 이 preset은 pageable buffer를 사용합니다.
+각 Spark 노드에서 `spark` 사용자의 memlock soft/hard limit을 32GiB 이상으로 설정해야 parameter buffer 약 12.3GB와 optimizer tile 약 4.6GB를 함께 고정할 수 있습니다.
+
+```bash
+printf 'spark soft memlock 33554432\nspark hard memlock 33554432\n' \
+  | sudo tee /etc/security/limits.d/90-post-training-lab.conf
+```
+
+설정 후 기존 SSH 연결을 끊고 다시 접속한 다음 `ulimit -l`이 `33554432` 이상인지 확인합니다.
 전처리 JSONL과 Hugging Face Arrow cache도 run output 아래에 남으며 dataset 전체를 Python list로 적재하지 않습니다.
 
 Megatron 성공 조건은 두 rank의 정상 종료, 1 optimizer step, async save finalization과 각 노드의 `/mnt/post-training/megatron/megatron-nvme-30b/checkpoints` shard 생성입니다.
