@@ -145,6 +145,18 @@ def test_rejects_sharded_trl_all_stage(tmp_path: Path) -> None:
         run.load_experiment(experiment_path)
 
 
+def test_allows_deepspeed_trl_all_stage(tmp_path: Path) -> None:
+    _, experiment_path = config_files(tmp_path)
+    experiment = json.loads(experiment_path.read_text())
+    experiment["env"].update({
+        "DISTRIBUTED_BACKEND": "deepspeed", "STAGE": "all",
+        "DEEPSPEED_CONFIG": "configs/deepspeed-zero3-nvme.json",
+    })
+    experiment_path.write_text(json.dumps(experiment))
+
+    run.load_experiment(experiment_path)
+
+
 def test_remote_command_quotes_values_and_has_bounded_timeout(tmp_path: Path) -> None:
     setup_path, experiment_path = config_files(tmp_path, nnodes=1)
     setup = run.load_setup(setup_path)

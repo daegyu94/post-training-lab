@@ -19,6 +19,6 @@
     "GRADIENT_ACCUMULATION_STEPS": 1,
     "LEARNING_RATE": "2e-5",
     "SEED": 42,
-    "STAGE": "train"
+    "STAGE": "all"
   }
 }

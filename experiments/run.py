@@ -184,8 +184,8 @@ def load_experiment(path: Path) -> dict[str, Any]:
             raise ConfigError("TRL DISTRIBUTED_BACKEND must be ddp, fsdp2, or deepspeed")
         if stage not in {"all", "base", "train", "tuned"}:
             raise ConfigError("TRL STAGE must be all, base, train, or tuned")
-        if distributed != "ddp" and stage in {"all", "tuned"}:
-            raise ConfigError("TRL fsdp2/deepspeed only support STAGE=base or STAGE=train")
+        if distributed == "fsdp2" and stage in {"all", "tuned"}:
+            raise ConfigError("TRL fsdp2 only supports STAGE=base or STAGE=train")
         if distributed == "deepspeed" and not value["env"].get("DEEPSPEED_CONFIG"):
             raise ConfigError("TRL deepspeed requires DEEPSPEED_CONFIG")
     else:
