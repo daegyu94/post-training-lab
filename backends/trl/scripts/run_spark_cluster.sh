@@ -49,8 +49,8 @@ fi
 output_dir="${OUTPUT_DIR:-results/spark-${model_id##*/}-${distributed_backend}}"
 stage="${STAGE:-all}"
 case "$stage" in all|base|train|tuned) ;; *) echo "STAGE must be all, base, train, or tuned" >&2; exit 2 ;; esac
-if [[ "$distributed_backend" != ddp && ( "$stage" == all || "$stage" == tuned ) ]]; then
-  echo "FSDP2/DeepSpeed currently support STAGE=base or STAGE=train; sharded export/reload is not yet verified" >&2
+if [[ "$distributed_backend" == fsdp2 && ( "$stage" == all || "$stage" == tuned ) ]]; then
+  echo "FSDP2 currently supports STAGE=base or STAGE=train; sharded export/reload is not yet verified" >&2
   exit 2
 fi
 mkdir -p "$output_dir/logs"

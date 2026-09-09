@@ -252,9 +252,9 @@ def validate_config(config: SparkConfig) -> str:
         validate_deepspeed_config(config.deepspeed_config)
     elif config.deepspeed_config is not None:
         raise ValueError("deepspeed_config is valid only with distributed_backend=deepspeed")
-    if config.distributed_backend != "ddp" and config.stage == "tuned":
+    if config.distributed_backend == "fsdp2" and config.stage == "tuned":
         raise ValueError(
-            "tuned stage is disabled for sharded backends until export/reload is verified"
+            "tuned stage is disabled for fsdp2 until export/reload is verified"
         )
     validate_revision(config.model_revision, "model_revision")
     validate_revision(config.dataset_revision, "dataset_revision")

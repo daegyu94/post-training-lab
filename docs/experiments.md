@@ -28,7 +28,7 @@
 | `experiments/trl/smoke.json` | 2노드 DDP LoRA, 1 step | base/train/tuned |
 | `experiments/megatron/smoke.json` | 2노드 full SFT, 2 step | base/train/tuned |
 | `experiments/megatron/resume-smoke.json` | 2노드 full SFT, 2→3 step | base/train/resume/tuned |
-| `experiments/trl/nvme-offload-30b.json` | 2노드 Qwen3 30B full SFT, ZeRO-3 NVMe state offload | train |
+| `experiments/trl/nvme-offload-30b.json` | 2노드 Qwen3 30B full SFT, ZeRO-3 NVMe state offload | base/train/tuned |
 | `experiments/megatron/qwen3-30b-lora.json` | 2노드 Qwen3 30B MoE LoRA, 평가와 node-local NVMe async checkpoint | train |
 | `experiments/megatron/glm-4.7-flash-30b-lora.json` | 2노드 GLM-4.7-Flash 30B MoE LoRA, 평가와 node-local NVMe async checkpoint | train |
 
@@ -38,7 +38,8 @@
 TRL NVMe preset과 두 Megatron 30B preset은 작은 smoke 네 개에 포함되지 않습니다.
 Megatron의 Qwen과 GLM preset은 검증 당시와 같은 TP=1, PP=1, EP=2 구성으로 1 step, 평가 1회와 async checkpoint를 실행합니다.
 GLM preset의 `TRANSFORMER_IMPL=auto`는 Transformer Engine 구현을 선택합니다.
-준비 조건과 두 backend에서 `NVMe`가 뜻하는 범위는 [30B NVMe 실습](../labs/nvme-30b/README.md)을 따릅니다.
+TRL NVMe preset의 `train` stage는 학습 직후 같은 프로세스에서 평가를 실행하지 않고, 평가는 `tuned` stage를 별도 프로세스로 실행해 학습이 남긴 native DeepSpeed ZeRO checkpoint를 새 엔진에 복원한 뒤에 수행합니다.
+준비 조건과 두 backend에서 `NVMe`가 뜻하는 범위, `tuned` stage 실행 조건은 [30B NVMe 실습](../labs/nvme-30b/README.md)을 따릅니다.
 
 `experiments/run.py`는 `--backend`, `--setup`, `--experiment`, `--output`을 요구합니다.
 기본은 dry-run이고 실제 실행의 `--timeout`은 기본 900초이며 양의 정수여야 합니다.

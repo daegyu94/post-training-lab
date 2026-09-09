@@ -159,6 +159,26 @@ def test_deepspeed_model_loads_safetensor_shards_one_at_a_time(monkeypatch, tmp_
     assert loaded == ["first.safetensors", "second.safetensors"]
 
 
+def test_deepspeed_tuned_full_model_loads_as_skeleton_without_state_dict(tmp_path: Path) -> None:
+    model = FakeModel()
+    config_calls = []
+    fake_transformers = types.SimpleNamespace(
+        AutoConfig=types.SimpleNamespace(from_pretrained=lambda path, **_kwargs: config_calls.append(path) or object()),
+        AutoModelForCausalLM=types.SimpleNamespace(from_config=lambda *_args, **_kwargs: model),
+    )
+    config = types.SimpleNamespace(
+        distributed_backend="deepspeed", model_dir=tmp_path / "model", output_dir=tmp_path / "out",
+        finetuning_mode="full", model_revision="a" * 40,
+    )
+
+    loaded_model = spark_train._load_model(
+        config, types.SimpleNamespace(bfloat16="bf16"), fake_transformers, object(), load_tuned=True,
+    )
+
+    assert loaded_model is model
+    assert config_calls == [str(tmp_path / "model")]
+
+
 def test_deepspeed_nvme_profile_is_detected(tmp_path: Path) -> None:
     profile = tmp_path / "deepspeed.json"
     profile.write_text(json.dumps({"zero_optimization": {"offload_param": {"device": "nvme"}}}))
@@ -275,6 +295,110 @@ def test_main_passes_cli_optimizer_and_sft_config_to_trainer(monkeypatch, tmp_pa
     assert model.checkpointing_kwargs == {"gradient_checkpointing_kwargs": {"use_reentrant": False}}
     summary = json.loads((args.output_dir / "summary-train.json").read_text(encoding="utf-8"))
     assert summary["memory_components_scope"] == "replicated model view"
+
+
+def test_tuned_stage_reloads_deepspeed_checkpoint_before_evaluate(monkeypatch, tmp_path: Path) -> None:
+    captured = {}
+    args = argparse.Namespace(
+        model_id="Qwen/Qwen3-30B-A3B", model_dir=tmp_path / "model", model_revision="a" * 40,
+        dataset_id="public/data", dataset_revision="b" * 40, data_dir=tmp_path / "data", output_dir=tmp_path / "out",
+        stage="tuned", finetuning_mode="full", optimizer="adamw", learning_rate=0.0003,
+        max_steps=1, max_length=32, gradient_accumulation_steps=2, seed=42,
+        distributed_backend="deepspeed", deepspeed_config=tmp_path / "ds.json",
+        train_samples=None, eval_samples=None, lora_r=8, lora_alpha=16,
+    )
+    model = FakeModel()
+
+    class FakeOptimizer:
+        def __init__(self, parameters, **kwargs):
+            self.parameters = parameters
+            self.kwargs = kwargs
+            self.state = {}
+
+    class FakeSFTConfig:
+        def __init__(self, **kwargs):
+            captured["sft_config"] = kwargs
+            self.gradient_checkpointing = kwargs["gradient_checkpointing"]
+
+    class FakeTrainer:
+        def __init__(self, **kwargs):
+            captured["trainer"] = kwargs
+            self.model = kwargs["model"]
+            self.model_wrapped = self.model
+            self.optimizer = FakeOptimizer(self.model.parameters(), lr=args.learning_rate)
+
+        def get_train_dataloader(self):
+            captured.setdefault("calls", []).append("get_train_dataloader")
+            return "fake-dataloader"
+
+        def _prepare_for_training(self, max_steps, train_dataloader, resume_from_checkpoint):
+            captured.setdefault("calls", []).append("prepare_for_training")
+            captured["prepare_kwargs"] = {
+                "max_steps": max_steps, "train_dataloader": train_dataloader,
+                "resume_from_checkpoint": resume_from_checkpoint,
+            }
+
+        def evaluate(self):
+            captured.setdefault("calls", []).append("evaluate")
+            return {"eval_loss": 1.0}
+
+    def fake_load_dataset(*args, **kwargs):
+        captured["load_dataset"] = {"args": args, "kwargs": kwargs}
+        return {"train": [{"prompt": "p", "completion": "c"}], "validation": [{"prompt": "p", "completion": "c"}]}
+
+    fake_torch = types.SimpleNamespace(
+        bfloat16="bf16",
+        manual_seed=lambda _: None,
+        device=lambda *_: "cuda:0",
+        is_tensor=lambda value: isinstance(value, FakeTensor),
+        optim=types.SimpleNamespace(AdamW=FakeOptimizer, SGD=FakeOptimizer),
+        cuda=types.SimpleNamespace(is_available=lambda: True, is_bf16_supported=lambda: True, device_count=lambda: 1, set_device=lambda _: None, max_memory_allocated=lambda: 0, max_memory_reserved=lambda: 0),
+    )
+    fake_peft = types.SimpleNamespace(LoraConfig=object, get_peft_model=lambda model, _: model, PeftModel=types.SimpleNamespace(from_pretrained=lambda model, *_args, **_kwargs: model))
+
+    def fake_deepspeed_load_checkpoint(model_wrapped, checkpoint_dir, load_module_strict=True):
+        captured.setdefault("calls", []).append("deepspeed_load_checkpoint")
+        captured["load_checkpoint_args"] = {
+            "model_wrapped": model_wrapped, "checkpoint_dir": checkpoint_dir, "load_module_strict": load_module_strict,
+        }
+
+    integrations = types.ModuleType("transformers.integrations")
+    deepspeed_integration = types.ModuleType("transformers.integrations.deepspeed")
+    deepspeed_integration.deepspeed_load_checkpoint = fake_deepspeed_load_checkpoint
+    monkeypatch.setitem(sys.modules, "torch", fake_torch)
+    monkeypatch.setitem(sys.modules, "transformers", types.SimpleNamespace())
+    monkeypatch.setitem(sys.modules, "transformers.integrations", integrations)
+    monkeypatch.setitem(sys.modules, "transformers.integrations.deepspeed", deepspeed_integration)
+    monkeypatch.setitem(sys.modules, "trl", types.SimpleNamespace(SFTConfig=FakeSFTConfig, SFTTrainer=FakeTrainer))
+    monkeypatch.setitem(sys.modules, "datasets", types.SimpleNamespace(load_dataset=fake_load_dataset))
+    monkeypatch.setitem(sys.modules, "peft", fake_peft)
+    monkeypatch.setattr(spark_train, "parse_args", lambda: args)
+    monkeypatch.setattr(spark_train, "validate_config", lambda _: "qwen3_moe")
+    monkeypatch.setattr(spark_train, "_write_log", lambda _: nullcontext())
+    monkeypatch.setattr(spark_train, "_load_tokenizer", lambda *_: types.SimpleNamespace(pad_token="<pad>", eos_token="<eos>"))
+    monkeypatch.setattr(spark_train, "_load_model", lambda *_args, **_kwargs: model)
+    monkeypatch.setattr(spark_train, "model_snapshot_evidence", lambda *_: {})
+    import trl_lab.spark_data as spark_data
+    monkeypatch.setattr(
+        spark_data,
+        "prepare_prompt_completion_data",
+        lambda *_args: (
+            {"train": tmp_path / "training.jsonl", "validation": tmp_path / "validation.jsonl"},
+            {},
+        ),
+    )
+
+    spark_train.main()
+
+    assert captured["calls"] == ["get_train_dataloader", "prepare_for_training", "deepspeed_load_checkpoint", "evaluate"]
+    assert captured["prepare_kwargs"] == {
+        "max_steps": 1, "train_dataloader": "fake-dataloader", "resume_from_checkpoint": None,
+    }
+    assert captured["load_checkpoint_args"] == {
+        "model_wrapped": model, "checkpoint_dir": str(args.output_dir / "model"), "load_module_strict": True,
+    }
+    summary = json.loads((args.output_dir / "summary-tuned.json").read_text(encoding="utf-8"))
+    assert summary["evaluation"] == {"eval_loss": 1.0}
 
 
 def test_sharded_backend_training_arguments_are_explicit(tmp_path: Path) -> None:

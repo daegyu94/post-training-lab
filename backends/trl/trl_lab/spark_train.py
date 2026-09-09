@@ -139,7 +139,14 @@ def _load_tokenizer(config: SparkConfig, transformers: Any) -> Any:
 def _load_model(config: SparkConfig, torch: Any, transformers: Any, peft: Any, load_tuned: bool = False) -> Any:
     model_path = config.output_dir / "model" if load_tuned and config.finetuning_mode == "full" else config.model_dir
     index_path = model_path / "model.safetensors.index.json"
-    if config.distributed_backend == "deepspeed" and index_path.is_file():
+    if load_tuned and config.finetuning_mode == "full" and config.distributed_backend == "deepspeed":
+        # output_dir/model is a native DeepSpeed ZeRO checkpoint (no safetensors index); the
+        # trained weights are restored later via deepspeed_load_checkpoint onto this skeleton.
+        model_config = transformers.AutoConfig.from_pretrained(
+            str(config.model_dir), local_files_only=True, revision=config.model_revision
+        )
+        model = transformers.AutoModelForCausalLM.from_config(model_config, dtype=torch.bfloat16)
+    elif config.distributed_backend == "deepspeed" and index_path.is_file():
         from safetensors.torch import load_file
         from transformers.integrations.deepspeed import _load_state_dict_into_zero3_model
 
@@ -360,6 +367,12 @@ def main() -> None:
         train_metrics: dict[str, Any] = {}
         train_seconds = None
         if args.stage in {"base", "tuned"}:
+            if args.stage == "tuned" and config.distributed_backend == "deepspeed" and args.finetuning_mode == "full":
+                from transformers.integrations.deepspeed import deepspeed_load_checkpoint
+
+                train_dataloader = trainer.get_train_dataloader()
+                trainer._prepare_for_training(max_steps=1, train_dataloader=train_dataloader, resume_from_checkpoint=None)
+                deepspeed_load_checkpoint(trainer.model_wrapped, str(config.output_dir / "model"), load_module_strict=True)
             evaluation = trainer.evaluate()
             update_count = 0
         else:

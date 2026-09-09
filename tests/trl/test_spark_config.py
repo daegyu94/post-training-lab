@@ -174,6 +174,20 @@ def test_sharded_backend_rejects_unverified_tuned_reload(tmp_path: Path) -> None
         }))
 
 
+def test_deepspeed_backend_allows_tuned_reload(tmp_path: Path) -> None:
+    config = make_inputs(tmp_path)
+    (config.output_dir / "model").mkdir(parents=True)
+    deepspeed_config = Path(__file__).parents[2] / "backends" / "trl" / "configs" / "deepspeed-zero3-nvme.json"
+
+    validate_config(SparkConfig(**{
+        **config.__dict__,
+        "distributed_backend": "deepspeed",
+        "deepspeed_config": deepspeed_config,
+        "stage": "tuned",
+        "finetuning_mode": "full",
+    }))
+
+
 @pytest.mark.parametrize("name, stage", [
     ("deepspeed-zero2.json", 2),
     ("deepspeed-zero3.json", 3),

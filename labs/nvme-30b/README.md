@@ -75,6 +75,12 @@ TRL 성공 조건은 두 rank의 정상 종료, 1 optimizer step과 `/mnt/post-t
 현재 고정된 TRL·DeepSpeed 조합에서 LoRA와 ZeRO-3 NVMe parameter offload를 함께 쓰면 reentrant gradient checkpointing이 여러 MoE layer의 swap buffer를 계속 점유하므로 지원하지 않습니다.
 각 Spark 노드에서 `spark` 사용자의 memlock soft/hard limit을 32GiB 이상으로 설정해야 parameter buffer 약 12.3GB와 optimizer tile 약 4.6GB를 함께 고정할 수 있습니다.
 
+`train` stage는 학습 직후 같은 프로세스에서 평가를 실행하지 않습니다.
+DeepSpeed ZeRO-3의 parameter coordinator는 학습 forward+backward에서 기록한 실행 trace를 기준으로 NVMe swap buffer 반납 시점을 정하는데, backward가 없는 평가 forward는 이 trace와 어긋나 buffer가 반납되지 않고 소진됩니다(`buffer_count`를 늘려도 소진 시점만 미뤄질 뿐 해결되지 않음).
+대신 평가는 `STAGE=tuned`를 별도 프로세스로 실행해 수행합니다: 새 프로세스는 학습 trace가 없는 새 ZeRO-3 엔진을 만들고, `trainer.save_model()`이 남긴 native DeepSpeed ZeRO checkpoint(`output_dir/model/global_step*`)를 `deepspeed_load_checkpoint`로 그 엔진에 복원한 뒤 평가합니다.
+이 복원은 rank별 partition을 그대로 불러오는 저메모리 경로만 사용하며, 30B 전체를 하나의 프로세스에 fp32로 모으는 변환(zero_to_fp32류)은 쓰지 않습니다.
+`tuned`는 그 checkpoint를 만든 `train` run과 동일한 node/GPU topology(`NNODES`/`NPROC_PER_NODE`)로 실행해야 하며, `experiments/run.py`가 `STAGE=all`로 두 stage를 실행하면 같은 환경변수를 그대로 재사용하므로 이 조건이 자동으로 맞습니다.
+
 설정 후 기존 SSH 연결을 끊고 다시 접속한 다음 `ulimit -l`이 `33554432` 이상인지 확인합니다.
 전처리 JSONL과 Hugging Face Arrow cache도 run output 아래에 남으며 dataset 전체를 Python list로 적재하지 않습니다.
 
