@@ -97,6 +97,48 @@ spark2 --SSH tunnel--> collector       |                +--> NFS 공유 경로 (
 이 경로는 GitHub Pages에 값을 공개하지 않으며 controller에서만 보입니다. 외부에 공개하려면 위 Observatory push·export 절차를 그대로 따릅니다.
 2026-09-09에 Qwen2.5-0.5B DDP smoke를 60 step으로 돌리며 이 방식을 실제로 검증했습니다: launcher가 공유 경로에 쓴 `trl-rank-0.json`을 controller가 SSH 없이 직접 읽었고, 약 8초 동안 step 4→60까지 13번의 서로 다른 값을 관찰했습니다.
 
+### Metrics Bridge: Reusing the Observatory UI Without SSH
+
+위 static viewer는 GitHub Pages의 `telemetry.html`을 재사용하지 못합니다 — 그 UI는 collector의 `POST /api/framework-metrics` 계약(bearer token 인증)에 맞춰져 있고 평문 JSON 파일을 직접 읽지 않습니다.
+`observability/profiling_lab/metrics_bridge.py`는 그 collector를 그대로 두고 데이터를 넣는 경로만 바꿉니다: NFS 공유 `FRAMEWORK_METRICS_DIR`를 주기적으로 읽어 같은 샘플을 collector의 API로 그대로 전달합니다.
+
+```text
+Observatory 원래 경로 (SSH push)               Metrics bridge (이 방식)
+
+spark1 --SSH tunnel--> agent --+               spark1 --+
+spark2 --SSH tunnel--> agent --+--> collector           +--> NFS 공유 경로
+                                                spark2 --+          |
+                                                                     v
+                                              controller의 bridge poller (SSH 불필요)
+                                                                     |
+                                                            POST /api/framework-metrics
+                                                                     v
+                                                    controller의 같은 collector (동일 API)
+                                                                     |
+                                                                     v
+                                            GitHub Pages telemetry.html, "Local collector" 모드
+                                            (수정 없이 그대로 사용)
+```
+
+collector와 poller 모두 controller 안에서만 통신하므로(둘 다 기본값 `127.0.0.1`), Spark 노드로의 SSH나 reverse tunnel이 전혀 없습니다.
+
+```bash
+# collector: Observatory 저장소 루트에서 (기본 controller local hosting)
+export OBSERVATORY_TOKEN="$(python3 -c 'import secrets; print(secrets.token_hex(24))')"
+python3 telemetry/server.py --port 8011 --database artifacts/spark.sqlite3 \
+  --cors-origin https://daegyu94.github.io
+
+# bridge: post-training-lab 저장소 루트에서
+export OBSERVATORY_TOKEN="<위와 같은 값>"
+PYTHONPATH=observability python3 -m profiling_lab.metrics_bridge \
+  --metrics-dir /path/to/shared/observatory-demo/<run_id>/framework-metrics \
+  --endpoint http://127.0.0.1:8011 --interval 2
+```
+
+`--endpoint`는 기본값이 controller local(`http://127.0.0.1:8011`)이지만, collector를 다른 상시 가동 서버에서 띄우고 싶으면 그 서버에서 `telemetry/server.py --bind <address>`를 실행한 뒤 `--endpoint`만 그 서버 주소로 바꾸면 됩니다 — bridge는 NFS 공유 경로를 읽을 수 있는 곳(보통 controller)에서만 돌리고, collector는 어디서 돌리든 상관없습니다. Apache Spark나 MapReduce의 History Server가 URL 하나로 어디를 볼지 정하는 것과 같은 방식입니다.
+
+2026-09-09에 Qwen2.5-0.5B DDP smoke를 80 step으로 돌리며 collector·bridge·telemetry.html이 쓰는 실제 `GET /api/framework-metrics`로 검증했습니다: bridge가 `--once` 없이 계속 돌면서 학습이 진행되는 동안 step 1→80까지 총 22개의 서로 다른 sample이 collector에 실시간으로 쌓였고, 매 sample이 `source: framework-adapter, synthetic: false`로 응답됐습니다.
+
 ## Distributed Trace
 
 각 Spark 노드의 `observability`에서 CUDA Python과 같은 `PROFILE_RUN_ID`를 지정합니다.
