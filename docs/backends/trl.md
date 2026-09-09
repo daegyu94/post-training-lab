@@ -36,11 +36,11 @@ Runner가 controller에서 `ssh spark@spark1`, `ssh spark@spark2`로 접속해 �
 과거 실행은 Torch `2.10.0+cu130`을 사용했으므로 version pin만으로 같은 CUDA build가 선택된다고 가정할 수 없습니다.
 
 먼저 각 노드에서 [공통 준비 스크립트](../../setups/spark/README.md#prepare-each-spark-node)를 실행합니다.
-그다음 `backends/trl`의 `.venv`에 Python package를 설치합니다.
+그다음 node-local TRL 가상환경에 Python package를 설치합니다.
 
 ```bash
-cd "$HOME/.local/ptl/repo/backends/trl"
-. .venv/bin/activate
+cd "/path/to/shared/post-training-lab/backends/trl"
+. "$HOME/.local/ptl/venvs/trl/bin/activate"
 python -m pip install -r requirements-spark.txt
 python -c 'import torch, transformers, trl, accelerate; print(torch.__version__, torch.cuda.is_available()); print(transformers.__version__, trl.__version__, accelerate.__version__)'
 ```

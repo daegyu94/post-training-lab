@@ -58,12 +58,12 @@ Rendezvous 주소·포트와 NCCL 통신 경로도 노드 사이에서 접근 �
 모델 snapshot은 가중치, tokenizer와 설정 파일이 모두 들어 있는 디렉터리입니다.
 한 노드의 cache만 채우면 다른 노드에서는 모델을 읽을 수 없으며 setup 스크립트가 대신 다운로드하지도 않습니다.
 
-각 노드에서 사용할 backend의 `.venv`를 활성화하고 아래 명령을 실행합니다.
+각 노드에서 사용할 backend의 node-local 가상환경을 활성화하고 아래 명령을 실행합니다.
 명령이 출력하는 snapshot 절대 경로를 해당 노드의 `model_dirs`에 기록합니다.
 
 ```bash
-cd "$HOME/.local/ptl/repo/backends/trl"  # 또는 backends/megatron
-. .venv/bin/activate
+cd "/path/to/shared/post-training-lab/backends/trl"  # 또는 backends/megatron
+. "$HOME/.local/ptl/venvs/trl/bin/activate"  # 또는 venvs/megatron
 python - <<'PY'
 from huggingface_hub import snapshot_download
 print(snapshot_download(

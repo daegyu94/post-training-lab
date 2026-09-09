@@ -39,26 +39,32 @@ Controller는 Git checkout, 설정, 실행 기록을 관리하고 GPU 학습 pro
 
 ## Prepare Each Spark Node
 
-프로젝트 checkout과 프로젝트 전용 cache는 다음처럼 `$HOME/.local/ptl` 아래에 모으는 것을 권장합니다.
+Git checkout은 별도로 clone하지 않고 controller의 NFS 공유 디렉터리(`/path/to/shared/post-training-lab`)를 그대로 사용합니다.
+두 Spark 노드와 controller가 같은 `.git`을 보므로 별도 pull·sync 없이 controller에서 커밋한 상태가 즉시 반영됩니다.
+가상환경과 cache는 checkout 밖의 node-local 경로 `$HOME/.local/ptl` 아래에 모으는 것을 권장합니다.
+가상환경을 checkout 안에 두면 컴파일된 native extension이 NFS를 통해 다른 노드와 공유되어 버리므로 반드시 checkout 밖에 둡니다.
 학습 결과와 NVMe offload 파일은 용량과 수명이 다르므로 이 디렉터리가 아니라 setup의 `output_root`에 둡니다.
 
 | 용도 | 권장 경로 |
 | --- | --- |
-| Git checkout | `$HOME/.local/ptl/repo` |
-| TRL 가상환경 | `$HOME/.local/ptl/repo/backends/trl/.venv` |
-| Megatron 가상환경 | `$HOME/.local/ptl/repo/backends/megatron/.venv` |
+| Git checkout | NFS 공유 디렉터리의 저장소 경로 (예: `/path/to/shared/post-training-lab`) |
+| TRL 가상환경 | `$HOME/.local/ptl/venvs/trl` |
+| Megatron 가상환경 | `$HOME/.local/ptl/venvs/megatron` |
 | Hugging Face cache | `$HOME/.local/ptl/cache/huggingface` |
 | Torch extension cache | `$HOME/.local/ptl/cache/torch_extensions` |
 
 TRL과 Megatron의 고정 의존성이 다르므로 하나의 공용 가상환경을 공유하지 않습니다.
-Launcher는 각 backend의 `.venv`를 기본으로 사용하고 cache 환경변수도 위 경로로 설정합니다.
+Launcher는 각 backend의 가상환경을 기본으로 사용하고 cache 환경변수도 위 경로로 설정합니다.
 
-저장소를 권장 경로에 clone한 뒤 각 노드에서 다음 스크립트를 한 번 실행합니다.
-이 스크립트는 compiler, Python headers, `libaio-dev`, `ninja-build` 등 native extension과 DeepSpeed async I/O에 필요한 system package를 설치하고 두 `.venv`를 만듭니다.
+NFS로 공유되는 checkout은 controller 사용자와 다른 UID로 접근하므로 Git이 "dubious ownership"으로 거부할 수 있습니다.
+각 Spark 노드의 `spark` 사용자 `~/.gitconfig`에 해당 checkout 경로를 `safe.directory`로 등록해야 하며, 이 등록은 Git 저장소 상태를 바꾸지 않는 순수 설정 파일 편집이므로 `git` 명령을 실행하지 않고 파일에 직접 추가합니다(AGENTS.md의 "Spark 노드에서 Git 명령을 실행하지 않는다" 규칙 유지).
+
+각 노드에서 다음 스크립트를 한 번 실행합니다.
+이 스크립트는 compiler, Python headers, `libaio-dev`, `ninja-build` 등 native extension과 DeepSpeed async I/O에 필요한 system package를 설치하고, checkout 밖에 두 가상환경을 만들고, NFS checkout에 대한 `safe.directory` 설정을 추가합니다.
 또한 TRL 30B NVMe 실습에 필요한 `spark` 사용자의 memlock 한도를 32GiB로 설정합니다.
 
 ```bash
-cd "$HOME/.local/ptl/repo"
+cd "/path/to/shared/post-training-lab"
 ./setups/spark/prepare_node.sh
 ```
 

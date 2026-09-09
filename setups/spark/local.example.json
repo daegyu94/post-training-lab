@@ -9,10 +9,10 @@
   "nodes": [
     {
       "host": "spark1",
-      "checkout": "/path/to/ptl/repo",
+      "checkout": "/path/to/shared/post-training-lab",
       "python": {
-        "trl": "/path/to/ptl/repo/backends/trl/.venv/bin/python",
-        "megatron": "/path/to/ptl/repo/backends/megatron/.venv/bin/python"
+        "trl": "/path/to/ptl/venvs/trl/bin/python",
+        "megatron": "/path/to/ptl/venvs/megatron/bin/python"
       },
       "env": {},
       "model_dirs": {
@@ -28,10 +28,10 @@
     },
     {
       "host": "spark2",
-      "checkout": "/path/to/ptl/repo",
+      "checkout": "/path/to/shared/post-training-lab",
       "python": {
-        "trl": "/path/to/ptl/repo/backends/trl/.venv/bin/python",
-        "megatron": "/path/to/ptl/repo/backends/megatron/.venv/bin/python"
+        "trl": "/path/to/ptl/venvs/trl/bin/python",
+        "megatron": "/path/to/ptl/venvs/megatron/bin/python"
       },
       "env": {},
       "model_dirs": {

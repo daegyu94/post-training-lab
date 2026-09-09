@@ -36,15 +36,15 @@ Transformer Engine은 ARM64에서 source build했고 optional NCCL EP를 `NVTE_W
 따라서 이 저장소만으로 검증된 단일 fresh-install 명령을 제공할 수 없습니다.
 충돌을 임의로 무시하는 설치 명령 대신 실제 의존성·build 결과를 별도 기록해야 합니다.
 
-먼저 각 노드에서 [공통 준비 스크립트](../../setups/spark/README.md#prepare-each-spark-node)를 실행해 system package와 `backends/megatron/.venv`를 준비합니다.
+먼저 각 노드에서 [공통 준비 스크립트](../../setups/spark/README.md#prepare-each-spark-node)를 실행해 system package와 node-local Megatron 가상환경을 준비합니다.
 이 스크립트는 아래 Python package를 대신 설치하지 않으므로, 현재 검증된 환경을 옮기거나 실제 build 결과를 기록하며 의존성을 설치해야 합니다.
 준비된 환경을 검사할 때는 각 노드의 `backends/megatron`에서 실행합니다.
 `PYTHON_HEADERS`는 native helper build에 필요한 경우에만 해당 환경의 Python development header 경로로 지정합니다.
 
 ```bash
-cd "$HOME/.local/ptl/repo/backends/megatron"
-. .venv/bin/activate
-export PYTHON="$PWD/.venv/bin/python"
+cd "/path/to/shared/post-training-lab/backends/megatron"
+. "$HOME/.local/ptl/venvs/megatron/bin/activate"
+export PYTHON="$HOME/.local/ptl/venvs/megatron/bin/python"
 source scripts/spark_runtime_env.sh
 python -c 'import torch, megatron.bridge, megatron.core, transformer_engine; print(torch.__version__, torch.cuda.is_available())'
 ```

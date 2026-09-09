@@ -33,7 +33,7 @@ for host in spark1 spark2; do
   ssh "spark@$host" \
     'findmnt -T /mnt/post-training/trl; test -w /mnt/post-training/trl; test -w /mnt/post-training/megatron'
   ssh "spark@$host" \
-    '$HOME/.local/ptl/repo/backends/trl/.venv/bin/python -c "from deepspeed.ops.op_builder import AsyncIOBuilder; AsyncIOBuilder().load(verbose=True)"'
+    '$HOME/.local/ptl/venvs/trl/bin/python -c "from deepspeed.ops.op_builder import AsyncIOBuilder; AsyncIOBuilder().load(verbose=True)"'
 done
 ```
 
