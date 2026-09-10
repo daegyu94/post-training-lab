@@ -45,9 +45,17 @@ global:
 scrape_configs:
   - job_name: spark
     static_configs:
-      - targets: ['$SPARK1_ADDR:19100', '$SPARK2_ADDR:19100']
+      - targets: ['$SPARK1_ADDR:19100']
         labels:
           cluster: spark-cluster
+          nodename: spark1
+      - targets: ['$SPARK2_ADDR:19100']
+        labels:
+          cluster: spark-cluster
+          nodename: spark2
+    relabel_configs:
+      - source_labels: [nodename]
+        target_label: instance
 EOF
   cat > "$output_dir/provisioning/datasources/default.yaml" <<EOF
 apiVersion: 1
