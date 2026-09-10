@@ -36,6 +36,10 @@ Transformer Engine은 ARM64에서 source build했고 optional NCCL EP를 `NVTE_W
 따라서 이 저장소만으로 검증된 단일 fresh-install 명령을 제공할 수 없습니다.
 충돌을 임의로 무시하는 설치 명령 대신 실제 의존성·build 결과를 별도 기록해야 합니다.
 
+실제 fresh venv로 시도한 결과, ModelOpt 충돌보다 **더 먼저** 막히는 지점을 확인했습니다: `megatron-bridge[recipes]==0.6.0`이 끌어오는 `fast-hadamard-transform`(source 배포만 있음)의 `setup.py`가 빌드 시점에 `import torch`를 실행하는데, pip 기본 격리 빌드 환경은 같은 명령으로 설치 중인 torch를 빌드 단계에서 보지 못해 `ModuleNotFoundError: No module named 'torch'`로 실패합니다.
+`pip install --no-build-isolation`을 주면 이 특정 오류는 해결됩니다(PyPI의 실제 sdist로 직접 확인). 다만 이 저장소의 대역폭 제약으로 실제 CUDA torch를 끝까지 설치해 `[recipes]`의 나머지 tail(mistral-common, peft, diffusers, comet-ml, flashinfer 등 다수)과 ModelOpt 충돌까지 전체 성공을 확인하지는 못했습니다 — `fast-hadamard-transform`의 `setup.py`는 `CUDA_HOME`이 없으면 `bare_metal_version`을 참조 전에 정의하지 못하는 별도 버그도 있어, CPU 전용 torch로는 이 지점을 넘을 수 없습니다.
+즉 fresh-install은 최소 `--no-build-isolation`과 정상 동작하는 CUDA toolkit(`CUDA_HOME`)이 필요하며, 이 두 조건을 갖춘 뒤에도 ModelOpt 충돌이 실제로 발생하는지는 여전히 미확인입니다.
+
 먼저 각 노드에서 [공통 준비 스크립트](../../setups/spark/README.md#prepare-each-spark-node)를 실행해 system package와 node-local Megatron 가상환경을 준비합니다.
 이 스크립트는 아래 Python package를 대신 설치하지 않으므로, 현재 검증된 환경을 옮기거나 실제 build 결과를 기록하며 의존성을 설치해야 합니다.
 준비된 환경을 검사할 때는 각 노드의 `backends/megatron`에서 실행합니다.
