@@ -102,6 +102,59 @@ def test_native_preparation_rejects_overlong_without_truncation(tmp_path: Path):
         )
 
 
+def test_native_preparation_skips_boundary_tokenization_rows_instead_of_aborting(tmp_path: Path, capsys):
+    class BoundaryTokenizer(CharTokenizer):
+        """Returns an inconsistent id list for exactly row-1's rendered prompt; everything
+        else (including row-2-ok's strings) falls through to real, consistent per-char coding."""
+
+        BAD_PROMPT = "<system>Be concise.|<user>What is 2+2?<assistant>"
+
+        def __call__(self, text, *, add_special_tokens=False):
+            if text == self.BAD_PROMPT:
+                return {"input_ids": [1, 2, 3]}
+            return super().__call__(text, add_special_tokens=add_special_tokens)
+
+    ok_row = {
+        "prompt_id": "row-2-ok",
+        "messages": [
+            {"role": "user", "content": "What is 3+3?"},
+            {"role": "assistant", "content": "6."},
+        ],
+        "provenance": {"source": "fixture"},
+    }
+    data_dir = tmp_path / "source"
+    data_dir.mkdir()
+    (data_dir / "manifest.json").write_text(
+        json.dumps({"dataset": "fixture", "dataset_revision": "rev"}), encoding="utf-8"
+    )
+    train = data_dir / "training.jsonl"
+    valid = data_dir / "validation.jsonl"
+    train.write_text(
+        json.dumps(_row("row-1")) + "\n" + json.dumps(ok_row) + "\n",
+        encoding="utf-8",
+    )
+    valid.write_text(json.dumps({**ok_row, "prompt_id": "eval"}) + "\n", encoding="utf-8")
+
+    manifest = prepare_cluster_data(
+        train,
+        valid,
+        tmp_path / "prepared",
+        BoundaryTokenizer(),
+        512,
+        dataset_id="fixture",
+        dataset_revision="rev",
+        model_revision="model-rev",
+    )
+
+    assert manifest["counts"] == {"train": 1, "validation": 1}
+    prepared_ids = {
+        json.loads(line)["prompt_id"]
+        for line in (tmp_path / "prepared" / "training.jsonl").read_text(encoding="utf-8").splitlines()
+    }
+    assert prepared_ids == {"row-2-ok"}
+    assert "skipping train row" in capsys.readouterr().err
+
+
 def test_native_preparation_keeps_source_and_writes_provenance(tmp_path: Path):
     data_dir = tmp_path / "source"
     data_dir.mkdir()

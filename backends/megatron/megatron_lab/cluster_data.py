@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any, Iterable
@@ -142,8 +143,18 @@ def _prepare_split(
     prompt_ids: set[str] = set()
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as target:
-            for row in _iter_jsonl(source_path):
-                example = render_prompt_completion(row, tokenizer)
+            for ordinal, row in enumerate(_iter_jsonl(source_path)):
+                try:
+                    example = render_prompt_completion(row, tokenizer)
+                except ValueError as exc:
+                    # BPE re-tokenization can merge differently across the
+                    # prompt/completion boundary for a small fraction of real
+                    # conversations (observed ~1.3% on no_robots); that is a
+                    # property of this row's text under this tokenizer, not a
+                    # malformed row, so skip it rather than aborting the whole
+                    # split -- matches datasets_lab.public_data's tolerance.
+                    print(f"[cluster_data] skipping {split} row {ordinal}: {exc}", file=sys.stderr)
+                    continue
                 total_tokens = example["prompt_tokens"] + example["supervised_tokens"]
                 if total_tokens > max_length:
                     raise ValueError(
