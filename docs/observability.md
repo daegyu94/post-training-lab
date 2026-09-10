@@ -56,36 +56,67 @@ Server는 종료할 때까지 실행하므로 작업을 마치면 해당 세션�
 spark1 telemetry --+
                   +--> controller collector --> SQLite --> 실시간 확인
 spark2 telemetry --+                            |
-                                                +--> JSON export --> GitHub Pages
+                                                +--> 내장 웹 UI
 ```
 
-[Post-Training Lab Observatory](https://github.com/daegyu94/post-training-lab-observatory)는 Python 표준 라이브러리로 만든 controller collector를 제공합니다.
+이 저장소의 `profiling_lab.collector`는 Python 표준 라이브러리로 만든 controller collector와 로컬 웹 UI를 제공합니다.
 Spark 노드는 SSH reverse tunnel을 통해 측정값을 보내므로 collector port를 외부에 열지 않고도 controller 화면에서 최신 값을 확인할 수 있습니다.
 
-GitHub Pages는 정적 사이트라 측정값을 직접 받을 수 없습니다.
-공개할 run은 controller에서 JSON snapshot으로 내보내 Observatory 저장소에 반영한 뒤 Pages에서 확인합니다.
+저장소 루트에서 token을 한 번 만들고 collector를 실행합니다.
+Token과 SQLite는 `artifacts/` 아래에 두며 Git에 포함하지 않습니다.
+
+```bash
+mkdir -p artifacts
+umask 077
+test -s artifacts/observatory-token || \
+  python3 -c 'import secrets; print(secrets.token_hex(24))' > artifacts/observatory-token
+chmod 600 artifacts/observatory-token
+export OBSERVATORY_TOKEN="$(cat artifacts/observatory-token)"
+PYTHONPATH=observability python3 -m profiling_lab.collector \
+  --bind 127.0.0.1 --port 8001 \
+  --database artifacts/observatory.sqlite3
+```
+
+원격 GUI host에서는 `ssh -N -L 8001:127.0.0.1:8001 <controller-host>`를 실행합니다.
+브라우저의 `http://127.0.0.1:8001/`은 전체 profiling dashboard와 run history를, `http://127.0.0.1:8001/telemetry.html`은 실시간 collector 화면을 제공합니다.
+실시간 화면에 같은 token을 입력하면 2초마다 최신 지표를 조회합니다.
 
 공통 runner는 output 이름을 `run_id`로 사용하고 TRL과 Megatron adapter가 rank별 최신 metric을 `<output>/framework-metrics/`에 atomic JSON으로 기록합니다.
 TRL은 Trainer가 집계한 loss와 실제 누적 입력 token 차이를 사용하고, Megatron은 callback loss, step wall time, 설정된 batch·sequence 상한 기반 tokens/s와 rank timer를 기록합니다.
 
-Observatory node agent에 같은 `run_id`와 `--framework-metrics-dir <output>/framework-metrics`를 주면 노드 전체 CPU·메모리·NIC와 framework metric이 함께 collector로 전송됩니다.
+내장 `profiling_lab.node_agent`에 같은 `run_id`와 `--framework-metrics-dir <output>/framework-metrics`를 주면 노드 전체 CPU·메모리·NIC와 framework metric이 함께 collector로 전송됩니다.
 학습 process는 collector에 직접 접속하지 않으므로 collector 또는 tunnel 장애가 학습 step을 막지 않습니다.
 직접 backend launcher를 실행할 때에는 `OBSERVATORY_RUN_ID`와 `FRAMEWORK_METRICS_DIR`를 함께 설정해야 adapter가 활성화됩니다. 공통 runner를 쓰면 두 값을 자동으로 설정하므로 따로 지정할 필요가 없습니다.
 
+Spark 노드에서 controller의 loopback collector로 보내려면 controller에서 reverse tunnel과 agent를 함께 실행합니다.
+
+```bash
+run_id='<training-output-directory-name>'
+{ cat artifacts/observatory-token; printf '\n'; } | \
+  ssh -o ExitOnForwardFailure=yes -R 18001:127.0.0.1:8001 spark@spark1 \
+    "read -r OBSERVATORY_TOKEN; export OBSERVATORY_TOKEN; \
+     cd /home/spark/shared/post-training-lab; \
+     PYTHONPATH=observability python3 -m profiling_lab.node_agent \
+       --endpoint http://127.0.0.1:18001 --run-id '$run_id' \
+       --framework-metrics-dir '<node-output>/$run_id/framework-metrics'"
+```
+
+`spark2`도 같은 명령으로 실행하며 node-local output 경로만 해당 노드 값으로 지정합니다.
+
 ### Lightweight Local Viewer (History Server Pattern)
 
-위 Observatory 경로는 SSH reverse tunnel과 별도 collector 프로세스가 필요합니다.
+위 push 경로는 SSH reverse tunnel과 별도 collector 프로세스가 필요합니다.
 Controller와 두 Spark 노드가 이미 같은 NFS 공유 디렉터리를 보고 있으므로(`AGENTS.md`의 NFS 절 참고), `FRAMEWORK_METRICS_DIR`를 node-local NVMe 대신 그 공유 경로로 지정하면 collector나 SSH tunnel 없이도 controller가 파일을 직접 읽을 수 있습니다.
 Apache Spark나 MapReduce의 History Server와 같은 pull 방식입니다: 애플리케이션은 잘 알려진 공유 경로에 쓰기만 하고, 뷰어는 그 경로를 그냥 읽습니다.
 
 ```text
-Observatory (push, 위 경로)                   Local viewer (pull, 이 경로)
+Collector push 경로                           Local viewer pull 경로
 
 spark1 --SSH tunnel--> collector --> SQLite    spark1 --+
 spark2 --SSH tunnel--> collector       |                +--> NFS 공유 경로 (같은 파일, 복사 없음)
                         |                       spark2 --+          |
-                        +--> JSON export                            v
-                             --> GitHub Pages          controller가 직접 읽음 (SSH·tunnel·token 불필요)
+                        +--> 내장 웹 UI                              v
+                                                     controller가 직접 읽음 (SSH·tunnel 불필요)
                                                                      |
                                                                      v
                                                      정적 HTTP server + 브라우저 polling
@@ -93,17 +124,16 @@ spark2 --SSH tunnel--> collector       |                +--> NFS 공유 경로 (
 
 `backends/trl/scripts/run_spark_cluster.sh`와 `backends/megatron/scripts/run_spark_cluster.sh`는 `FRAMEWORK_METRICS_DIR`가 이미 설정돼 있으면 그 값을 그대로 쓰고, 없으면 기존처럼 `<output>/framework-metrics`(node-local NVMe)를 기본값으로 씁니다.
 공유 경로를 가리키게 하려면 launcher 호출 전에 `FRAMEWORK_METRICS_DIR`를 NFS 경로로 export하면 됩니다. `<output>/model`처럼 checkpoint 저장 경로는 이 값의 영향을 받지 않으므로 30B NVMe 실습처럼 checkpoint 자체는 node-local NVMe에 남기고 metric만 공유 경로로 보낼 수 있습니다.
-뷰어는 그 경로의 `<framework>-rank-<rank>.json`을 주기적으로 `fetch`하는 간단한 정적 HTML이면 충분하며, 저장소에는 포함돼 있지 않습니다.
-이 경로는 GitHub Pages에 값을 공개하지 않으며 controller에서만 보입니다. 외부에 공개하려면 위 Observatory push·export 절차를 그대로 따릅니다.
+내장 collector와 `metrics_bridge`를 사용하면 그 경로의 `<framework>-rank-<rank>.json`을 주기적으로 읽어 같은 로컬 UI에서 볼 수 있습니다.
+이 경로는 값을 외부에 공개하지 않으며 controller에서만 보입니다.
 2026-09-09에 Qwen2.5-0.5B DDP smoke를 60 step으로 돌리며 이 방식을 실제로 검증했습니다: launcher가 공유 경로에 쓴 `trl-rank-0.json`을 controller가 SSH 없이 직접 읽었고, 약 8초 동안 step 4→60까지 13번의 서로 다른 값을 관찰했습니다.
 
-### Metrics Bridge: Reusing the Observatory UI Without SSH
+### Metrics Bridge: NFS 지표를 내장 UI에서 보기
 
-위 static viewer는 GitHub Pages의 `telemetry.html`을 재사용하지 못합니다 — 그 UI는 collector의 `POST /api/framework-metrics` 계약(bearer token 인증)에 맞춰져 있고 평문 JSON 파일을 직접 읽지 않습니다.
-`observability/profiling_lab/metrics_bridge.py`는 그 collector를 그대로 두고 데이터를 넣는 경로만 바꿉니다: NFS 공유 `FRAMEWORK_METRICS_DIR`를 주기적으로 읽어 같은 샘플을 collector의 API로 그대로 전달합니다.
+`observability/profiling_lab/metrics_bridge.py`는 NFS 공유 `FRAMEWORK_METRICS_DIR`를 주기적으로 읽어 내장 collector API로 전달합니다.
 
 ```text
-Observatory 원래 경로 (SSH push)               Metrics bridge (이 방식)
+Node agent 경로 (SSH push)                     Metrics bridge (NFS pull)
 
 spark1 --SSH tunnel--> agent --+               spark1 --+
 spark2 --SSH tunnel--> agent --+--> collector           +--> NFS 공유 경로
@@ -116,28 +146,28 @@ spark2 --SSH tunnel--> agent --+--> collector           +--> NFS 공유 경로
                                                     controller의 같은 collector (동일 API)
                                                                      |
                                                                      v
-                                            GitHub Pages telemetry.html, "Local collector" 모드
-                                            (수정 없이 그대로 사용)
+                                                  내장 collector 웹 UI
 ```
 
 collector와 poller 모두 controller 안에서만 통신하므로(둘 다 기본값 `127.0.0.1`), Spark 노드로의 SSH나 reverse tunnel이 전혀 없습니다.
 
 ```bash
-# collector: Observatory 저장소 루트에서 (기본 controller local hosting)
-export OBSERVATORY_TOKEN="$(python3 -c 'import secrets; print(secrets.token_hex(24))')"
-python3 telemetry/server.py --port 8011 --database artifacts/spark.sqlite3 \
-  --cors-origin https://daegyu94.github.io
+# collector: post-training-lab 저장소 루트에서
+export OBSERVATORY_TOKEN="$(cat artifacts/observatory-token)"
+PYTHONPATH=observability python3 -m profiling_lab.collector \
+  --database artifacts/observatory.sqlite3
 
 # bridge: post-training-lab 저장소 루트에서
 export OBSERVATORY_TOKEN="<위와 같은 값>"
 PYTHONPATH=observability python3 -m profiling_lab.metrics_bridge \
   --metrics-dir /path/to/shared/observatory-demo/<run_id>/framework-metrics \
-  --endpoint http://127.0.0.1:8011 --interval 2
+  --endpoint http://127.0.0.1:8001 --interval 2
 ```
 
-`--endpoint`는 기본값이 controller local(`http://127.0.0.1:8011`)이지만, collector를 다른 상시 가동 서버에서 띄우고 싶으면 그 서버에서 `telemetry/server.py --bind <address>`를 실행한 뒤 `--endpoint`만 그 서버 주소로 바꾸면 됩니다 — bridge는 NFS 공유 경로를 읽을 수 있는 곳(보통 controller)에서만 돌리고, collector는 어디서 돌리든 상관없습니다. Apache Spark나 MapReduce의 History Server가 URL 하나로 어디를 볼지 정하는 것과 같은 방식입니다.
+`--endpoint`의 기본값은 controller local(`http://127.0.0.1:8001`)입니다.
+Bridge는 NFS 공유 경로를 읽을 수 있는 곳에서 실행합니다.
 
-2026-09-09에 Qwen2.5-0.5B DDP smoke를 80 step으로 돌리며 collector·bridge·telemetry.html이 쓰는 실제 `GET /api/framework-metrics`로 검증했습니다: bridge가 `--once` 없이 계속 돌면서 학습이 진행되는 동안 step 1→80까지 총 22개의 서로 다른 sample이 collector에 실시간으로 쌓였고, 매 sample이 `source: framework-adapter, synthetic: false`로 응답됐습니다.
+2026-09-09에 Qwen2.5-0.5B DDP smoke를 80 step으로 돌리며 collector와 bridge가 쓰는 실제 `GET /api/framework-metrics` 계약을 검증했습니다: bridge가 `--once` 없이 계속 돌면서 학습이 진행되는 동안 step 1→80까지 총 22개의 서로 다른 sample을 전달했습니다.
 
 ## Distributed Trace
 

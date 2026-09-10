@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "run_id": "pt-1038",
+  "source": "static-mock-api",
+  "window": "last_60m",
+  "canonical_contract": "sft-lab/config/metrics.json",
+  "paths": [
+    {
+      "id": "storage_to_host",
+      "label": "Storage → Host",
+      "technology": "local NVMe + shared checkpoint",
+      "data_movement_bytes_total": 479318350234,
+      "data_movement_duration_seconds": 188,
+      "data_movement_effective_bandwidth_bytes_per_second": 2549565693,
+      "baseline_bandwidth_bytes_per_second": 5153960755,
+      "baseline_utilization_ratio": 0.49
+    },
+    {
+      "id": "host_to_gpu",
+      "label": "Host → GPU",
+      "technology": "PCIe / pinned memory",
+      "data_movement_bytes_total": 394277997773,
+      "data_movement_duration_seconds": 43,
+      "data_movement_effective_bandwidth_bytes_per_second": 9169255762,
+      "baseline_bandwidth_bytes_per_second": 30064771072,
+      "baseline_utilization_ratio": 0.3
+    },
+    {
+      "id": "gpu_intra_node",
+      "label": "GPU ↔ GPU · intra-node",
+      "technology": "NVLink 4 / NVSwitch",
+      "data_movement_bytes_total": 6808175999189,
+      "data_movement_duration_seconds": 38,
+      "data_movement_effective_bandwidth_bytes_per_second": 179162526294,
+      "baseline_bandwidth_bytes_per_second": 461708984320,
+      "baseline_utilization_ratio": 0.39
+    },
+    {
+      "id": "gpu_inter_node",
+      "label": "GPU ↔ GPU · inter-node",
+      "technology": "InfiniBand / GPUDirect RDMA",
+      "data_movement_bytes_total": 4908219906392,
+      "data_movement_duration_seconds": 68,
+      "data_movement_effective_bandwidth_bytes_per_second": 72179704506,
+      "baseline_bandwidth_bytes_per_second": 204010946560,
+      "baseline_utilization_ratio": 0.35
+    },
+    {
+      "id": "checkpoint_to_storage",
+      "label": "GPU/Host → Checkpoint",
+      "technology": "local NVMe + shared checkpoint",
+      "data_movement_bytes_total": 549755813888,
+      "data_movement_duration_seconds": 58,
+      "data_movement_effective_bandwidth_bytes_per_second": 9478548515,
+      "baseline_bandwidth_bytes_per_second": 25769803776,
+      "baseline_utilization_ratio": 0.37
+    }
+  ],
+  "phases": [
+    {
+      "phase": "dataset_loading",
+      "path_ids": [
+        "storage_to_host"
+      ],
+      "data_movement_bytes_total": 479318350234,
+      "data_movement_duration_seconds": 188,
+      "bottleneck": "metadata and cache miss"
+    },
+    {
+      "phase": "model_loading",
+      "path_ids": [
+        "storage_to_host",
+        "host_to_gpu"
+      ],
+      "data_movement_bytes_total": 957777707008,
+      "data_movement_duration_seconds": 119,
+      "bottleneck": "host staging"
+    },
+    {
+      "phase": "training_input",
+      "path_ids": [
+        "host_to_gpu"
+      ],
+      "data_movement_bytes_total": 394277997773,
+      "data_movement_duration_seconds": 43,
+      "bottleneck": "copy overlap"
+    },
+    {
+      "phase": "forward_backward",
+      "path_ids": [
+        "gpu_intra_node",
+        "gpu_inter_node"
+      ],
+      "data_movement_bytes_total": 11716395905581,
+      "data_movement_duration_seconds": 68,
+      "bottleneck": "collective overlap"
+    },
+    {
+      "phase": "optimizer_step",
+      "path_ids": [
+        "gpu_inter_node"
+      ],
+      "data_movement_bytes_total": 2061452360685,
+      "data_movement_duration_seconds": 33,
+      "bottleneck": "rank synchronization"
+    },
+    {
+      "phase": "checkpoint_save",
+      "path_ids": [
+        "checkpoint_to_storage"
+      ],
+      "data_movement_bytes_total": 549755813888,
+      "data_movement_duration_seconds": 58,
+      "bottleneck": "writer coordination"
+    },
+    {
+      "phase": "checkpoint_restore",
+      "path_ids": [
+        "storage_to_host",
+        "host_to_gpu"
+      ],
+      "data_movement_bytes_total": 549755813888,
+      "data_movement_duration_seconds": 52,
+      "bottleneck": "read and rank barrier"
+    },
+    {
+      "phase": "evaluation",
+      "path_ids": [
+        "host_to_gpu",
+        "gpu_intra_node"
+      ],
+      "data_movement_bytes_total": 216466351718,
+      "data_movement_duration_seconds": 103,
+      "bottleneck": "input transfer"
+    }
+  ],
+  "peak_memory": {
+    "gpu_memory_peak_bytes": 149250113536,
+    "host_memory_peak_bytes": 615254065152,
+    "host_pinned_memory_used_bytes": 39728447488
+  }
+}

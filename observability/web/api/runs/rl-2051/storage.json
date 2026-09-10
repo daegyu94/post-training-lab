@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "run_id": "rl-2051",
+  "source": "static-mock-api",
+  "window": "last_60m",
+  "units": {
+    "throughput": "GB/s",
+    "latency": "ms",
+    "iops": "kIOPS"
+  },
+  "devices": [
+    {
+      "node": "node-00",
+      "device": "nvme0n1",
+      "mount": "/datasets",
+      "read_gbps": 1.49,
+      "write_gbps": 0.76,
+      "iops": 43,
+      "latency_ms_p95": 1.7,
+      "utilization_percent": 64,
+      "queue_depth": 4
+    },
+    {
+      "node": "node-01",
+      "device": "nvme0n1",
+      "mount": "/datasets",
+      "read_gbps": 1.45,
+      "write_gbps": 0.72,
+      "iops": 41,
+      "latency_ms_p95": 2,
+      "utilization_percent": 60,
+      "queue_depth": 24
+    },
+    {
+      "node": "node-02",
+      "device": "nvme0n1",
+      "mount": "/datasets",
+      "read_gbps": 1.98,
+      "write_gbps": 1.51,
+      "iops": 68,
+      "latency_ms_p95": 8,
+      "utilization_percent": 88,
+      "queue_depth": 26
+    },
+    {
+      "node": "node-03",
+      "device": "nvme0n1",
+      "mount": "/datasets",
+      "read_gbps": 1.39,
+      "write_gbps": 0.68,
+      "iops": 39,
+      "latency_ms_p95": 2.2,
+      "utilization_percent": 57,
+      "queue_depth": 3
+    }
+  ],
+  "checkpoint": {
+    "size_gib": 684,
+    "save_seconds": 52,
+    "load_seconds": 48,
+    "throughput_gbps": 13.2,
+    "location": "object://synthetic-checkpoints/rl-2051"
+  },
+  "series": [
+    {
+      "minute": 0,
+      "read_gbps": 1.48,
+      "write_gbps": 0.42,
+      "latency_ms_p95": 2.1
+    },
+    {
+      "minute": 10,
+      "read_gbps": 1.61,
+      "write_gbps": 0.51,
+      "latency_ms_p95": 2.8
+    },
+    {
+      "minute": 20,
+      "read_gbps": 1.74,
+      "write_gbps": 0.58,
+      "latency_ms_p95": 3.2
+    },
+    {
+      "minute": 30,
+      "read_gbps": 2.18,
+      "write_gbps": 0.91,
+      "latency_ms_p95": 5.6
+    },
+    {
+      "minute": 40,
+      "read_gbps": 2.41,
+      "write_gbps": 1.28,
+      "latency_ms_p95": 8.7
+    },
+    {
+      "minute": 50,
+      "read_gbps": 1.92,
+      "write_gbps": 0.74,
+      "latency_ms_p95": 4.1
+    },
+    {
+      "minute": 60,
+      "read_gbps": 1.82,
+      "write_gbps": 0.64,
+      "latency_ms_p95": 3.8
+    }
+  ]
+}

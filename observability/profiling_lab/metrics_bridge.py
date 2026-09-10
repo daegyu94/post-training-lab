@@ -1,4 +1,4 @@
-"""Forward local framework-metrics JSON samples to an Observatory collector.
+"""Forward local framework-metrics JSON samples to the local collector.
 
 Reads the same <framework>-rank-<rank>.json files write_framework_metrics()
 produces (see framework_metrics.py) from a directory this process can read

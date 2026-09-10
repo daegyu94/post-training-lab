@@ -1,4 +1,4 @@
-"""TRL callback for the Observatory live framework metric spool."""
+"""TRL callback for the live framework metric spool."""
 
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ class _MetricsCallback:
             )
         except (OSError, ValueError) as exc:
             if not self.warned:
-                print(f"[observatory] metric export disabled after error: {exc}", file=sys.stderr)
+                print(f"[metrics] export disabled after error: {exc}", file=sys.stderr)
                 self.warned = True
 
 
@@ -62,7 +62,7 @@ def make_trl_callback() -> Any | None:
         return None
     from transformers import TrainerCallback
 
-    class ObservatoryCallback(_MetricsCallback, TrainerCallback):
+    class LocalMetricsCallback(_MetricsCallback, TrainerCallback):
         pass
 
-    return ObservatoryCallback(output)
+    return LocalMetricsCallback(output)

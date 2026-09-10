@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "run_id": "pt-1042",
+  "source": "static-mock-api",
+  "window": "last_60m",
+  "units": {"throughput": "GB/s", "latency": "ms", "iops": "kIOPS"},
+  "devices": [
+    {"node":"node-00","device":"nvme0n1","mount":"/datasets","read_gbps":1.82,"write_gbps":0.64,"iops":46,"latency_ms_p95":1.9,"utilization_percent":68,"queue_depth":5},
+    {"node":"node-01","device":"nvme0n1","mount":"/datasets","read_gbps":1.77,"write_gbps":0.61,"iops":44,"latency_ms_p95":2.2,"utilization_percent":64,"queue_depth":4},
+    {"node":"node-02","device":"nvme0n1","mount":"/datasets","read_gbps":2.41,"write_gbps":1.28,"iops":72,"latency_ms_p95":8.7,"utilization_percent":94,"queue_depth":32},
+    {"node":"node-03","device":"nvme0n1","mount":"/datasets","read_gbps":1.69,"write_gbps":0.58,"iops":42,"latency_ms_p95":2.4,"utilization_percent":61,"queue_depth":4}
+  ],
+  "checkpoint": {"size_gib":912,"save_seconds":46,"load_seconds":41,"throughput_gbps":19.8,"location":"object://synthetic-checkpoints/pt-1042"},
+  "series": [
+    {"minute":0,"read_gbps":1.48,"write_gbps":0.42,"latency_ms_p95":2.1},
+    {"minute":10,"read_gbps":1.61,"write_gbps":0.51,"latency_ms_p95":2.8},
+    {"minute":20,"read_gbps":1.74,"write_gbps":0.58,"latency_ms_p95":3.2},
+    {"minute":30,"read_gbps":2.18,"write_gbps":0.91,"latency_ms_p95":5.6},
+    {"minute":40,"read_gbps":2.41,"write_gbps":1.28,"latency_ms_p95":8.7},
+    {"minute":50,"read_gbps":1.92,"write_gbps":0.74,"latency_ms_p95":4.1},
+    {"minute":60,"read_gbps":1.82,"write_gbps":0.64,"latency_ms_p95":3.8}
+  ]
+}

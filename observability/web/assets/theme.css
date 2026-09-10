@@ -1,0 +1,103 @@
+/* Shared semantic colors for the dashboard and measured telemetry page. */
+:root {
+  color-scheme: light;
+  --bg: #f4f6fa;
+  --surface: #fff;
+  --surface-2: #f8faff;
+  --ink: #15233a;
+  --muted: #52627a;
+  --line: #dde5ef;
+  --accent: #3165df;
+  --positive: #397253;
+  --matrix-low: #dce8ff;
+  --matrix-high: #e7ac54;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0c1422;
+  --surface: #152135;
+  --surface-2: #1b2a40;
+  --ink: #edf3fc;
+  --muted: #b0bfd4;
+  --line: #34465f;
+  --blue: #8fb4ff;
+  --accent: #8fb4ff;
+  --green: #62d6a0;
+  --positive: #83dfb0;
+  --amber: #f3c479;
+  --red: #ff9696;
+  --matrix-low: hsl(218 38% 16%);
+  --matrix-high: hsl(31 73% 29%);
+}
+.theme-control { white-space: nowrap; }
+.theme-control select { min-width: 100px; }
+.axis { fill: var(--muted); }
+.chart svg > g:first-child, .spark svg > g:first-child { stroke: var(--line); }
+#chart-series, #storage-read-path { stroke: var(--accent); }
+.spark .axis text:nth-child(3) { fill: var(--accent); }
+.spark .axis text:nth-child(4) { fill: var(--positive); }
+#storage-write-path { stroke: var(--positive); }
+.api-health { color: var(--positive); }
+[data-theme="dark"] .topbar { background: rgba(21, 33, 53, .96); }
+[data-theme="dark"] select,
+[data-theme="dark"] .button,
+[data-theme="dark"] .badge,
+[data-theme="dark"] .stream-bar { background: var(--surface); color: var(--ink); border-color: var(--line); }
+[data-theme="dark"] .button.primary { background: #3165df; border-color: #3165df; color: #fff; }
+[data-theme="dark"] .button.playing { background: #234a91; border-color: #729aff; color: #fff; }
+[data-theme="dark"] .badge.blue,
+[data-theme="dark"] .callout,
+[data-theme="dark"] .gpu { background: #1c3152; border-color: #3c5981; color: #c3d7fa; }
+[data-theme="dark"] .callout code,
+[data-theme="dark"] .gpu b,
+[data-theme="dark"] .method { color: var(--accent); }
+[data-theme="dark"] .badge.warn,
+[data-theme="dark"] .gpu.hot,
+[data-theme="dark"] .diagnostic-icon { background: #3a2d1d; border-color: #775b32; color: #f3c479; }
+[data-theme="dark"] .gpu.hot b { color: #f3c479; }
+[data-theme="dark"] .track,
+[data-theme="dark"] .util-bar,
+[data-theme="dark"] .matrix .diagonal { background: #26364e !important; color: var(--muted); }
+[data-theme="dark"] .compute,
+[data-theme="dark"] .util-bar i { background: var(--accent); }
+[data-theme="dark"] .table th,
+[data-theme="dark"] .matrix-wrap,
+[data-theme="dark"] .path-node,
+[data-theme="dark"] .metric-card { background: var(--surface-2); color: var(--ink); border-color: var(--line); }
+[data-theme="dark"] .table th { color: var(--muted); }
+[data-theme="dark"] .table td,
+[data-theme="dark"] .table th,
+[data-theme="dark"] .node-table,
+[data-theme="dark"] .coverage,
+[data-theme="dark"] .history-item { border-color: var(--line); }
+[data-theme="dark"] .table tr.alert { background: #342b20; }
+[data-theme="dark"] .table tr:hover td { background: #223652; }
+[data-theme="dark"] .matrix td,
+[data-theme="dark"] .legend b { color: var(--ink); }
+[data-theme="dark"] .path-node.selected,
+[data-theme="dark"] .path-node:hover { border-color: var(--accent); box-shadow: 0 0 0 2px #36517a; }
+[data-theme="dark"] .history-item code { color: var(--muted); }
+[data-theme="dark"] .stream-bar.live { background: #15342c; border-color: #3b8061; }
+[data-theme="dark"] .toast { background: #243957; border: 1px solid var(--line); }
+
+.measured-page { background: var(--bg); color: var(--ink); }
+.measured-page a { color: var(--accent); }
+.measured-page button, .measured-page input, .measured-page select {
+  background: var(--surface-2); color: var(--ink); border-color: var(--line);
+}
+.measured-page th, .measured-page td { border-color: var(--line); }
+.measured-page svg { background: var(--surface-2); }
+.measured-page svg polyline { stroke: var(--accent); }
+.measured-page #status { color: var(--accent); }
+.measured-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.measured-page :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+/* Keep the extra control from making the sticky header dominate the viewport. */
+@media (min-width: 821px) and (max-width: 1500px) {
+  .top-title { display: none; }
+}
+@media (max-width: 520px) {
+  .controls label:first-child { flex: 0 0 100%; }
+  .controls label:not(:first-child) { width: auto; flex: 1 1 calc(50% - 5px); }
+  .controls label:not(:first-child) select { min-width: 0; width: 0; }
+}

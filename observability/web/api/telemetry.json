@@ -1,0 +1,330 @@
+{
+  "schema_version": 1,
+  "source": "linux-procfs",
+  "synthetic": false,
+  "mode": "published-snapshot",
+  "generated_at": "2026-09-08T07:07:27.928432+00:00",
+  "scope": "node-wide; not attributable to a training process",
+  "samples": [
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark1",
+      "metrics": {
+        "cpu_utilization_percent": 5.104,
+        "memory_used_gib": 114.83119583129883,
+        "memory_total_gib": 119.69363403320312,
+        "memory_available_gib": 4.862438201904297,
+        "swap_used_gib": 15.293537139892578,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 0.0012517163497301701,
+        "nic_transmit_gbps": 8.520163354122057e-05,
+        "interval_seconds": 2.0009006038308144
+      },
+      "received_at": "2026-09-08T07:06:21.547514+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark2",
+      "metrics": {
+        "cpu_utilization_percent": 0.25,
+        "memory_used_gib": 4.085418701171875,
+        "memory_total_gib": 119.69229125976562,
+        "memory_available_gib": 115.60687255859375,
+        "swap_used_gib": 0.16184616088867188,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 1.6183066735960353e-05,
+        "nic_transmit_gbps": 4.245656342289993e-05,
+        "interval_seconds": 2.0011040261015296
+      },
+      "received_at": "2026-09-08T07:06:21.560390+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark1",
+      "metrics": {
+        "cpu_utilization_percent": 5.183,
+        "memory_used_gib": 114.81622695922852,
+        "memory_total_gib": 119.69363403320312,
+        "memory_available_gib": 4.877407073974609,
+        "swap_used_gib": 15.291584014892578,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 0.0014444219052417745,
+        "nic_transmit_gbps": 6.73139530501093e-05,
+        "interval_seconds": 2.0282273408956826
+      },
+      "received_at": "2026-09-08T07:06:23.551544+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark2",
+      "metrics": {
+        "cpu_utilization_percent": 0.518,
+        "memory_used_gib": 4.091320037841797,
+        "memory_total_gib": 119.69229125976562,
+        "memory_available_gib": 115.60097122192383,
+        "swap_used_gib": 0.16183853149414062,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 2.983503341625813e-05,
+        "nic_transmit_gbps": 6.286414257493882e-05,
+        "interval_seconds": 2.028755897656083
+      },
+      "received_at": "2026-09-08T07:06:23.565077+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark1",
+      "metrics": {
+        "cpu_utilization_percent": 5.221,
+        "memory_used_gib": 114.82804107666016,
+        "memory_total_gib": 119.69363403320312,
+        "memory_available_gib": 4.865592956542969,
+        "swap_used_gib": 15.291584014892578,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 0.001470020277827699,
+        "nic_transmit_gbps": 8.240656819857251e-05,
+        "interval_seconds": 2.0039179353043437
+      },
+      "received_at": "2026-09-08T07:06:25.555871+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark2",
+      "metrics": {
+        "cpu_utilization_percent": 0.275,
+        "memory_used_gib": 4.088859558105469,
+        "memory_total_gib": 119.69229125976562,
+        "memory_available_gib": 115.60343170166016,
+        "swap_used_gib": 0.16183853149414062,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 4.113899634500079e-05,
+        "nic_transmit_gbps": 7.241341627384467e-05,
+        "interval_seconds": 2.0039380472153425
+      },
+      "received_at": "2026-09-08T07:06:25.569141+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark1",
+      "metrics": {
+        "cpu_utilization_percent": 5.293,
+        "memory_used_gib": 114.81123733520508,
+        "memory_total_gib": 119.69363403320312,
+        "memory_available_gib": 4.882396697998047,
+        "swap_used_gib": 15.291584014892578,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 0.001415960175802827,
+        "nic_transmit_gbps": 8.652996817244357e-05,
+        "interval_seconds": 2.0040224636904895
+      },
+      "received_at": "2026-09-08T07:06:27.559518+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark2",
+      "metrics": {
+        "cpu_utilization_percent": 0.25,
+        "memory_used_gib": 4.083580017089844,
+        "memory_total_gib": 119.69229125976562,
+        "memory_available_gib": 115.60871124267578,
+        "swap_used_gib": 0.16183853149414062,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 3.9315934972789375e-05,
+        "nic_transmit_gbps": 5.696261224133125e-05,
+        "interval_seconds": 2.0046833441592753
+      },
+      "received_at": "2026-09-08T07:06:27.573818+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark1",
+      "metrics": {
+        "cpu_utilization_percent": 5.249,
+        "memory_used_gib": 114.84637451171875,
+        "memory_total_gib": 119.69363403320312,
+        "memory_available_gib": 4.847259521484375,
+        "swap_used_gib": 15.291305541992188,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 0.0014073356636897343,
+        "nic_transmit_gbps": 8.258854630287912e-05,
+        "interval_seconds": 2.0033770711161196
+      },
+      "received_at": "2026-09-08T07:06:29.562710+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark2",
+      "metrics": {
+        "cpu_utilization_percent": 0.25,
+        "memory_used_gib": 4.093776702880859,
+        "memory_total_gib": 119.69229125976562,
+        "memory_available_gib": 115.59851455688477,
+        "swap_used_gib": 0.16183853149414062,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 1.9926071524038698e-05,
+        "nic_transmit_gbps": 3.1469781229070726e-05,
+        "interval_seconds": 2.0042084036394954
+      },
+      "received_at": "2026-09-08T07:06:29.577286+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark1",
+      "metrics": {
+        "cpu_utilization_percent": 6.5,
+        "memory_used_gib": 114.52114486694336,
+        "memory_total_gib": 119.69363403320312,
+        "memory_available_gib": 5.172489166259766,
+        "swap_used_gib": 15.372386932373047,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 0.0014731531237736606,
+        "nic_transmit_gbps": 6.697693458624675e-05,
+        "interval_seconds": 2.0033165272325277
+      },
+      "received_at": "2026-09-08T07:06:31.566120+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark2",
+      "metrics": {
+        "cpu_utilization_percent": 0.15,
+        "memory_used_gib": 4.082607269287109,
+        "memory_total_gib": 119.69229125976562,
+        "memory_available_gib": 115.60968399047852,
+        "swap_used_gib": 0.16183853149414062,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 4.087892871338615e-05,
+        "nic_transmit_gbps": 3.805170574483312e-05,
+        "interval_seconds": 2.003379310015589
+      },
+      "received_at": "2026-09-08T07:06:31.581639+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark1",
+      "metrics": {
+        "cpu_utilization_percent": 5.22,
+        "memory_used_gib": 114.51276779174805,
+        "memory_total_gib": 119.69363403320312,
+        "memory_available_gib": 5.180866241455078,
+        "swap_used_gib": 15.372386932373047,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 0.0013455970439204502,
+        "nic_transmit_gbps": 7.464271571326722e-05,
+        "interval_seconds": 2.0037856148555875
+      },
+      "received_at": "2026-09-08T07:06:33.569866+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark2",
+      "metrics": {
+        "cpu_utilization_percent": 0.274,
+        "memory_used_gib": 4.1049346923828125,
+        "memory_total_gib": 119.69229125976562,
+        "memory_available_gib": 115.58735656738281,
+        "swap_used_gib": 0.16183853149414062,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 5.554602809023471e-05,
+        "nic_transmit_gbps": 4.77807572092292e-05,
+        "interval_seconds": 2.004823816008866
+      },
+      "received_at": "2026-09-08T07:06:33.586673+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark1",
+      "metrics": {
+        "cpu_utilization_percent": 5.247,
+        "memory_used_gib": 114.53271865844727,
+        "memory_total_gib": 119.69363403320312,
+        "memory_available_gib": 5.160915374755859,
+        "swap_used_gib": 15.372386932373047,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 0.0013260794026074714,
+        "nic_transmit_gbps": 8.02522872341664e-05,
+        "interval_seconds": 2.003481838852167
+      },
+      "received_at": "2026-09-08T07:06:35.573094+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark2",
+      "metrics": {
+        "cpu_utilization_percent": 0.25,
+        "memory_used_gib": 4.105007171630859,
+        "memory_total_gib": 119.69229125976562,
+        "memory_available_gib": 115.58728408813477,
+        "swap_used_gib": 0.16183853149414062,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 4.1128543984331135e-05,
+        "nic_transmit_gbps": 5.326601301812385e-05,
+        "interval_seconds": 2.005030862055719
+      },
+      "received_at": "2026-09-08T07:06:35.591924+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark1",
+      "metrics": {
+        "cpu_utilization_percent": 4.998,
+        "memory_used_gib": 114.54693222045898,
+        "memory_total_gib": 119.69363403320312,
+        "memory_available_gib": 5.146701812744141,
+        "swap_used_gib": 15.364521026611328,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 0.001604092403285373,
+        "nic_transmit_gbps": 9.659411671652352e-05,
+        "interval_seconds": 2.0036002872511744
+      },
+      "received_at": "2026-09-08T07:06:37.577042+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark2",
+      "metrics": {
+        "cpu_utilization_percent": 0.25,
+        "memory_used_gib": 4.118186950683594,
+        "memory_total_gib": 119.69229125976562,
+        "memory_available_gib": 115.57410430908203,
+        "swap_used_gib": 0.16183853149414062,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 4.457547355058483e-05,
+        "nic_transmit_gbps": 6.82075753327277e-05,
+        "interval_seconds": 2.005407747346908
+      },
+      "received_at": "2026-09-08T07:06:37.596759+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark1",
+      "metrics": {
+        "cpu_utilization_percent": 5.17,
+        "memory_used_gib": 65.39960098266602,
+        "memory_total_gib": 119.69363403320312,
+        "memory_available_gib": 54.29403305053711,
+        "swap_used_gib": 8.64986801147461,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 0.001464268542867294,
+        "nic_transmit_gbps": 8.55454123358972e-05,
+        "interval_seconds": 2.0038947188295424
+      },
+      "received_at": "2026-09-08T07:06:39.581056+00:00"
+    },
+    {
+      "run_id": "spark-host-20260908",
+      "node": "spark2",
+      "metrics": {
+        "cpu_utilization_percent": 0.274,
+        "memory_used_gib": 4.102176666259766,
+        "memory_total_gib": 119.69229125976562,
+        "memory_available_gib": 115.59011459350586,
+        "swap_used_gib": 0.161834716796875,
+        "swap_total_gib": 15.999996185302734,
+        "nic_receive_gbps": 3.551145934577202e-05,
+        "nic_transmit_gbps": 6.88720392008854e-05,
+        "interval_seconds": 2.0047613168135285
+      },
+      "received_at": "2026-09-08T07:06:39.601000+00:00"
+    }
+  ]
+}

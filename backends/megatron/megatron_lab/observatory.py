@@ -1,4 +1,4 @@
-"""Megatron Bridge callback for the Observatory live metric spool."""
+"""Megatron Bridge callback for the live metric spool."""
 
 from __future__ import annotations
 
@@ -85,7 +85,7 @@ class _MetricsCallback:
             )
         except (OSError, ValueError, ZeroDivisionError) as exc:
             if not self.warned:
-                print(f"[observatory] metric export disabled after error: {exc}", file=sys.stderr)
+                print(f"[metrics] export disabled after error: {exc}", file=sys.stderr)
                 self.warned = True
 
 
@@ -95,7 +95,7 @@ def make_megatron_callback(tokens_per_step: int) -> Any | None:
         return None
     from megatron.bridge.training.callbacks import Callback
 
-    class ObservatoryCallback(_MetricsCallback, Callback):
+    class LocalMetricsCallback(_MetricsCallback, Callback):
         pass
 
-    return ObservatoryCallback(output, tokens_per_step)
+    return LocalMetricsCallback(output, tokens_per_step)

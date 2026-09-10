@@ -1,0 +1,376 @@
+{
+  "schema_version": 1,
+  "run_id": "pt-1042",
+  "source": "static-mock-api",
+  "window": "last_60m",
+  "nodes": [
+    {
+      "node": "node-00",
+      "cpu_utilization_percent": 58,
+      "memory_used_gib": 171,
+      "memory_total_gib": 256,
+      "memory_pressure_ratio": 0.07,
+      "nic_receive_gbps": 29.5,
+      "nic_transmit_gbps": 31.5,
+      "network_errors_total": 0,
+      "gpus": [
+        {
+          "index": 0,
+          "global_rank": 0,
+          "utilization_percent": 81,
+          "memory_used_gib": 170.9,
+          "power_watts": 795,
+          "temperature_celsius": 68,
+          "clock_mhz": 1767,
+          "errors_total": 0
+        },
+        {
+          "index": 1,
+          "global_rank": 1,
+          "utilization_percent": 84,
+          "memory_used_gib": 173,
+          "power_watts": 816,
+          "temperature_celsius": 70,
+          "clock_mhz": 1803,
+          "errors_total": 0
+        },
+        {
+          "index": 2,
+          "global_rank": 2,
+          "utilization_percent": 87,
+          "memory_used_gib": 175.1,
+          "power_watts": 837,
+          "temperature_celsius": 72,
+          "clock_mhz": 1839,
+          "errors_total": 0
+        },
+        {
+          "index": 3,
+          "global_rank": 3,
+          "utilization_percent": 81,
+          "memory_used_gib": 170.9,
+          "power_watts": 795,
+          "temperature_celsius": 68,
+          "clock_mhz": 1767,
+          "errors_total": 0
+        },
+        {
+          "index": 4,
+          "global_rank": 4,
+          "utilization_percent": 84,
+          "memory_used_gib": 173,
+          "power_watts": 816,
+          "temperature_celsius": 70,
+          "clock_mhz": 1803,
+          "errors_total": 0
+        },
+        {
+          "index": 5,
+          "global_rank": 5,
+          "utilization_percent": 87,
+          "memory_used_gib": 175.1,
+          "power_watts": 837,
+          "temperature_celsius": 72,
+          "clock_mhz": 1839,
+          "errors_total": 0
+        },
+        {
+          "index": 6,
+          "global_rank": 6,
+          "utilization_percent": 81,
+          "memory_used_gib": 170.9,
+          "power_watts": 795,
+          "temperature_celsius": 68,
+          "clock_mhz": 1767,
+          "errors_total": 0
+        },
+        {
+          "index": 7,
+          "global_rank": 7,
+          "utilization_percent": 84,
+          "memory_used_gib": 173,
+          "power_watts": 816,
+          "temperature_celsius": 70,
+          "clock_mhz": 1803,
+          "errors_total": 0
+        }
+      ]
+    },
+    {
+      "node": "node-01",
+      "cpu_utilization_percent": 63,
+      "memory_used_gib": 178,
+      "memory_total_gib": 256,
+      "memory_pressure_ratio": 0.07,
+      "nic_receive_gbps": 32.3,
+      "nic_transmit_gbps": 34.9,
+      "network_errors_total": 0,
+      "gpus": [
+        {
+          "index": 0,
+          "global_rank": 8,
+          "utilization_percent": 88,
+          "memory_used_gib": 170.9,
+          "power_watts": 844,
+          "temperature_celsius": 73,
+          "clock_mhz": 1851,
+          "errors_total": 0
+        },
+        {
+          "index": 1,
+          "global_rank": 9,
+          "utilization_percent": 82,
+          "memory_used_gib": 173,
+          "power_watts": 802,
+          "temperature_celsius": 69,
+          "clock_mhz": 1779,
+          "errors_total": 0
+        },
+        {
+          "index": 2,
+          "global_rank": 10,
+          "utilization_percent": 85,
+          "memory_used_gib": 175.1,
+          "power_watts": 823,
+          "temperature_celsius": 71,
+          "clock_mhz": 1815,
+          "errors_total": 0
+        },
+        {
+          "index": 3,
+          "global_rank": 11,
+          "utilization_percent": 88,
+          "memory_used_gib": 170.9,
+          "power_watts": 844,
+          "temperature_celsius": 73,
+          "clock_mhz": 1851,
+          "errors_total": 0
+        },
+        {
+          "index": 4,
+          "global_rank": 12,
+          "utilization_percent": 82,
+          "memory_used_gib": 173,
+          "power_watts": 802,
+          "temperature_celsius": 69,
+          "clock_mhz": 1779,
+          "errors_total": 0
+        },
+        {
+          "index": 5,
+          "global_rank": 13,
+          "utilization_percent": 85,
+          "memory_used_gib": 175.1,
+          "power_watts": 823,
+          "temperature_celsius": 71,
+          "clock_mhz": 1815,
+          "errors_total": 0
+        },
+        {
+          "index": 6,
+          "global_rank": 14,
+          "utilization_percent": 88,
+          "memory_used_gib": 170.9,
+          "power_watts": 844,
+          "temperature_celsius": 73,
+          "clock_mhz": 1851,
+          "errors_total": 0
+        },
+        {
+          "index": 7,
+          "global_rank": 15,
+          "utilization_percent": 82,
+          "memory_used_gib": 173,
+          "power_watts": 802,
+          "temperature_celsius": 69,
+          "clock_mhz": 1779,
+          "errors_total": 0
+        }
+      ]
+    },
+    {
+      "node": "node-02",
+      "cpu_utilization_percent": 81,
+      "memory_used_gib": 185,
+      "memory_total_gib": 256,
+      "memory_pressure_ratio": 0.15,
+      "nic_receive_gbps": 35.1,
+      "nic_transmit_gbps": 31.5,
+      "network_errors_total": 2,
+      "gpus": [
+        {
+          "index": 0,
+          "global_rank": 16,
+          "utilization_percent": 67,
+          "memory_used_gib": 170.9,
+          "power_watts": 766,
+          "temperature_celsius": 72,
+          "clock_mhz": 1827,
+          "errors_total": 0
+        },
+        {
+          "index": 1,
+          "global_rank": 17,
+          "utilization_percent": 70,
+          "memory_used_gib": 173,
+          "power_watts": 787,
+          "temperature_celsius": 74,
+          "clock_mhz": 1863,
+          "errors_total": 0
+        },
+        {
+          "index": 2,
+          "global_rank": 18,
+          "utilization_percent": 64,
+          "memory_used_gib": 175.1,
+          "power_watts": 745,
+          "temperature_celsius": 70,
+          "clock_mhz": 1791,
+          "errors_total": 0
+        },
+        {
+          "index": 3,
+          "global_rank": 19,
+          "utilization_percent": 67,
+          "memory_used_gib": 170.9,
+          "power_watts": 766,
+          "temperature_celsius": 72,
+          "clock_mhz": 1827,
+          "errors_total": 0
+        },
+        {
+          "index": 4,
+          "global_rank": 20,
+          "utilization_percent": 70,
+          "memory_used_gib": 173,
+          "power_watts": 787,
+          "temperature_celsius": 74,
+          "clock_mhz": 1863,
+          "errors_total": 0
+        },
+        {
+          "index": 5,
+          "global_rank": 21,
+          "utilization_percent": 64,
+          "memory_used_gib": 175.1,
+          "power_watts": 745,
+          "temperature_celsius": 70,
+          "clock_mhz": 1791,
+          "errors_total": 0
+        },
+        {
+          "index": 6,
+          "global_rank": 22,
+          "utilization_percent": 67,
+          "memory_used_gib": 170.9,
+          "power_watts": 766,
+          "temperature_celsius": 72,
+          "clock_mhz": 1827,
+          "errors_total": 1
+        },
+        {
+          "index": 7,
+          "global_rank": 23,
+          "utilization_percent": 70,
+          "memory_used_gib": 173,
+          "power_watts": 787,
+          "temperature_celsius": 74,
+          "clock_mhz": 1863,
+          "errors_total": 0
+        }
+      ]
+    },
+    {
+      "node": "node-03",
+      "cpu_utilization_percent": 62,
+      "memory_used_gib": 171,
+      "memory_total_gib": 256,
+      "memory_pressure_ratio": 0.07,
+      "nic_receive_gbps": 29.5,
+      "nic_transmit_gbps": 34.9,
+      "network_errors_total": 0,
+      "gpus": [
+        {
+          "index": 0,
+          "global_rank": 24,
+          "utilization_percent": 84,
+          "memory_used_gib": 170.9,
+          "power_watts": 816,
+          "temperature_celsius": 70,
+          "clock_mhz": 1803,
+          "errors_total": 0
+        },
+        {
+          "index": 1,
+          "global_rank": 25,
+          "utilization_percent": 87,
+          "memory_used_gib": 173,
+          "power_watts": 837,
+          "temperature_celsius": 72,
+          "clock_mhz": 1839,
+          "errors_total": 0
+        },
+        {
+          "index": 2,
+          "global_rank": 26,
+          "utilization_percent": 81,
+          "memory_used_gib": 175.1,
+          "power_watts": 795,
+          "temperature_celsius": 68,
+          "clock_mhz": 1767,
+          "errors_total": 0
+        },
+        {
+          "index": 3,
+          "global_rank": 27,
+          "utilization_percent": 84,
+          "memory_used_gib": 170.9,
+          "power_watts": 816,
+          "temperature_celsius": 70,
+          "clock_mhz": 1803,
+          "errors_total": 0
+        },
+        {
+          "index": 4,
+          "global_rank": 28,
+          "utilization_percent": 87,
+          "memory_used_gib": 173,
+          "power_watts": 837,
+          "temperature_celsius": 72,
+          "clock_mhz": 1839,
+          "errors_total": 0
+        },
+        {
+          "index": 5,
+          "global_rank": 29,
+          "utilization_percent": 81,
+          "memory_used_gib": 175.1,
+          "power_watts": 795,
+          "temperature_celsius": 68,
+          "clock_mhz": 1767,
+          "errors_total": 0
+        },
+        {
+          "index": 6,
+          "global_rank": 30,
+          "utilization_percent": 84,
+          "memory_used_gib": 170.9,
+          "power_watts": 816,
+          "temperature_celsius": 70,
+          "clock_mhz": 1803,
+          "errors_total": 0
+        },
+        {
+          "index": 7,
+          "global_rank": 31,
+          "utilization_percent": 87,
+          "memory_used_gib": 173,
+          "power_watts": 837,
+          "temperature_celsius": 72,
+          "clock_mhz": 1839,
+          "errors_total": 0
+        }
+      ]
+    }
+  ]
+}
