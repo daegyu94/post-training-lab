@@ -31,6 +31,7 @@
 | `experiments/trl/nvme-offload-30b.json` | 2노드 Qwen3 30B full SFT, ZeRO-3 NVMe state offload | base/train/tuned |
 | `experiments/megatron/qwen3-30b-lora.json` | 2노드 Qwen3 30B MoE LoRA, 평가와 node-local NVMe async checkpoint | train |
 | `experiments/megatron/glm-4.7-flash-30b-lora.json` | 2노드 GLM-4.7-Flash 30B MoE LoRA, 평가와 node-local NVMe async checkpoint | train |
+| `experiments/megatron/qwen3-30b-full.json` | 2노드 Qwen3 30B MoE full-parameter(non-LoRA) — memory 적합성 미검증, [Verification](verification.md#known-implementation-limits) 참고 | all |
 
 앞의 smoke 네 개는 작은 Qwen2.5-0.5B와 고정 No Robots 입력을 사용합니다.
 모델 품질·장기 수렴·일반적인 성능 비교용 preset은 아닙니다.
