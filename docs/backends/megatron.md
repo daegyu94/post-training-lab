@@ -27,30 +27,18 @@ Spark에서 `world_size=TP*PP*DP`이며 `world_size`는 `TP*PP`와 `PP*EP`로 �
 [requirements-spark.txt](../../backends/megatron/requirements-spark.txt)는 Torch 2.10.0의 cu130 build를 먼저 설치하도록 명시합니다.
 일반 `scripts/setup.sh`는 이 환경을 완성하는 설치기가 아닙니다.
 
-과거 환경은 Torch `2.10.0+cu130`, Bridge `0.6.0`, Core `0.19.0`, Transformer Engine `2.18.0`을 사용했습니다.
+검증된 환경은 Torch `2.10.0+cu130`, Bridge `0.6.0`, Core `0.19.0`, Transformer Engine `2.18.0`을 사용합니다.
 Transformer Engine은 ARM64에서 source build했고 optional NCCL EP를 `NVTE_WITH_NCCL_EP=0`으로 제외했습니다.
 이미 설치된 wheel에 환경변수를 바꿔도 extension이 추가되지 않습니다.
 
-현재 requirements의 ModelOpt `0.46.0`은 Bridge가 선언하는 `0.46.0rc1`과 다릅니다.
-과거 실행은 기존 환경을 복제해 검증한 것이며 새 환경의 전체 dependency resolution 성공을 보장하지 않습니다.
-따라서 이 저장소만으로 검증된 단일 fresh-install 명령을 제공할 수 없습니다.
-충돌을 임의로 무시하는 설치 명령 대신 실제 의존성·build 결과를 별도 기록해야 합니다.
-
-실제 fresh venv로 시도한 결과, ModelOpt 충돌보다 **더 먼저** 막히는 지점이 있고, 그 지점은 어떤 pip 옵션으로도 우회되지 않습니다.
-
-`megatron-bridge[recipes]==0.6.0`이 끌어오는 `fast-hadamard-transform==1.1.0`(source 배포만 있음)은 두 단계로 막힙니다.
-1. `setup.py`가 빌드 시점에 `import torch`를 실행하는데, pip 기본 격리 빌드 환경은 같은 명령으로 설치 중인 torch를 보지 못해 `ModuleNotFoundError: No module named 'torch'`로 실패합니다 — `--no-build-isolation`으로 해결됩니다.
-2. 이 단계를 넘겨도(실제 CUDA torch `2.10.0+cu130`과 `/usr/local/cuda`의 `nvcc 13.0`을 그대로 써서 확인) `cc1plus: fatal error: csrc/fast_hadamard_transform.cpp: No such file or directory`로 막힙니다 — **PyPI의 sdist 자체에 `csrc/`가 없습니다.** 패키지 안의 `SOURCES.txt`에도 `.cpp`/`.cu` 파일이 전혀 나열돼 있지 않고, GitHub 배포 wheel도 `linux_x86_64`만 있어 ARM64 사전 빌드 wheel도 없습니다. 즉 이 버전은 ARM64에서 근본적으로 설치 불가능합니다.
-
-이 사실은 기존 검증된 venv를 직접 확인해서 교차검증했습니다 — `fast_hadamard_transform`은 **프로덕션 venv에도 설치돼 있지 않습니다.**
-`diffusers`, `mistral_common`, `peft`처럼 `[recipes]`의 다른 항목은 있지만 `fast_hadamard_transform`, `flashinfer-python`, `flashinfer-cubin`, `comet-ml`, `mlflow`, `timm`, `open-clip-torch`, `qwen-vl-utils`는 없습니다.
-즉 실제로 동작하는 지금 환경도 `pip install megatron-bridge[recipes]==0.6.0`을 그대로 성공시킨 적이 없고, `[recipes]`의 일부만 선택적으로 설치해서 만들어졌습니다 — 이 저장소가 실제로 쓰는 기능(Qwen/GLM SFT, LoRA, checkpoint)에는 이 항목들이 필요하지 않기 때문입니다.
-fresh-install을 다시 시도할 때는 `megatron-bridge[recipes]`가 아니라 `megatron-bridge`(extra 없이) 설치를 우선 시도하는 편이 맞습니다.
-
-ModelOpt 충돌도 다시 볼 필요가 있습니다: 실제 설치된 `megatron-core` METADATA의 `Requires-Dist`는 `nvidia-modelopt[torch]>=0.44`(느슨한 하한)이며, `megatron-bridge`의 METADATA에는 modelopt가 아예 나오지 않습니다 — `==0.46.0rc1`처럼 정확히 고정된 요구는 현재 설치된 core `0.19.0`/bridge `0.6.0`의 실제 METADATA에서 확인되지 않았습니다. `nvidia-modelopt==0.46.0`이 `>=0.44`를 만족하므로, 문서에 적힌 정확한 버전 충돌은 최신 버전에서는 재현되지 않을 수 있습니다 — 다만 `fast-hadamard-transform`이 그보다 먼저 막혀서 실제 pip resolver로 끝까지 검증하지는 못했습니다.
+`megatron-bridge==0.6.0`은 `--no-deps`로 설치합니다.
+extra 없이 그냥 설치해도 base package METADATA가 `fast-hadamard-transform`, `flashinfer-python`, `flashinfer-cubin`, `comet-ml`, `mlflow`, `timm`, `open-clip-torch`, `qwen-vl-utils`를 무조건 요구합니다(`[recipes]` extra가 아니라 base package의 고정 요구).
+이 중 `fast-hadamard-transform`의 PyPI sdist는 `csrc/` 소스 자체가 없고(`SOURCES.txt`에 `.cpp`/`.cu`가 전혀 없음) ARM64 사전 빌드 wheel도 없어 ARM64에서 근본적으로 설치 불가능합니다.
+이 저장소가 쓰는 기능(Qwen/GLM SFT, LoRA, checkpoint)에는 이 항목들이 필요하지 않으므로, bridge 자체는 `--no-deps`로 건너뛰고 [requirements-spark.txt](../../backends/megatron/requirements-spark.txt)에 실제로 import 시점에 필요한 sub-dependency만 명시해 설치합니다.
+`nvidia-modelopt==0.46.0`으로 고정하며, 실제 설치된 `megatron-core` METADATA는 `nvidia-modelopt[torch]>=0.44`만 요구하므로 이 버전으로 충족됩니다.
 
 먼저 각 노드에서 [공통 준비 스크립트](../../setups/spark/README.md#prepare-each-spark-node)를 실행해 system package와 node-local Megatron 가상환경을 준비합니다.
-이 스크립트는 아래 Python package를 대신 설치하지 않으므로, 현재 검증된 환경을 옮기거나 실제 build 결과를 기록하며 의존성을 설치해야 합니다.
+이 스크립트는 아래 Python package를 대신 설치하지 않으므로, 두 단계로 나눠 설치합니다.
 준비된 환경을 검사할 때는 각 노드의 `backends/megatron`에서 실행합니다.
 `PYTHON_HEADERS`는 native helper build에 필요한 경우에만 해당 환경의 Python development header 경로로 지정합니다.
 
@@ -59,7 +47,10 @@ cd "/path/to/shared/post-training-lab/backends/megatron"
 . "$HOME/.local/ptl/venvs/megatron/bin/activate"
 export PYTHON="$HOME/.local/ptl/venvs/megatron/bin/python"
 source scripts/spark_runtime_env.sh
+pip install --no-deps megatron-bridge==0.6.0
+pip install -r requirements-spark.txt
 python -c 'import torch, megatron.bridge, megatron.core, transformer_engine; print(torch.__version__, torch.cuda.is_available())'
+python -c 'from megatron.bridge import AutoBridge; from megatron.bridge.peft.lora import LoRA'
 ```
 
 Helper는 venv의 userspace library 경로와 extension suffix를 설정하며 driver나 system package를 설치하지 않습니다.
