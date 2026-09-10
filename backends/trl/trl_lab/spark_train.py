@@ -268,6 +268,13 @@ def _uses_deepspeed_nvme(config: SparkConfig) -> bool:
     return any(zero.get(name, {}).get("device") == "nvme" for name in ("offload_param", "offload_optimizer"))
 
 
+def _save_trained_model(trainer: Any, config: SparkConfig) -> None:
+    destination = config.output_dir / ("adapter" if config.finetuning_mode == "lora" else "model")
+    trainer.save_model(str(destination))
+    if config.distributed_backend == "ddp" and config.finetuning_mode == "lora" and _rank() != 0:
+        trainer.accelerator.unwrap_model(trainer.model).save_pretrained(str(destination))
+
+
 def _sample_trainable_parameters(trainable_named: list[tuple[str, Any]], limit: int = 8) -> list[tuple[str, Any]]:
     """Prefer immediately-updatable LoRA B weights, then full-model output/norm weights."""
 
@@ -402,7 +409,7 @@ def main() -> None:
                 if _uses_deepspeed_nvme(config)
                 else trainer.evaluate()
             )
-            trainer.save_model(str(config.output_dir / "adapter" if args.finetuning_mode == "lora" else config.output_dir / "model"))
+            _save_trained_model(trainer, config)
             train_metrics = dict(result.metrics)
             update_count = int(result.global_step)
             train_seconds = time.perf_counter() - started

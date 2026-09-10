@@ -155,7 +155,7 @@ Megatron은 `PYTHONPATH=backends/megatron`과 `megatron_lab.prepare_service_data
 임의 revision을 채워 우회하지 말고, 불변 버전과 호환 manifest를 만드는 구현이 별도로 필요하다는 제한으로 취급합니다.
 
 Spark 전처리는 모델의 native template으로 마지막 assistant 이전 prompt와 마지막 응답·EOS를 분리합니다.
-토큰 경계와 supervised token을 검사하며 길이를 초과하면 조용히 자르지 않고 중단합니다.
+TRL은 tokenizer 경계 병합을 Trainer와 같은 방식으로 처리하고 길이 초과 행을 stderr에 기록한 뒤 제외하며, Megatron은 길이 초과 시 중단합니다.
 Test 입력, `chosen`/`rejected` 선호도 쌍, 구조화된 `tool_calls`는 현재 SFT 입력 경로의 대체물이 아닙니다.
 
 변환 후에도 작은 학습으로 로딩과 loss를 확인해야 하며, 데이터 간 validation loss만으로 품질 순위를 정하지 않습니다.

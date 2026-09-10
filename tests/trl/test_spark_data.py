@@ -63,7 +63,7 @@ def test_non_assistant_final_turn_fails() -> None:
         render_prompt_completion(bad, FakeTokenizer())
 
 
-def test_unknown_prompt_role_and_boundary_merge_fail() -> None:
+def test_unknown_prompt_role_fails_and_boundary_merge_is_accepted() -> None:
     bad_role = row()
     bad_role["messages"][0]["role"] = "tool"
     with pytest.raises(ValueError, match="unsupported message role"):
@@ -73,10 +73,9 @@ def test_unknown_prompt_role_and_boundary_merge_fail() -> None:
         def __call__(self, text, **kwargs):
             if text.endswith("assistant:"):
                 return {"input_ids": [1, 2]}
-            return {"input_ids": [7, self.eos_token_id]}
+            return {"input_ids": [7, 8, self.eos_token_id]}
 
-    with pytest.raises(ValueError, match="not a prefix"):
-        render_prompt_completion(row(), BoundaryMergingTokenizer())
+    assert render_prompt_completion(row(), BoundaryMergingTokenizer())["supervised_tokens"] == 1
 
 
 def test_final_structured_call_fails_but_null_field_is_not_a_call() -> None:
@@ -120,6 +119,27 @@ def test_requested_rows_must_be_available(tmp_path: Path) -> None:
             512,
             train_samples=2,
         )
+
+
+def test_overlong_rows_are_skipped_without_reducing_requested_count(tmp_path: Path, capsys) -> None:
+    short = row("short")
+    short["messages"][0]["content"] = "Q"
+    (tmp_path / "training.jsonl").write_text(
+        "\n".join((json.dumps(row("long")), json.dumps(short))) + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "validation.jsonl").write_text(json.dumps(short | {"prompt_id": "eval"}) + "\n", encoding="utf-8")
+    (tmp_path / "manifest.json").write_text(
+        json.dumps({"dataset": "public/data", "dataset_revision": "a" * 40}),
+        encoding="utf-8",
+    )
+
+    _, metadata = prepare_prompt_completion_data(
+        tmp_path, tmp_path / "prepared", FakeTokenizer(), "public/data", "a" * 40, 30, train_samples=1,
+    )
+
+    assert metadata["actual_selected_rows"]["train"] == ["short"]
+    assert "skipping train example long" in capsys.readouterr().err
 
 
 def test_preparation_streams_disk_backed_trainer_inputs(tmp_path: Path) -> None:

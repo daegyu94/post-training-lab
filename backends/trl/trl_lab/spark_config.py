@@ -249,7 +249,13 @@ def validate_config(config: SparkConfig) -> str:
             "distributed_backend must be one of ddp, fsdp2, or deepspeed"
         )
     if config.distributed_backend == "deepspeed":
-        validate_deepspeed_config(config.deepspeed_config)
+        deepspeed = validate_deepspeed_config(config.deepspeed_config)
+        zero = deepspeed["zero_optimization"]
+        if config.finetuning_mode == "lora" and any(
+            zero.get(name, {}).get("device") == "nvme"
+            for name in ("offload_param", "offload_optimizer")
+        ):
+            raise ValueError("LoRA with DeepSpeed NVMe offload is unsupported; use DDP or full fine-tuning")
     elif config.deepspeed_config is not None:
         raise ValueError("deepspeed_config is valid only with distributed_backend=deepspeed")
     if config.distributed_backend == "fsdp2" and config.stage == "tuned":

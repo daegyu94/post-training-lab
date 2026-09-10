@@ -440,7 +440,20 @@ def test_glm_config_uses_local_provider_and_known_options_only(tmp_path: Path, m
                 return {"input_ids": [2, 999]}
             return {"input_ids": [1, 2, 999]}
 
-    from megatron_lab.config import build_cluster_config
+    from megatron_lab import config as config_module
+
+    dataset_builds = 0
+    original_build_cluster_dataset = config_module._build_cluster_dataset
+
+    def count_dataset_builds(args):
+        nonlocal dataset_builds
+        dataset_builds += 1
+        return original_build_cluster_dataset(args)
+
+    monkeypatch.setattr(
+        config_module, "_build_cluster_dataset", count_dataset_builds
+    )
+    build_cluster_config = config_module.build_cluster_config
 
     args = Namespace(
         setup="spark-cluster",
@@ -499,6 +512,7 @@ def test_glm_config_uses_local_provider_and_known_options_only(tmp_path: Path, m
     args.save_interval = 3
     custom_cfg, _ = build_cluster_config(args)
     assert custom_cfg.checkpoint.save_interval == 3
+    assert dataset_builds == 3
 
 
 def test_cluster_launcher_passes_explicit_ranks_and_resume_horizon(tmp_path: Path) -> None:

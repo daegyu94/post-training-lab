@@ -95,7 +95,7 @@ def test_offload_selects_deepspeed_config_and_forces_backend(tmp_path: Path) -> 
         "--backend", "trl", "--dataset", "ultrachat",
         "--model-id", "m", "--model-revision", MODEL_REVISION,
         "--setup", str(setup_path), "--output", str(tmp_path / "out"),
-        "--offload", "nvme",
+        "--offload", "nvme", "--finetuning-mode", "full",
     ])
     setup = run.load_setup(setup_path)
 
@@ -103,6 +103,21 @@ def test_offload_selects_deepspeed_config_and_forces_backend(tmp_path: Path) -> 
 
     assert experiment["env"]["DISTRIBUTED_BACKEND"] == "deepspeed"
     assert experiment["env"]["DEEPSPEED_CONFIG"] == "configs/deepspeed-zero3-nvme.json"
+
+
+def test_nvme_offload_rejects_lora(tmp_path: Path) -> None:
+    data_dir = tmp_path / "data"
+    write_manifest(data_dir, dataset="HuggingFaceH4/ultrachat_200k", dataset_revision=ULTRACHAT_REVISION)
+    setup_path = setup_file(tmp_path, data_dir=data_dir)
+    args = build.parse_args([
+        "--backend", "trl", "--dataset", "ultrachat",
+        "--model-id", "m", "--model-revision", MODEL_REVISION,
+        "--setup", str(setup_path), "--output", str(tmp_path / "out"),
+        "--offload", "nvme",
+    ])
+
+    with pytest.raises(run.ConfigError, match="requires --finetuning-mode full"):
+        build.build_experiment(args, run.load_setup(setup_path))
 
 
 def test_dataset_choices_exclude_reference_only_presets(tmp_path: Path) -> None:

@@ -67,7 +67,7 @@ python experiments/build.py \
 
 `--epochs`는 `--max-steps`와 배타적입니다. TRL은 `spark_train.py`가 HF `SFTConfig`의 `num_train_epochs`/`max_steps=-1` sentinel로 직접 처리합니다. Megatron은 step 기반 scheduler라 `--epochs`를 `build.py`가 미리 `steps = ceil(epochs * train_count / global_batch_size)`로 계산해 `MAX_STEPS`/`SCHEDULE_STEPS`로 넣습니다 — 이 계산은 이미 준비된 dataset의 `manifest.json`(`train_count`)을 controller에서 직접 읽을 수 있을 때만 가능합니다. `data_dir`가 node-local 경로([30B NVMe 실습](../labs/nvme-30b/README.md#training-data-storage-general-principle-vs-this-poc) 참고)인 지금 이 클러스터 구성에서는 controller가 그 경로를 읽을 수 없으므로 **Megatron에서 `--epochs`는 항상 명확한 오류로 즉시 멈추며, `--max-steps`를 직접 써야 합니다.** TRL은 `spark_train.py`가 실행 시점에 노드에서 직접 epoch를 처리하므로 이 제약이 없습니다.
 
-`--offload {none,cpu,nvme}`는 TRL 전용입니다. `cpu`/`nvme`는 `--distributed-backend deepspeed`를 강제하고 `backends/trl/configs/deepspeed-zero3-{cpu,nvme}.json`을 선택합니다. `--backend megatron`과 함께 쓰면 즉시 오류입니다 — Megatron은 오늘 offload 경로가 없습니다.
+`--offload {none,cpu,nvme}`는 TRL 전용입니다. `cpu`/`nvme`는 `--distributed-backend deepspeed`를 강제하고 `backends/trl/configs/deepspeed-zero3-{cpu,nvme}.json`을 선택합니다. NVMe profile은 full fine-tuning 전용이므로 `--finetuning-mode full`이 필요합니다. `--backend megatron`과 함께 쓰면 즉시 오류입니다 — Megatron은 오늘 offload 경로가 없습니다.
 
 Megatron 전용 `--tp`/`--pp`/`--ep`/`--global-batch-size`/`--micro-batch-size`는 이 저장소에서 이미 검증된 30B preset의 기본값(TP=1, PP=1, EP=2)을 그대로 씁니다 — Megatron parallelism을 몰라도 일단 돌아가는 값입니다. 각 옵션의 뜻은 `python experiments/build.py --help`에서 확인합니다.
 
@@ -94,7 +94,7 @@ Dataset 준비(`prepare_public_data.py`)는 `build.py`가 대신 실행하지 �
 
 `train`과 `tuned`의 `eval_loss`가 소수점까지 정확히 같다는 것은 저장된 LoRA adapter를 다시 읽어도 수치가 흔들리지 않는다는 재로딩 신뢰성 증거입니다. `base`→`train`의 감소폭이 작은 건 256개 샘플·16 step만 학습했기 때문이며, 이 값 자체를 모델 품질의 일반적 지표로 확대 해석하지 않습니다.
 
-이 사례는 DDP+LoRA 특유의 문제도 실제로 드러냈습니다: `output_root`가 node-local이라 `train`이 global rank 0의 노드에만 adapter를 남기고, 다른 rank의 노드에는 그 사본이 없어 `tuned`가 `tuned LoRA stage requires output_dir/adapter`로 실패했습니다. 이는 `build.py`나 실험 설정의 문제가 아니라 **모델(과 adapter)은 모든 rank에 복제되어야 하는데 저장은 rank 0만 하고, 저장 위치가 노드마다 독립된 로컬 디스크라 자동으로 안 퍼진 것**입니다. 복구는 adapter 디렉터리를 다른 rank의 노드로 명시적으로 복사한 뒤 `tuned`를 다시 실행하는 것이었고, 자세한 내용과 일반 원칙은 [TRL 백엔드 문서](backends/trl.md#choose-a-distributed-backend)를 따릅니다.
+이 사례는 DDP+LoRA의 node-local 저장 문제도 드러냈습니다: 당시에는 global rank 0의 노드에만 adapter가 남아 `tuned`가 실패했습니다. 현재는 `train` 단계가 각 rank의 node-local adapter를 저장하며, 2노드 `base`→`train`→`tuned` smoke로 재로딩까지 검증했습니다. 자세한 동작은 [TRL 백엔드 문서](backends/trl.md#choose-a-distributed-backend)를 따릅니다.
 
 **Case 3·4 (Megatron `--stage train`)**: `experiments/megatron/qwen3-30b-lora.json`과 `glm-4.7-flash-30b-lora.json`(이 저장소에서 유일하게 손으로 작성되고 검증된 30B preset)은 둘 다 `STAGE=train`만 씁니다. `build.py`의 기본값인 `--stage all`(base→train→tuned)로 이 두 30B MoE 모델을 실행하면, `train`이 checkpoint 저장까지는 성공한 뒤 `tuned` 단계가 checkpoint에서 HF dataset source를 다시 만드는 과정에서 실패합니다 — 이는 `self_oss`나 `ultrachat` 같은 특정 dataset의 문제가 아니라, **이 저장소에서 30B MoE 모델에 대해 `tuned`/resume 경로 자체가 아직 검증된 적이 없다는 뜻**입니다. 그래서 case 3·4는 기존 30B preset과 같은 범위인 `--stage train`으로 실행했고, `--stage all`의 30B 검증은 별도 과제로 남습니다.
 

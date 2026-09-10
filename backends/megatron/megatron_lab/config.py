@@ -422,7 +422,6 @@ def build_cluster_config(args: Namespace):
     _set_model_option(model, "recompute_num_layers", 1 if recompute else None)
 
     cfg.tokenizer.tokenizer_model = str(args.model_dir)
-    cfg.dataset = _build_cluster_dataset(args)
     cfg.train.train_iters = args.max_steps
     cfg.train.global_batch_size = topology.global_batch_size
     cfg.train.micro_batch_size = topology.micro_batch_size

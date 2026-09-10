@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import sys
 import tempfile
 from typing import Any
 
@@ -57,8 +58,6 @@ def render_prompt_completion(row: dict[str, Any], tokenizer: Any) -> dict[str, A
     completion = _text(final.get("content"), "assistant.content") + eos
     prompt_tokens = _token_ids(tokenizer, prompt)
     combined_tokens = _token_ids(tokenizer, prompt + completion)
-    if combined_tokens[:len(prompt_tokens)] != prompt_tokens:
-        raise ValueError("native prompt tokenization is not a prefix of prompt plus completion")
     supervised_tokens = len(combined_tokens) - len(prompt_tokens)
     if supervised_tokens < 1:
         raise ValueError("final assistant completion has no supervised tokens")
@@ -108,9 +107,12 @@ def _iter_examples(
             example = render_prompt_completion(row, tokenizer)
             total_tokens = example["prompt_tokens"] + example["supervised_tokens"]
             if total_tokens > max_length:
-                raise ValueError(
-                    f"{split} example {example['prompt_id']} exceeds max_length={max_length}"
+                print(
+                    f"[data] skipping {split} example {example['prompt_id']}: "
+                    f"{total_tokens} tokens exceeds max_length={max_length}",
+                    file=sys.stderr,
                 )
+                continue
             count += 1
             yield example
     if count == 0:

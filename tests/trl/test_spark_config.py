@@ -195,6 +195,19 @@ def test_deepspeed_backend_allows_tuned_reload(tmp_path: Path) -> None:
     }))
 
 
+def test_deepspeed_nvme_rejects_lora(tmp_path: Path) -> None:
+    config = make_inputs(tmp_path)
+    profile = Path(__file__).parents[2] / "backends" / "trl" / "configs" / "deepspeed-zero3-nvme.json"
+
+    with pytest.raises(ValueError, match="LoRA with DeepSpeed NVMe offload is unsupported"):
+        validate_config(SparkConfig(**{
+            **config.__dict__,
+            "distributed_backend": "deepspeed",
+            "deepspeed_config": profile,
+            "finetuning_mode": "lora",
+        }))
+
+
 @pytest.mark.parametrize("name, stage", [
     ("deepspeed-zero2.json", 2),
     ("deepspeed-zero3.json", 3),

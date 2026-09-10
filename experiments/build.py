@@ -123,6 +123,8 @@ def build_experiment(args: argparse.Namespace, setup: dict[str, Any]) -> dict[st
         raise run.ConfigError("--offload is TRL-only; Megatron has no offload/parameter-offload path today")
     if args.offload != "none" and args.backend == "trl" and args.distributed_backend not in ("ddp", "deepspeed"):
         raise run.ConfigError("--offload requires --distributed-backend deepspeed (or the default, which it will set)")
+    if args.offload == "nvme" and args.finetuning_mode == "lora":
+        raise run.ConfigError("--offload nvme requires --finetuning-mode full; use --offload none for LoRA")
 
     env: dict[str, Any] = {
         "MODEL_ID": args.model_id, "MODEL_REVISION": args.model_revision,

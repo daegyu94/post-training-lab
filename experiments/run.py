@@ -188,6 +188,12 @@ def load_experiment(path: Path) -> dict[str, Any]:
             raise ConfigError("TRL fsdp2 only supports STAGE=base or STAGE=train")
         if distributed == "deepspeed" and not value["env"].get("DEEPSPEED_CONFIG"):
             raise ConfigError("TRL deepspeed requires DEEPSPEED_CONFIG")
+        if (
+            distributed == "deepspeed"
+            and Path(value["env"].get("DEEPSPEED_CONFIG", "")).name == "deepspeed-zero3-nvme.json"
+            and value["env"].get("FINETUNING_MODE", "lora") == "lora"
+        ):
+            raise ConfigError("TRL LoRA with NVMe offload is unsupported; use DDP or full fine-tuning")
     else:
         stage = value["env"].get("STAGE", "all")
         if stage not in {"all", "base", "train", "tuned"}:

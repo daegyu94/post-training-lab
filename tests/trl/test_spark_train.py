@@ -187,6 +187,22 @@ def test_deepspeed_nvme_profile_is_detected(tmp_path: Path) -> None:
     assert spark_train._uses_deepspeed_nvme(config)
 
 
+def test_nonzero_ddp_rank_saves_lora_to_its_node_local_output(monkeypatch, tmp_path: Path) -> None:
+    calls = []
+    model = types.SimpleNamespace(save_pretrained=lambda path: calls.append(("local", path)))
+    trainer = types.SimpleNamespace(
+        model=model,
+        accelerator=types.SimpleNamespace(unwrap_model=lambda value: value),
+        save_model=lambda path: calls.append(("trainer", path)),
+    )
+    config = types.SimpleNamespace(output_dir=tmp_path, finetuning_mode="lora", distributed_backend="ddp")
+    monkeypatch.setenv("RANK", "1")
+
+    spark_train._save_trained_model(trainer, config)
+
+    assert calls == [("trainer", str(tmp_path / "adapter")), ("local", str(tmp_path / "adapter"))]
+
+
 def test_parameter_sampling_keeps_representative_update_evidence() -> None:
     parameter = FakeTensor()
     selected = spark_train._sample_trainable_parameters([
