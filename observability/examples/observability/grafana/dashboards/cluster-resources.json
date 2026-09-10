@@ -33,7 +33,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Network throughput",
+      "title": "TCP/Ethernet network throughput",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
       "targets": [
         {"expr": "sum by (instance) (rate(node_network_receive_bytes_total{device!~\"lo|docker.*|veth.*\"}[1m]))", "legendFormat": "{{instance}} RX"},
@@ -43,8 +43,18 @@
     },
     {
       "type": "timeseries",
-      "title": "Disk I/O busy time",
+      "title": "RDMA (InfiniBand/RoCE) throughput",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "targets": [
+        {"expr": "sum by (instance) (rate(node_infiniband_port_data_received_bytes_total[1m]))", "legendFormat": "{{instance}} RX"},
+        {"expr": "sum by (instance) (rate(node_infiniband_port_data_transmitted_bytes_total[1m]))", "legendFormat": "{{instance}} TX"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "Bps"}, "overrides": []}
+    },
+    {
+      "type": "timeseries",
+      "title": "Disk I/O busy time",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
       "targets": [{"expr": "rate(node_disk_io_time_seconds_total[1m])", "legendFormat": "{{instance}} {{device}}"}],
       "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0}, "overrides": []}
     }

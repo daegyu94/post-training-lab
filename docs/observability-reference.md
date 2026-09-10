@@ -83,6 +83,10 @@ Bytes와 duration을 모두 얻을 수 있으면 `data_movement_effective_bandwi
 | Host memory → GPU | framework data wait와 pinned memory | PyTorch Profiler memory copy event 또는 Nsight Systems |
 | GPU ↔ GPU in one node | DCGM utilization과 framework collective timer | NCCL Tests single-node baseline, selected trace |
 | GPU node ↔ GPU node | NIC/InfiniBand counter와 communication timer | NCCL Tests multi-node baseline, GPUDirect RDMA 확인 |
+
+RoCE NIC는 같은 물리 포트에서 두 경로를 분리해서 셉니다: 일반 TCP/IP 소켓 트래픽은 kernel netdev 경로를 지나 `node_network_*`(`network_receive_bytes_per_second`, `network_transmit_bytes_per_second`, `network_errors_total`)로 잡히고, RDMA verbs 트래픽(NCCL의 IB transport 포함)은 kernel bypass 경로를 지나 `/sys/class/infiniband`의 InfiniBand counter로 잡힙니다.
+Node Exporter의 `infiniband` collector는 기본으로 켜져 있어 별도 flag 없이 이 두 번째 경로를 `node_infiniband_port_data_received_bytes_total`, `node_infiniband_port_data_transmitted_bytes_total`(및 오류 counter)로 노출하며, `metrics.json`은 이를 `rdma_receive_bytes_per_second`, `rdma_transmit_bytes_per_second`, `rdma_errors_total`로 정의합니다.
+`network_*` metric만 보면 RDMA 트래픽이 잡히지 않으므로, GPU node 간 collective가 RDMA를 실제로 쓰는지 확인하려면 `rdma_*` metric(또는 dashboard의 "RDMA (InfiniBand/RoCE) throughput" panel)을 함께 봐야 합니다.
 | GPU/host → checkpoint storage | checkpoint timer, storage throughput와 volume | writer/rank coordination trace |
 
 Node Exporter와 DCGM만으로는 bytes가 어떤 framework phase나 rank에서 발생했는지 알 수 없습니다.

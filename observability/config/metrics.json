@@ -360,6 +360,30 @@
       "policy": "always"
     },
     {
+      "name": "rdma_receive_bytes_per_second",
+      "category": "network",
+      "unit": "bytes/s",
+      "scope": "interface",
+      "source": "Node Exporter infiniband collector",
+      "policy": "always"
+    },
+    {
+      "name": "rdma_transmit_bytes_per_second",
+      "category": "network",
+      "unit": "bytes/s",
+      "scope": "interface",
+      "source": "Node Exporter infiniband collector",
+      "policy": "always"
+    },
+    {
+      "name": "rdma_errors_total",
+      "category": "network",
+      "unit": "events",
+      "scope": "interface",
+      "source": "Node Exporter infiniband collector",
+      "policy": "always"
+    },
+    {
       "name": "collective_bandwidth_bytes_per_second",
       "category": "network",
       "unit": "bytes/s",
