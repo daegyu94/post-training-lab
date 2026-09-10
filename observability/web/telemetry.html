@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Spark measured telemetry · Post-Training Lab</title>
+<title>Lightweight Live Viewer · Post-Training Lab</title>
 <script src="assets/theme.js"></script>
 <script src="assets/charts.js"></script>
 <style>
@@ -11,9 +11,9 @@ body{font:16px system-ui;background:#101722;color:#e4edf7;max-width:1200px;margi
 <link rel="stylesheet" href="assets/theme.css">
 </head>
 <body class="measured-page">
-<div class="measured-toolbar"><a href="index.html">Dashboard / Run history</a><label class="theme-control">Theme <select data-theme-select aria-label="Color theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div>
-<h1>Spark measured telemetry</h1>
-<p>REAL MEASUREMENTS · Linux /proc와 framework adapter가 보낸 노드 자원, loss, throughput과 rank timer입니다.</p>
+<div class="measured-toolbar"><label class="theme-control">Theme <select data-theme-select aria-label="Color theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div>
+<h1>Lightweight Live Viewer</h1>
+<p>REAL MEASUREMENTS · Linux /proc와 framework adapter가 보낸 노드 자원, loss, throughput과 rank timer입니다. GPU와 RDMA는 다루지 않습니다 — 그건 Grafana 대시보드를 씁니다. Prometheus·Grafana 없이 이 프로세스 하나로 봅니다.</p>
 <p>Spark GB10 UMA: CPU와 GPU가 같은 물리 메모리를 공유합니다. System used는 CPU 전용 사용량이 아니며 GPU 메모리와 더하지 않습니다. GPU framebuffer 사용량 N/A는 0이 아닙니다. Available과 swap을 함께 확인하세요.</p>
 <label>Source <select id="source"><option value="snapshot">Bundled snapshot</option><option value="collector">Local collector</option></select></label>
 <label id="collector-config" hidden>Collector URL <input id="collector-url" type="url" value="http://127.0.0.1:8001" inputmode="url" spellcheck="false"></label>

@@ -9,7 +9,7 @@ Host·GPU 계측, Spark monitoring, NCCL baseline과 PyTorch trace 예제입니�
 | `examples/pytorch/` | Synthetic DDP와 selected-rank trace |
 | `profiling_lab/` | 계측, node agent, local collector와 metrics bridge |
 | `scripts/` | 환경 준비·수집·baseline 실행 |
-| `web/` | Collector가 제공하는 profiling dashboard, run history와 실시간 UI |
+| `web/` | Collector가 제공하는 Lightweight Live Viewer(실시간 UI) |
 
 Framework hook은 사용자가 연결하는 예제이며 모든 LLM 학습에 자동 적용되지 않습니다.
 Synthetic 결과와 실제 학습 결과는 구분합니다.

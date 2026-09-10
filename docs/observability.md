@@ -84,13 +84,13 @@ FRAMEWORK_METRICS_DIR='<launcher가 쓴 output-directory>/framework-metrics' \
 `FRAMEWORK_METRICS_DIR`를 NFS 공유 경로로 바꾸는 [Lightweight Local Viewer](#lightweight-local-viewer-history-server-pattern) 패턴과 이 bridge를 같이 쓰지는 않습니다 — 그러면 두 노드의 `node` role이 같은 파일을 각자 읽어 같은 rank가 두 `instance` label로 중복 노출됩니다.
 Grafana로만 보는 이 경로에서는 각 노드가 자신의 node-local `FRAMEWORK_METRICS_DIR`(기본값)만 읽게 두는 것이 맞습니다.
 
-아래 [Controller에서 결과 수집과 표시](#controller에서-결과-수집과-표시) 절의 `profiling_lab.collector`/`node_agent`는 목적이 다른 별도 도구입니다.
-Prometheus·Grafana 없이 Python 프로세스 하나로 뜨는 자체 웹 UI로, 학습 중 실시간 스트림과 과거 run 요약·비교(run history)에 초점을 두며 CPU·메모리·NIC(TCP)와 학습 지표만 다룹니다 — GPU와 RDMA는 다루지 않습니다.
-지금 이 노드에서 host·GPU·network·RDMA·학습 지표를 한 화면에서 상시로 보려면 위 Grafana 대시보드를 쓰고, 과거 run을 비교하거나 Prometheus·Grafana 없이 가볍게 보고 싶을 때만 아래 절을 씁니다.
+아래 [Controller에서 결과 수집과 표시](#controller에서-결과-수집과-표시) 절의 **Lightweight Live Viewer**(`profiling_lab.collector`/`node_agent`)는 목적이 다른 별도 도구입니다.
+Prometheus·Grafana 없이 Python 프로세스 하나로 뜨는 자체 웹 UI로, CPU·메모리·NIC(TCP)와 학습 지표의 실시간 스트림만 보여줍니다 — GPU와 RDMA는 다루지 않고, run history 같은 부가 기능도 없습니다.
+지금 이 노드에서 host·GPU·network·RDMA·학습 지표를 한 화면에서 상시로 보려면 위 Grafana 대시보드를 쓰고, Prometheus·Grafana 인프라 없이 최소한으로 실시간 값만 보고 싶을 때만 아래 절을 씁니다.
 
 ## Controller에서 결과 수집과 표시
 
-이 절은 Prometheus·Grafana와 별개로 동작하는 자체 web UI([Local Viewing](#local-viewing) 참고)입니다 — GPU와 RDMA는 다루지 않으며, 그 대신 run history 비교와 Prometheus·Grafana 없는 가벼운 실행을 지원합니다.
+이 절은 Prometheus·Grafana와 별개로 동작하는 자체 web UI(**Lightweight Live Viewer**, [Local Viewing](#local-viewing) 참고)입니다 — GPU와 RDMA는 다루지 않으며, Prometheus·Grafana 없이 CPU·메모리·NIC·학습 지표만 최소한으로 실시간으로 봅니다.
 
 각 Spark 노드의 GPU sampler는 원본 값을 JSONL로 저장하고 Node Exporter가 읽을 지표 파일도 갱신합니다.
 학습 launcher는 같은 `run_id` 아래에 rank별 로그, summary와 measurement JSONL을 남깁니다.
@@ -121,8 +121,7 @@ PYTHONPATH=observability python3 -m profiling_lab.collector \
 ```
 
 원격 GUI host에서는 `ssh -N -L 8001:127.0.0.1:8001 <controller-host>`를 실행합니다.
-브라우저의 `http://127.0.0.1:8001/`은 전체 profiling dashboard와 run history를, `http://127.0.0.1:8001/telemetry.html`은 실시간 collector 화면을 제공합니다.
-실시간 화면에 같은 token을 입력하면 2초마다 최신 지표를 조회합니다.
+브라우저에서 `http://127.0.0.1:8001/`을 열면 Lightweight Live Viewer가 뜨며, 같은 token을 입력하면 2초마다 최신 지표를 조회합니다.
 
 공통 runner는 output 이름을 `run_id`로 사용하고 TRL과 Megatron adapter가 rank별 최신 metric을 `<output>/framework-metrics/`에 atomic JSON으로 기록합니다.
 TRL은 Trainer가 집계한 loss와 실제 누적 입력 token 차이를 사용하고, Megatron은 callback loss, step wall time, 설정된 batch·sequence 상한 기반 tokens/s와 rank timer를 기록합니다.

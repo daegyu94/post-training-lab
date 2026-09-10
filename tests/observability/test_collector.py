@@ -40,7 +40,7 @@ def test_collector_initializes_local_ui_and_database(tmp_path: Path, monkeypatch
     assert created["address"] == ("127.0.0.1", 8001)
     assert b"Post-Training Lab" in collector.VIEWER.read_bytes()
     assert collector._web_file("/assets/charts.js")[1] == "text/javascript; charset=utf-8"
-    assert collector._web_file("/api/runs.json")[1] == "application/json"
+    assert collector._web_file("/api/telemetry.json")[1] == "application/json"
     assert collector._web_file("/../profiling_lab/collector.py") is None
     with sqlite3.connect(database) as db:
         tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}

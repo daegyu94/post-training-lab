@@ -33,14 +33,14 @@ FRAMEWORK_FIELDS = {
 }
 IDENTIFIER = re.compile(r"^[A-Za-z0-9_.-]{1,64}$")
 TIMER = re.compile(r"^[a-z][a-z0-9_-]{0,63}$")
-VIEWER = Path(__file__).resolve().parents[1] / "web" / "index.html"
+VIEWER = Path(__file__).resolve().parents[1] / "web" / "telemetry.html"
 WEB_ROOT = VIEWER.parent.resolve()
 
 
 def _web_file(request_path: str) -> tuple[bytes, str] | None:
     path = request_path.partition("?")[0]
     if path == "/":
-        path = "/index.html"
+        path = "/telemetry.html"
     candidate = (WEB_ROOT / path.lstrip("/")).resolve()
     if not candidate.is_relative_to(WEB_ROOT) or not candidate.is_file():
         return None

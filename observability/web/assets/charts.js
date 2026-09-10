@@ -1,4 +1,4 @@
-/* Shared SVG line-chart math for index.html and telemetry.html. Pure functions only — no DOM access. */
+/* SVG line-chart math for telemetry.html. Pure functions only — no DOM access. */
 const Charts = (() => {
   function linspace(start, end, count) {
     if (count <= 1) return [start];
