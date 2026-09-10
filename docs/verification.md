@@ -82,6 +82,7 @@ DDP는 parameter와 gradient가 unified memory 한도에 근접하고, 설치된
 - Megatron Spark requirements의 ModelOpt stable pin과 Bridge의 rc 의존성이 달라 fresh-install 전체 성공이 검증되지 않았습니다.
 - 서비스 변환 manifest는 두 Spark validator의 고정 데이터 형식과 다릅니다.
 - Sharded export·resume와 parameter 계측은 백엔드별 제한이 있으므로 학습 성공과 별도 검증해야 합니다.
-- Megatron 30B full-parameter(non-LoRA) SFT는 아직 memory 적합성이 검증되지 않았습니다. `experiments/megatron/qwen3-30b-full.json`(검증된 `qwen3-30b-lora.json`과 `FINETUNING_MODE`만 다름)으로 시도했으나, 로컬에 준비된 `no_robots` 5000행 중 한 행이 검증된 LoRA preset과 같은 `MAX_LENGTH=2048`을 넘어 `cluster_data.py`의 "never truncates" 정책에 막혔습니다 — 이 경계값은 memory 비교의 기준이라 늘리지 않았고, 그 결과 full-parameter 30B의 memory 적합성은 여전히 미확인입니다.
+- Megatron 30B full-parameter(non-LoRA) SFT는 아직 **실측으로는** 검증되지 않았습니다. `experiments/megatron/qwen3-30b-full.json`(검증된 `qwen3-30b-lora.json`과 `FINETUNING_MODE`만 다름)으로 시도했으나, 로컬에 준비된 `no_robots` 5000행 중 한 행이 검증된 LoRA preset과 같은 `MAX_LENGTH=2048`을 넘어 `cluster_data.py`의 "never truncates" 정책에 막혔습니다 — 이 경계값은 memory 비교의 기준이라 늘리지 않았습니다.
+  [메모리 추정기](experiments.md#estimate-memory-before-running-experimentsestimate_memorypy)는 이 구성을 per-rank 149.7 GiB(파라미터 29.9 + gradient 29.9 + Adam optimizer 89.6)로 예측해 노드당 119 GiB 예산을 **약 31 GiB 초과**한다고 봅니다. 같은 구성에서 `--optimizer sgd`는 90.0 GiB로 예산 안에 들어옵니다. 둘 다 추정이며 실행으로 확인한 값이 아닙니다.
 
 실패를 지원 불가능으로 일반화하거나 임의의 revision·버전으로 우회하지 않습니다.

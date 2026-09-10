@@ -51,6 +51,29 @@ TRL NVMe preset의 `train` stage는 학습 직후 같은 프로세스에서 평�
 백엔드가 지원하는 모든 직접 CLI 옵션이 공통 runner에 노출된 것은 아닙니다.
 Runner는 output 디렉터리 이름을 `OBSERVATORY_RUN_ID`로 예약해 framework metric과 host telemetry를 같은 실행에 연결합니다.
 
+## Estimate Memory Before Running (`experiments/estimate_memory.py`)
+
+GPU 시간을 쓰기 전에 "이 구성이 메모리에 들어가는가"를 먼저 계산합니다.
+파라미터 크기는 아키텍처별 수식이 아니라 snapshot의 `*.safetensors` 헤더에서 **실제 텐서 바이트**를 읽어 구하므로, MoE·dense 구분이나 새 아키텍처 대응에 코드 변경이 필요 없습니다. Expert 가중치는 텐서 이름으로 식별해 expert parallel sharding만 따로 적용합니다.
+
+```bash
+python experiments/estimate_memory.py \
+  --model-dir '<snapshot-dir>' \
+  --backend megatron --finetuning-mode full --ep 2 --world-size 2 \
+  --budget-gib 119
+```
+
+`--budget-gib`를 주면 per-rank 예산과 비교해 `FITS` / `DOES NOT FIT`을 판정합니다.
+`--offload cpu|nvme`는 optimizer·gradient를 on-device에서 빼고, 대신 해당 계층이 감당해야 할 용량을 따로 알려줍니다.
+
+| 검증 대상 | 실측 ([Verification](verification.md#30b-gpu-results)) | 이 도구의 예측 |
+| --- | --- | --- |
+| TRL DDP LoRA | 58.825 GiB | 59.2 GiB |
+| TRL FSDP2 LoRA | 32.147 GiB | 29.3 GiB |
+| Megatron LoRA EP=2 | 34.759 GiB | 30.8 GiB |
+
+**이 값은 추정이지 측정이 아닙니다.** CUDA context, allocator 단편화, framework workspace를 모델링하지 않아 실측보다 **낮게** 나오는 경향이 있습니다(위 표에서 최대 -11%). 따라서 여유가 빠듯하게 `FITS`로 나오면 실제로는 안 들어갈 수 있다고 봐야 하며, 판정 근거로 쓸 때는 [Verification](verification.md)의 증거 구분 원칙을 그대로 따릅니다.
+
 ## Build an Experiment from Knobs (`experiments/build.py`)
 
 매번 새 `experiments/*.json`을 손으로 작성하는 대신, `experiments/build.py`가 backend·dataset·model·offload·epoch 같은 간단한 knob을 그 스키마로 매핑해 `experiments/generated/<output 이름>.json`에 쓰고, 그 파일을 그대로 `experiments/run.py`의 `load_setup`/`load_experiment`/`build_plan`/`execute`에 넘깁니다. 검증·SSH 실행 로직은 전혀 새로 만들지 않고 재사용합니다.
