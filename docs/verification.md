@@ -79,7 +79,7 @@ DDP는 parameter와 gradient가 unified memory 한도에 근접하고, 설치된
 ## Known Implementation Limits
 
 - Controller commit이 `unknown`이면 runner가 원격 commit 일치 검사를 생략합니다.
-- Megatron Spark requirements의 ModelOpt stable pin과 Bridge의 rc 의존성이 달라 fresh-install 전체 성공이 검증되지 않았습니다. 실제 fresh venv 시도에서는 이 충돌보다 먼저 `megatron-bridge[recipes]`의 `fast-hadamard-transform` 빌드가 pip 기본 build isolation 때문에 `import torch`에서 실패하는 것을 확인했습니다 — `--no-build-isolation`으로 이 지점은 해결되지만(PyPI sdist로 직접 검증) 이후 tail 전체와 ModelOpt 충돌 자체는 대역폭 제약으로 끝까지 확인하지 못했습니다. 자세한 내용은 [Megatron 문서](backends/megatron.md#spark-environment)를 따릅니다.
+- Megatron `requirements-spark.txt`의 `megatron-bridge[recipes]==0.6.0`은 fresh-install에서 성공한 적이 없습니다. `[recipes]`가 끌어오는 `fast-hadamard-transform==1.1.0`은 실제 CUDA torch·`nvcc`로도 빌드가 안 됩니다 — PyPI sdist 자체에 `csrc/` 소스가 없고 ARM64 사전 빌드 wheel도 없습니다. 검증된 프로덕션 venv도 이 패키지 없이 만들어졌습니다(`[recipes]`의 일부만 선택 설치). 문서에 적힌 ModelOpt `0.46.0` vs Bridge `0.46.0rc1` 충돌은 실제 설치된 core `0.19.0`/bridge `0.6.0` METADATA에서 확인되지 않았고(core는 `nvidia-modelopt[torch]>=0.44`만 요구, `0.46.0`으로 충족됨) 이 블로커 때문에 끝까지 재현해보지 못했습니다. 자세한 내용은 [Megatron 문서](backends/megatron.md#spark-environment)를 따릅니다.
 - 서비스 변환 manifest는 두 Spark validator의 고정 데이터 형식과 다릅니다.
 - Sharded export·resume와 parameter 계측은 백엔드별 제한이 있으므로 학습 성공과 별도 검증해야 합니다.
 - Megatron 30B full-parameter(non-LoRA) SFT는 아직 **실측으로는** 검증되지 않았습니다. `experiments/megatron/qwen3-30b-full.json`(검증된 `qwen3-30b-lora.json`과 `FINETUNING_MODE`만 다름)으로 시도했으나, 로컬에 준비된 `no_robots` 5000행 중 한 행이 검증된 LoRA preset과 같은 `MAX_LENGTH=2048`을 넘어 `cluster_data.py`의 "never truncates" 정책에 막혔습니다 — 이 경계값은 memory 비교의 기준이라 늘리지 않았습니다.

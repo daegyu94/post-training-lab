@@ -36,9 +36,18 @@ Transformer Engine은 ARM64에서 source build했고 optional NCCL EP를 `NVTE_W
 따라서 이 저장소만으로 검증된 단일 fresh-install 명령을 제공할 수 없습니다.
 충돌을 임의로 무시하는 설치 명령 대신 실제 의존성·build 결과를 별도 기록해야 합니다.
 
-실제 fresh venv로 시도한 결과, ModelOpt 충돌보다 **더 먼저** 막히는 지점을 확인했습니다: `megatron-bridge[recipes]==0.6.0`이 끌어오는 `fast-hadamard-transform`(source 배포만 있음)의 `setup.py`가 빌드 시점에 `import torch`를 실행하는데, pip 기본 격리 빌드 환경은 같은 명령으로 설치 중인 torch를 빌드 단계에서 보지 못해 `ModuleNotFoundError: No module named 'torch'`로 실패합니다.
-`pip install --no-build-isolation`을 주면 이 특정 오류는 해결됩니다(PyPI의 실제 sdist로 직접 확인). 다만 이 저장소의 대역폭 제약으로 실제 CUDA torch를 끝까지 설치해 `[recipes]`의 나머지 tail(mistral-common, peft, diffusers, comet-ml, flashinfer 등 다수)과 ModelOpt 충돌까지 전체 성공을 확인하지는 못했습니다 — `fast-hadamard-transform`의 `setup.py`는 `CUDA_HOME`이 없으면 `bare_metal_version`을 참조 전에 정의하지 못하는 별도 버그도 있어, CPU 전용 torch로는 이 지점을 넘을 수 없습니다.
-즉 fresh-install은 최소 `--no-build-isolation`과 정상 동작하는 CUDA toolkit(`CUDA_HOME`)이 필요하며, 이 두 조건을 갖춘 뒤에도 ModelOpt 충돌이 실제로 발생하는지는 여전히 미확인입니다.
+실제 fresh venv로 시도한 결과, ModelOpt 충돌보다 **더 먼저** 막히는 지점이 있고, 그 지점은 어떤 pip 옵션으로도 우회되지 않습니다.
+
+`megatron-bridge[recipes]==0.6.0`이 끌어오는 `fast-hadamard-transform==1.1.0`(source 배포만 있음)은 두 단계로 막힙니다.
+1. `setup.py`가 빌드 시점에 `import torch`를 실행하는데, pip 기본 격리 빌드 환경은 같은 명령으로 설치 중인 torch를 보지 못해 `ModuleNotFoundError: No module named 'torch'`로 실패합니다 — `--no-build-isolation`으로 해결됩니다.
+2. 이 단계를 넘겨도(실제 CUDA torch `2.10.0+cu130`과 `/usr/local/cuda`의 `nvcc 13.0`을 그대로 써서 확인) `cc1plus: fatal error: csrc/fast_hadamard_transform.cpp: No such file or directory`로 막힙니다 — **PyPI의 sdist 자체에 `csrc/`가 없습니다.** 패키지 안의 `SOURCES.txt`에도 `.cpp`/`.cu` 파일이 전혀 나열돼 있지 않고, GitHub 배포 wheel도 `linux_x86_64`만 있어 ARM64 사전 빌드 wheel도 없습니다. 즉 이 버전은 ARM64에서 근본적으로 설치 불가능합니다.
+
+이 사실은 기존 검증된 venv를 직접 확인해서 교차검증했습니다 — `fast_hadamard_transform`은 **프로덕션 venv에도 설치돼 있지 않습니다.**
+`diffusers`, `mistral_common`, `peft`처럼 `[recipes]`의 다른 항목은 있지만 `fast_hadamard_transform`, `flashinfer-python`, `flashinfer-cubin`, `comet-ml`, `mlflow`, `timm`, `open-clip-torch`, `qwen-vl-utils`는 없습니다.
+즉 실제로 동작하는 지금 환경도 `pip install megatron-bridge[recipes]==0.6.0`을 그대로 성공시킨 적이 없고, `[recipes]`의 일부만 선택적으로 설치해서 만들어졌습니다 — 이 저장소가 실제로 쓰는 기능(Qwen/GLM SFT, LoRA, checkpoint)에는 이 항목들이 필요하지 않기 때문입니다.
+fresh-install을 다시 시도할 때는 `megatron-bridge[recipes]`가 아니라 `megatron-bridge`(extra 없이) 설치를 우선 시도하는 편이 맞습니다.
+
+ModelOpt 충돌도 다시 볼 필요가 있습니다: 실제 설치된 `megatron-core` METADATA의 `Requires-Dist`는 `nvidia-modelopt[torch]>=0.44`(느슨한 하한)이며, `megatron-bridge`의 METADATA에는 modelopt가 아예 나오지 않습니다 — `==0.46.0rc1`처럼 정확히 고정된 요구는 현재 설치된 core `0.19.0`/bridge `0.6.0`의 실제 METADATA에서 확인되지 않았습니다. `nvidia-modelopt==0.46.0`이 `>=0.44`를 만족하므로, 문서에 적힌 정확한 버전 충돌은 최신 버전에서는 재현되지 않을 수 있습니다 — 다만 `fast-hadamard-transform`이 그보다 먼저 막혀서 실제 pip resolver로 끝까지 검증하지는 못했습니다.
 
 먼저 각 노드에서 [공통 준비 스크립트](../../setups/spark/README.md#prepare-each-spark-node)를 실행해 system package와 node-local Megatron 가상환경을 준비합니다.
 이 스크립트는 아래 Python package를 대신 설치하지 않으므로, 현재 검증된 환경을 옮기거나 실제 build 결과를 기록하며 의존성을 설치해야 합니다.
