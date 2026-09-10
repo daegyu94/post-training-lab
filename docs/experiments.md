@@ -73,6 +73,33 @@ Megatron 전용 `--tp`/`--pp`/`--ep`/`--global-batch-size`/`--micro-batch-size`�
 
 Dataset 준비(`prepare_public_data.py`)는 `build.py`가 대신 실행하지 않습니다 — HF Hub 다운로드 같은 부수효과를 조립 단계에 숨기지 않기 위해서이며, 준비 절차는 [Datasets](datasets.md)를 그대로 따릅니다.
 
+### Representative Runs
+
+`build.py`가 실제로 다양한 조합을 돌려 다른 결과를 내는지 확인한 네 가지 실행과 그 해석입니다. 모두 이 프로젝트의 실제 2노드 Spark 클러스터, node-local model·dataset 구성([30B NVMe 실습](../labs/nvme-30b/README.md#training-data-storage-general-principle-vs-this-poc) 참고)에서 `--execute`로 실행했습니다.
+
+| Case | Backend | Model | Dataset | knob | 결과 |
+| --- | --- | --- | --- | --- | --- |
+| 1 | TRL DDP | Qwen2.5-0.5B-Instruct | ultrachat (256 train/32 eval) | `--epochs 1` | base/train/tuned 모두 통과 |
+| 2 | TRL DeepSpeed | Qwen3-30B-A3B | no_robots | `--offload nvme --max-steps 1` | train 통과, 별도 `tuned` process 평가 통과 |
+| 3 | Megatron | Qwen3-30B-A3B | self_oss | 기본 TP=1·PP=1·EP=2, `--max-steps 1 --stage train` | 통과 |
+| 4 | Megatron | GLM-4.7-Flash | ultrachat | 기본 TP=1·PP=1·EP=2, `--max-steps 1 --max-length 4096 --stage train` | 통과 |
+
+**Case 1 (epoch 검증)**: `--epochs`가 실제로 HF `SFTConfig`의 `num_train_epochs`를 통해 동작하는지, 그리고 학습이 진짜 loss를 낮추는지 확인하는 사례입니다. `summary-{base,train,tuned}.json`의 `evaluation.eval_loss`를 비교합니다.
+
+| Stage | eval_loss | 의미 |
+| --- | --- | --- |
+| `base` | 1.4340 | 학습 전 원본 모델 |
+| `train` | 1.4308 | 1 epoch(=16 optimizer step) 학습 직후, 같은 process에서 평가 |
+| `tuned` | 1.4308 | 학습이 끝난 adapter를 별도 process에서 다시 읽어 평가 |
+
+`train`과 `tuned`의 `eval_loss`가 소수점까지 정확히 같다는 것은 저장된 LoRA adapter를 다시 읽어도 수치가 흔들리지 않는다는 재로딩 신뢰성 증거입니다. `base`→`train`의 감소폭이 작은 건 256개 샘플·16 step만 학습했기 때문이며, 이 값 자체를 모델 품질의 일반적 지표로 확대 해석하지 않습니다.
+
+이 사례는 DDP+LoRA 특유의 문제도 실제로 드러냈습니다: `output_root`가 node-local이라 `train`이 global rank 0의 노드에만 adapter를 남기고, 다른 rank의 노드에는 그 사본이 없어 `tuned`가 `tuned LoRA stage requires output_dir/adapter`로 실패했습니다. 이는 `build.py`나 실험 설정의 문제가 아니라 **모델(과 adapter)은 모든 rank에 복제되어야 하는데 저장은 rank 0만 하고, 저장 위치가 노드마다 독립된 로컬 디스크라 자동으로 안 퍼진 것**입니다. 복구는 adapter 디렉터리를 다른 rank의 노드로 명시적으로 복사한 뒤 `tuned`를 다시 실행하는 것이었고, 자세한 내용과 일반 원칙은 [TRL 백엔드 문서](backends/trl.md#choose-a-distributed-backend)를 따릅니다.
+
+**Case 3·4 (Megatron `--stage train`)**: `experiments/megatron/qwen3-30b-lora.json`과 `glm-4.7-flash-30b-lora.json`(이 저장소에서 유일하게 손으로 작성되고 검증된 30B preset)은 둘 다 `STAGE=train`만 씁니다. `build.py`의 기본값인 `--stage all`(base→train→tuned)로 이 두 30B MoE 모델을 실행하면, `train`이 checkpoint 저장까지는 성공한 뒤 `tuned` 단계가 checkpoint에서 HF dataset source를 다시 만드는 과정에서 실패합니다 — 이는 `self_oss`나 `ultrachat` 같은 특정 dataset의 문제가 아니라, **이 저장소에서 30B MoE 모델에 대해 `tuned`/resume 경로 자체가 아직 검증된 적이 없다는 뜻**입니다. 그래서 case 3·4는 기존 30B preset과 같은 범위인 `--stage train`으로 실행했고, `--stage all`의 30B 검증은 별도 과제로 남습니다.
+
+Case 4는 `--max-length` 기본값(2048)에서 ultrachat의 한 샘플이 길이를 초과해 한 번 실패했고, `--max-length 4096`으로 재실행해 통과했습니다 — preset마다 실제 대화 길이가 다르므로 `--max-length`를 데이터셋에 맞게 조정해야 할 수 있다는 실제 사례입니다.
+
 ## Repeated Megatron Measurements
 
 이 반복 측정도 `Qwen/Qwen2.5-0.5B-Instruct`와 No Robots를 고정한 저비용 A/B 비교입니다.
