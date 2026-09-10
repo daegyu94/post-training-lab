@@ -35,7 +35,7 @@ SFT는 "사용자 요청"과 "모델이 배워야 할 목표 응답"을 짝지�
 ## Public Data
 
 공개 데이터는 고정된 버전과 변환 조건을 기록해 언제든 같은 파일을 다시 만들 수 있게 합니다.
-두 백엔드의 `scripts/prepare_public_data.sh`는 같은 네 preset과 CLI를 제공하며, 변환 규칙과 고정 revision은 각 백엔드의 `public_data.py`가 정의합니다.
+변환 규칙과 고정 revision은 두 백엔드가 공유하는 `datasets_lab/public_data.py` 한 곳이 정의하며, 진입점은 저장소 루트의 `scripts/prepare_public_data.sh`입니다.
 
 | Preset | 원본 ID | 변환 대상 |
 | --- | --- | --- |
@@ -56,7 +56,6 @@ SWE-agent 기록은 참고 항목일 뿐 CLI preset이 아닙니다.
 명령은 Hub에 접속하고 출력 파일을 교체할 수 있으므로 새 출력 디렉터리를 사용합니다.
 
 ```bash
-cd backends/trl
 PYTHON='<backend-python>' bash scripts/prepare_public_data.sh \
   --preset no_robots \
   --revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b \
@@ -133,14 +132,13 @@ Spark 노드에서 `RuntimeError: Cannot send a request, as the client has been 
 
 ```bash
 trace_output="$(mktemp -d)"
-PYTHONPATH=backends/trl python -m trl_lab.prepare_service_data \
-  --input backends/trl/examples/service-traces.jsonl \
+python -m datasets_lab.prepare_service_data \
+  --input datasets_lab/examples/service-traces.jsonl \
   --output-dir "$trace_output"
 python -m json.tool "$trace_output/manifest.json"
 ```
 
 예상 결과는 학습 2개, 검증 1개, test 1개와 미승인 기록 제외 1개입니다.
-Megatron은 `PYTHONPATH=backends/megatron`과 `megatron_lab.prepare_service_data`로 같은 예제를 실행할 수 있습니다.
 `test.jsonl`의 `grader`는 평가 정보를 담지만 평가기를 자동 실행하지 않습니다.
 `prepare_service_data.sh` 래퍼는 기본적으로 `.venv/bin/python`을 사용하며 `PYTHON`으로 다른 interpreter를 지정할 수 있습니다.
 

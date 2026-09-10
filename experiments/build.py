@@ -7,10 +7,8 @@ validates, writes that file to experiments/generated/<output-name>.json (build_p
 hashes the literal file for provenance, so there is no in-memory shortcut), then calls
 straight into run.load_setup / run.load_experiment / run.build_plan / run.execute.
 
-Dataset presets are read directly from whichever backend's own public_data.PRESETS
-dict matches --backend (trl_lab.public_data or megatron_lab.public_data) rather than
-hardcoding a second list - those two modules are themselves separate, pre-existing
-copies (not deduplicated here; see docs/experiments.md).
+Dataset presets are read directly from datasets_lab.public_data.PRESETS, the single
+adapter both backends share, rather than hardcoding a second list.
 """
 
 from __future__ import annotations
@@ -36,11 +34,9 @@ DEEPSPEED_CONFIGS = {
 DEFAULT_GENERATED_DIR = ROOT / "experiments" / "generated"
 
 
-def _dataset_presets(backend: str) -> dict[str, Any]:
-    if backend == "trl":
-        from trl_lab.public_data import PRESETS
-    else:
-        from megatron_lab.public_data import PRESETS
+def _dataset_presets() -> dict[str, Any]:
+    from datasets_lab.public_data import PRESETS
+
     return {key: spec for key, spec in PRESETS.items() if not spec.reference_only}
 
 
@@ -111,7 +107,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def build_experiment(args: argparse.Namespace, setup: dict[str, Any]) -> dict[str, Any]:
-    presets = _dataset_presets(args.backend)
+    presets = _dataset_presets()
     if args.dataset not in presets:
         raise run.ConfigError(f"--dataset must be one of {sorted(presets)} for backend {args.backend}")
     spec = presets[args.dataset]

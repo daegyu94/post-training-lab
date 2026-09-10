@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from trl_lab.public_data import get_preset, iter_hub_rows, resolve_revision, select_bounded, write_public_jsonl
+from datasets_lab.public_data import get_preset, iter_hub_rows, resolve_revision, select_bounded, write_public_jsonl
 
 
 def main() -> None:

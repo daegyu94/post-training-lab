@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from megatron_lab.public_data import PRESETS, adapt_row, select_bounded, write_public_jsonl
+from datasets_lab.public_data import PRESETS, adapt_row, select_bounded, write_public_jsonl
 
 
 def test_native_and_self_oss_adapters_have_canonical_messages() -> None:

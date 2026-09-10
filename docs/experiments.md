@@ -63,7 +63,7 @@ python experiments/build.py \
 ```
 
 기본값은 이 프로젝트의 실제 2노드 Spark 클러스터에 맞춰져 있습니다(`--nnodes 2`).
-`--dataset`의 선택지는 고정 목록이 아니라 선택한 `--backend`의 `trl_lab.public_data.PRESETS` 또는 `megatron_lab.public_data.PRESETS`에서 그대로 읽습니다(`reference_only`인 preset은 제외).
+`--dataset`의 선택지는 고정 목록이 아니라 두 백엔드가 공유하는 `datasets_lab.public_data.PRESETS`에서 그대로 읽습니다(`reference_only`인 preset은 제외).
 
 `--epochs`는 `--max-steps`와 배타적입니다. TRL은 `spark_train.py`가 HF `SFTConfig`의 `num_train_epochs`/`max_steps=-1` sentinel로 직접 처리합니다. Megatron은 step 기반 scheduler라 `--epochs`를 `build.py`가 미리 `steps = ceil(epochs * train_count / global_batch_size)`로 계산해 `MAX_STEPS`/`SCHEDULE_STEPS`로 넣습니다 — 이 계산은 이미 준비된 dataset의 `manifest.json`(`train_count`)을 controller에서 직접 읽을 수 있을 때만 가능합니다. `data_dir`가 node-local 경로([30B NVMe 실습](../labs/nvme-30b/README.md#training-data-storage-general-principle-vs-this-poc) 참고)인 지금 이 클러스터 구성에서는 controller가 그 경로를 읽을 수 없으므로 **Megatron에서 `--epochs`는 항상 명확한 오류로 즉시 멈추며, `--max-steps`를 직접 써야 합니다.** TRL은 `spark_train.py`가 실행 시점에 노드에서 직접 epoch를 처리하므로 이 제약이 없습니다.
 
