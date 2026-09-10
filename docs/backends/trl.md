@@ -90,6 +90,7 @@ NFS를 사용한다면 Spark 노드 기준인 `/home/spark/shared/...` 경로를
 `tuned` 단계는 새 process에서 저장물을 다시 읽으므로, 저장과 재로딩을 함께 확인할 수 있습니다.
 
 - **DDP** — 데이터만 rank별로 나누고 모델과 LoRA adapter는 각 rank에 복제합니다. `output_root`가 [node-local 경로](../../labs/nvme-30b/README.md#training-data-storage-general-principle-vs-this-poc)여도 `train`이 각 rank에 로컬 adapter를 남기므로 `tuned`가 바로 재로딩합니다.
+- **FSDP2가 `tuned`를 못 하는 이유** — 버그가 아니라 저장 방식과 storage topology의 조합 때문입니다. FSDP2는 `state_dict_type: SHARDED_STATE_DICT`라 각 rank가 자기 shard만 저장하는데(DDP처럼 rank별 전체 복제본을 저장하지 않음), `output_root`가 node-local이라 spark1엔 shard 0, spark2엔 shard 1만 남고 이를 한곳에서 보는 공유 경로가 없습니다. `tuned`는 새 process가 저장물을 다시 읽어야 하는데 한 노드에서는 자기 shard밖에 못 보므로 아직 지원하지 않습니다.
 - **DeepSpeed** — LoRA는 기존 adapter reload 경로를 그대로 쓰고, full fine-tuning은 별도 process가 native ZeRO checkpoint를 새 엔진에 rank-local로 불러와 평가합니다.
 
 ### DeepSpeed NVMe offload profile
