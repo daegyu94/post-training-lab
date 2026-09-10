@@ -47,6 +47,21 @@ Server는 종료할 때까지 실행하므로 작업을 마치면 해당 세션�
 일부 GB10 NVML 값은 unavailable/null이며 이를 사용량 0으로 해석하지 않습니다.
 시스템 메모리와 학습 process의 CUDA allocated/reserved peak도 구분합니다.
 
+Grafana가 loopback에만 열리므로 브라우저에서 보려면 SSH local forwarding이 필요합니다.
+Server role을 실행한 노드(위 예시는 spark1)에서 바로 보는 경우:
+
+```bash
+ssh -NT -L 13000:127.0.0.1:13000 spark@spark1
+```
+
+GUI가 있는 별도 머신에서 controller를 거쳐 보는 경우, controller를 jump host로 한 번 더 거칩니다:
+
+```bash
+ssh -NT -L 13000:127.0.0.1:13000 -J <user>@<controller-ssh-alias> spark@spark1
+```
+
+브라우저에서 `http://localhost:13000` 접속 후 `admin`과 `GRAFANA_ADMIN_PASSWORD`로 로그인합니다.
+
 `server` role이 복사하는 대시보드는 `examples/observability/spark-resources.json`(uid `spark-profiling`)입니다.
 저장소에는 `examples/observability/grafana/dashboards/cluster-resources.json`과 `compose.yaml`도 있는데, 이는 Docker Compose로 Prometheus·Grafana를 띄우는 별도의 일반 예시이며 이 ARM64 Spark 클러스터 워크플로우에서는 쓰이지 않습니다 — 대시보드를 고칠 때는 `spark-resources.json` 쪽을 수정해야 실제로 반영됩니다.
 
