@@ -54,7 +54,8 @@ Server role을 실행한 노드(위 예시는 spark1)에서 바로 보는 경우
 ssh -NT -L 13000:127.0.0.1:13000 spark@spark1
 ```
 
-GUI가 있는 별도 머신에서 controller를 거쳐 보는 경우, controller를 jump host로 한 번 더 거칩니다:
+Controller 자체에는 GUI(브라우저)가 없고 사용자의 실제 client 머신에서 SSH로 접속해 쓰는 host이므로, 브라우저는 그 client 머신에서 엽니다.
+그래서 client → controller → spark1 순서로 SSH forwarding을 두 번 거쳐야 하며, controller는 GUI 없이 순수 jump host로만 씁니다:
 
 ```bash
 ssh -NT -L 13000:127.0.0.1:13000 -J <user>@<controller-ssh-alias> spark@spark1
