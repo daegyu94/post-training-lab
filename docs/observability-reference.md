@@ -109,7 +109,7 @@ python -m pytest -q tests/observability/test_schema.py
 
 공통 runner는 `OBSERVATORY_RUN_ID`를 실행 output 이름으로 설정합니다.
 TRL callback과 Megatron Bridge callback은 collector와 통신하지 않고 rank별 최신 JSON을 `<output>/framework-metrics/`에 atomic replace합니다.
-이 JSON을 실제로 어디서 읽는지는 목적에 따라 다릅니다 — host·GPU·network·RDMA까지 한 화면에서 상시로 보려면 같은 노드의 `profiling_lab.framework_metrics_textfile`이 이를 Node Exporter textfile collector로 재발행해 Grafana에서 바로 보이고([Local Viewing](observability.md#local-viewing)), Prometheus·Grafana 없이 CPU·메모리·NIC·학습 지표만 가볍게 보려면 `profiling_lab.node_agent`가 (loopback 또는 SSH reverse tunnel로) `profiling_lab.collector`에 전송합니다([Controller에서 결과 수집과 표시](observability.md#controller에서-결과-수집과-표시)).
+이 JSON을 실제로 어디서 읽는지는 목적에 따라 다릅니다 — host·GPU·network·RDMA까지 한 화면에서 상시로 보려면 같은 노드의 `profiling_lab.framework_metrics_textfile`이 이를 Node Exporter textfile collector로 재발행해 Grafana에서 바로 보이고([Local Viewing](observability.md#local-viewing)), 과거 run을 서버 없이 조회하려면 `profiling_lab.show_run`이 output-dir의 파일을 직접 읽습니다([Run History](observability.md#run-history)).
 TRL tokens/s는 Trainer의 누적 입력 token 차이이고 Megatron tokens/s는 `global_batch_size * max_length`를 callback wall time으로 나눈 configured-token 처리율이므로 variable-length 실행의 실제 non-padding token 처리율로 해석하지 않습니다.
 Megatron timer는 `timing_log_level=1`에서 이미 계산한 timer의 rank-local `active_time` 차이를 읽으며 adapter 때문에 추가 collective를 실행하지 않습니다.
 

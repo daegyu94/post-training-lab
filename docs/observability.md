@@ -81,135 +81,22 @@ FRAMEWORK_METRICS_DIR='<launcher가 쓴 output-directory>/framework-metrics' \
 결과적으로 `spark-resources.json`의 `TCP/Ethernet network throughput`, `RDMA (InfiniBand/RoCE) throughput`, `Training loss`, `Training throughput (tokens/s)`, `Training step time`, `Training sample age` panel까지 host·GPU·network·RDMA·학습 지표가 **하나의 Grafana 대시보드**에서 보입니다.
 `FRAMEWORK_METRICS_DIR`를 지정하지 않으면 이 process는 시작되지 않고 나머지 host/GPU 모니터링은 그대로 동작합니다.
 
-`FRAMEWORK_METRICS_DIR`를 NFS 공유 경로로 바꾸는 [Lightweight Local Viewer](#lightweight-local-viewer-history-server-pattern) 패턴과 이 bridge를 같이 쓰지는 않습니다 — 그러면 두 노드의 `node` role이 같은 파일을 각자 읽어 같은 rank가 두 `instance` label로 중복 노출됩니다.
-Grafana로만 보는 이 경로에서는 각 노드가 자신의 node-local `FRAMEWORK_METRICS_DIR`(기본값)만 읽게 두는 것이 맞습니다.
+`FRAMEWORK_METRICS_DIR`를 NFS 공유 경로로 두 노드 모두에 지정하지는 않습니다 — 그러면 두 노드의 `node` role이 같은 파일을 각자 읽어 같은 rank가 두 `instance` label로 중복 노출됩니다.
+각 노드가 자신의 node-local `FRAMEWORK_METRICS_DIR`(기본값)만 읽게 두는 것이 맞습니다.
 
-아래 [Controller에서 결과 수집과 표시](#controller에서-결과-수집과-표시) 절의 **Lightweight Live Viewer**(`profiling_lab.collector`/`node_agent`)는 목적이 다른 별도 도구입니다.
-Prometheus·Grafana 없이 Python 프로세스 하나로 뜨는 자체 웹 UI로, CPU·메모리·NIC(TCP)와 학습 지표의 실시간 스트림만 보여줍니다 — GPU와 RDMA는 다루지 않고, run history 같은 부가 기능도 없습니다.
-지금 이 노드에서 host·GPU·network·RDMA·학습 지표를 한 화면에서 상시로 보려면 위 Grafana 대시보드를 쓰고, Prometheus·Grafana 인프라 없이 최소한으로 실시간 값만 보고 싶을 때만 아래 절을 씁니다.
+과거 run을 조회하고 싶으면 서버가 필요 없습니다 — 아래 [Run History](#run-history) 절을 씁니다.
 
-## Controller에서 결과 수집과 표시
+## Run History
 
-이 절은 Prometheus·Grafana와 별개로 동작하는 자체 web UI(**Lightweight Live Viewer**, [Local Viewing](#local-viewing) 참고)입니다 — GPU와 RDMA는 다루지 않으며, Prometheus·Grafana 없이 CPU·메모리·NIC·학습 지표만 최소한으로 실시간으로 봅니다.
-
-각 Spark 노드의 GPU sampler는 원본 값을 JSONL로 저장하고 Node Exporter가 읽을 지표 파일도 갱신합니다.
-학습 launcher는 같은 `run_id` 아래에 rank별 로그, summary와 measurement JSONL을 남깁니다.
-
-```text
-spark1 telemetry --+
-                  +--> controller collector --> SQLite --> 실시간 확인
-spark2 telemetry --+                            |
-                                                +--> 내장 웹 UI
-```
-
-이 저장소의 `profiling_lab.collector`는 Python 표준 라이브러리로 만든 controller collector와 로컬 웹 UI를 제공합니다.
-Spark 노드는 SSH reverse tunnel을 통해 측정값을 보내므로 collector port를 외부에 열지 않고도 controller 화면에서 최신 값을 확인할 수 있습니다.
-
-저장소 루트에서 token을 한 번 만들고 collector를 실행합니다.
-Token과 SQLite는 `artifacts/` 아래에 두며 Git에 포함하지 않습니다.
+학습 launcher는 이미 output-dir에 파일로 기록을 남깁니다: Megatron은 `run-metadata-<stage>.json`, TRL은 `summary-<stage>.json`, 그리고 `OBSERVATORY_RUN_ID`/`FRAMEWORK_METRICS_DIR`가 설정돼 있었다면 `framework-metrics/<framework>-rank-<rank>.json`(마지막 step 값)도 남습니다.
+[`profiling_lab.show_run`](../observability/profiling_lab/show_run.py)은 이 파일들을 그냥 읽어서 요약해 출력하는 CLI로, 서버나 collector가 필요 없습니다.
 
 ```bash
-mkdir -p artifacts
-umask 077
-test -s artifacts/observatory-token || \
-  python3 -c 'import secrets; print(secrets.token_hex(24))' > artifacts/observatory-token
-chmod 600 artifacts/observatory-token
-export OBSERVATORY_TOKEN="$(cat artifacts/observatory-token)"
-PYTHONPATH=observability python3 -m profiling_lab.collector \
-  --bind 127.0.0.1 --port 8001 \
-  --database artifacts/observatory.sqlite3
+PYTHONPATH=observability python3 -m profiling_lab.show_run '<output-dir>'
 ```
 
-원격 GUI host에서는 `ssh -N -L 8001:127.0.0.1:8001 <controller-host>`를 실행합니다.
-브라우저에서 `http://127.0.0.1:8001/`을 열면 Lightweight Live Viewer가 뜨며, 같은 token을 입력하면 2초마다 최신 지표를 조회합니다.
-
-공통 runner는 output 이름을 `run_id`로 사용하고 TRL과 Megatron adapter가 rank별 최신 metric을 `<output>/framework-metrics/`에 atomic JSON으로 기록합니다.
-TRL은 Trainer가 집계한 loss와 실제 누적 입력 token 차이를 사용하고, Megatron은 callback loss, step wall time, 설정된 batch·sequence 상한 기반 tokens/s와 rank timer를 기록합니다.
-
-내장 `profiling_lab.node_agent`에 같은 `run_id`와 `--framework-metrics-dir <output>/framework-metrics`를 주면 노드 전체 CPU·메모리·NIC와 framework metric이 함께 collector로 전송됩니다.
-학습 process는 collector에 직접 접속하지 않으므로 collector 또는 tunnel 장애가 학습 step을 막지 않습니다.
-직접 backend launcher를 실행할 때에는 `OBSERVATORY_RUN_ID`와 `FRAMEWORK_METRICS_DIR`를 함께 설정해야 adapter가 활성화됩니다. 공통 runner를 쓰면 두 값을 자동으로 설정하므로 따로 지정할 필요가 없습니다.
-
-Spark 노드에서 controller의 loopback collector로 보내려면 controller에서 reverse tunnel과 agent를 함께 실행합니다.
-
-```bash
-run_id='<training-output-directory-name>'
-{ cat artifacts/observatory-token; printf '\n'; } | \
-  ssh -o ExitOnForwardFailure=yes -R 18001:127.0.0.1:8001 spark@spark1 \
-    "read -r OBSERVATORY_TOKEN; export OBSERVATORY_TOKEN; \
-     cd /home/spark/shared/post-training-lab; \
-     PYTHONPATH=observability python3 -m profiling_lab.node_agent \
-       --endpoint http://127.0.0.1:18001 --run-id '$run_id' \
-       --framework-metrics-dir '<node-output>/$run_id/framework-metrics'"
-```
-
-`spark2`도 같은 명령으로 실행하며 node-local output 경로만 해당 노드 값으로 지정합니다.
-
-### Lightweight Local Viewer (History Server Pattern)
-
-위 push 경로는 SSH reverse tunnel과 별도 collector 프로세스가 필요합니다.
-Controller와 두 Spark 노드가 이미 같은 NFS 공유 디렉터리를 보고 있으므로(`AGENTS.md`의 NFS 절 참고), `FRAMEWORK_METRICS_DIR`를 node-local NVMe 대신 그 공유 경로로 지정하면 collector나 SSH tunnel 없이도 controller가 파일을 직접 읽을 수 있습니다.
-Apache Spark나 MapReduce의 History Server와 같은 pull 방식입니다: 애플리케이션은 잘 알려진 공유 경로에 쓰기만 하고, 뷰어는 그 경로를 그냥 읽습니다.
-
-```text
-Collector push 경로                           Local viewer pull 경로
-
-spark1 --SSH tunnel--> collector --> SQLite    spark1 --+
-spark2 --SSH tunnel--> collector       |                +--> NFS 공유 경로 (같은 파일, 복사 없음)
-                        |                       spark2 --+          |
-                        +--> 내장 웹 UI                              v
-                                                     controller가 직접 읽음 (SSH·tunnel 불필요)
-                                                                     |
-                                                                     v
-                                                     정적 HTTP server + 브라우저 polling
-```
-
-`backends/trl/scripts/run_spark_cluster.sh`와 `backends/megatron/scripts/run_spark_cluster.sh`는 `FRAMEWORK_METRICS_DIR`가 이미 설정돼 있으면 그 값을 그대로 쓰고, 없으면 기존처럼 `<output>/framework-metrics`(node-local NVMe)를 기본값으로 씁니다.
-공유 경로를 가리키게 하려면 launcher 호출 전에 `FRAMEWORK_METRICS_DIR`를 NFS 경로로 export하면 됩니다. `<output>/model`처럼 checkpoint 저장 경로는 이 값의 영향을 받지 않으므로 30B NVMe 실습처럼 checkpoint 자체는 node-local NVMe에 남기고 metric만 공유 경로로 보낼 수 있습니다.
-내장 collector와 `metrics_bridge`를 사용하면 그 경로의 `<framework>-rank-<rank>.json`을 주기적으로 읽어 같은 로컬 UI에서 볼 수 있습니다.
-이 경로는 값을 외부에 공개하지 않으며 controller에서만 보입니다.
-2026-09-09에 Qwen2.5-0.5B DDP smoke를 60 step으로 돌리며 이 방식을 실제로 검증했습니다: launcher가 공유 경로에 쓴 `trl-rank-0.json`을 controller가 SSH 없이 직접 읽었고, 약 8초 동안 step 4→60까지 13번의 서로 다른 값을 관찰했습니다.
-
-### Metrics Bridge: NFS 지표를 내장 UI에서 보기
-
-`observability/profiling_lab/metrics_bridge.py`는 NFS 공유 `FRAMEWORK_METRICS_DIR`를 주기적으로 읽어 내장 collector API로 전달합니다.
-
-```text
-Node agent 경로 (SSH push)                     Metrics bridge (NFS pull)
-
-spark1 --SSH tunnel--> agent --+               spark1 --+
-spark2 --SSH tunnel--> agent --+--> collector           +--> NFS 공유 경로
-                                                spark2 --+          |
-                                                                     v
-                                              controller의 bridge poller (SSH 불필요)
-                                                                     |
-                                                            POST /api/framework-metrics
-                                                                     v
-                                                    controller의 같은 collector (동일 API)
-                                                                     |
-                                                                     v
-                                                  내장 collector 웹 UI
-```
-
-collector와 poller 모두 controller 안에서만 통신하므로(둘 다 기본값 `127.0.0.1`), Spark 노드로의 SSH나 reverse tunnel이 전혀 없습니다.
-
-```bash
-# collector: post-training-lab 저장소 루트에서
-export OBSERVATORY_TOKEN="$(cat artifacts/observatory-token)"
-PYTHONPATH=observability python3 -m profiling_lab.collector \
-  --database artifacts/observatory.sqlite3
-
-# bridge: post-training-lab 저장소 루트에서
-export OBSERVATORY_TOKEN="<위와 같은 값>"
-PYTHONPATH=observability python3 -m profiling_lab.metrics_bridge \
-  --metrics-dir /path/to/shared/observatory-demo/<run_id>/framework-metrics \
-  --endpoint http://127.0.0.1:8001 --interval 2
-```
-
-`--endpoint`의 기본값은 controller local(`http://127.0.0.1:8001`)입니다.
-Bridge는 NFS 공유 경로를 읽을 수 있는 곳에서 실행합니다.
-
-2026-09-09에 Qwen2.5-0.5B DDP smoke를 80 step으로 돌리며 collector와 bridge가 쓰는 실제 `GET /api/framework-metrics` 계약을 검증했습니다: bridge가 `--once` 없이 계속 돌면서 학습이 진행되는 동안 step 1→80까지 총 22개의 서로 다른 sample을 전달했습니다.
+output-dir가 controller에서 보이지 않는 node-local 경로면 해당 Spark 노드에서 실행합니다.
+`framework-metrics`는 학습 도중에는 최신 step 값이고 학습이 끝나면 마지막 값에 고정되며, 전체 loss 추이가 필요하면 `logs/`의 학습 로그를 확인합니다.
 
 ## Distributed Trace
 
