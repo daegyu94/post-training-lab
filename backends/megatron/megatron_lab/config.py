@@ -416,7 +416,11 @@ def build_cluster_config(args: Namespace):
         "recompute_method",
         "uniform" if recompute == "full" else None,
     )
-    _set_model_option(model, "recompute_num_layers", 1 if recompute else None)
+    # Megatron Core requires recompute_num_layers to be None for "selective" recompute
+    # (it only applies to "full" recompute's uniform/block chunking); setting it
+    # unconditionally raises "recompute_num_layers must be None" at TransformerConfig
+    # validation time.
+    _set_model_option(model, "recompute_num_layers", 1 if recompute == "full" else None)
 
     cfg.tokenizer.tokenizer_model = str(args.model_dir)
     cfg.train.train_iters = args.max_steps

@@ -300,7 +300,20 @@ def test_qwen_layer_spec_stays_core_local(monkeypatch):
     assert model.transformer_layer_spec is marker
 
 
-def test_glm_config_uses_local_provider_and_known_options_only(tmp_path: Path, monkeypatch) -> None:
+@pytest.mark.parametrize(
+    "recompute, expected_granularity, expected_method, expected_num_layers",
+    [
+        ("none", None, None, None),
+        ("full", "full", "uniform", 1),
+        # Megatron Core's TransformerConfig.__post_init__ requires recompute_num_layers
+        # to be None for "selective" (it raises "recompute_num_layers must be None"
+        # otherwise) -- it only applies to "full" recompute's uniform/block chunking.
+        ("selective", "selective", None, None),
+    ],
+)
+def test_glm_config_uses_local_provider_and_known_options_only(
+    tmp_path: Path, monkeypatch, recompute, expected_granularity, expected_method, expected_num_layers
+) -> None:
     """A strict fake catches remote recipe calls and misspelled provider fields."""
 
     model_dir = tmp_path / "glm"
@@ -478,7 +491,7 @@ def test_glm_config_uses_local_provider_and_known_options_only(tmp_path: Path, m
         distributed_optimizer=True,
         overlap_grad_reduce=False,
         sequence_parallel=False,
-        recompute="none",
+        recompute=recompute,
         checkpoint_mode="sync",
         fully_parallel_save=True,
         fully_parallel_load=True,
@@ -498,7 +511,9 @@ def test_glm_config_uses_local_provider_and_known_options_only(tmp_path: Path, m
     assert cfg.model.transformer_layer_spec.keywords["use_transformer_engine"] is True
     assert cfg.model.attention_backend == "auto"
     assert cfg.model.overlap_moe_expert_parallel_comm is False
-    assert cfg.model.recompute_granularity is None
+    assert cfg.model.recompute_granularity == expected_granularity
+    assert cfg.model.recompute_method == expected_method
+    assert cfg.model.recompute_num_layers == expected_num_layers
     assert cfg.optimizer.use_distributed_optimizer is True
     assert cfg.scheduler.max_steps == 10
     assert cfg.checkpoint.save_interval == 5
