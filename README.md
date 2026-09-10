@@ -25,7 +25,9 @@ Controller에는 Python 3.10 이상과 Git이 필요하며 학습에는 준비�
 | --- | --- |
 | `setups/spark/` | 노드·경로·환경 설정 |
 | `experiments/` | 공통 runner·학습 preset·반복 측정 |
-| `backends/` | 백엔드별 학습·데이터·환경 |
+| `datasets_lab/` | 공개·서비스 데이터의 canonical 변환 (두 백엔드 공용) |
+| `scripts/` | 데이터 준비 진입점 |
+| `backends/` | 백엔드별 학습·환경 |
 | `observability/` | 계측·baseline·trace 도구 |
 | `docs/` | 사용자 가이드·reference·설계 |
 | `labs/` | 실습 목표·전제조건·완료 기준 |

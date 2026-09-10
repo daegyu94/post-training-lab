@@ -81,20 +81,25 @@ NFS를 사용한다면 Spark 노드 기준인 `/home/spark/shared/...` 경로를
 
 ## Choose a Distributed Backend
 
-DDP는 `base`, `train`, `tuned`, `all` workflow를 지원하는 기본 선택입니다.
-`tuned` 단계는 새 process에서 LoRA adapter 또는 full model 저장물을 다시 읽으므로 저장과 재로딩을 함께 확인할 수 있습니다.
-DDP는 데이터만 rank별로 나누고 모델과 LoRA adapter를 각 rank에 복제합니다.
-`output_root`가 [node-local 경로](../../labs/nvme-30b/README.md#training-data-storage-general-principle-vs-this-poc)여도 `train` 단계가 각 rank의 로컬 adapter를 저장하므로 같은 두 노드의 `tuned` 단계가 바로 재로딩할 수 있습니다.
+| backend | `base` | `train` | `tuned` | 설정 파일 | 비고 |
+| --- | :---: | :---: | :---: | --- | --- |
+| `ddp` | ✅ | ✅ | ✅ | 불필요 | 기본 선택 |
+| `fsdp2` | ✅ | ✅ | ❌ | 불필요 | sharded export·tuned reload·optimizer resume 미검증 |
+| `deepspeed` | ✅ | ✅ | ✅ | **필수** | [ZeRO-2](../../backends/trl/configs/deepspeed-zero2.json) 또는 [ZeRO-3](../../backends/trl/configs/deepspeed-zero3.json) |
 
-FSDP2는 현재 `base` 또는 `train` 단계만 지원합니다.
-Sharded export, 별도 process의 tuned reload, optimizer resume이 검증된다는 뜻이 아닙니다.
-DeepSpeed는 `tuned` 단계도 지원합니다. LoRA는 기존 adapter reload 경로를 그대로 쓰고, full fine-tuning은 별도 process가 학습이 남긴 native DeepSpeed ZeRO checkpoint를 새 엔진에 rank-local로 다시 불러와 평가합니다.
-NVMe offload를 쓰는 조합은 `train` 단계 안에서의 평가만 건너뛰며(이유와 tuned 단계 재로딩 방식은 [30B NVMe 실습](../../labs/nvme-30b/README.md#expected-results-and-verification) 참고), 평가 자체는 `tuned` 단계로 수행합니다.
-DeepSpeed는 [ZeRO-2](../../backends/trl/configs/deepspeed-zero2.json) 또는 [ZeRO-3](../../backends/trl/configs/deepspeed-zero3.json) 설정 파일을 요구합니다.
-`deepspeed-zero3-nvme.json`은 `/mnt/post-training/trl`로 parameter와 optimizer state를 offload하는 30B 실습 전용 설정입니다.
-이 NVMe profile은 full fine-tuning 전용이며 LoRA와 함께 쓰면 검증 단계에서 거부됩니다. LoRA에는 DDP 또는 NVMe parameter offload가 없는 DeepSpeed profile을 사용합니다.
-이 경로는 설정 파일에 고정되어 있으므로 다른 mount를 사용하려면 설정 사본의 두 `nvme_path`를 바꿔야 합니다.
-일반 ZeRO-3와 달리 두 노드에 쓰기 가능한 로컬 디렉터리와 DeepSpeed async I/O build가 필요합니다.
+`tuned` 단계는 새 process에서 저장물을 다시 읽으므로, 저장과 재로딩을 함께 확인할 수 있습니다.
+
+- **DDP** — 데이터만 rank별로 나누고 모델과 LoRA adapter는 각 rank에 복제합니다. `output_root`가 [node-local 경로](../../labs/nvme-30b/README.md#training-data-storage-general-principle-vs-this-poc)여도 `train`이 각 rank에 로컬 adapter를 남기므로 `tuned`가 바로 재로딩합니다.
+- **DeepSpeed** — LoRA는 기존 adapter reload 경로를 그대로 쓰고, full fine-tuning은 별도 process가 native ZeRO checkpoint를 새 엔진에 rank-local로 불러와 평가합니다.
+
+### DeepSpeed NVMe offload profile
+
+`deepspeed-zero3-nvme.json`은 `/mnt/post-training/trl`로 parameter와 optimizer state를 offload하는 **30B 실습 전용** 설정이며, 일반 ZeRO-3와 제약이 다릅니다.
+
+- **full fine-tuning 전용** — LoRA와 함께 쓰면 검증 단계에서 거부됩니다. LoRA에는 DDP 또는 NVMe parameter offload가 없는 DeepSpeed profile을 씁니다.
+- `train` 단계 **안에서의 평가만** 건너뜁니다. 평가 자체는 `tuned` 단계로 수행합니다 ([이유와 재로딩 방식](../../labs/nvme-30b/README.md#expected-results-and-verification)).
+- 두 노드에 쓰기 가능한 로컬 디렉터리와 DeepSpeed async I/O build가 필요합니다.
+- offload 경로는 설정 파일에 고정되어 있어, 다른 mount를 쓰려면 설정 사본의 `nvme_path` 두 곳을 바꿔야 합니다.
 
 모델과 backend별 실행 결과와 실패 원인은 [Verification](../verification.md)에 요약합니다.
 0.5B smoke 성공을 30B full SFT의 메모리 적합성이나 장기 수렴 증거로 해석해서는 안 됩니다.

@@ -75,7 +75,9 @@ PY
 
 다음으로 [공개 데이터 준비](datasets.md#public-data)에 따라 No Robots 학습 예제 8개와 검증 예제 2개를 만듭니다.
 모델 snapshot과 마찬가지로 학습 데이터도 각 노드의 `data_dir`을 node-local 경로로 둡니다.
-한 노드에서 준비한 뒤 그 결과물(`training.jsonl`, `validation.jsonl`, `manifest.json`)을 다른 노드에 그대로 복사합니다 — 각 노드가 Hugging Face Hub에서 독립적으로 다시 만들면 venv 간 라이브러리 버전 차이로 내용이 미묘하게 갈릴 수 있고, `validate_dataset_manifest()`는 `dataset_id`·`revision`만 비교해 이런 내용물 수준의 차이는 잡지 못합니다.
+
+**한 노드에서 준비한 뒤 결과물(`training.jsonl`, `validation.jsonl`, `manifest.json`)을 다른 노드에 그대로 복사합니다.**
+각 노드가 Hub에서 독립적으로 다시 만들면 venv 간 라이브러리 버전 차이로 내용이 갈릴 수 있는데, `validate_dataset_manifest()`는 `dataset_id`·`revision`만 비교해 이런 차이를 잡지 못합니다.
 
 ## Configure the Setup
 
@@ -100,8 +102,9 @@ cp -n setups/spark/local.example.json setups/spark/local.json
 | `nodes[].output_root` | 미리 생성한 출력 부모 디렉터리 또는 `trl`·`megatron`별 부모 디렉터리 |
 | `env`, `nodes[].env` | 허용된 NCCL·OMP·HF 등 환경별 변수 |
 
-현재 검증은 TRL만 실행해도 `python` 사전에 두 백엔드 key를 요구합니다.
-실제 실행은 선택한 백엔드 Python만 사용합니다.
+> **주의:** TRL만 실행하더라도 `nodes[].python` 사전에는 `trl`과 `megatron` **두 key가 모두** 있어야 검증을 통과합니다.
+> 실제 실행에는 선택한 백엔드의 Python만 사용합니다.
+
 공유 저장소 경로는 controller가 아니라 각 노드에서 보이는 경로를 적습니다.
 분산 checkpoint 재로딩에는 필요한 모든 rank shard가 보여야 합니다.
 

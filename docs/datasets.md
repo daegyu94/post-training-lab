@@ -65,8 +65,15 @@ PYTHON='<backend-python>' bash scripts/prepare_public_data.sh \
 
 성공하면 마지막 출력에 `train=8 validation=2 overlap=0`이 표시됩니다.
 `manifest.json`의 `dataset`, `dataset_revision`, `train_count`, `eval_count`, `files`를 확인합니다.
-**이 명령은 한 노드에서만 실행합니다.** 나머지 노드에는 같은 명령을 다시 실행하는 대신 생성된 JSONL 두 개와 manifest를 그대로 복사합니다.
-각 노드가 Hub에서 독립적으로 다시 만들면 (a) venv 간 라이브러리 버전 차이로 같은 seed에서도 내용이 미묘하게 갈릴 수 있고 — `validate_dataset_manifest()`는 `dataset_id`·`revision`만 비교해 이런 차이를 못 잡습니다 — (b) `huggingface_hub`/`datasets` 라이브러리의 재시도 로직이 환경에 따라 실패할 수 있습니다(이 저장소에서 실제로 관측: `RuntimeError: Cannot send a request, as the client has been closed.`). 이미 검증된 결과물을 복사하는 쪽이 더 안전하고 빠릅니다.
+> **이 명령은 한 노드에서만 실행합니다.**
+> 나머지 노드에는 같은 명령을 다시 실행하지 말고, 생성된 JSONL 두 개와 manifest를 그대로 복사합니다.
+
+각 노드가 Hub에서 독립적으로 다시 만들면 안 되는 이유는 두 가지입니다.
+
+- **내용이 갈릴 수 있습니다.** venv 간 라이브러리 버전 차이로 같은 seed에서도 결과가 미묘하게 달라지는데, `validate_dataset_manifest()`는 `dataset_id`·`revision`만 비교하므로 이런 차이를 잡지 못합니다.
+- **다운로드가 실패할 수 있습니다.** `huggingface_hub`/`datasets`의 재시도 로직이 환경에 따라 실패합니다 (실제 관측: `RuntimeError: Cannot send a request, as the client has been closed.`).
+
+이미 검증된 결과물을 복사하는 쪽이 더 안전하고 빠릅니다.
 
 ### 옵션과 주의점
 
