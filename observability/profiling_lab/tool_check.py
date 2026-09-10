@@ -23,7 +23,6 @@ TOOLS = {
     "dcgm_exporter": Tool(("dcgm-exporter", "--version"), "gpu", "open_source_vendor_dependency"),
     "grafana": Tool(("grafana-server", "--version"), "visualization", "open_source"),
     "otel_collector": Tool(("otelcol-contrib", "--version"), "distributed_trace", "open_source"),
-    "fio": Tool(("fio", "--version"), "storage_baseline", "open_source"),
     "nccl_tests": Tool(("all_reduce_perf", "-h"), "network_baseline", "open_source_vendor_dependency"),
     "docker": Tool(("docker", "compose", "version"), "lab_runtime", "open_source_components"),
     "podman": Tool(("podman", "compose", "version"), "lab_runtime", "open_source"),

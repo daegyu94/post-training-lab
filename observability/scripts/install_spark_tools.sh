@@ -15,9 +15,5 @@ if [[ "${1:-node}" == server ]]; then
   tar xzf prometheus.tar.gz
   download https://dl.grafana.com/oss/release/grafana-12.1.0.linux-arm64.tar.gz grafana.tar.gz
   tar xzf grafana.tar.gz
-elif [[ "${1:-node}" == fio ]]; then
-  download https://github.com/axboe/fio/archive/refs/tags/fio-3.39.tar.gz fio.tar.gz
-  tar xzf fio.tar.gz
-  (cd fio-fio-3.39 && ./configure --disable-native && make -j4)
 fi
 sha256sum ./*.tar.gz > downloaded-archives.sha256

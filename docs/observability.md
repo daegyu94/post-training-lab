@@ -7,7 +7,7 @@ Synthetic workload와 실제 LLM 학습 결과는 구분합니다.
 ## CPU Checks
 
 저장소 루트에서 아래 순서로 실행합니다.
-Setup은 `.venv`를 만들고 pytest를 설치하지만 CUDA PyTorch, NCCL Tests, fio나 Python package 자체를 설치하지 않습니다.
+Setup은 `.venv`를 만들고 pytest를 설치하지만 CUDA PyTorch, NCCL Tests나 Python package 자체를 설치하지 않습니다.
 모듈은 `observability`를 작업 디렉터리로 사용해 import합니다.
 
 ```bash
@@ -174,15 +174,3 @@ HOSTS='<first-host>,<second-host>' GPUS_PER_NODE=1 \
 
 `artifacts/nccl-baseline/manifest.env`와 `all-reduce.log`에서 조건·correctness 오류·대역폭을 확인합니다.
 NCCL baseline은 학습 throughput이 아닙니다.
-
-fio는 저장소에 쓰기 부하를 주며 기본 16 GiB 테스트 파일을 남깁니다.
-사용자 데이터가 없는 전용 시험 디렉터리와 여유 공간을 먼저 확인하고 `observability`에서 실행합니다.
-
-```bash
-FIO_DIRECTORY='<dedicated-test-directory>' \
-  bash scripts/run_fio_baseline.sh
-```
-
-결과는 `artifacts/fio-baseline/checkpoint.json`입니다.
-남은 `profiling-lab-checkpoint.bin`은 자동 삭제되지 않으므로 시험 후 정확한 파일을 확인해 별도로 정리합니다.
-fio 결과는 checkpoint의 장애 후 복구나 fsync 보장을 증명하지 않습니다.

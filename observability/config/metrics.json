@@ -396,7 +396,7 @@
       "category": "storage",
       "unit": "operations/s",
       "scope": "device",
-      "source": "Node Exporter or fio",
+      "source": "Node Exporter",
       "policy": "always"
     },
     {
@@ -404,7 +404,7 @@
       "category": "storage",
       "unit": "s",
       "scope": "operation",
-      "source": "fio or selected I/O trace",
+      "source": "selected I/O trace",
       "policy": "baseline or diagnostic"
     },
     {

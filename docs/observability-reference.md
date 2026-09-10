@@ -73,17 +73,17 @@ Prompt, request ID, timestamp와 trace ID처럼 계속 늘어나는 값은 Prome
 | `rollout`, `tool_interaction`, `reward`, `weight_sync` | agentic RL의 generation, external wait, reward/evaluation과 policy distribution |
 
 Phase marker에는 최소한 `run_id`, `phase`, 시작/종료 시각과 성공 여부를 기록합니다.
-Bytes와 duration을 모두 얻을 수 있으면 `data_movement_effective_bandwidth_bytes_per_second`를 계산하고, 동일 path의 NCCL Tests 또는 fio baseline과 비교해 utilization ratio를 만듭니다.
+Bytes와 duration을 모두 얻을 수 있으면 `data_movement_effective_bandwidth_bytes_per_second`를 계산하고, 동일 path의 NCCL Tests baseline과 비교해 utilization ratio를 만듭니다.
 
 ## Data Movement Paths
 
 | Path | Always-on evidence | Diagnostic evidence |
 | --- | --- | --- |
-| Local/remote storage → host memory | Node Exporter disk, filesystem, mountstats와 storage client metric | fio, iostat 또는 selected I/O trace |
+| Local/remote storage → host memory | Node Exporter disk, filesystem, mountstats와 storage client metric | iostat 또는 selected I/O trace |
 | Host memory → GPU | framework data wait와 pinned memory | PyTorch Profiler memory copy event 또는 Nsight Systems |
 | GPU ↔ GPU in one node | DCGM utilization과 framework collective timer | NCCL Tests single-node baseline, selected trace |
 | GPU node ↔ GPU node | NIC/InfiniBand counter와 communication timer | NCCL Tests multi-node baseline, GPUDirect RDMA 확인 |
-| GPU/host → checkpoint storage | checkpoint timer, storage throughput와 volume | fio checkpoint pattern, writer/rank coordination trace |
+| GPU/host → checkpoint storage | checkpoint timer, storage throughput와 volume | writer/rank coordination trace |
 
 Node Exporter와 DCGM만으로는 bytes가 어떤 framework phase나 rank에서 발생했는지 알 수 없습니다.
 Framework phase marker와 rank map을 같은 `run_id`로 연결하고, 원인이 남을 때만 selected trace를 수집합니다.
@@ -106,7 +106,6 @@ TRL callback과 Megatron Bridge callback은 collector와 통신하지 않고 ran
 TRL tokens/s는 Trainer의 누적 입력 token 차이이고 Megatron tokens/s는 `global_batch_size * max_length`를 callback wall time으로 나눈 configured-token 처리율이므로 variable-length 실행의 실제 non-padding token 처리율로 해석하지 않습니다.
 Megatron timer는 `timing_log_level=1`에서 이미 계산한 timer의 rank-local `active_time` 차이를 읽으며 adapter 때문에 추가 collective를 실행하지 않습니다.
 
-[Megatron metric hook](../observability/examples/megatron/metric_hook.py)은 Node Exporter textfile collector를 직접 사용하는 별도 예제입니다.
 [verl profiler 설정](../observability/examples/verl/torch-profiler.yaml)은 외부 framework 연동 참고이며 이 저장소에 verl 학습 backend가 있다는 뜻은 아닙니다.
 실제 사용하는 framework 버전에 맞춰 설정을 검증한 후 적용합니다.
 

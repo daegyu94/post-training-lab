@@ -1,6 +1,6 @@
 # Observability Tools
 
-Host·GPU 계측, Spark monitoring, NCCL·fio baseline과 PyTorch trace 예제입니다.
+Host·GPU 계측, Spark monitoring, NCCL baseline과 PyTorch trace 예제입니다.
 실행은 [Observability](../docs/observability.md), 지표 계약과 framework 연결은 [Reference](../docs/observability-reference.md)를 따릅니다.
 
 | 경로 | 역할 |
