@@ -30,3 +30,6 @@ def test_comparison_reads_last_rank_logs_on_their_node(tmp_path, node_rank, stag
         assert args[args.index('--tuned-log') + 1].endswith('rank-1-tuned.log')
         assert args[args.index('--metadata') + 1].endswith('tuned-rank-1.json')
         assert args[args.index('--micro-batch-size') + 1] == '2'
+        assert args[args.index('--checkpoint-dir') + 1] == str(
+            tmp_path / 'out' / 'checkpoints'
+        )

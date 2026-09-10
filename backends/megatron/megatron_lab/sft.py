@@ -41,6 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--train-data", type=Path, required=True)
     parser.add_argument("--eval-data", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--checkpoint-dir", type=Path)
     parser.add_argument("--load-checkpoint", type=Path)
     parser.add_argument("--max-steps", type=int, default=5)
     parser.add_argument(
@@ -133,6 +134,7 @@ def write_run_metadata(args: argparse.Namespace, spec: object, topology: object)
     if args.stage in {"resume", "tuned"}:
         load_checkpoint = str(
             getattr(args, "load_checkpoint", None)
+            or getattr(args, "checkpoint_dir", None)
             or (args.output_dir / "checkpoints")
         )
     model_spec = spec

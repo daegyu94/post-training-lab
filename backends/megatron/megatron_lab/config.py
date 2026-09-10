@@ -342,9 +342,6 @@ def build_cluster_config(args: Namespace):
     validate_dataset_manifest(
         Path(args.train_data), args.dataset_revision, getattr(args, "dataset_id", DATASET_ID)
     )
-    _resolve_cluster_load_checkpoint(
-        args, Path(args.output_dir) / "checkpoints"
-    )
     cfg = _cluster_skeleton(spec, args)
     model = cfg.model
     topology = args.topology
@@ -465,7 +462,9 @@ def build_cluster_config(args: Namespace):
     cfg.optimizer.use_distributed_optimizer = args.distributed_optimizer
 
     cfg.ddp.overlap_grad_reduce = args.overlap_grad_reduce
-    checkpoint_dir = args.output_dir / "checkpoints"
+    checkpoint_dir = (
+        getattr(args, "checkpoint_dir", None) or args.output_dir / "checkpoints"
+    )
     cfg.checkpoint.pretrained_checkpoint = str(args.model_dir)
     cfg.checkpoint.save_interval = (
         getattr(args, "save_interval", None) or args.max_steps

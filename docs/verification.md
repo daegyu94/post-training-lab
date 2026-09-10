@@ -65,7 +65,8 @@ DDP와 FSDP2 모두 1 optimizer step, finite train/eval loss, checkpoint와 양 
 ## NVMe and Full SFT
 
 두 Spark 노드의 `/mnt/post-training`은 로컬 NVMe root filesystem에 있고 backend별 디렉터리에 `spark` 쓰기 권한이 있습니다.
-Megatron Qwen3-30B LoRA는 `/mnt/post-training/megatron`에서 1 step과 async checkpoint를 완료했으며 각 노드에 rank별 shard가 생성됐습니다.
+Megatron Qwen3-30B-A3B와 GLM-4.7-Flash LoRA는 로컬 NVMe에 데이터 cache와 로그를 기록하고, NFS의 공통 `torch_dist` checkpoint에서 iteration 1을 새 process로 재로딩해 `STAGE=all`을 완료했습니다.
+Qwen은 40,000/8,000건에서 base loss `1.402232`와 tuned loss `1.342737`, GLM은 160,000/30,000건에서 `2.269922`와 `2.012836`을 기록했습니다.
 
 Megatron은 NVMe를 native training state offload 대상으로 지원하지 않으므로 이 결과는 dataset cache와 checkpoint I/O 검증입니다.
 TRL의 ZeRO-3 NVMe offload는 별도의 DeepSpeed AIO extension build와 실제 1-step 완료를 성공 조건으로 사용합니다.

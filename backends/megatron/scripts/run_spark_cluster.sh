@@ -18,6 +18,7 @@ esac
 model_id="${MODEL_ID:-Qwen/Qwen3-30B-A3B}"
 data_dir="${DATA_DIR:-data/public-smoke/no_robots}"
 output_dir="${OUTPUT_DIR:-results/setup2-${model_id##*/}}"
+checkpoint_dir="${CHECKPOINT_DIR:-$output_dir/checkpoints}"
 python_bin="${PYTHON:-.venv/bin/python}"
 export PATH="$(dirname "$python_bin"):$PATH"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.local/ptl/cache}"
@@ -116,6 +117,7 @@ common_args=(
   --train-data "$data_dir/training.jsonl"
   --eval-data "$data_dir/validation.jsonl"
   --output-dir "$output_dir"
+  --checkpoint-dir "$checkpoint_dir"
   --max-steps "$max_steps"
   --schedule-steps "$schedule_steps"
   --eval-iters "$eval_iters"
@@ -235,6 +237,7 @@ if (( NODE_RANK == nnodes - 1 )); then
     --train-data "$data_dir/training.jsonl" \
     --eval-data "$data_dir/validation.jsonl" \
     --output-dir "$output_dir" \
+    --checkpoint-dir "$checkpoint_dir" \
     --max-steps "$compare_max_steps" \
     --schedule-steps "$schedule_steps" \
     --eval-iters "$eval_iters" \

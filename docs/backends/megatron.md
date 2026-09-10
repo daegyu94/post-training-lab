@@ -87,10 +87,10 @@ Async checkpoint는 train/resume stage의 `torch_dist`와 persistent worker를 �
 종료 전에 pending save의 finalization과 필요한 모든 shard를 확인합니다.
 파일이 보이거나 save 호출이 끝났다는 사실만으로 장애 후 durability를 주장하지 않습니다.
 
-`experiments/megatron/qwen3-30b-lora.json`과 `experiments/megatron/glm-4.7-flash-30b-lora.json`은 backend별 `output_root`를 `/mnt/post-training/megatron`으로 지정해 30B checkpoint를 각 노드의 로컬 NVMe에 기록합니다.
-이는 parameter·optimizer·activation의 실행 중 NVMe offload가 아니라 checkpoint I/O 실습입니다.
-같은 run의 전처리 JSONL과 Arrow cache도 이 NVMe output 아래에 생성되므로 input batch 경로의 storage I/O도 함께 관찰할 수 있습니다.
-Node-local shard를 다른 topology나 노드에서 재개하려면 필요한 shard와 metadata를 공유 저장소로 모으는 별도 단계가 필요합니다.
+30B preset의 output·전처리 JSONL·Arrow cache·로그는 backend별 `output_root`인 `/mnt/post-training/megatron`의 로컬 NVMe에 기록합니다.
+공통 runner는 `torch_dist` checkpoint만 두 노드가 함께 보는 `<checkout>/artifacts/checkpoints/<run-id>`에 기록해 다음 `tuned` 또는 `resume` process가 모든 shard와 metadata를 읽게 합니다.
+직접 launcher를 실행할 때 `OUTPUT_DIR`가 node-local이면 `CHECKPOINT_DIR`을 두 노드에서 같은 NFS 경로로 지정해야 하며, 지정하지 않으면 `<output>/checkpoints`를 사용합니다.
+이는 parameter·optimizer·activation의 실행 중 NVMe offload가 아니라 dataset cache와 checkpoint I/O 배치입니다.
 
 TP/PP를 바꾸는 optimizer 재분할은 기본 `dp_reshardable` format으로 해결되지 않습니다.
 `DIST_CKPT_OPTIM_FULLY_RESHARDABLE=true`인 별도 source checkpoint와 optimizer 저장·로드 조건이 필요합니다.

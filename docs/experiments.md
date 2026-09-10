@@ -81,8 +81,8 @@ Dataset 준비(`prepare_public_data.py`)는 `build.py`가 대신 실행하지 �
 | --- | --- | --- | --- | --- | --- |
 | 1 | TRL DDP | Qwen2.5-0.5B-Instruct | ultrachat (256 train/32 eval) | `--epochs 1` | base/train/tuned 모두 통과 |
 | 2 | TRL DeepSpeed | Qwen3-30B-A3B | no_robots | `--offload nvme --max-steps 1` | train 통과, 별도 `tuned` process 평가 통과 |
-| 3 | Megatron | Qwen3-30B-A3B | self_oss | 기본 TP=1·PP=1·EP=2, `--max-steps 1 --stage train` | 통과 |
-| 4 | Megatron | GLM-4.7-Flash | ultrachat | 기본 TP=1·PP=1·EP=2, `--max-steps 1 --max-length 4096 --stage train` | 통과 |
+| 3 | Megatron | Qwen3-30B-A3B | self_oss (40,000 train/8,000 eval) | TP=1·PP=1·EP=2, `--max-steps 1 --stage all` | base `1.402232` → tuned `1.342737`, 통과 |
+| 4 | Megatron | GLM-4.7-Flash | ultrachat (160,000 train/30,000 eval) | TP=1·PP=1·EP=2, `--max-steps 1 --max-length 4096 --stage all` | base `2.269922` → tuned `2.012836`, 통과 |
 
 **Case 1 (epoch 검증)**: `--epochs`가 실제로 HF `SFTConfig`의 `num_train_epochs`를 통해 동작하는지, 그리고 학습이 진짜 loss를 낮추는지 확인하는 사례입니다. `summary-{base,train,tuned}.json`의 `evaluation.eval_loss`를 비교합니다.
 
@@ -96,7 +96,7 @@ Dataset 준비(`prepare_public_data.py`)는 `build.py`가 대신 실행하지 �
 
 이 사례는 DDP+LoRA의 node-local 저장 문제도 드러냈습니다: 당시에는 global rank 0의 노드에만 adapter가 남아 `tuned`가 실패했습니다. 현재는 `train` 단계가 각 rank의 node-local adapter를 저장하며, 2노드 `base`→`train`→`tuned` smoke로 재로딩까지 검증했습니다. 자세한 동작은 [TRL 백엔드 문서](backends/trl.md#choose-a-distributed-backend)를 따릅니다.
 
-**Case 3·4 (Megatron `--stage train`)**: `experiments/megatron/qwen3-30b-lora.json`과 `glm-4.7-flash-30b-lora.json`(이 저장소에서 유일하게 손으로 작성되고 검증된 30B preset)은 둘 다 `STAGE=train`만 씁니다. `build.py`의 기본값인 `--stage all`(base→train→tuned)로 이 두 30B MoE 모델을 실행하면, `train`이 checkpoint 저장까지는 성공한 뒤 `tuned` 단계가 checkpoint에서 HF dataset source를 다시 만드는 과정에서 실패합니다 — 이는 `self_oss`나 `ultrachat` 같은 특정 dataset의 문제가 아니라, **이 저장소에서 30B MoE 모델에 대해 `tuned`/resume 경로 자체가 아직 검증된 적이 없다는 뜻**입니다. 그래서 case 3·4는 기존 30B preset과 같은 범위인 `--stage train`으로 실행했고, `--stage all`의 30B 검증은 별도 과제로 남습니다.
+**Case 3·4 (Megatron `--stage all`)**: 이전 실패 원인은 HF dataset이 아니라 공유 파일시스템을 전제로 한 `torch_dist` checkpoint를 node-local NVMe에 나누어 저장한 것이었습니다. rank 0에 metadata와 `__0_0.distcp`, rank 1에 `__1_0.distcp`만 남아 새 process가 완전한 checkpoint를 볼 수 없었습니다. 공통 runner가 checkpoint를 NFS checkout 아래에 두도록 수정한 뒤 두 30B MoE 모델 모두 base→train→tuned 단일 실행과 iteration 1 재로딩을 통과했습니다. 학습 iteration의 NaN과 skipped iteration은 두 사례 모두 0이었고 `summary.json`의 `checkpoint_reload_verified`도 `true`입니다.
 
 Case 4는 `--max-length` 기본값(2048)에서 ultrachat의 한 샘플이 길이를 초과해 한 번 실패했고, `--max-length 4096`으로 재실행해 통과했습니다 — preset마다 실제 대화 길이가 다르므로 `--max-length`를 데이터셋에 맞게 조정해야 할 수 있다는 실제 사례입니다.
 

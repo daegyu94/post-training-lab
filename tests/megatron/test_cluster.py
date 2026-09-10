@@ -502,6 +502,13 @@ def test_glm_config_uses_local_provider_and_known_options_only(tmp_path: Path, m
     assert cfg.optimizer.use_distributed_optimizer is True
     assert cfg.scheduler.max_steps == 10
     assert cfg.checkpoint.save_interval == 5
+    shared_checkpoint = tmp_path / "shared-checkpoint"
+    shared_checkpoint.mkdir()
+    args.checkpoint_dir = shared_checkpoint
+    args.stage = "tuned"
+    tuned_cfg, _ = build_cluster_config(args)
+    assert tuned_cfg.checkpoint.load == str(shared_checkpoint)
+    args.stage = "train"
     assert cfg.checkpoint.dist_ckpt_optim_fully_reshardable is True
     assert cfg.dataset.preprocessing.loss_mode == "completion"
     assert cfg.dataset.preprocessing.add_eos is False
@@ -512,7 +519,7 @@ def test_glm_config_uses_local_provider_and_known_options_only(tmp_path: Path, m
     args.save_interval = 3
     custom_cfg, _ = build_cluster_config(args)
     assert custom_cfg.checkpoint.save_interval == 3
-    assert dataset_builds == 3
+    assert dataset_builds == 4
 
 
 def test_cluster_launcher_passes_explicit_ranks_and_resume_horizon(tmp_path: Path) -> None:
@@ -567,6 +574,11 @@ def test_cluster_launcher_passes_explicit_ranks_and_resume_horizon(tmp_path: Pat
         for call in launch_calls
     )
     assert all("--save-interval" not in call["argv"] for call in launch_calls)
+    assert all(
+        call["argv"][call["argv"].index("--checkpoint-dir") + 1]
+        == str(output_dir / "checkpoints")
+        for call in launch_calls
+    )
     resume_call = next(
         call for call in launch_calls if "--stage" in call["argv"] and call["argv"][call["argv"].index("--stage") + 1] == "resume"
     )

@@ -19,10 +19,10 @@
     "EP": 2,
     "EVAL_ITERS": 1,
     "SAVE_INTERVAL": 1,
-    "CHECKPOINT_MODE": "async",
+    "CHECKPOINT_MODE": "sync",
     "SAVE_OPTIMIZER": true,
     "MEASURE_TIMING": true,
     "SEED": 42,
-    "STAGE": "train"
+    "STAGE": "all"
   }
 }

@@ -35,7 +35,7 @@ TRL과 Megatron summary는 각각 실제 생성 코드를 기준으로 읽습니
 
 ## Configuration Contract
 
-Runner 소유 변수는 `NODE_RANK`, `PYTHON`, `OUTPUT_DIR`, `NNODES`, `NPROC_PER_NODE`, `MASTER_ADDR`, `MASTER_PORT`, `MODEL_DIR`, `DATA_DIR`입니다.
+Runner 소유 변수는 `NODE_RANK`, `PYTHON`, `OUTPUT_DIR`, `CHECKPOINT_DIR`, `NNODES`, `NPROC_PER_NODE`, `MASTER_ADDR`, `MASTER_PORT`, `MODEL_DIR`, `DATA_DIR`입니다.
 Experiment에서 덮어쓸 수 없습니다.
 노드별 hardware 환경은 setup의 공통 환경에 덧붙여지며 허용 prefix는 `NCCL`, `OMP`, `HF_`, `TOKENIZERS_`입니다.
 `PYTHON_HEADERS`와 `CPATH`도 허용됩니다.

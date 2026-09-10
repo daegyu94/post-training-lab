@@ -49,6 +49,7 @@ def main() -> None:
     parser.add_argument("--train-data", type=Path, required=True)
     parser.add_argument("--eval-data", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--checkpoint-dir", type=Path)
     parser.add_argument("--model-id", required=True)
     parser.add_argument("--dataset-id", default=DATASET_ID)
     parser.add_argument("--model-revision", default="unknown")
@@ -142,7 +143,9 @@ def main() -> None:
         },
         performance={},
         artifacts={
-            "checkpoint_dir": str(args.output_dir / "checkpoints"),
+            "checkpoint_dir": str(
+                args.checkpoint_dir or args.output_dir / "checkpoints"
+            ),
             "base_evaluation_log": str(args.base_log),
             "training_log": str(args.output_dir / "logs" / f"rank-{topology.world_size - 1}-train.log"),
             "tuned_evaluation_log": str(args.tuned_log),

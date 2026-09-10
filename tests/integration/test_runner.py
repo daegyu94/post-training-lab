@@ -85,6 +85,8 @@ def test_megatron_30b_presets_are_runnable(name: str, model_id: str) -> None:
     assert experiment["env"]["MODEL_ID"] == model_id
     assert experiment["env"]["FINETUNING_MODE"] == "lora"
     assert experiment["env"]["MAX_STEPS"] == "1"
+    assert experiment["env"]["CHECKPOINT_MODE"] == "sync"
+    assert experiment["env"]["STAGE"] == "all"
 
 
 def test_dataset_id_is_required(tmp_path: Path) -> None:
@@ -118,6 +120,9 @@ def test_backend_specific_output_roots(tmp_path: Path) -> None:
 
     assert {rank["output"] for rank in plan["ranks"]} == {
         "/mnt/post-training/megatron/nvme-run"
+    }
+    assert {rank["env"]["CHECKPOINT_DIR"] for rank in plan["ranks"]} == {
+        "/srv/post-training-unified/artifacts/checkpoints/nvme-run"
     }
 
 
