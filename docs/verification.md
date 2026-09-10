@@ -15,8 +15,8 @@ python -m venv .venv-check
 . .venv-check/bin/activate
 python -m pip install -r requirements-dev.txt
 python -m pytest -q
-python -m compileall -q backends experiments observability tests run_summary.py
-for script in backends/*/scripts/*.sh observability/scripts/*.sh setups/spark/*.sh; do
+python -m compileall -q backends datasets_lab experiments observability tests
+for script in backends/*/scripts/*.sh observability/scripts/*.sh setups/spark/*.sh scripts/*.sh; do
   bash -n "$script" || exit 1
 done
 ```

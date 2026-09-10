@@ -24,12 +24,14 @@ flowchart TD
 | `setups/spark/` | host, Python, 입력·출력 경로, 환경별 변수 | 모델 revision·학습률 |
 | `experiments/run.py` | 설정 검증, SSH 시작·제한·정리, controller 기록 | 백엔드 학습 loop |
 | `experiments/<backend>/` | 고정 입력 revision과 학습 조건 | SSH 주소·mount 경로 |
-| `backends/trl/` | TRL·Trainer·Accelerate의 SFT와 저장 | Megatron recipe |
-| `backends/megatron/` | Bridge 설정·Core 분산 모델과 checkpoint | Serving 배포 |
+| `datasets_lab/` | 공개·서비스 데이터의 canonical 변환 규칙과 고정 revision | 백엔드별 학습 설정 |
+| `scripts/` | 데이터 준비 진입점(backend venv는 `PYTHON`으로 선택) | 학습 실행 |
+| `backends/trl/` | TRL·Trainer·Accelerate의 SFT와 저장 | Megatron recipe, 데이터 변환 |
+| `backends/megatron/` | Bridge 설정·Core 분산 모델과 checkpoint | Serving 배포, 데이터 변환 |
 | `observability/` | 계측·baseline·trace helper | 모든 학습 loop에 자동 hook 설치 |
 | `tests/` | CPU 회귀와 mock 기반 실행 계약 검사 | 실제 GPU 실행 보장 |
 
-`run_summary.py` 계열은 공통 summary helper를 제공하지만 TRL Spark는 이 helper 대신 자체 stage summary를 생성합니다.
+`observability/run_summary.py`는 공통 summary helper를 제공하지만 TRL Spark는 이 helper 대신 자체 stage summary를 생성합니다.
 TRL과 Megatron summary는 각각 실제 생성 코드를 기준으로 읽습니다.
 공통 runner는 backend summary나 가중치를 controller로 자동 수집하지 않습니다.
 
