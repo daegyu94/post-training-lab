@@ -1,4 +1,8 @@
-"""Build the common machine-readable experiment summary."""
+"""Build the common machine-readable experiment summary.
+
+Lives here because both backend launchers already export observability/ on
+PYTHONPATH; megatron_lab.compare imports it by bare name at runtime.
+"""
 
 from __future__ import annotations
 
