@@ -7,6 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import sys
 from typing import Any, Iterable, Iterator
 
 ADAPTER_VERSION = "public-sft-v1"
@@ -143,7 +144,11 @@ def select_bounded(rows: Iterable[dict[str, Any]], spec: PublicDatasetSpec, trai
     for ordinal, source_row in enumerate(rows):
         if ordinal >= max_scan:
             break
-        row = adapt_row(spec, source_row, ordinal)
+        try:
+            row = adapt_row(spec, source_row, ordinal)
+        except ValueError as exc:
+            print(f"[data] skipping malformed source row {ordinal}: {exc}", file=sys.stderr)
+            continue
         key = row["prompt_id"]
         group = hashlib.sha256(json.dumps([message for message in row["messages"] if message["role"] != "assistant"], ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         if key in seen_ids or group in seen_groups:

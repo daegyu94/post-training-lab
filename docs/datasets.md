@@ -74,6 +74,7 @@ PYTHON='<backend-python>' bash scripts/prepare_public_data.sh \
 `--revision`을 생략하면 preset의 고정 revision을 사용합니다.
 `--max-scan`은 기본 10000이며 이 범위에서 요청한 개수를 채우지 못하면 실패합니다.
 중복 ID와 동일 입력 대화는 제외하지만 의미상 유사한 대화까지 검사하지는 않습니다.
+원본 소스에 형식이 깨진 행(예: 빈 메시지 content)이 섞여 있으면 그 행만 건너뛰고 stderr에 이유를 남깁니다 — 전체 변환을 중단하지 않습니다. 이 저장소에서 실제로 관측: `no_robots` 9,500행 중 1개, `ultrachat` 207,865행 중 31개.
 제공된 smoke는 위 No Robots revision을 요구하므로 UltraChat으로 바꾸려면 실험의 데이터 ID와 revision도 함께 변경해야 합니다.
 
 Megatron의 `prepare_spark_data.sh`는 별도의 UltraChat 전용 이전 경로입니다.

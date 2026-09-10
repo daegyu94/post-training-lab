@@ -52,6 +52,13 @@ def test_eval_quota_does_not_reassign_train_rows() -> None:
     assert [row["prompt_id"] for row in first_train] == [row["prompt_id"] for row in second_train]
 
 
+def test_select_bounded_skips_malformed_rows_instead_of_aborting() -> None:
+    rows = [{"id": 0, "instruction": "", "response": "A0"}] + [{"id": i, "instruction": f"Q{i}", "response": f"A{i}"} for i in range(1, 100)]
+    train, evaluation = select_bounded(rows, PRESETS["self_oss"], 8, 3, 42, 100)
+    assert len(train) == 8 and len(evaluation) == 3
+    assert "0" not in {row["prompt_id"] for row in train} | {row["prompt_id"] for row in evaluation}
+
+
 def test_manifest_records_revision_hashes_and_source_provenance(tmp_path: Path) -> None:
     train = [adapt_row(PRESETS["self_oss"], {"id": 1, "instruction": "Q", "response": "A"})]
     evaluation = [adapt_row(PRESETS["self_oss"], {"id": 2, "instruction": "Q2", "response": "A2"})]
