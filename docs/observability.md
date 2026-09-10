@@ -47,6 +47,29 @@ Server는 종료할 때까지 실행하므로 작업을 마치면 해당 세션�
 일부 GB10 NVML 값은 unavailable/null이며 이를 사용량 0으로 해석하지 않습니다.
 시스템 메모리와 학습 process의 CUDA allocated/reserved peak도 구분합니다.
 
+`server` role이 복사하는 대시보드는 `examples/observability/spark-resources.json`(uid `spark-profiling`)입니다.
+저장소에는 `examples/observability/grafana/dashboards/cluster-resources.json`과 `compose.yaml`도 있는데, 이는 Docker Compose로 Prometheus·Grafana를 띄우는 별도의 일반 예시이며 이 ARM64 Spark 클러스터 워크플로우에서는 쓰이지 않습니다 — 대시보드를 고칠 때는 `spark-resources.json` 쪽을 수정해야 실제로 반영됩니다.
+
+## Local Viewing
+
+`node` role을 실행할 때 같은 shell에 `FRAMEWORK_METRICS_DIR`를 학습 launcher가 쓰는 값과 똑같이 지정하면, 그 노드의 `node` role이 [`profiling_lab.framework_metrics_textfile`](../observability/profiling_lab/framework_metrics_textfile.py)을 추가로 띄웁니다.
+이 process는 `<framework>-rank-<rank>.json` 스냅샷을 주기적으로 읽어 `training_loss`, `training_tokens_per_second`, `training_step_time_seconds`, `training_step`, (Megatron이면) `training_timer_seconds{timer="..."}`를 GPU sampler와 같은 textfile collector(`$output_dir/textfile/framework.prom`)에 씁니다.
+
+```bash
+NODE_ADDR='<node-management-address>' \
+FRAMEWORK_METRICS_DIR='<launcher가 쓴 output-directory>/framework-metrics' \
+  bash scripts/run_spark_observability.sh node
+```
+
+이 값은 새 서비스가 아니라 launcher가 이미 쓰는 그 node-local 경로를 가리키기만 하면 되므로, 별도 NFS 공유나 collector 없이 그 노드의 rank(들)이 곧바로 같은 Grafana 대시보드에 나타납니다.
+결과적으로 `spark-resources.json`의 `TCP/Ethernet network throughput`, `RDMA (InfiniBand/RoCE) throughput`, `Training loss`, `Training throughput (tokens/s)`, `Training step time`, `Training sample age` panel까지 host·GPU·network·RDMA·학습 지표가 **하나의 Grafana 대시보드**에서 보입니다.
+`FRAMEWORK_METRICS_DIR`를 지정하지 않으면 이 process는 시작되지 않고 나머지 host/GPU 모니터링은 그대로 동작합니다.
+
+`FRAMEWORK_METRICS_DIR`를 NFS 공유 경로로 바꾸는 [Lightweight Local Viewer](#lightweight-local-viewer-history-server-pattern) 패턴과 이 bridge를 같이 쓰지는 않습니다 — 그러면 두 노드의 `node` role이 같은 파일을 각자 읽어 같은 rank가 두 `instance` label로 중복 노출됩니다.
+Grafana로만 보는 이 경로에서는 각 노드가 자신의 node-local `FRAMEWORK_METRICS_DIR`(기본값)만 읽게 두는 것이 맞습니다.
+
+아래 Observatory·Local Viewer·Metrics Bridge 절은 Grafana 인스턴스 없이 보거나(다른 사람에게 URL만 공유) GitHub Pages로 외부에 공개하는 경로이며, 이 저장소에서만 로컬로 보는 용도로는 위 방식으로 충분합니다.
+
 ## Controller에서 결과 수집과 표시
 
 각 Spark 노드의 GPU sampler는 원본 값을 JSONL로 저장하고 Node Exporter가 읽을 지표 파일도 갱신합니다.

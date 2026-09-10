@@ -12,7 +12,7 @@ cleanup() {
   trap - EXIT INT TERM
   for pid in "${pids[@]}"; do kill "$pid" 2>/dev/null || true; done
   for pid in "${pids[@]}"; do wait "$pid" 2>/dev/null || true; done
-  if [[ "$role" == node ]]; then rm -f "$output_dir/textfile/gpu.prom"; fi
+  if [[ "$role" == node ]]; then rm -f "$output_dir/textfile/gpu.prom" "$output_dir/textfile/framework.prom"; fi
 }
 trap cleanup EXIT
 trap 'exit 130' INT
@@ -28,6 +28,12 @@ if [[ "$role" == node ]]; then
     --output "$output_dir/gpu-$(date -u +%Y%m%dT%H%M%S).jsonl" \
     --textfile-dir "$output_dir/textfile" --duration "${DURATION:-900}" &
   pids+=("$!")
+  if [[ -n "${FRAMEWORK_METRICS_DIR:-}" ]]; then
+    "${PYTHON:-python3}" -m profiling_lab.framework_metrics_textfile \
+      --metrics-dir "$FRAMEWORK_METRICS_DIR" \
+      --textfile-dir "$output_dir/textfile" --interval "${FRAMEWORK_METRICS_INTERVAL:-2}" &
+    pids+=("$!")
+  fi
 elif [[ "$role" == server ]]; then
   : "${SPARK1_ADDR:?Set SPARK1_ADDR to the spark1 management address}"
   : "${SPARK2_ADDR:?Set SPARK2_ADDR to the spark2 management address}"

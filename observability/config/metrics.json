@@ -64,6 +64,30 @@
       "policy": "always"
     },
     {
+      "name": "training_step",
+      "category": "training",
+      "unit": "step",
+      "scope": "rank",
+      "source": "framework adapter",
+      "policy": "always"
+    },
+    {
+      "name": "training_timer_seconds",
+      "category": "training",
+      "unit": "s",
+      "scope": "rank",
+      "source": "Megatron rank-local timer",
+      "policy": "megatron"
+    },
+    {
+      "name": "training_sample_timestamp_seconds",
+      "category": "training",
+      "unit": "s",
+      "scope": "node",
+      "source": "framework-metrics textfile bridge",
+      "policy": "always"
+    },
+    {
       "name": "training_model_flops_utilization_ratio",
       "category": "training",
       "unit": "ratio",
