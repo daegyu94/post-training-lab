@@ -1,37 +1,50 @@
 # Post-Training Lab
 
-이미 학습된 LLM에 SFT를 적용하고 데이터 준비, 분산 실행, 저장·재로딩과 자원 계측을 실습하는 저장소입니다.
-현재 백엔드는 TRL과 Megatron Bridge이며 공통 실행 환경은 NVIDIA DGX Spark입니다.
-Controller가 실행을 조율하고 실제 학습은 설정한 Spark 노드에서 수행합니다.
+이미 학습된 LLM에 SFT를 적용하면서 데이터 준비, 분산 실행, checkpoint 저장·재로딩과 자원 계측을 실습하는 저장소입니다.
+백엔드는 TRL과 Megatron Bridge, 실행 환경은 NVIDIA DGX Spark 2노드(`spark1`, `spark2`)입니다.
+Controller가 실행을 조율하고 GPU 연산은 Spark 노드에서만 수행합니다.
 
-## Start Here
+첫 실행은 [Getting Started](docs/getting-started.md)에서 시작합니다.
+Controller에는 Python 3.10 이상과 Git이, 학습에는 준비된 Spark 노드·CUDA 환경·모델·데이터가 필요합니다.
 
-[Getting Started](docs/getting-started.md)에서 NVIDIA DGX Spark 노드 환경과 입력을 준비한 뒤 첫 분산 SFT를 실행합니다.
-Controller에는 Python 3.10 이상과 Git이 필요하며 학습에는 준비된 Spark 노드·CUDA 환경·모델·데이터가 필요합니다.
-문서 전체 안내는 [Documentation](docs/README.md), 구성 요소의 책임은 [Architecture](docs/architecture.md)를 확인합니다.
+## Documentation
 
-| 할 일 | 안내 |
+| 질문 | 문서 |
 | --- | --- |
-| 학습 입력 만들기 | [Datasets](docs/datasets.md) |
-| TRL SFT 실행 | [TRL](docs/backends/trl.md) |
-| Megatron SFT·checkpoint 재개 | [Megatron](docs/backends/megatron.md) |
-| 반복 비교 | [Experiments](docs/experiments.md) |
-| 자원·통신·저장소 계측 | [Observability](docs/observability.md) |
-| 결과·한계 확인 | [Verification](docs/verification.md) |
+| 환경을 준비하고 첫 SFT를 돌리려면? | [Getting Started](docs/getting-started.md) |
+| 어떤 구성 요소가 무엇을 책임지는가? | [Architecture](docs/architecture.md) |
+| 학습 입력을 어떻게 만드는가? | [Datasets](docs/datasets.md) |
+| TRL로 어떻게 학습하는가? | [TRL Backend](docs/backends/trl.md) |
+| Megatron으로 어떻게 학습·재개하는가? | [Megatron Backend](docs/backends/megatron.md) |
+| Preset을 고르고 반복 비교하려면? | [Experiments](docs/experiments.md) |
+| 자원·통신·저장소를 어떻게 관측하는가? | [Observability](docs/observability.md) |
+| 지표 이름·단위·수집 범위 규칙은? | [Metrics Contract](docs/metrics-contract.md) |
+| 무엇이 실제로 검증되었는가? | [Verification](docs/verification.md) |
+| 30B에서 측정한 checkpoint·memory 수치는? | [30B Measurements](docs/measurements-30b.md) |
+| 클러스터 토폴로지와 노드 준비는? | [Spark Cluster Setup](setups/spark/README.md) |
+
+실습:
+[30B NVMe data movement](labs/nvme-30b/README.md) — ZeRO-3 NVMe offload와 Megatron checkpoint I/O.
+[Sandbox resource limits](labs/sandbox-resource-limits/README.md) — cgroup v2 CPU·memory 상한과 unified memory 한계.
 
 ## Repository Layout
 
 | 경로 | 역할 |
 | --- | --- |
 | `setups/spark/` | 노드·경로·환경 설정 |
-| `experiments/` | 공통 runner·학습 preset·반복 측정 |
+| `experiments/` | 공통 runner, 학습 preset, 메모리 추정, 반복 측정 |
 | `datasets_lab/` | 공개·서비스 데이터의 canonical 변환 (두 백엔드 공용) |
 | `scripts/` | 데이터 준비 진입점 |
-| `backends/` | 백엔드별 학습·환경 |
+| `backends/` | 백엔드별 학습·평가·checkpoint 구현 |
 | `observability/` | 계측·baseline·trace 도구 |
-| `docs/` | 사용자 가이드·reference·설계 |
-| `labs/` | 실습 목표·전제조건·완료 기준 |
+| `labs/` | 목표·전제조건·완료 기준이 있는 실습 |
 | `tests/` | CPU·실행 계약 회귀 검사 |
+| `docs/` | 사용자 가이드와 reference |
 
-DPO, RL trainer, registry와 serving 배포는 구현되어 있지 않습니다.
-[Design](docs/design.md)은 후속 통합 제안이며 실행 가능한 workflow가 아닙니다.
+## Scope
+
+이 저장소는 SFT workflow와 그 관측·baseline까지만 다룹니다.
+DPO, RL trainer, artifact registry와 serving 배포는 구현되어 있지 않으며 이 저장소의 범위가 아닙니다.
+
+정적 검사, CPU 테스트, dry-run, 실제 GPU 실행은 서로 다른 증거이며 한 단계의 성공이 다른 단계를 보장하지 않습니다.
+이 원칙과 실제 검증 범위는 [Verification](docs/verification.md)에서 관리합니다.
