@@ -1,12 +1,54 @@
-# 30B Local NVMe Checkpoint와 Memory 실험
+# 30B Measurements
 
-`spark1`·`spark2`의 local NVMe만 사용해 30B 모델의 checkpoint I/O와 memory footprint를 측정한 기록입니다.
+30B 모델로 실제 실행해 얻은 수치입니다.
+이 저장소의 CPU 테스트·dry-run·GPU 실행 증거 구분 원칙은 [AGENTS.md](../AGENTS.md)를 따르고, 실행 성공 여부를 판정하는 방법은 [Getting Started](getting-started.md#6-verify-the-result)를 따릅니다.
+
+<a id="30b-gpu-results"></a>
+
+## 단일 실행 결과 (2026-09-09)
+
+commit `54a5fe0b69d168a86746d7de576d5dcae61c36b9`의 깨끗한 checkout으로 `spark1`·`spark2`에서 GPU당 process 하나를 실행했습니다.
+**이 표는 1-step 실행 가능성만 보여주며 장기 안정성이나 학습 품질을 뜻하지 않습니다.**
+
+Megatron은 TP=1·PP=1·EP=2·DP=2, BF16, sequence length 2048, global batch 2, attention LoRA를 사용했고 두 모델 모두 1 optimizer step, 평가, async `torch_dist` checkpoint와 양 rank exit 0을 확인했습니다.
+
+| Model | Train result | Peak allocated |
+| --- | --- | --- |
+| Qwen3-30B-A3B | loss `4.110986`, grad norm `15.480`, step `7.28 s` | `34.759 GiB` |
+| GLM-4.7-Flash | loss `2.497179`, grad norm `7.883`, step `6.37 s` | `34.671 GiB` |
+
+TRL은 Qwen3-30B-A3B, 같은 precision·길이·batch와 attention LoRA를 사용했습니다.
+
+| Backend | Train / eval loss | Peak allocated / reserved | Update evidence |
+| --- | --- | --- | --- |
+| DDP | `3.156563` / `2.587339` | `58.825 / 58.971 GiB` | sampled parameter delta가 0이 아님 |
+| FSDP2 | `3.156250` / `2.566406` | `32.147 / 34.188 GiB` | optimizer step과 sharded checkpoint |
+
+같은 조건은 `experiments/megatron/{qwen3-30b-lora,glm-4.7-flash-30b-lora}.json`으로 재실행할 수 있습니다.
+아래 [Checkpoint and Memory Experiment](#checkpoint-and-memory-experiment)는 같은 모델을 반복 측정한 별도 실험이므로, 이 표와 그쪽의 median은 서로 다른 run의 값입니다.
+
+### NVMe and Full SFT
+
+두 노드의 `/mnt/post-training`은 로컬 NVMe root filesystem에 있고 backend별 디렉터리에 `spark` 쓰기 권한이 있습니다.
+Megatron Qwen3-30B-A3B와 GLM-4.7-Flash LoRA는 로컬 NVMe에 데이터 cache와 로그를 쓰고, NFS의 공통 `torch_dist` checkpoint에서 iteration 1을 새 process로 재로딩해 `STAGE=all`을 완료했습니다(Qwen 40,000/8,000건 base `1.402232` → tuned `1.342737`, GLM 160,000/30,000건 `2.269922` → `2.012836`).
+Megatron은 NVMe를 native training state offload 대상으로 지원하지 않으므로 이 결과는 dataset cache와 checkpoint I/O 검증입니다.
+
+30B full SFT의 DDP·FSDP2 실패는 dataset 전체 적재가 원인이 아닙니다.
+DDP는 parameter와 gradient가 unified memory 한도에 근접하고, 설치된 Accelerate의 FSDP2 준비 과정은 sharding 전에 trainable BF16 parameter를 FP32로 올립니다.
+남은 후보였던 TRL DeepSpeed ZeRO-3 NVMe offload는 2노드에서 1 optimizer step(train loss 약 13.21), 별도 `tuned` process 평가(eval loss 약 11.96)와 복구 가능한 native ZeRO checkpoint까지 확인했습니다.
+같은 실행에서 두 노드 모두 `/mnt/post-training/trl/zero_stage_3` swap footprint가 약 256GiB로 각 노드 물리 RAM 119GiB보다 컸습니다 — NVMe offload 없이는 이 구성이 노드 RAM만으로 성립하지 않는다는 근거이며, 자세한 수치와 한계는 [30B NVMe 실습](../labs/nvme-30b/README.md#why-nvme-offload-is-necessary)을 따릅니다.
+
+<a id="checkpoint-and-memory-experiment"></a>
+
+## Checkpoint and Memory Experiment
+
+`spark1`·`spark2`의 local NVMe만 사용해 30B 모델의 checkpoint I/O와 memory footprint를 반복 측정한 전용 실험입니다.
 NFS는 조건에 포함하지 않고 Megatron checkpoint는 rank별 local shard 저장 성능만 평가합니다.
 
 실행 절차·측정 field·집계식·유효성 임계값은 모두 코드가 source of truth입니다 — 진입점 `experiments/checkpoint_memory_30b.py`, read/cache 분류 `experiments/checkpoint_io_probe.py`, cohort 생성 `experiments/prepare_checkpoint_cohort.py`.
 이 문서는 코드에서 읽어낼 수 없는 것만 남깁니다: 왜 이렇게 측정했는지와 실제로 무엇이 나왔는지.
 
-## 답하려는 질문
+### 답하려는 질문
 
 1. Megatron distributed checkpoint의 논리 크기와 실제 local NVMe write traffic은 얼마인가?
 2. Sync와 async checkpoint가 save latency, finalization과 학습 step time에 어떤 차이를 만드는가?
@@ -18,7 +60,7 @@ NFS는 조건에 포함하지 않고 Megatron checkpoint는 rank별 local shard 
 
 이 결과는 local checkpoint의 장애 복구, topology 변경 restore, power-loss durability 또는 framework 간 절대적 우열을 증명하지 않습니다.
 
-## 고정 조건
+### 고정 조건
 
 | 항목 | 값 |
 | --- | --- |
@@ -32,7 +74,7 @@ NFS는 조건에 포함하지 않고 Megatron checkpoint는 rank별 local shard 
 `spark1`과 `spark2`에서 같은 경로 문자열은 서로 다른 물리 disk를 가리킵니다.
 Metadata와 shard가 독립 filesystem에 나뉘면 새 process가 완전한 checkpoint를 찾을 수 없으므로 이 실험에서는 `tuned`·`resume`을 실행하지 않고 save 경로만 측정합니다(`CHECKPOINT_PLACEMENT=local`, `STAGE=train`).
 
-## I/O 동작
+### I/O 동작
 
 설치된 구현의 I/O 동작이 서로 다르므로 하나의 `NVMe I/O` 항목으로 묶지 않습니다.
 
@@ -49,7 +91,7 @@ Megatron은 data file과 metadata에 `fsync()`를 호출하지만 metadata renam
 
 TRL DeepSpeed ZeRO-3는 finetuning mode·optimizer·checkpoint format·runtime offload가 모두 다르므로 Megatron의 순수 baseline이 아니라 framework-native system 비교입니다.
 
-## 측정 설계에서 의도적으로 선택한 것
+### 측정 설계에서 의도적으로 선택한 것
 
 - **Async throughput의 분모로 `save()` 반환 시간을 쓰지 않습니다.** 그 값은 대부분 enqueue 작업만 나타냅니다. 첫 enqueue 시작부터 blocking finalization 완료까지를 씁니다.
 - **전역 `drop_caches`를 쓰지 않습니다.** 공유 cluster이기 때문이며, 대신 파일별 `POSIX_FADV_DONTNEED`로 eviction을 요청하고 관찰된 device-read delta로 cache 상태를 분류합니다. `POSIX_FADV_DONTNEED`는 advisory이므로 eviction 성공을 가정하지 않고, read-ahead 때문에 physical bytes가 logical을 넘을 수 있어 분류 임계값은 정확한 cache-hit ratio가 아닙니다.
@@ -59,7 +101,7 @@ TRL DeepSpeed ZeRO-3는 finetuning mode·optimizer·checkpoint format·runtime o
 - **측정할 수 없는 값은 zero가 아니라 `null`로 기록하고 invalid로 분류합니다.**
 - **각 run의 checkpoint는 probe와 metric 수집 직후 삭제합니다**(`cleanup_checkpoints()`). 모든 iteration·반복의 checkpoint를 보존하면 local storage를 소진하기 때문이며, manifest·measurement record는 그대로 남습니다.
 
-## 실행
+### 실행
 
 기본값은 실제 GPU 작업을 시작하지 않는 dry-run입니다.
 
@@ -81,11 +123,11 @@ Checkpoint phase는 sync/async warmup과 측정, rank별 resource sampling, warm
 Memory phase는 4096/8192 Megatron pilot과 반복, TRL DDP/FSDP2 LoRA, TRL ZeRO-3 NVMe full-SGD를 실행합니다.
 `LEN-2048` Megatron memory 값은 checkpoint phase 결과를 재사용합니다.
 
-## 실측 결과
+### 실측 결과
 
 Raw manifest·measurement record는 커밋하지 않으므로(`results/`는 gitignore 대상) 아래는 요약값입니다.
 
-### Megatron local checkpoint (sync vs async)
+#### Megatron local checkpoint (sync vs async)
 
 5회 반복 모두 종료 기준(rMAD ≤ 10%)을 만족해 8회로 확장하지 않았습니다.
 
@@ -96,7 +138,7 @@ Raw manifest·measurement record는 커밋하지 않으므로(`results/`는 giti
 
 LoRA rank 8 고정이라 sync/async가 같은 크기를 저장하므로 크기 차이는 없고, async가 blocking host-call 기준 약 1초 빠릅니다 — enqueue만 하고 반환하는 async 설계와 일치합니다.
 
-### Memory footprint
+#### Memory footprint
 
 | 조건 | Run 수 | CUDA peak allocated(median) | Host memory pressure(median) |
 | --- | ---: | ---: | ---: |
@@ -115,7 +157,7 @@ Unified-memory hardware이므로 CUDA와 host 측정값을 더하지 않고 별�
 
 DeepSpeed의 Direct offload traffic과 buffered ZeRO-checkpoint traffic을 분리해 보고하는 항목은 아직 측정하지 않았습니다.
 
-## LoRA trainable-ratio가 checkpoint I/O에 미치는 영향
+### LoRA trainable-ratio가 checkpoint I/O에 미치는 영향
 
 위 checkpoint 측정은 LoRA rank 8(전체 model-parallel shard의 약 0.03%)에서만 수행했습니다.
 같은 파이프라인에서 `LORA_DIM`만 바꿔 비율 축을 확인했습니다(sync만 사용 — sync/async 비교는 위에서 이미 끝났습니다).

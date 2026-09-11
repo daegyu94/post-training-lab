@@ -19,8 +19,7 @@ Controller에는 Python 3.10 이상과 Git이, 학습에는 준비된 Spark 노�
 | Preset을 고르고 반복 비교하려면? | [Experiments](docs/experiments.md) |
 | 자원·통신·저장소를 어떻게 관측하는가? | [Observability](docs/observability.md) |
 | 지표 이름·단위·수집 범위 규칙은? | [Metrics Contract](docs/metrics-contract.md) |
-| 무엇이 실제로 검증되었는가? | [Verification](docs/verification.md) |
-| 30B에서 측정한 checkpoint·memory 수치는? | [30B Measurements](docs/measurements-30b.md) |
+| 30B에서 실제로 측정한 수치는? | [30B Measurements](docs/measurements-30b.md) |
 | 클러스터 토폴로지와 노드 준비는? | [Spark Cluster Setup](setups/spark/README.md) |
 
 실습:
@@ -47,4 +46,4 @@ Controller에는 Python 3.10 이상과 Git이, 학습에는 준비된 Spark 노�
 DPO, RL trainer, artifact registry와 serving 배포는 구현되어 있지 않으며 이 저장소의 범위가 아닙니다.
 
 정적 검사, CPU 테스트, dry-run, 실제 GPU 실행은 서로 다른 증거이며 한 단계의 성공이 다른 단계를 보장하지 않습니다.
-이 원칙과 실제 검증 범위는 [Verification](docs/verification.md)에서 관리합니다.
+검증 명령은 [AGENTS.md](AGENTS.md), 판정 기준은 [Getting Started](docs/getting-started.md#6-verify-the-result)를 따릅니다.

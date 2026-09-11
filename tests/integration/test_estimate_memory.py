@@ -1,7 +1,7 @@
 """The estimator is only worth anything if it lands near the runs we actually measured.
 
-Reference measurements come from docs/verification.md's 30B GPU Results, all on
-two Spark nodes, one process per node, BF16, sequence length 2048.
+Reference measurements come from docs/measurements-30b.md's 30B GPU Results, all
+on two Spark nodes, one process per node, BF16, sequence length 2048.
 """
 
 import json
@@ -22,7 +22,7 @@ from experiments.estimate_memory import (
 QWEN3_30B = ModelWeights(expert_bytes=57_982_058_496, dense_bytes=3_082_186_752, tensor_count=18867)
 QWEN3_HIDDEN, QWEN3_LAYERS = 2048, 48
 
-# docs/verification.md, 30B GPU Results.
+# docs/measurements-30b.md, 30B GPU Results.
 MEASURED_GIB = {"megatron_lora_ep2": 34.759, "trl_ddp_lora": 58.825, "trl_fsdp2_lora": 32.147}
 # The estimate omits CUDA context, fragmentation and framework workspaces, so it
 # reads low; anything beyond this band means the model of a backend is wrong.

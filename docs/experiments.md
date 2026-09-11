@@ -19,11 +19,13 @@ Experiment 파일은 모델·데이터 revision과 학습 조건을, setup은 �
 | `experiments/trl/nvme-offload-30b.json` | 2노드 Qwen3 30B full SFT, ZeRO-3 NVMe offload | base/train/tuned |
 | `experiments/megatron/qwen3-30b-lora.json` | 2노드 Qwen3 30B MoE LoRA, 평가와 node-local async checkpoint | train |
 | `experiments/megatron/glm-4.7-flash-30b-lora.json` | 2노드 GLM-4.7-Flash 30B MoE LoRA, 평가와 node-local async checkpoint | train |
-| `experiments/megatron/qwen3-30b-full.json` | 2노드 Qwen3 30B MoE full-parameter — 메모리 적합성 미검증 ([Verification](verification.md#known-limits)) | all |
+| `experiments/megatron/qwen3-30b-full.json` | 2노드 Qwen3 30B MoE full-parameter — 아래 참고, 메모리 적합성 미검증 | all |
 
 앞의 smoke 네 개는 Qwen2.5-0.5B와 고정 No Robots 입력을 쓰며 모델 품질·장기 수렴·성능 비교용이 아닙니다.
 Megatron의 두 30B preset은 검증 당시와 같은 TP=1·PP=1·EP=2로 1 step, 평가 1회와 async checkpoint를 실행합니다.
 TRL NVMe preset의 `train`은 같은 process에서 평가하지 않고, 평가는 `tuned`를 별도 process로 실행해 native ZeRO checkpoint를 새 엔진에 복원한 뒤 수행합니다 — 이유와 준비 조건은 [30B NVMe 실습](../labs/nvme-30b/README.md)을 따릅니다.
+
+`qwen3-30b-full.json`은 **실측으로 검증되지 않았습니다.** 로컬 `no_robots` 5000행 중 한 행이 검증된 LoRA preset과 같은 `MAX_LENGTH=2048`을 넘어 "never truncates" 정책에 막혔습니다 — 이 경계값은 memory 비교의 기준이라 늘리지 않았습니다. [메모리 추정기](#estimate-memory-before-running)는 per-rank 149.7 GiB(파라미터 29.9 + gradient 29.9 + Adam 89.6)로 예측해 119 GiB 예산을 약 31 GiB 초과한다고 봅니다. `--optimizer sgd`는 90.0 GiB로 예산 안에 들어옵니다. 둘 다 추정이며 실행으로 확인한 값이 아닙니다.
 
 `experiments/run.py`는 `--backend`, `--setup`, `--experiment`, `--output`을 요구합니다.
 기본은 dry-run이고 `--timeout`은 기본 900초의 양의 정수이며 기존 출력 디렉터리는 재사용할 수 없습니다.
@@ -45,7 +47,7 @@ python experiments/estimate_memory.py \
 
 `--budget-gib`는 per-rank 예산과 비교해 `FITS`/`DOES NOT FIT`을 판정하고, `--offload cpu|nvme`는 optimizer·gradient를 on-device에서 빼되 해당 계층이 감당할 용량을 따로 알려줍니다.
 
-| 검증 대상 | 실측 ([Verification](verification.md#30b-gpu-results)) | 예측 |
+| 검증 대상 | 실측 ([30B Measurements](measurements-30b.md#30b-gpu-results)) | 예측 |
 | --- | --- | --- |
 | TRL DDP LoRA | 58.825 GiB | 59.2 GiB |
 | TRL FSDP2 LoRA | 32.147 GiB | 29.3 GiB |

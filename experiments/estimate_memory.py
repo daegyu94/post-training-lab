@@ -3,7 +3,8 @@
 Answers "will this configuration fit?" -- e.g. whether a 30B full-parameter SFT
 has any chance on this cluster -- from the model's actual tensor sizes plus the
 sharding the chosen backend applies. This is an ESTIMATE, not a measurement:
-see ESTIMATE_CAVEATS and docs/verification.md's evidence separation.
+see ESTIMATE_CAVEATS and AGENTS.md's evidence separation (static/CPU/dry-run/GPU
+are distinct evidence tiers).
 
 Parameter counts come from the safetensors index/headers already on disk, not
 from architecture-specific formulas, so MoE and dense models are handled the

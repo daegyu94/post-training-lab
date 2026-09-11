@@ -124,7 +124,23 @@ Controller 출력의 `manifest.json`에서 최종 `status`가 `passed`이고 모
 
 TRL은 `summary-base.json`, `summary-train.json`, `summary-tuned.json`과 adapter를 확인합니다.
 Finite loss와 실제 optimizer step을 확인하고, `tuned`가 별도 process에서 저장물을 다시 읽었는지 대조합니다.
-판정 기준 전체는 [Verification](verification.md#judge-a-run)을 따릅니다.
+
+각 단계가 실제로 무엇을 증명하고 무엇을 증명하지 않는지는 아래를 기준으로 판정합니다.
+
+| 확인 대상 | 성공 조건 | 증명하지 않는 것 |
+| --- | --- | --- |
+| Dry-run | 설정 검증·계획 생성·exit 0 | 원격 파일, GPU, SSH 준비 |
+| Controller 실행 | manifest의 `passed`, 모든 rank exit 0 | 학습 품질 |
+| 학습 | 예상 optimizer step, finite loss·gradient, 저장물 | 장기 수렴, 다른 모델의 메모리 적합성 |
+| Adapter reload | 별도 process에서 읽기·평가 완료 | optimizer·scheduler resume |
+| Checkpoint resume | 기대 iteration과 상태 load 후 추가 step | uninterrupted run과의 전체 수치 동등성 |
+| Async 저장 | 필요한 shard와 pending save finalization | fsync·장애 후 durability |
+
+백엔드 summary는 원격 출력 경로에 있고 controller로 자동 복사되지 않습니다.
+모든 rank 로그와 모델·데이터 revision, 실제 선택한 입력, topology, seed, 환경 버전을 함께 확인합니다.
+Sharded backend의 optimizer-step 증거를 전체 parameter checksum 검증으로 읽지 않습니다.
+ZeRO-3 과거 summary의 parameter count 0은 placeholder 계측 문제이며 모델 크기 0이 아닙니다.
+30B에서 실제로 측정한 수치는 [30B Measurements](measurements-30b.md)를 따릅니다.
 
 ## Troubleshooting
 

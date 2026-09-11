@@ -95,4 +95,4 @@ Optimizer state·계산을 CPU로 옮기는 optimizer offload와 activation을 �
 
 Selective recompute는 현재 `recompute_num_layers=1` 설정 때문에 Bridge 검증에서 실패합니다 — 메모리 부족이나 하드웨어 미지원의 증거가 아닙니다.
 현재 launcher는 평가 loss를 출력하는 마지막 global rank의 로그를 읽고 마지막 노드에서 `summary.json`을 작성합니다.
-재로딩 성공, 전체 상태의 수치 동등성, 장애 복구는 서로 다른 검증이며 [Verification](../verification.md)의 기준을 따릅니다.
+재로딩 성공, 전체 상태의 수치 동등성, 장애 복구는 서로 다른 검증이며 [Getting Started](../getting-started.md#6-verify-the-result)의 기준을 따릅니다.
