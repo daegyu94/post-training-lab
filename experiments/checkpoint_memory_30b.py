@@ -394,14 +394,19 @@ class _LocalFileResult:
         self.stderr = ""
 
 
-def _local_file_run(paths: list[Path]) -> Callable[..., Any]:
+def _local_file_run(paths: list[Path], fallback: Callable[..., Any] = subprocess.run) -> Callable[..., Any]:
     """A remote_run/run stand-in that replays already-fetched local files instead
     of SSHing, in call order. Used to resume a run whose metrics were already
-    collected before an earlier invocation was interrupted."""
+    collected before an earlier invocation was interrupted. A run can itself be
+    interrupted mid-collection (e.g. one rank's file fetched, the other not), so
+    a missing local file falls back to the real fetch rather than failing resume."""
     iterator = iter(paths)
 
-    def run_fn(*_args: Any, **_kwargs: Any) -> Any:
-        return _LocalFileResult(next(iterator).read_text(encoding="utf-8"))
+    def run_fn(*args: Any, **kwargs: Any) -> Any:
+        path = next(iterator)
+        if path.exists():
+            return _LocalFileResult(path.read_text(encoding="utf-8"))
+        return fallback(*args, **kwargs)
 
     return run_fn
 

@@ -134,3 +134,24 @@ def test_local_file_run_replays_files_in_call_order(tmp_path: Path) -> None:
 
     assert run_fn(["ssh", "whatever"]).stdout == "first\n"
     assert run_fn(["ssh", "whatever"]).stdout == "second\n"
+
+
+def test_local_file_run_falls_back_when_a_file_is_missing(tmp_path: Path) -> None:
+    # A run can be interrupted mid-collection: one rank's file already fetched,
+    # the other not. The missing one must fall back to a real fetch, not crash.
+    present = tmp_path / "present.jsonl"
+    present.write_text("cached\n", encoding="utf-8")
+    missing = tmp_path / "missing.jsonl"
+    seen = []
+
+    def fallback(*args, **kwargs):
+        seen.append(args)
+        class Result:
+            stdout = "fetched\n"
+        return Result()
+
+    run_fn = checkpoint_memory_30b._local_file_run([present, missing], fallback=fallback)
+
+    assert run_fn(["ssh", "a"]).stdout == "cached\n"
+    assert run_fn(["ssh", "b"]).stdout == "fetched\n"
+    assert seen == [(["ssh", "b"],)]
