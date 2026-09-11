@@ -327,7 +327,11 @@ def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execu
                 record["metrics"]["save_call_host_seconds_max_across_ranks"] = record["metrics"].pop("save_call_host_seconds_sum_per_rank")
                 record["metrics"]["blocking_finalization_host_seconds_max_across_ranks"] = record["metrics"].pop("blocking_finalization_host_seconds_sum_per_rank")
                 if post_run_fn is not None and not item["warmup"]:
-                    record["post_run"] = post_run_fn(plan, run_output, item)
+                    try:
+                        record["post_run"] = post_run_fn(plan, run_output, item)
+                    except Exception as exc:
+                        # Telemetry collection failing must not retract a training run that already passed.
+                        record["post_run_error"] = str(exc)
             else:
                 failed_variants.add(key)
         except KeyboardInterrupt:

@@ -57,6 +57,14 @@ def _delta(before: dict[str, int], after: dict[str, int]) -> dict[str, int]:
     return {name: after[name] - value for name, value in before.items()}
 
 
+def _safe_rate(amount: int, elapsed: float) -> float | None:
+    return amount / elapsed if elapsed > 0 else None
+
+
+def _safe_ratio(numerator: int, denominator: int) -> float | None:
+    return numerator / denominator if denominator else None
+
+
 def buffered_read(files: list[Path], read_device: Callable[[], dict[str, int]]) -> dict[str, object]:
     buffer = bytearray(4 * 1024 * 1024)
     before = read_device()
@@ -71,11 +79,11 @@ def buffered_read(files: list[Path], read_device: Callable[[], dict[str, int]]) 
     return {
         "seconds": elapsed,
         "logical_bytes": logical,
-        "logical_bytes_per_second": logical / elapsed,
+        "logical_bytes_per_second": _safe_rate(logical, elapsed),
         "physical_read_bytes": device["read_bytes"],
         "physical_read_operations": device["read_operations"],
         "device_busy_time_ms": device["busy_time_ms"],
-        "physical_to_logical_ratio": device["read_bytes"] / logical,
+        "physical_to_logical_ratio": _safe_ratio(device["read_bytes"], logical),
     }
 
 
@@ -117,11 +125,11 @@ def direct_read(
     return {
         "seconds": elapsed,
         "logical_bytes": logical,
-        "logical_bytes_per_second": logical / elapsed,
+        "logical_bytes_per_second": _safe_rate(logical, elapsed),
         "physical_read_bytes": device["read_bytes"],
         "physical_read_operations": device["read_operations"],
         "device_busy_time_ms": device["busy_time_ms"],
-        "physical_to_logical_ratio": device["read_bytes"] / logical,
+        "physical_to_logical_ratio": _safe_ratio(device["read_bytes"], logical),
     }
 
 
@@ -142,10 +150,12 @@ def run_probe(checkpoint_dir: Path, *, include_direct: bool = True) -> dict[str,
     cold = buffered_read(files, read_device)
     warm = buffered_read(files, read_device)
     cold["classification"] = (
-        "valid" if float(cold["physical_to_logical_ratio"]) >= 0.9 else "cache-contaminated"
+        "valid" if cold["physical_to_logical_ratio"] is not None and cold["physical_to_logical_ratio"] >= 0.9
+        else "cache-contaminated"
     )
     warm["classification"] = (
-        "valid" if float(warm["physical_to_logical_ratio"]) <= 0.1 else "unexpected-cache-miss"
+        "valid" if warm["physical_to_logical_ratio"] is not None and warm["physical_to_logical_ratio"] <= 0.1
+        else "unexpected-cache-miss"
     )
     return {
         "scope": "raw local-shard read; not Megatron restore",

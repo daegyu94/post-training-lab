@@ -83,8 +83,17 @@ def prepare_cohorts(
         ):
             raise RuntimeError(f"cohort manifest mismatch on {node['host']}")
         manifests.append(manifest)
-    if execute and len({item["source_selection_sha256"] for item in manifests}) != 1:
-        raise RuntimeError("cohort selection differs across Spark nodes")
+    if execute:
+        selections = {item["source_selection_sha256"] for item in manifests}
+        # source_selection_sha256 only hashes the chosen prompt IDs, so nodes with the
+        # same selection but divergently-provisioned UltraChat copies could still pass;
+        # also compare the actual per-file content hashes across nodes.
+        contents = {
+            tuple(sorted((name, entry["sha256"]) for name, entry in item["files"].items()))
+            for item in manifests
+        }
+        if len(selections) != 1 or len(contents) != 1:
+            raise RuntimeError("cohort selection or content differs across Spark nodes")
     return updated, planned
 
 
@@ -178,8 +187,8 @@ def aggregate_probe(by_rank: dict[str, Any]) -> dict[str, Any]:
             "seconds_max_across_ranks": elapsed,
             "logical_bytes": logical,
             "physical_read_bytes": physical,
-            "logical_bytes_per_second": logical / elapsed,
-            "physical_to_logical_ratio": physical / logical,
+            "logical_bytes_per_second": logical / elapsed if elapsed > 0 else None,
+            "physical_to_logical_ratio": physical / logical if logical else None,
             "rank_classifications": [value.get("classification") for value in values],
         }
     result["reads"] = reads
@@ -202,6 +211,7 @@ def checkpoint_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
             and item.get("variant") == variant and item.get("post_run")
         ]
         throughputs = [item["post_run"]["aggregate"]["reads"]["cold_buffered"]["logical_bytes_per_second"] for item in selected]
+        throughputs = [float(value) for value in throughputs if value is not None]
         save = [item["metrics"]["save_call_host_seconds_max_across_ranks"] for item in selected]
         save = [float(value) for value in save if value is not None]
         dispersion = relative_mad(save)

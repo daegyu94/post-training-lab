@@ -7,6 +7,7 @@ import hashlib
 import json
 import math
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Callable
 
@@ -102,8 +103,14 @@ def build_cohort(
     eval_ids = {str(row["prompt_id"]) for row in validation}
     if train_ids & eval_ids:
         raise ValueError("selected train and validation prompt IDs overlap")
-    output_dir.mkdir(parents=True)
-    paths = {"training": output_dir / "training.jsonl", "validation": output_dir / "validation.jsonl"}
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    # Build under a temp sibling and rename into place so a crash/timeout mid-build
+    # never leaves output_dir existing-but-manifest-less (which would permanently
+    # block retries via the exists() guard above).
+    # ponytail: an interrupt before the final rename leaves this temp dir orphaned on disk;
+    # add periodic cleanup of `.*.tmp-*` siblings if orphaned dirs start piling up.
+    tmp_dir = Path(tempfile.mkdtemp(dir=output_dir.parent, prefix=f".{output_dir.name}.tmp-"))
+    paths = {"training": tmp_dir / "training.jsonl", "validation": tmp_dir / "validation.jsonl"}
     for name, rows in (("training", train), ("validation", validation)):
         paths[name].write_text(
             "".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in rows),
@@ -133,9 +140,10 @@ def build_cohort(
         ).hexdigest(),
         "files": {name: {"path": path.name, "sha256": _sha256(path)} for name, path in paths.items()},
     }
-    (output_dir / "manifest.json").write_text(
+    (tmp_dir / "manifest.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8"
     )
+    tmp_dir.rename(output_dir)
     return manifest
 
 
