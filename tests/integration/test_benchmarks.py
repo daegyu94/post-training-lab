@@ -19,6 +19,27 @@ def _plan() -> dict:
     }
 
 
+def test_load_benchmark_plan_accepts_more_than_two_variants(tmp_path: Path) -> None:
+    plan = _plan()
+    plan["cells"][0]["variants"].append({"name": "c", "env": {"MAX_LENGTH": 8192}})
+    path = tmp_path / "plan.json"
+    path.write_text(json.dumps(plan), encoding="utf-8")
+
+    loaded = benchmarks.load_benchmark_plan(path)
+
+    assert [v["name"] for v in loaded["cells"][0]["variants"]] == ["a", "b", "c"]
+
+
+def test_load_benchmark_plan_rejects_single_variant(tmp_path: Path) -> None:
+    plan = _plan()
+    plan["cells"][0]["variants"] = plan["cells"][0]["variants"][:1]
+    path = tmp_path / "plan.json"
+    path.write_text(json.dumps(plan), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="at least two variants"):
+        benchmarks.load_benchmark_plan(path)
+
+
 def test_schedule_warmups_then_alternating_measured_order() -> None:
     runs = benchmarks.schedule_runs(_plan(), 4, 2)
     assert [(r["variant"], r["warmup"]) for r in runs[:2]] == [("a", True), ("b", True)]

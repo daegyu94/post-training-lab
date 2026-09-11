@@ -1,0 +1,44 @@
+{
+  "backend": "megatron",
+  "setup": "spark",
+  "base_experiment": "experiments/megatron/qwen3-30b-lora.json",
+  "defaults": {
+    "steps": 8,
+    "repeats": 3,
+    "within_run_warmup": 2,
+    "checkpoint_intervals": [2, 2]
+  },
+  "common_env": {
+    "MODEL_ID": "Qwen/Qwen3-30B-A3B",
+    "MODEL_REVISION": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+    "DATASET_ID": "HuggingFaceH4/ultrachat_200k",
+    "DATASET_REVISION": "8049631c405ae6576f93f445c6b8166f76f5505a",
+    "FINETUNING_MODE": "lora",
+    "CHECKPOINT_MODE": "sync",
+    "GLOBAL_BATCH_SIZE": 2,
+    "MICRO_BATCH_SIZE": 1,
+    "TP": 1,
+    "PP": 1,
+    "EP": 2,
+    "MAX_LENGTH": 2048,
+    "PAD_TO_MAX_LENGTH": true,
+    "SAVE_INTERVAL": 2,
+    "SAVE_OPTIMIZER": true,
+    "CHECKPOINT_PLACEMENT": "local",
+    "RESOURCE_SAMPLING": true,
+    "MEASURE_TIMING": true,
+    "SEED": 42,
+    "STAGE": "train"
+  },
+  "cells": [
+    {
+      "name": "lora-ratio-local",
+      "varying": ["LORA_DIM"],
+      "variants": [
+        {"name": "ratio-0.1pct", "env": {"LORA_DIM": 25}},
+        {"name": "ratio-0.5pct", "env": {"LORA_DIM": 126}},
+        {"name": "ratio-1pct", "env": {"LORA_DIM": 251}}
+      ]
+    }
+  ]
+}

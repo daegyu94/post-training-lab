@@ -46,10 +46,34 @@ def test_relative_mad_drives_extension_rule() -> None:
     assert checkpoint_memory_30b.relative_mad([5, 7, 10, 13, 20]) == 0.3
 
 
+def test_checkpoint_summary_derives_variant_names_from_records() -> None:
+    def record(variant: str, size: int, save_seconds: float) -> dict:
+        return {
+            "status": "passed", "warmup": False, "variant": variant,
+            "metrics": {"save_call_host_seconds_max_across_ranks": save_seconds},
+            "post_run": {"aggregate": {
+                "logical_checkpoint_bytes": size,
+                "reads": {"cold_buffered": {"logical_bytes_per_second": 1e9}},
+            }},
+        }
+
+    records = [
+        record("ratio-0.1pct", 1_000_000, 1.0),
+        record("ratio-0.5pct", 5_000_000, 1.2),
+        record("ratio-1pct", 10_000_000, 1.5),
+    ]
+
+    summary = checkpoint_memory_30b.checkpoint_summary(records)
+
+    assert set(summary) == {"ratio-0.1pct", "ratio-0.5pct", "ratio-1pct"}
+    assert summary["ratio-1pct"]["logical_checkpoint_bytes_median"] == 10_000_000
+    assert summary["ratio-1pct"]["run_count"] == 1
+
+
 def test_memory_matrix_matches_fixed_length_and_backend_contract() -> None:
     conditions = {item["name"]: item for item in checkpoint_memory_30b.memory_experiments()}
 
-    assert set(conditions) == {"len-1024", "len-4096", "trl-ddp", "trl-fsdp2", "trl-zero3-nvme"}
+    assert set(conditions) == {"len-4096", "len-8192", "trl-ddp", "trl-fsdp2", "trl-zero3-nvme"}
     assert conditions["len-4096"]["experiment"]["env"]["PAD_TO_MAX_LENGTH"] is True
     assert conditions["trl-ddp"]["experiment"]["env"]["PAD_TO_MAX_LENGTH"] is True
     zero = conditions["trl-zero3-nvme"]["experiment"]["env"]

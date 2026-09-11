@@ -73,8 +73,8 @@ def load_benchmark_plan(path: Path) -> dict[str, Any]:
     for cell in cells:
         if not isinstance(cell, dict) or not isinstance(cell.get("name"), str):
             raise ValueError("each benchmark cell needs a name")
-        if not isinstance(cell.get("variants"), list) or len(cell["variants"]) != 2:
-            raise ValueError(f"cell {cell.get('name')} must contain exactly two variants")
+        if not isinstance(cell.get("variants"), list) or len(cell["variants"]) < 2:
+            raise ValueError(f"cell {cell.get('name')} must contain at least two variants")
         for variant in cell["variants"]:
             if not isinstance(variant, dict) or not isinstance(variant.get("name"), str):
                 raise ValueError(f"cell {cell['name']} has an invalid variant")

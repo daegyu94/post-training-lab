@@ -145,6 +145,7 @@ common_args=(
   --finetuning-mode "${FINETUNING_MODE:-lora}"
   --checkpoint-mode "${CHECKPOINT_MODE:-sync}"
   --recompute "${RECOMPUTE:-full}"
+  --lora-dim "${LORA_DIM:-8}"
 )
 if [[ "$dist_ckpt_optim_fully_reshardable" == "true" ]]; then
   common_args+=(--dist-ckpt-optim-fully-reshardable)

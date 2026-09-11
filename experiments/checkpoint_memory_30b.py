@@ -226,7 +226,8 @@ def relative_mad(values: list[float]) -> float | None:
 
 def checkpoint_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
     summary = {}
-    for variant in ("sync", "async"):
+    variants = sorted({item["variant"] for item in records if item.get("variant")})
+    for variant in variants:
         selected = [
             item for item in records
             if item.get("status") == "passed" and not item.get("warmup")
@@ -234,11 +235,13 @@ def checkpoint_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
         ]
         throughputs = [item["post_run"]["aggregate"]["reads"]["cold_buffered"]["logical_bytes_per_second"] for item in selected]
         throughputs = [float(value) for value in throughputs if value is not None]
+        sizes = [float(item["post_run"]["aggregate"]["logical_checkpoint_bytes"]) for item in selected]
         save = [item["metrics"]["save_call_host_seconds_max_across_ranks"] for item in selected]
         save = [float(value) for value in save if value is not None]
         dispersion = relative_mad(save)
         summary[variant] = {
             "run_count": len(selected),
+            "logical_checkpoint_bytes_median": statistics.median(sizes) if sizes else None,
             "cold_buffered_read_bytes_per_second_median": statistics.median(throughputs) if throughputs else None,
             "save_call_seconds_median": statistics.median(save) if save else None,
             "save_call_relative_mad": dispersion,
@@ -275,13 +278,13 @@ def memory_experiments() -> list[dict[str, Any]]:
         "GRADIENT_ACCUMULATION_STEPS": 1,
     }
     return [
-        {"name": "len-1024", "repeats": 3, "pilot": True, "experiment": {
-            "backend": "megatron", "setup": "spark", "nnodes": 2, "nproc_per_node": 1,
-            "env": {**megatron, "MAX_LENGTH": 1024},
-        }},
         {"name": "len-4096", "repeats": 3, "pilot": True, "experiment": {
             "backend": "megatron", "setup": "spark", "nnodes": 2, "nproc_per_node": 1,
             "env": {**megatron, "MAX_LENGTH": 4096},
+        }},
+        {"name": "len-8192", "repeats": 3, "pilot": True, "experiment": {
+            "backend": "megatron", "setup": "spark", "nnodes": 2, "nproc_per_node": 1,
+            "env": {**megatron, "MAX_LENGTH": 8192},
         }},
         {"name": "trl-ddp", "repeats": 3, "pilot": False, "experiment": {
             "backend": "trl", "setup": "spark", "nnodes": 2, "nproc_per_node": 1,
@@ -317,9 +320,9 @@ def collect_memory_estimates(
     script = str(Path(node["checkout"]) / "experiments" / "estimate_memory.py")
     model_dir = node["model_dirs"][MODEL_ID]
     specs = [
-        ("meg-lora-1024", ["--backend", "megatron", "--finetuning-mode", "lora", "--optimizer", "adam", "--ep", "2", "--seq-len", "1024"]),
         ("meg-lora-2048", ["--backend", "megatron", "--finetuning-mode", "lora", "--optimizer", "adam", "--ep", "2", "--seq-len", "2048"]),
         ("meg-lora-4096", ["--backend", "megatron", "--finetuning-mode", "lora", "--optimizer", "adam", "--ep", "2", "--seq-len", "4096"]),
+        ("meg-lora-8192", ["--backend", "megatron", "--finetuning-mode", "lora", "--optimizer", "adam", "--ep", "2", "--seq-len", "8192"]),
         ("trl-ddp-lora", ["--backend", "trl", "--finetuning-mode", "lora", "--optimizer", "adamw", "--distributed-backend", "ddp"]),
         ("trl-fsdp2-lora", ["--backend", "trl", "--finetuning-mode", "lora", "--optimizer", "adamw", "--distributed-backend", "fsdp2"]),
         ("trl-zero3-nvme-full-sgd", ["--backend", "trl", "--finetuning-mode", "full", "--optimizer", "sgd", "--distributed-backend", "deepspeed", "--zero-stage", "3", "--offload", "nvme"]),

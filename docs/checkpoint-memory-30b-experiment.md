@@ -12,7 +12,7 @@ NFS는 실험 조건에 포함하지 않으며 Megatron checkpoint는 rank별 lo
 3. Megatron의 buffered read에서 page cache가 cold·warm 성능에 미치는 영향은 얼마인가?
 4. DeepSpeed NVMe offload의 Direct I/O와 framework checkpoint의 buffered I/O는 어떻게 다른가?
 5. 같은 30B 모델에서 framework와 분산 전략에 따라 CUDA, unified host memory와 NVMe footprint가 어떻게 달라지는가?
-6. Fixed sequence length 1024, 2048, 4096에서 Megatron LoRA의 memory footprint가 어떻게 달라지는가?
+6. Fixed sequence length 2048, 4096, 8192에서 Megatron LoRA의 memory footprint가 어떻게 달라지는가?
 
 이 결과는 local checkpoint의 장애 복구, topology 변경 restore, power-loss durability 또는 framework 간 절대적인 우열을 증명하지 않습니다.
 
@@ -77,7 +77,7 @@ Primary cohort는 tokenization에 성공하고 2048 token을 넘지 않는 Ultra
 Framework별 memory 비교에서는 모든 backend가 2048 token까지 padding해야 합니다.
 고정 padding을 동등하게 적용할 수 없다면 UltraChat scan 결과에서 2048 이하인 같은 16개 long sample을 선택하고 실제 token 길이를 결과에 기록합니다.
 
-Sequence length 자체의 memory 효과는 framework 비교와 섞지 않고 Megatron LoRA의 별도 1024/2048/4096 fixed-padding sweep으로 측정합니다.
+Sequence length 자체의 memory 효과는 framework 비교와 섞지 않고 Megatron LoRA의 별도 2048/4096/8192 fixed-padding sweep으로 측정합니다.
 
 ## Part A: Megatron local checkpoint
 
@@ -285,12 +285,13 @@ Checkpoint sync/async 비교에서는 2048 하나만 사용하고 sequence lengt
 
 | ID | `MAX_LENGTH` | Padding | 반복 |
 | --- | ---: | --- | --- |
-| `LEN-1024` | 1024 | fixed | pilot 1회, 필요하면 측정 3회 |
 | `LEN-2048` | 2048 | fixed | checkpoint run 결과 재사용 |
 | `LEN-4096` | 4096 | fixed | pilot 1회, 안정적이면 측정 3회 |
+| `LEN-8192` | 8192 | fixed | pilot 1회, 안정적이면 측정 3회 |
 
-각 길이에는 해당 상한 이하로 tokenization되는 같은 선택 규칙의 UltraChat cohort를 사용합니다.
-`LEN-4096` pilot은 OOM, swap 급증, non-finite 값이나 비정상적인 step time이 없을 때만 반복 측정으로 확장합니다.
+세 길이 모두 checkpoint phase가 쓰는 2048-cohort(32 train, 모든 행이 ≤2048 token)를 그대로 재사용합니다 — 2048/4096/8192는 전부 이 cohort의 상한 이상이므로 별도 cohort 준비가 필요 없습니다.
+1024를 원래 하한으로 뒀던 초기 설계는 2048-cohort 안에 1024 초과 샘플이 섞여 있어 구조적으로 항상 실패했으므로(`native setup2 preparation never truncates`), 하한을 2048로 올리고 상한을 8192로 확장했습니다 — attention/activation memory가 non-trivial하게 늘어나는 구간은 위쪽(4096→8192)에서 더 잘 드러납니다.
+`LEN-4096`·`LEN-8192` pilot은 OOM, swap 급증, non-finite 값이나 비정상적인 step time이 없을 때만 반복 측정으로 확장합니다.
 
 Sequence length가 커지면 activation과 workspace memory가 증가하고 attention compute는 길이에 더 민감하게 증가할 수 있습니다.
 30B parameter와 optimizer state가 차지하는 고정 비용은 거의 변하지 않으므로 전체 memory가 sequence length에 정비례한다고 가정하지 않습니다.
@@ -373,7 +374,7 @@ X축에는 실험 조건을 사용하고 BF16은 제목이나 manifest에 기록
 5. `Megatron read`: `warm-after-write`, `cold-buffered`, `warm-buffered`와 Direct I/O device baseline
 6. `DeepSpeed I/O`: 분리한 Direct offload와 buffered ZeRO-checkpoint panel
 7. `Memory`: 분리한 CUDA peak, host pressure, NVMe footprint와 estimator panel
-8. `Sequence length`: 1024, 2048, 4096별 CUDA peak, host pressure와 step time
+8. `Sequence length`: 2048, 4096, 8192별 CUDA peak, host pressure와 step time
 
 Legend에는 동작이 드러나는 label을 사용합니다.
 
@@ -413,7 +414,7 @@ python experiments/checkpoint_memory_30b.py \
 ```
 
 Checkpoint phase는 sync/async warmup과 측정, 각 rank의 resource sampling, warm-after-write/cold/warm buffered read와 Direct I/O baseline을 한 번에 수행합니다.
-Memory phase는 1024/4096 Megatron pilot과 반복, TRL DDP/FSDP2 LoRA, TRL ZeRO-3 NVMe full-SGD를 실행하며 TRL도 `pad_to_multiple_of=MAX_LENGTH`로 fixed padding을 적용합니다.
+Memory phase는 4096/8192 Megatron pilot과 반복, TRL DDP/FSDP2 LoRA, TRL ZeRO-3 NVMe full-SGD를 실행하며 TRL도 `pad_to_multiple_of=MAX_LENGTH`로 fixed padding을 적용합니다.
 `LEN-2048` Megatron memory 값은 checkpoint phase 결과를 재사용합니다.
 
 1. UltraChat 고정 revision을 각 노드에 준비하고 Qwen tokenizer length manifest와 benchmark cohort를 생성합니다.
@@ -421,7 +422,7 @@ Memory phase는 1024/4096 Megatron pilot과 반복, TRL DDP/FSDP2 LoRA, TRL ZeRO
 3. 통계에서 제외할 30B Megatron sync와 async pilot을 실행합니다.
 4. Megatron sync와 async를 각각 5회 측정하고 연결된 read 순서를 실행합니다.
 5. 별도 실험 없이 같은 run에서 Megatron 2048 memory 값을 수집합니다.
-6. Megatron LoRA의 1024와 4096 length pilot을 실행하고 안정성 기준을 통과한 조건만 각각 3회 측정합니다.
+6. Megatron LoRA의 4096과 8192 length pilot을 실행하고 안정성 기준을 통과한 조건만 각각 3회 측정합니다.
 7. TRL DDP와 FSDP2 LoRA memory 조건을 각각 3회 실행합니다.
 8. TRL ZeRO-3 NVMe full-SGD memory와 I/O 조건을 3회 실행합니다.
 9. 추정값과 관찰된 headroom으로 Megatron full-SGD pilot 실행 여부를 결정합니다.
@@ -429,7 +430,7 @@ Memory phase는 1024/4096 Megatron pilot과 반복, TRL DDP/FSDP2 LoRA, TRL ZeRO
 
 초기 30B 예산은 Megatron checkpoint run 10개와 TRL memory/I/O run 9개를 합한 측정 run 19개입니다.
 Pilot은 이 수에 포함하지 않습니다.
-Length sweep을 반복 측정으로 확장하면 1024와 4096 조건의 run 6개가 추가되어 최대 25개가 됩니다.
+Length sweep을 반복 측정으로 확장하면 4096과 8192 조건의 run 6개가 추가되어 최대 25개가 됩니다.
 
 모든 iteration과 반복의 checkpoint를 보존하면 local storage를 소진할 수 있습니다.
 Metric과 raw-read 검사를 마친 뒤 조건별 대표 checkpoint 하나와 manifest·measurement record를 보존하고 나머지는 명시적인 cleanup policy 아래에서만 제거합니다.

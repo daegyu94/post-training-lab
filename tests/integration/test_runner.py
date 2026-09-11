@@ -152,6 +152,17 @@ def test_local_checkpoint_placement_uses_each_nodes_output(tmp_path: Path) -> No
     }
 
 
+def test_lora_dim_is_an_accepted_megatron_env_var(tmp_path: Path) -> None:
+    _, experiment_path = config_files(tmp_path, backend="megatron")
+    experiment = json.loads(experiment_path.read_text())
+    experiment["env"]["LORA_DIM"] = 126
+    experiment_path.write_text(json.dumps(experiment))
+
+    loaded = run.load_experiment(experiment_path)
+
+    assert loaded["env"]["LORA_DIM"] == "126"
+
+
 def test_local_checkpoint_placement_rejects_reload_stages(tmp_path: Path) -> None:
     _, experiment_path = config_files(tmp_path, backend="megatron")
     experiment = json.loads(experiment_path.read_text())
