@@ -111,6 +111,41 @@ def test_real_parser_verifies_complete_finite_native_steps(tmp_path: Path) -> No
     assert parsed["steady_step_ids"] == [2, 3]
 
 
+def test_run_benchmark_raises_clear_error_for_unknown_cell_prefix(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    plan = _plan()
+    plan["cells"][0]["name"] = "totally-unrecognized-cell"
+    plan["base_experiment"] = "base.json"
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    base_path = tmp_path / "base.json"
+    base_path.write_text("{}", encoding="utf-8")
+    base = {"backend": "megatron", "setup": "spark", "nnodes": 1, "nproc_per_node": 1,
+            "env": {"MODEL_ID": "m", "MODEL_REVISION": "a" * 40,
+                    "DATASET_ID": "d", "DATASET_REVISION": "b" * 40}}
+    monkeypatch.setattr(benchmarks, "ROOT", tmp_path)
+    monkeypatch.setattr(benchmarks.runner, "load_setup", lambda path: {"nodes": []})
+    def fake_load(path):
+        return base.copy() if path == base_path else json.loads(path.read_text(encoding="utf-8"))
+    monkeypatch.setattr(benchmarks.runner, "load_experiment", fake_load)
+    monkeypatch.setattr(benchmarks, "_git_head", lambda: "c" * 40)
+
+    def fake_build(setup, experiment, setup_path, experiment_path, output, root):
+        return {"ranks": [{"rank": 0, "host": "local", "output": str(output / "remote")}],
+                "backend": "megatron", "run_id": output.name, "controller_commit": "c" * 40}
+
+    monkeypatch.setattr(benchmarks.runner, "build_plan", fake_build)
+    output = tmp_path / "out"
+    result = benchmarks.run_benchmark(
+        setup_path=tmp_path / "setup.json", benchmark_path=plan_path, output=output, execute=True,
+        execute_fn=lambda plan_value, timeout, out: 0,
+        fetch_fn=lambda plan_value, out: {},
+    )
+    record = result["records"][0]
+    assert record["status"] == "failed"
+    assert "totally-unrecognized-cell" in record["error"]
+    assert "does not match a known feature prefix" in record["error"]
+
+
 def test_run_benchmark_uses_fake_runner_and_fetch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     plan = _plan()
     plan["cells"][0]["name"] = "recompute-test"

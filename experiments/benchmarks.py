@@ -317,7 +317,15 @@ def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execu
             record["exit_code"] = code
             if code == 0:
                 log = run_output / f"rank-{len(plan['ranks']) - 1}.log"
-                feature = next(name for prefix, name in (("overlap", "overlap-grad-reduce"), ("recompute", "recompute"), ("sequence-parallel", "sequence-parallel"), ("checkpoint", "checkpoint")) if item["cell"].startswith(prefix))
+                cell_feature_prefixes = (
+                    ("overlap", "overlap-grad-reduce"), ("recompute", "recompute"),
+                    ("sequence-parallel", "sequence-parallel"), ("checkpoint", "checkpoint"),
+                    ("lora-ratio", "lora-ratio"),
+                )
+                try:
+                    feature = next(name for prefix, name in cell_feature_prefixes if item["cell"].startswith(prefix))
+                except StopIteration:
+                    raise ValueError(f"cell {item['cell']!r} does not match a known feature prefix") from None
                 record["parsed"] = parse_megatron_log(log, feature=feature, variant=item["variant"], run_index=item["run_index"], warmup_steps=item.get("warmup_steps", 0), exit_code=0, completed=True)
                 if len(record["parsed"]["steps"]) != effective_steps:
                     raise ValueError(f"native log contains {len(record['parsed']['steps'])} steps; expected {effective_steps}")

@@ -2,7 +2,15 @@ from pathlib import Path
 
 import pytest
 
-from megatron_lab.feature_lab import parse_megatron_log
+from megatron_lab.feature_lab import FEATURE_VARIANTS, parse_megatron_log, validate_feature_variant
+
+
+def test_lora_ratio_is_a_registered_feature_with_three_variants() -> None:
+    assert FEATURE_VARIANTS["lora-ratio"] == ("ratio-0.1pct", "ratio-0.5pct", "ratio-1pct")
+    for variant in FEATURE_VARIANTS["lora-ratio"]:
+        validate_feature_variant("lora-ratio", variant)
+    with pytest.raises(ValueError, match="lora-ratio variant must be one of"):
+        validate_feature_variant("lora-ratio", "sync")
 
 
 def _log(*iterations: int, checkpoint: bool = True) -> str:

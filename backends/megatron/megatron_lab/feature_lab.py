@@ -24,6 +24,7 @@ FEATURE_VARIANTS = {
     "recompute": ("full", "selective"),
     "sequence-parallel": ("off", "on"),
     "expert-parallel": ("ep1", "ep2"),
+    "lora-ratio": ("ratio-0.1pct", "ratio-0.5pct", "ratio-1pct"),
 }
 
 _STEP_RE = re.compile(
