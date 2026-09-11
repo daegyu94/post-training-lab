@@ -231,6 +231,7 @@ def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execu
                   execute_fn: Callable[..., int] = runner.execute,
                   fetch_fn: Callable[..., dict[str, Any]] = fetch_measurements,
                   post_run_fn: Callable[[dict[str, Any], Path, dict[str, Any]], dict[str, Any]] | None = None,
+                  cleanup_fn: Callable[[dict[str, Any], Path, dict[str, Any]], None] | None = None,
                   ) -> dict[str, Any]:
     if output.exists():
         raise ValueError(f"refusing to reuse existing benchmark output: {output}")
@@ -332,6 +333,11 @@ def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execu
                     except Exception as exc:
                         # Telemetry collection failing must not retract a training run that already passed.
                         record["post_run_error"] = str(exc)
+                if cleanup_fn is not None:
+                    try:
+                        cleanup_fn(plan, run_output, item)
+                    except Exception as exc:
+                        record["cleanup_error"] = str(exc)
             else:
                 failed_variants.add(key)
         except KeyboardInterrupt:

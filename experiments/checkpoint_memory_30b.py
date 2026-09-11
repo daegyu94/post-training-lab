@@ -72,7 +72,10 @@ def prepare_cohorts(
         )
         if result.returncode:
             raise RuntimeError(f"cohort preparation failed on {node['host']}: {result.stderr.strip()}")
-        manifest = json.loads(result.stdout.strip().splitlines()[-1])
+        # The cache-hit branch `cat`s a pretty-printed manifest.json (multi-line);
+        # the create branch prints a single compact line. json.loads handles both
+        # as long as the whole trimmed stdout is parsed, not just its last line.
+        manifest = json.loads(result.stdout.strip())
         if (
             manifest.get("dataset") != DATASET_ID
             or manifest.get("dataset_revision") != DATASET_REVISION
@@ -164,6 +167,25 @@ def collect_post_run(
         (destination / f"resources-node-{rank['rank']}.jsonl").write_text(resource.stdout, encoding="utf-8")
         by_rank[str(rank["rank"])] = {"checkpoint_io": probe, "resources": summarize_resources(resource.stdout.splitlines())}
     return {"ranks": by_rank, "aggregate": aggregate_probe(by_rank)}
+
+
+def cleanup_checkpoints(
+    plan: dict[str, Any], _run_output: Path, _item: dict[str, Any],
+    *, remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> None:
+    """Delete a run's node-local checkpoint directory once its metrics and read
+    probes are already captured, so local NVMe isn't exhausted across repeats."""
+    for rank in plan["ranks"]:
+        checkpoint_dir = rank["env"].get("CHECKPOINT_DIR")
+        if not checkpoint_dir:
+            continue
+        result = remote_run(
+            ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", rank["host"],
+             f"rm -rf -- {shlex.quote(checkpoint_dir)}"],
+            check=False, capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode:
+            raise RuntimeError(f"checkpoint cleanup failed on rank {rank['rank']}: {result.stderr.strip()}")
 
 
 def aggregate_probe(by_rank: dict[str, Any]) -> dict[str, Any]:
@@ -392,6 +414,10 @@ def run_memory_matrix(
                     record["resources"] = collect_run_resources(plan, run_output)
                     if experiment["backend"] == "megatron":
                         record["metrics_by_rank"] = benchmarks.fetch_measurements(plan, run_output)
+                        try:
+                            cleanup_checkpoints(plan, run_output, condition)
+                        except Exception as exc:
+                            record["cleanup_error"] = str(exc)
                     else:
                         record["trl_summary"] = collect_trl_summary(plan, run_output)
                 if pilot and code != 0:
@@ -439,6 +465,7 @@ def main(argv: list[str] | None = None) -> int:
                 checkpoint_intervals=[2, 2],
                 timeout=args.timeout,
                 post_run_fn=collect_post_run if args.execute else None,
+                cleanup_fn=cleanup_checkpoints if args.execute else None,
             )
         result["cohorts"] = cohort_plan
         if args.execute and args.phase == "checkpoint":

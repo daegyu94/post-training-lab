@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from experiments import checkpoint_memory_30b
 
@@ -68,3 +69,56 @@ def test_memory_estimates_include_non_runnable_full_adam() -> None:
 
     assert {item["name"] for item in records} >= {"meg-full-sgd", "meg-full-adam"}
     assert all("--json" in item["command"] for item in records)
+
+
+def test_prepare_cohorts_parses_pretty_printed_cached_manifest() -> None:
+    # The cache-hit branch `cat`s manifest.json, which is written with indent=2
+    # (multi-line); a same-selection, same-content result from both nodes must
+    # not raise even though it is not a single compact JSON line.
+    manifest = {
+        "dataset": checkpoint_memory_30b.DATASET_ID,
+        "dataset_revision": checkpoint_memory_30b.DATASET_REVISION,
+        "model_revision": checkpoint_memory_30b.MODEL_REVISION,
+        "max_length": 2048, "train_count": 32, "eval_count": 8,
+        "source_selection_sha256": "abc",
+        "files": {"training": {"sha256": "t"}, "validation": {"sha256": "v"}},
+    }
+
+    class Result:
+        returncode = 0
+        stdout = json.dumps(manifest, indent=2) + "\n"
+
+    node = {
+        "host": "spark@spark1", "checkout": "/repo", "python": {"megatron": "/venv/bin/python"},
+        "model_dirs": {checkpoint_memory_30b.MODEL_ID: "/models/qwen"},
+        "data_dir": "/data/ultrachat", "output_root": {"megatron": "/mnt/megatron"},
+    }
+    setup = {"nodes": [node, {**node, "host": "spark@spark2"}]}
+
+    updated, planned = checkpoint_memory_30b.prepare_cohorts(setup, execute=True, remote_run=lambda *a, **k: Result())
+
+    assert len(planned) == 2
+    assert updated["nodes"][0]["data_dir"] == checkpoint_memory_30b.cohort_path(node)
+
+
+def test_cleanup_checkpoints_removes_each_ranks_checkpoint_dir() -> None:
+    seen = []
+
+    class Result:
+        returncode = 0
+        stderr = ""
+
+    def fake_run(command, **kwargs):
+        seen.append(command)
+        return Result()
+
+    plan = {"ranks": [
+        {"rank": 0, "host": "spark@spark1", "env": {"CHECKPOINT_DIR": "/mnt/a/checkpoints"}},
+        {"rank": 1, "host": "spark@spark2", "env": {"CHECKPOINT_DIR": "/mnt/b/checkpoints"}},
+    ]}
+
+    checkpoint_memory_30b.cleanup_checkpoints(plan, Path("/unused"), {}, remote_run=fake_run)
+
+    assert len(seen) == 2
+    assert "rm -rf -- /mnt/a/checkpoints" in seen[0][-1]
+    assert "rm -rf -- /mnt/b/checkpoints" in seen[1][-1]
