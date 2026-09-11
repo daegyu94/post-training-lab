@@ -433,4 +433,35 @@ Pilot은 이 수에 포함하지 않습니다.
 Length sweep을 반복 측정으로 확장하면 4096과 8192 조건의 run 6개가 추가되어 최대 25개가 됩니다.
 
 모든 iteration과 반복의 checkpoint를 보존하면 local storage를 소진할 수 있습니다.
-Metric과 raw-read 검사를 마친 뒤 조건별 대표 checkpoint 하나와 manifest·measurement record를 보존하고 나머지는 명시적인 cleanup policy 아래에서만 제거합니다.
+실제 구현은 대표 checkpoint 하나를 남기는 대신, 각 run의 checkpoint I/O probe와 metric 수집이 끝나는 즉시 그 run의 node-local checkpoint 디렉터리를 삭제합니다(`cleanup_checkpoints()`, checkpoint phase는 warmup 포함 모든 run, memory phase는 Megatron 조건에 적용). Manifest·measurement record는 그대로 보존됩니다.
+
+## 실측 결과
+
+`--execute`로 실제 실행한 결과입니다. Raw manifest·measurement record는 커밋하지 않으므로(`results/`는 gitignore 대상) 아래는 그 결과를 요약한 값입니다.
+
+### Part A/B: Megatron local checkpoint (sync vs async)
+
+5회 반복 모두 종료 기준(rMAD ≤ 10%)을 만족해 8회로 확장하지 않았습니다.
+
+| Variant | Run 수 | Checkpoint 크기(median) | Save 호출 시간(median) | Cold-buffered read(median) | rMAD |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| sync | 5 | 69.4 MiB | 2.356s | 3.12 GB/s | 0.57% |
+| async | 5 | 69.4 MiB | 1.301s | 3.58 GB/s | 1.62% |
+
+Sync/async 모두 같은 크기의 checkpoint를 저장하므로(LoRA rank 8 고정) 크기 차이는 없고, async가 blocking host-call 시간 기준으로 약 1초 빠릅니다 — enqueue만 하고 반환하는 async의 설계와 일치합니다.
+
+### Part D: Memory footprint
+
+| 조건 | Run 수 | CUDA peak allocated(median) | Host memory pressure(median) |
+| --- | ---: | ---: | ---: |
+| `LEN-4096` (Megatron LoRA) | 3 | 39.5 GB | 53.7 GB |
+| `LEN-8192` (Megatron LoRA) | 3 | 57.6 GB | 72.6 GB |
+| `MEM-TRL-DDP` | 3 | 59.8 GB | 69.7 GB |
+| `MEM-TRL-FSDP2` | 3 | 34.1 GB | 104.0 GB |
+| `MEM-TRL-Z3-NVME` | 3 | 6.4 GB | 91.8 GB |
+
+`LEN-2048`(checkpoint phase 재사용)은 Part A 조건과 동일합니다.
+`EST-MEG-ADAM`(Megatron full + Adam) 추정값은 rank당 160.8 GiB로 119 GiB 예산을 초과해 실행하지 않았습니다.
+`EST-MEG-SGD`(Megatron full + SGD) 추정값은 rank당 96.6 GiB로 예산 안에 들어오지만, 실제 pilot 실행은 별도로 결정되지 않았습니다(추정만 수행).
+
+`LEN-1024`는 최초 설계에서 checkpoint phase의 2048-cohort를 그대로 재사용하다 구조적으로 실패했고(2048-cohort 안에 1024 초과 샘플 존재), 이를 계기로 sweep 범위를 2048/4096/8192로 올렸습니다.

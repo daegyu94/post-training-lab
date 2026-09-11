@@ -81,3 +81,18 @@ python experiments/checkpoint_memory_30b.py \
 
 [checkpoint-memory-30b-experiment.md의 유효성 기준](checkpoint-memory-30b-experiment.md#유효성-기준)을 그대로 적용합니다.
 추가로, 세 조건의 `logical_checkpoint_bytes_median`이 `LORA_DIM`에 거의 선형으로 비례하는지 확인합니다 — 벗어나면 optimizer state 계산이나 target module 구성이 예상과 다르다는 신호입니다.
+
+## 실측 결과
+
+`--execute`로 실제 실행한 결과입니다(12/12 run 통과, pilot 3 + 측정 9).
+
+| Variant | `LORA_DIM` | Checkpoint 크기(median) | Save 호출 시간(median) | rMAD |
+| --- | ---: | ---: | ---: | ---: |
+| `ratio-0.1pct` | 25 | 224.9 MB | 1.44s | 2.10% |
+| `ratio-0.5pct` | 126 | 1,128.4 MB | 2.03s | 0.13% |
+| `ratio-1pct` | 251 | 2,246.6 MB | 2.61s | 0.60% |
+
+**선형성**: `ratio-0.5pct`/`ratio-0.1pct` = 5.02배 (`LORA_DIM` 비율 126/25 = 5.04와 거의 일치), `ratio-1pct`/`ratio-0.1pct` = 9.99배 (비율 251/25 = 10.04와 거의 일치) — checkpoint 크기가 `LORA_DIM`에 예상대로 선형 비례함을 실측으로 확인했습니다.
+세 조건 모두 rMAD가 10% 기준을 크게 밑돌아 8회로 확장하지 않았습니다.
+
+Rank 역산 자체도 실행 전 별도로 검증했습니다 — `ratio-0.1pct`(`LORA_DIM=25`) pilot의 Megatron 로그가 정확히 계산값과 일치했습니다: `Trainable parameters: 15,974,400`(계산값과 동일), `Trainable percentage: 0.10%`.
