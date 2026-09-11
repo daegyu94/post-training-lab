@@ -34,16 +34,20 @@ NODE_ADDR='<node-management-address>' \
 ```
 
 도구가 설치된 ARM64 monitoring host에서는 server role을 별도 실행합니다.
-`GRAFANA_ADMIN_PASSWORD`를 설정하고 실제 두 주소를 지정합니다.
+`GRAFANA_ADMIN_PASSWORD`와 cluster 이름, 이름이 붙은 monitoring target 목록을 지정합니다.
+`SPARK_TARGETS`는 `node=address` 항목을 쉼표로 연결한 값이므로 노드 수를 고정하지 않습니다.
 
 ```bash
-SPARK1_ADDR='<first-node-management-address>' \
-SPARK2_ADDR='<second-node-management-address>' \
+CLUSTER_NAME='<cluster-name>' \
+SPARK_TARGETS='trainer-0=<first-node-management-address>,rollout-0=<second-node-management-address>' \
+GRAFANA_ADMIN_PASSWORD='<non-default-password>' \
   bash scripts/run_spark_observability.sh server
 ```
 
 Prometheus는 loopback 19090, Grafana는 loopback 13000에 바인딩합니다.
 Server는 종료할 때까지 실행하므로 작업을 마치면 해당 세션을 종료합니다.
+기존 PoC의 `SPARK1_ADDR`와 `SPARK2_ADDR`를 함께 주는 방식도 `spark1`, `spark2` 이름으로 호환됩니다.
+`SERVER_CONFIG_ONLY=1`을 지정하면 service를 시작하지 않고 generated Prometheus·Grafana provisioning 파일만 작성해 target 구성을 확인합니다.
 일부 GB10 NVML 값은 unavailable/null이며 이를 사용량 0으로 해석하지 않습니다.
 시스템 메모리와 학습 process의 CUDA allocated/reserved peak도 구분합니다.
 
@@ -63,8 +67,10 @@ ssh -NT -L 13000:127.0.0.1:13000 -J <user>@<controller-ssh-alias> spark@spark1
 
 브라우저에서 `http://localhost:13000` 접속 후 `admin`과 `GRAFANA_ADMIN_PASSWORD`로 로그인합니다.
 
-`server` role이 복사하는 대시보드는 `examples/observability/spark-resources.json`(uid `spark-profiling`)입니다.
-저장소에는 `examples/observability/grafana/dashboards/cluster-resources.json`과 `compose.yaml`도 있는데, 이는 Docker Compose로 Prometheus·Grafana를 띄우는 별도의 일반 예시이며 이 ARM64 Spark 클러스터 워크플로우에서는 쓰이지 않습니다 — 대시보드를 고칠 때는 `spark-resources.json` 쪽을 수정해야 실제로 반영됩니다.
+`server` role은 `examples/observability/`의 `spark-resources.json`(uid `spark-profiling`), `compute-communication.json`, `data-storage.json`을 함께 복사합니다.
+Run Overview는 실행 진행과 GPU 행렬을 요약하고, Compute & Communication은 GPU health·rank timer·인터페이스별 통신을, Data & Storage는 node-local device·filesystem을 다룹니다.
+Grafana의 화면 링크는 시간 범위와 cluster·node·run 선택을 전달합니다.
+저장소에는 `examples/observability/grafana/dashboards/cluster-resources.json`과 `compose.yaml`도 있는데, 이는 Docker Compose로 Prometheus·Grafana를 띄우는 별도의 일반 예시이며 이 ARM64 Spark 클러스터 워크플로우에서는 쓰이지 않습니다.
 
 ## Local Viewing
 
@@ -78,7 +84,10 @@ FRAMEWORK_METRICS_DIR='<launcher가 쓴 output-directory>/framework-metrics' \
 ```
 
 이 값은 새 서비스가 아니라 launcher가 이미 쓰는 그 node-local 경로를 가리키기만 하면 되므로, 별도 NFS 공유나 collector 없이 그 노드의 rank(들)이 곧바로 같은 Grafana 대시보드에 나타납니다.
-결과적으로 `spark-resources.json`의 `TCP/Ethernet network throughput`, `RDMA (InfiniBand/RoCE) throughput`, `Training loss`, `Training throughput (tokens/s)`, `Training step time`, `Training sample age` panel까지 host·GPU·network·RDMA·학습 지표가 **하나의 Grafana 대시보드**에서 보입니다.
+결과적으로 세 대시보드에서 host·GPU·network·RDMA·학습 지표를 같은 시간 범위와 선택값으로 볼 수 있습니다.
+GPU 행렬은 현재 sampler가 보고한 GPU index와 utilization이며 allocation이 아닙니다.
+통신 패널은 interface·RDMA port counter이고 endpoint 쌍별 traffic matrix가 아닙니다.
+Data & Storage의 local device·filesystem 지표도 특정 run의 단독 사용량이나 특정 storage 구현의 topology로 해석하지 않습니다.
 `FRAMEWORK_METRICS_DIR`를 지정하지 않으면 이 process는 시작되지 않고 나머지 host/GPU 모니터링은 그대로 동작합니다.
 
 `FRAMEWORK_METRICS_DIR`를 NFS 공유 경로로 두 노드 모두에 지정하지는 않습니다 — 그러면 두 노드의 `node` role이 같은 파일을 각자 읽어 같은 rank가 두 `instance` label로 중복 노출됩니다.

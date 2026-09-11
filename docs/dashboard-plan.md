@@ -13,7 +13,7 @@ Checkpoint와 NFS는 각각 작업 단계와 저장소 구현의 한 사례이�
 | 확인 대상 | 현재 구현 | 개선 방향 |
 | --- | --- | --- |
 | `observability/examples/observability/spark-resources.json` | GPU·메모리·TCP·RDMA·학습 시계열, 단일 UID `spark-profiling` | Overview 진입점을 유지하고 상세 화면 분리 |
-| `observability/scripts/run_spark_observability.sh` | Spark 대시보드 한 파일 복사, 두 노드 scrape, retention 1일 | 여러 대시보드 provisioning, 실제 확장 시 scrape 대상 목록화 |
+| `observability/scripts/run_spark_observability.sh` | 이름 있는 target 목록 scrape, retention 1일 | 여러 대시보드 provisioning과 target 목록 재사용 |
 | `observability/profiling_lab/spark_telemetry.py` | GPU 사용률·전력·온도·클럭, 일부 process memory | 기존 지표로 GPU 행렬과 health 상세 구성 |
 | `observability/profiling_lab/framework_metrics.py` | rank별 JSON에 `local_rank`, `observed_at` 기록 | 실제 GPU 식별자·실행 역할·상태 연결 보완 |
 | `observability/profiling_lab/framework_metrics_textfile.py` | loss·throughput·step·timer 노출, 읽는 시각을 freshness로 사용 | 원본 sample 시각과 collector 상태 분리 |
@@ -95,7 +95,7 @@ Compute interconnect도 같은 증거 구분 원칙을 따르지만 storage topo
 1. **기존 지표로 세 화면 구성**
    `spark-resources.json`의 UID를 유지해 Overview로 정리하고, Compute 및 Data 상세 JSON을 추가합니다.
    GPU 사용률 행렬, 온도·클럭 상세, 포트별 네트워크, CPU·로컬 disk·filesystem을 기존 지표로 연결합니다.
-   `run_spark_observability.sh`는 명시한 세 dashboard 파일을 provisioning하고, 공통 변수·링크로 시간 범위를 전달합니다.
+   `run_spark_observability.sh`는 명시한 세 dashboard 파일을 provisioning하고, 이름 있는 target 목록과 공통 변수·링크로 시간 범위를 전달합니다.
    GPU inventory가 아직 없는 단계에서는 사라진 시계열을 정상·미할당으로 해석하지 않도록 제한을 표시합니다.
    완료 기준은 기존 학습 지표 보존, 세 화면 탐색, GPU별 표시, 장치·mount별 구분입니다.
 2. **Freshness와 allocation 신뢰성**
@@ -110,7 +110,7 @@ Compute interconnect도 같은 증거 구분 원칙을 따르지만 storage topo
    완료 기준은 구성 변경·부분 계측을 표시하고 counter 합계로 가짜 edge 성능을 만들지 않는 것입니다.
 4. **Workload와 규모 확장**
    실제 agentic RL producer가 준비되면 역할·phase·데이터 작업 지표를 기존 화면에 연결합니다.
-   노드 확장 시 scrape 대상을 목록화하고, 장시간 관측 시 retention·수집기 실행 기간을 요구에 맞춥니다.
+   장시간 관측 시 retention·수집기 실행 기간을 요구에 맞춥니다.
    현재 GPU sampler의 유한 실행 기간과 `wait -n`에 따른 서비스 종료를 확인하며 dashboard를 상시 서비스로 오인하지 않도록 합니다.
    RL 구현이나 대규모 storage adapter 일괄 작성은 이 단계의 선행 작업이 아닙니다.
 

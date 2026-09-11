@@ -35,9 +35,19 @@ if [[ "$role" == node ]]; then
     pids+=("$!")
   fi
 elif [[ "$role" == server ]]; then
-  : "${SPARK1_ADDR:?Set SPARK1_ADDR to the spark1 management address}"
-  : "${SPARK2_ADDR:?Set SPARK2_ADDR to the spark2 management address}"
   : "${GRAFANA_ADMIN_PASSWORD:?Set a non-default Grafana password}"
+  cluster_name="${CLUSTER_NAME:-spark-cluster}"
+  if [[ ! "$cluster_name" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+    echo "CLUSTER_NAME must contain only letters, digits, dots, underscores, or hyphens" >&2
+    exit 2
+  fi
+  if [[ -n "${SPARK_TARGETS:-}" ]]; then
+    IFS=',' read -r -a spark_targets <<< "$SPARK_TARGETS"
+  else
+    : "${SPARK1_ADDR:?Set SPARK_TARGETS or SPARK1_ADDR and SPARK2_ADDR}"
+    : "${SPARK2_ADDR:?Set SPARK_TARGETS or SPARK1_ADDR and SPARK2_ADDR}"
+    spark_targets=("spark1=$SPARK1_ADDR" "spark2=$SPARK2_ADDR")
+  fi
   mkdir -p "$output_dir/provisioning/datasources" "$output_dir/provisioning/dashboards" "$output_dir/dashboards"
   cat > "$output_dir/prometheus.yml" <<EOF
 global:
@@ -45,14 +55,28 @@ global:
 scrape_configs:
   - job_name: spark
     static_configs:
-      - targets: ['$SPARK1_ADDR:19100']
+EOF
+  seen_nodes=""
+  for target in "${spark_targets[@]}"; do
+    node="${target%%=*}"
+    address="${target#*=}"
+    if [[ "$node" == "$target" || ! "$node" =~ ^[A-Za-z0-9_.-]+$ || ! "$address" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+      echo "SPARK_TARGETS entries must be node=address with letters, digits, dots, underscores, or hyphens" >&2
+      exit 2
+    fi
+    if [[ " $seen_nodes " == *" $node "* ]]; then
+      echo "SPARK_TARGETS node names must be unique: $node" >&2
+      exit 2
+    fi
+    seen_nodes+=" $node"
+    cat >> "$output_dir/prometheus.yml" <<EOF
+      - targets: ['$address:19100']
         labels:
-          cluster: spark-cluster
-          nodename: spark1
-      - targets: ['$SPARK2_ADDR:19100']
-        labels:
-          cluster: spark-cluster
-          nodename: spark2
+          cluster: $cluster_name
+          nodename: $node
+EOF
+  done
+  cat >> "$output_dir/prometheus.yml" <<EOF
     relabel_configs:
       - source_labels: [nodename]
         target_label: instance
@@ -75,7 +99,8 @@ providers:
     options:
       path: $output_dir/dashboards
 EOF
-  cp examples/observability/spark-resources.json "$output_dir/dashboards/"
+  cp examples/observability/{spark-resources,compute-communication,data-storage}.json "$output_dir/dashboards/"
+  if [[ "${SERVER_CONFIG_ONLY:-0}" == 1 ]]; then exit 0; fi
   "$tools_dir/prometheus-3.5.0.linux-arm64/prometheus" \
     --config.file="$output_dir/prometheus.yml" --storage.tsdb.path="$output_dir/prometheus-data" \
     --storage.tsdb.retention.time=1d --web.listen-address=127.0.0.1:19090 > "$output_dir/prometheus.log" 2>&1 &
