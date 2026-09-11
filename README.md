@@ -16,29 +16,15 @@ Controller에는 Python 3.10 이상과 Git이, 학습에는 준비된 Spark 노�
 | 학습 입력을 어떻게 만드는가? | [Datasets](docs/datasets.md) |
 | TRL로 어떻게 학습하는가? | [TRL Backend](docs/backends/trl.md) |
 | Megatron으로 어떻게 학습·재개하는가? | [Megatron Backend](docs/backends/megatron.md) |
-| Preset을 고르고 반복 비교하려면? | [Experiments](docs/experiments.md) |
+| Preset을 고르고 30B·반복 측정 수치를 보려면? | [Experiments](docs/experiments.md) |
 | 자원·통신·저장소를 어떻게 관측하는가? | [Observability](docs/observability.md) |
-| 지표 이름·단위·수집 범위 규칙은? | [Metrics Contract](docs/metrics-contract.md) |
-| 30B에서 실제로 측정한 수치는? | [30B Measurements](docs/measurements-30b.md) |
 | 클러스터 토폴로지와 노드 준비는? | [Spark Cluster Setup](setups/spark/README.md) |
 
 실습:
 [30B NVMe data movement](labs/nvme-30b/README.md) — ZeRO-3 NVMe offload와 Megatron checkpoint I/O.
 [Sandbox resource limits](labs/sandbox-resource-limits/README.md) — cgroup v2 CPU·memory 상한과 unified memory 한계.
 
-## Repository Layout
-
-| 경로 | 역할 |
-| --- | --- |
-| `setups/spark/` | 노드·경로·환경 설정 |
-| `experiments/` | 공통 runner, 학습 preset, 메모리 추정, 반복 측정 |
-| `datasets_lab/` | 공개·서비스 데이터의 canonical 변환 (두 백엔드 공용) |
-| `scripts/` | 데이터 준비 진입점 |
-| `backends/` | 백엔드별 학습·평가·checkpoint 구현 |
-| `observability/` | 계측·baseline·trace 도구 |
-| `labs/` | 목표·전제조건·완료 기준이 있는 실습 |
-| `tests/` | CPU·실행 계약 회귀 검사 |
-| `docs/` | 사용자 가이드와 reference |
+디렉터리별 책임과 각 경로가 포함하지 않는 책임은 [Architecture](docs/architecture.md#responsibilities)에 있습니다.
 
 ## Scope
 
