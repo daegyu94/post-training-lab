@@ -1,15 +1,13 @@
 # Getting Started
 
-Spark 노드에 환경과 입력을 준비한 뒤 controller에서 작은 TRL 분산 SFT를 실행하고 결과를 판정하는 것이 목표입니다.
-실제 학습은 controller가 아니라 `spark1`·`spark2`에서 수행합니다.
-Controller와 노드의 역할, SSH 흐름, NFS 경로는 [Spark cluster setup](../setups/spark/README.md)을 따릅니다.
-
-순서는 계획 확인 → 노드 준비 → 입력 준비 → setup 작성 → smoke 실행 → 판정입니다.
+Controller에서 작은 TRL 분산 SFT를 시작하고 `spark1`·`spark2`의 학습 결과를 확인합니다.
+순서는 계획 확인 → 노드·입력 준비 → setup 작성 → smoke 실행 → 판정입니다.
+역할·SSH·NFS 구성은 [Spark cluster setup](../setups/spark/README.md)을 따릅니다.
 
 ## 1. Check the Execution Plan
 
 Controller에는 Python 3.10 이상과 Git이 필요합니다.
-아래 명령은 setup과 experiment를 결합한 실행 계획만 출력하며 SSH 접속이나 원격 파일 확인을 하지 않습니다.
+아래 명령은 setup과 experiment를 결합한 계획만 출력하며 원격으로 접속하지 않습니다.
 
 ```bash
 python experiments/run.py \
@@ -19,10 +17,8 @@ python experiments/run.py \
   --output results/trl-smoke
 ```
 
-종료 코드 0과 JSON 계획이 예상 결과입니다.
-`backend`가 `trl`이고 두 rank의 환경변수·출력 경로가 있는지 확인합니다.
-명령은 출력 디렉터리를 만들지 않지만 이미 존재하는 경로는 거부합니다.
-계획 출력은 모델·데이터·GPU·SSH 준비를 증명하지 않습니다.
+Exit 0과 JSON의 `backend: trl`, 두 rank의 환경변수·출력 경로를 확인합니다.
+출력 디렉터리를 생성하지는 않지만 기존 경로는 거부하며, 모델·데이터·GPU·SSH 준비는 별도로 확인해야 합니다.
 
 ## 2. Prepare the Nodes
 
@@ -52,9 +48,8 @@ Rendezvous 주소·포트와 NCCL 통신 경로도 노드 사이에서 접근 �
 | 모델 | `Qwen/Qwen2.5-0.5B-Instruct` revision `7ae557604adf67be50417f59c2c2f167def9a775` |
 | 데이터 | `HuggingFaceH4/no_robots` revision `e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b` |
 
-모델 snapshot은 **각 노드에 따로** 준비합니다.
-한 노드의 cache만 채우면 다른 노드에서 모델을 읽을 수 없고 setup 스크립트가 대신 다운로드하지도 않습니다.
-각 노드에서 사용할 백엔드 가상환경을 활성화하고 실행한 뒤, 출력된 snapshot 절대 경로를 그 노드의 `model_dirs`에 기록합니다.
+모델은 setup 스크립트가 다운로드하지 않으므로 **각 노드에서** 백엔드 가상환경을 활성화하고 snapshot을 준비합니다.
+출력된 절대 경로를 해당 노드의 `model_dirs`에 기록합니다.
 
 ```bash
 . "$HOME/.local/ptl/venvs/trl/bin/activate"  # 또는 venvs/megatron
@@ -67,9 +62,7 @@ print(snapshot_download(
 PY
 ```
 
-학습 데이터는 [Datasets](datasets.md#public-data)에 따라 No Robots 학습 8개·검증 2개로 만듭니다.
-데이터는 **한 노드에서 한 번만 만들고 결과물을 다른 노드로 복사**합니다 — 노드별 재생성이 위험한 이유는 [Datasets](datasets.md#public-data)에 있습니다.
-모델과 마찬가지로 `data_dir`도 node-local 경로로 둡니다.
+No Robots 학습 8개·검증 2개는 **한 번 생성해 다른 노드로 복사**하고 `data_dir`를 node-local로 지정합니다([Datasets](datasets.md#public-data)).
 
 ## 4. Configure the Setup
 
@@ -122,10 +115,7 @@ Controller 출력의 `manifest.json`에서 최종 `status`가 `passed`이고 모
 같은 디렉터리의 `rank-<n>.log`에 원격 실행 로그가 남습니다.
 백엔드 summary와 가중치는 controller로 자동 복사되지 않으므로 계획에 적힌 원격 출력 경로에서 확인합니다.
 
-TRL은 `summary-base.json`, `summary-train.json`, `summary-tuned.json`과 adapter를 확인합니다.
-Finite loss와 실제 optimizer step을 확인하고, `tuned`가 별도 process에서 저장물을 다시 읽었는지 대조합니다.
-
-각 단계가 실제로 무엇을 증명하고 무엇을 증명하지 않는지는 아래를 기준으로 판정합니다.
+TRL의 `summary-base.json`, `summary-train.json`, `summary-tuned.json`과 adapter를 아래 기준으로 확인합니다.
 
 | 확인 대상 | 성공 조건 | 증명하지 않는 것 |
 | --- | --- | --- |
@@ -136,7 +126,6 @@ Finite loss와 실제 optimizer step을 확인하고, `tuned`가 별도 process�
 | Checkpoint resume | 기대 iteration과 상태 load 후 추가 step | uninterrupted run과의 전체 수치 동등성 |
 | Async 저장 | 필요한 shard와 pending save finalization | fsync·장애 후 durability |
 
-백엔드 summary는 원격 출력 경로에 있고 controller로 자동 복사되지 않습니다.
 모든 rank 로그와 모델·데이터 revision, 실제 선택한 입력, topology, seed, 환경 버전을 함께 확인합니다.
 Sharded backend의 optimizer-step 증거를 전체 parameter checksum 검증으로 읽지 않습니다.
 ZeRO-3 과거 summary의 parameter count 0은 placeholder 계측 문제이며 모델 크기 0이 아닙니다.
@@ -154,5 +143,4 @@ ZeRO-3 과거 summary의 parameter count 0은 placeholder 계측 문제이며 �
 | CUDA OOM | rank 로그, 다른 작업, 메모리 계측 | 다른 작업을 임의 종료하지 않고 소형 preset부터 재확인 |
 | `CERTIFICATE_VERIFY_FAILED` / `client has been closed` | venv의 CA 번들 | `SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt` 지정 |
 
-Timeout이나 실패 후 정리 오류가 남으면 manifest와 process 상태를 확인합니다.
-Runner의 정리 대상은 해당 run이 소유한 process이며, 다른 작업 종료를 복구 절차로 사용하지 않습니다.
+정리 오류가 남으면 manifest와 해당 run의 process 상태를 확인하며, 다른 작업은 종료하지 않습니다.

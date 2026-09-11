@@ -1,10 +1,10 @@
 # Megatron Backend
 
-Hugging Face snapshot을 Megatron Bridge provider와 설정으로 연결하고 Megatron Core 기반 분산 SFT를 실행합니다.
-Launcher 기본값은 LoRA이며 제공된 소형 smoke preset은 full SFT를 명시합니다.
+Hugging Face snapshot을 Bridge로 연결해 Megatron Core 분산 SFT를 실행합니다.
+Launcher 기본값은 LoRA, 소형 smoke preset은 full SFT입니다.
 
-Canonical JSONL은 전체 row를 RAM에 모으지 않고 rank별 output으로 순차 변환합니다.
-Bridge의 Hugging Face dataset cache도 같은 output 아래에 두며 DataLoader는 disk-backed Arrow dataset에서 batch를 읽습니다.
+Canonical JSONL은 rank별 output으로 순차 변환하고 같은 위치에 Arrow cache를 둡니다.
+DataLoader는 전체 row를 RAM에 모으지 않고 disk-backed dataset에서 batch를 읽습니다.
 
 ## Parallelism Concepts
 
@@ -26,15 +26,12 @@ Transformer Engine은 ARM64에 사전 빌드 wheel이 없어 각 노드에서 so
 이미 설치된 wheel에 환경변수만 바꿔도 extension이 추가되지 않습니다.
 
 **`megatron-bridge==0.6.0`은 `--no-deps`로 설치합니다.**
-extra 없이 설치해도 base package METADATA가 `fast-hadamard-transform`, `flashinfer-python`, `flashinfer-cubin`, `comet-ml`, `mlflow`, `timm`, `open-clip-torch`, `qwen-vl-utils`를 무조건 요구합니다(`[recipes]` extra가 아니라 base의 고정 요구).
-이 중 `fast-hadamard-transform`은 PyPI sdist에 `csrc/` 소스 자체가 없고 ARM64 wheel도 없어 근본적으로 설치 불가능합니다.
-이 저장소가 쓰는 기능(Qwen/GLM SFT, LoRA, checkpoint)에는 필요하지 않으므로 bridge는 `--no-deps`로 건너뛰고, 실제 import 시점에 필요한 sub-dependency만 [requirements-spark.txt](../../backends/megatron/requirements-spark.txt)에 명시해 설치합니다.
-`nvidia-modelopt==0.46.0`으로 고정하며, 설치된 `megatron-core` METADATA는 `nvidia-modelopt[torch]>=0.44`만 요구하므로 충족됩니다.
+Base package가 요구하는 `fast-hadamard-transform`은 해당 PyPI sdist에 `csrc/`가 없고 ARM64 wheel도 없어 설치가 막힙니다.
+Qwen/GLM SFT·LoRA·checkpoint에 필요한 의존성만 [requirements-spark.txt](../../backends/megatron/requirements-spark.txt)로 설치합니다.
+고정된 `nvidia-modelopt==0.46.0`은 Core의 `nvidia-modelopt[torch]>=0.44` 요구를 충족합니다.
 
-먼저 각 노드에서 [공통 준비 스크립트](../../setups/spark/README.md#prepare-each-spark-node)를 실행합니다.
-그 스크립트는 아래 Python package를 대신 설치하지 않습니다.
-`PYTHON_HEADERS`는 native helper build에 필요한 경우에만 해당 환경의 development header 경로로 지정합니다.
-생성한 wheel은 checkout 밖에 두며 커밋하지 않습니다.
+각 노드에서 [공통 준비 스크립트](../../setups/spark/README.md#prepare-each-spark-node) 실행 후 아래 Python package를 설치합니다.
+Native helper build에 필요하면 `PYTHON_HEADERS`에 development header 경로를 지정하고, wheel은 checkout 밖에 보관합니다.
 
 ```bash
 cd "/path/to/shared/post-training-lab/backends/megatron"
@@ -76,8 +73,8 @@ Import 성공은 CUDA kernel·NCCL·학습 성공과 구분합니다.
 | Sync/async 저장 비교 | `CHECKPOINT_MODE=sync` 또는 `async` | save와 blocking finalization 별도 계측 |
 | Topology 변경 | `RESUME_TP`, `RESUME_PP`, `RESUME_EP` | 저장 format과 state 복원 범위 |
 
-Async checkpoint는 train/resume stage의 `torch_dist`와 persistent worker를 사용합니다.
-종료 전에 pending save의 finalization과 필요한 모든 shard를 확인하며, 파일이 보이거나 save 호출이 끝났다는 사실만으로 장애 후 durability를 주장하지 않습니다.
+Async checkpoint는 train/resume에서 `torch_dist`와 persistent worker를 사용합니다.
+종료 전 pending save finalization과 모든 shard를 확인하되, save 완료를 장애 후 durability 보장으로 해석하지 않습니다.
 
 30B preset의 output·전처리 JSONL·Arrow cache·로그는 `/mnt/post-training/megatron` 로컬 NVMe에 기록합니다.
 **공통 runner는 `torch_dist` checkpoint만** 두 노드가 함께 보는 `<checkout>/artifacts/checkpoints/<run-id>`에 기록해 다음 `tuned`·`resume` process가 모든 shard와 metadata를 읽게 합니다.
@@ -89,9 +86,9 @@ TP/PP를 바꾸는 optimizer 재분할은 기본 `dp_reshardable` format으로 �
 
 ## CPU Offload and Known Limits
 
-Megatron Core가 native training offload 대상으로 지원하는 저장 계층은 **CPU memory뿐**입니다.
-Optimizer state·계산을 CPU로 옮기는 optimizer offload와 activation을 비동기로 옮기는 activation offload가 있지만, NVMe를 parameter·optimizer·activation의 실행 중 저장 계층으로 쓰는 기능은 없습니다.
-현재 이 저장소의 Bridge wrapper는 CPU offload 옵션도 노출하지 않으며 `RECOMPUTE`는 offload가 아니라 activation 재계산입니다.
+Megatron Core의 native training offload는 **CPU memory만** 지원합니다(optimizer state·계산 또는 activation 이동).
+NVMe state offload는 없고 이 저장소의 Bridge wrapper는 CPU offload도 노출하지 않습니다.
+`RECOMPUTE`는 activation 재계산입니다.
 
 Selective recompute는 현재 `recompute_num_layers=1` 설정 때문에 Bridge 검증에서 실패합니다 — 메모리 부족이나 하드웨어 미지원의 증거가 아닙니다.
 현재 launcher는 평가 loss를 출력하는 마지막 global rank의 로그를 읽고 마지막 노드에서 `summary.json`을 작성합니다.

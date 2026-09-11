@@ -1,10 +1,8 @@
 # Observability
 
-`observability/`는 host·GPU 계측, Spark monitoring, 통신·저장소 baseline과 PyTorch trace 예제를 제공합니다.
-먼저 상시 지표로 이상 구간을 찾고 필요한 rank만 짧게 trace하는 순서를 씁니다.
-Synthetic workload 결과와 실제 LLM 학습 결과는 구분합니다.
-
-이 문서는 도구를 어떻게 실행하는지와 지표 이름·단위·수집 범위를 맞추는 계약([Metrics Contract](#metrics-contract))을 함께 관리합니다.
+`observability/`의 host·GPU 계측, Spark monitoring, 통신·저장소 baseline과 PyTorch trace 사용법을 다룹니다.
+상시 지표로 이상 구간을 찾은 뒤 필요한 rank만 짧게 trace하며, synthetic 결과와 실제 LLM 학습 결과는 구분합니다.
+지표 이름·단위·범위는 [Metrics Contract](#metrics-contract)를 따릅니다.
 
 ## CPU Checks
 
@@ -19,7 +17,7 @@ bash scripts/check_tools.sh
 python -m pytest -q ../tests/observability
 ```
 
-도구 검사에서 미설치 도구가 표시되면 해당 기능의 준비가 안 된 것이며 전체 기능 실패로 해석하지 않습니다.
+미설치 도구 표시는 해당 기능만 준비되지 않았다는 뜻입니다.
 
 ## Spark Monitoring
 
@@ -42,13 +40,11 @@ SPARK_TARGETS='trainer-0=<first-node-address>,rollout-0=<second-node-address>' \
   bash scripts/run_spark_observability.sh server
 ```
 
-Prometheus는 loopback 19090, Grafana는 loopback 13000에 바인딩합니다.
-Grafana는 anonymous Viewer로 열리므로 SSH tunnel만 있으면 비밀번호 없이 볼 수 있고, 관리자 계정이 필요할 때만 `GRAFANA_ADMIN_PASSWORD`를 지정합니다.
-Server는 종료할 때까지 실행하므로 작업을 마치면 세션을 종료합니다.
-`SERVER_CONFIG_ONLY=1`은 service를 시작하지 않고 생성된 provisioning 파일만 써서 target 구성을 확인합니다.
+Prometheus는 loopback 19090, Grafana는 loopback 13000에서 실행하며 작업 후 server 세션을 종료합니다.
+Grafana는 anonymous Viewer이고 관리자 계정이 필요할 때만 `GRAFANA_ADMIN_PASSWORD`를 지정합니다.
+`SERVER_CONFIG_ONLY=1`은 service 없이 provisioning 파일만 생성합니다.
 
-Grafana가 loopback에만 열리므로 브라우저로 보려면 SSH local forwarding이 필요합니다.
-Controller에는 GUI가 없고 사용자의 client 머신에서 접속하는 host이므로, client → controller → spark1 순으로 두 번 거치며 controller는 순수 jump host로 씁니다.
+Grafana를 보려면 client에서 controller를 jump host로 거쳐 server 노드(아래는 spark1)에 SSH forwarding을 엽니다.
 
 ```bash
 ssh -NT -L 13000:127.0.0.1:13000 -J <user>@<controller-ssh-alias> spark@spark1
@@ -56,9 +52,14 @@ ssh -NT -L 13000:127.0.0.1:13000 -J <user>@<controller-ssh-alias> spark@spark1
 
 브라우저에서 `http://localhost:13000`을 엽니다.
 
-`server` role은 `examples/observability/`의 세 dashboard를 함께 복사합니다 — Run Overview(`spark-resources.json`, uid `spark-profiling`)는 실행 진행과 GPU 행렬을, Compute & Communication은 GPU health·rank timer·인터페이스별 통신을, Data & Storage는 node-local device·filesystem을 다룹니다.
-화면 링크는 시간 범위와 cluster·node·run 선택을 전달합니다.
-저장소의 `examples/observability/grafana/`와 `compose.yaml`은 Docker Compose로 Prometheus·Grafana를 띄우는 별도의 일반 예시이며 이 ARM64 워크플로우에서는 쓰지 않습니다.
+`server`는 `examples/observability/`의 세 dashboard를 복사합니다.
+
+- Run Overview(`spark-resources.json`, uid `spark-profiling`): 실행 진행·GPU 행렬
+- Compute & Communication: GPU health·rank timer·인터페이스 통신
+- Data & Storage: node-local device·filesystem
+
+화면 링크는 시간·cluster·node·run 선택을 유지합니다.
+같은 경로의 `grafana/`와 `compose.yaml`은 별도 Docker Compose 예시이며 이 ARM64 경로에서는 쓰지 않습니다.
 
 해석할 때 주의할 것:
 
@@ -70,8 +71,8 @@ ssh -NT -L 13000:127.0.0.1:13000 -J <user>@<controller-ssh-alias> spark@spark1
 
 ## Live Framework Metrics
 
-`node` role을 실행할 때 같은 shell에 `FRAMEWORK_METRICS_DIR`를 학습 launcher가 쓰는 값과 똑같이 지정하면, 그 노드가 [`framework_metrics_textfile`](../observability/profiling_lab/framework_metrics_textfile.py)을 추가로 띄웁니다.
-이 process는 `<framework>-rank-<rank>.json` 스냅샷을 주기적으로 읽어 `training_loss`, `training_tokens_per_second`, `training_step_time_seconds`, `training_step`, (Megatron이면) `training_timer_seconds{timer="..."}`를 GPU sampler와 같은 textfile collector에 씁니다.
+`node` role에 launcher와 같은 `FRAMEWORK_METRICS_DIR`를 지정하면 [`framework_metrics_textfile`](../observability/profiling_lab/framework_metrics_textfile.py)이 rank JSON을 주기적으로 읽습니다.
+`training_loss`, `training_tokens_per_second`, `training_step_time_seconds`, `training_step`과 Megatron의 `training_timer_seconds{timer="..."}`를 GPU sampler와 같은 textfile collector에 씁니다.
 
 ```bash
 NODE_ADDR='<node-management-address>' \
@@ -79,21 +80,17 @@ FRAMEWORK_METRICS_DIR='<launcher output-directory>/framework-metrics' \
   bash scripts/run_spark_observability.sh node
 ```
 
-새 서비스가 아니라 launcher가 이미 쓰는 node-local 경로를 가리키기만 하면 되므로, 별도 NFS 공유나 collector 없이 그 노드의 rank가 같은 Grafana 대시보드에 나타납니다.
-지정하지 않으면 이 process만 시작되지 않고 나머지 host/GPU 모니터링은 그대로 동작합니다.
-
-> **`FRAMEWORK_METRICS_DIR`를 NFS 공유 경로로 두 노드 모두에 지정하지 않습니다.**
-> 두 노드가 같은 파일을 각자 읽어 같은 rank가 두 `instance` label로 중복 노출됩니다.
-> 각 노드가 자신의 node-local 경로(기본값)만 읽게 둡니다.
+생략하면 framework 수집만 꺼지고 host/GPU 모니터링은 계속됩니다.
+**각 노드의 node-local 경로를 사용합니다.**
+두 노드가 같은 NFS 파일을 읽으면 같은 rank가 두 `instance`로 중복 노출됩니다.
 
 GPU allocation matrix는 framework snapshot에 `CUDA_VISIBLE_DEVICES`와 `LOCAL_RANK`가 있는 rank만 표시합니다.
 `TOPOLOGY_DIR`를 한 node role에 지정하면 `compute-topology.json`·`storage-topology.json`의 `components`(각 `id`와 선택적 `role`)와 `edges`(`source`, `destination`, 선택적 `relation`)를 Grafana에 표시합니다 — 전달된 관계를 보여줄 뿐 bandwidth·latency 측정값이 아닙니다.
 
 ## Run History
 
-과거 run 조회에는 서버가 필요 없습니다.
-학습 launcher가 이미 output-dir에 파일을 남깁니다: Megatron은 `run-metadata-<stage>.json`, TRL은 `summary-<stage>.json`, 그리고 `OBSERVATORY_RUN_ID`/`FRAMEWORK_METRICS_DIR`가 설정됐다면 `framework-metrics/<framework>-rank-<rank>.json`(마지막 step 값)도 남습니다.
-[`show_run`](../observability/profiling_lab/show_run.py)은 이 파일들을 읽어 요약을 출력하는 CLI입니다.
+[`show_run`](../observability/profiling_lab/show_run.py)은 서버 없이 output-dir의 Megatron `run-metadata-<stage>.json`과 TRL `summary-<stage>.json`을 읽습니다.
+`OBSERVATORY_RUN_ID`/`FRAMEWORK_METRICS_DIR`가 설정됐다면 `framework-metrics/<framework>-rank-<rank>.json`의 마지막 step도 표시합니다.
 
 ```bash
 PYTHONPATH=observability python3 -m profiling_lab.show_run '<output-dir>'
@@ -140,10 +137,8 @@ NCCL baseline은 학습 throughput이 아닙니다.
 
 ## Metrics Contract
 
-같은 지표를 다른 이름이나 단위로 기록하면 실행 결과를 비교할 수 없습니다.
-이 절은 학습 코드와 자원 수집 도구가 지표의 **이름·단위·측정 범위**를 맞추는 규칙을 설명합니다.
-실제 source of truth는 [`config/metrics.json`](../observability/config/metrics.json)이고 [`config/metrics.schema.json`](../observability/config/metrics.schema.json)이 파일 형식을 검증합니다.
-`observability/profiling_lab/schema.py`는 별도 dependency 없이 test와 script에서 runtime validation을 수행합니다.
+비교 가능한 지표의 **이름·단위·측정 범위**는 [`config/metrics.json`](../observability/config/metrics.json)을 기준으로 합니다.
+파일 형식은 [`config/metrics.schema.json`](../observability/config/metrics.schema.json)에 정의하며 `observability/profiling_lab/schema.py`가 추가 의존성 없이 runtime validation을 수행합니다.
 
 `metrics.json`의 `schema_version`은 소비자가 이해하는 계약 version입니다.
 기존 metric의 의미나 단위를 바꾸는 호환성 파괴 변경에만 version을 올리고, 새 metric 추가는 같은 version에서 합니다.
@@ -172,16 +167,14 @@ NCCL baseline은 학습 throughput이 아닙니다.
 | `source` | exporter, framework timer, selected trace, manifest 또는 derived summary |
 | `policy` | always-on, workload-specific, baseline, diagnostic 수집 조건 |
 
-**이 계약은 목표 vocabulary이지 자동 수집 목록이 아닙니다.**
-현재 dashboard는 exporter가 노출하는 원본 이름을 그대로 조회합니다.
-host/GPU/network는 Node Exporter·DCGM이 직접 exporter이고, 학습 지표는 TRL·Megatron 콜백이 rank별로 쓴 JSON 스냅샷을 `framework_metrics_textfile`이 같은 노드의 textfile collector로 재발행한 값입니다 — push gateway가 아니라 GPU sampler와 같은 패턴입니다([Live Framework Metrics](#live-framework-metrics)).
-Canonical name 변환과 phase별 집계는 workload adapter에서 추가 구현해야 합니다.
-Derived metric은 원본 값을 덮어쓰지 않고 계산에 쓴 window와 source metric을 summary에 함께 기록합니다.
+**계약은 목표 vocabulary이며 자동 수집 목록이 아닙니다.**
+Dashboard는 exporter 원본 이름을 조회하고 학습 지표는 rank JSON을 textfile collector로 재발행합니다([Live Framework Metrics](#live-framework-metrics)).
+Canonical name 변환·phase 집계는 workload adapter에 추가 구현해야 합니다.
+Derived metric은 원본을 보존하고 계산 window·source metric을 summary에 기록합니다.
 
 ### Labels and Manifest Fields
 
-`recommended_labels`는 결과를 필터링·비교하는 분류 기준입니다.
-값의 종류가 제한된 항목만 써야 시계열 수가 폭증하지 않습니다.
+`recommended_labels`는 필터·비교 기준이며 시계열 증가를 제한하도록 값의 종류를 제한합니다.
 공통 후보는 `run_id`, `cluster`, `job`, `node`, `gpu`, `framework`, `role`, `phase`, `device`, `interface`, `operation`, `parallel_group`이고, Megatron hook의 `rank`·`local_rank`·`tp_rank`·`pp_rank`·`dp_rank`·`timer`는 범위를 제한한 예제 확장입니다.
 
 Commit, image digest, model/dataset/checkpoint URI, rank map, profiler option, precision, batch/sequence 설정, storage path type, filesystem, cache state, node topology는 `manifest_only_fields`에 기록합니다.
@@ -218,10 +211,10 @@ Bytes와 duration을 모두 얻으면 유효 대역폭을 계산하고 같은 pa
 Node Exporter와 DCGM만으로는 bytes가 어떤 phase나 rank에서 발생했는지 알 수 없습니다.
 Framework phase marker와 rank map을 같은 `run_id`로 연결하고, 원인이 남을 때만 selected trace를 수집합니다.
 
-**RoCE NIC는 같은 물리 포트에서 두 경로를 따로 셉니다.**
-일반 TCP/IP 소켓 트래픽은 kernel netdev 경로를 지나 `node_network_*`로 잡히고, RDMA verbs 트래픽(NCCL의 IB transport 포함)은 kernel bypass 경로를 지나 `/sys/class/infiniband`의 counter로 잡힙니다.
-Node Exporter의 `infiniband` collector는 기본으로 켜져 있어 이 두 번째 경로를 `node_infiniband_port_data_{received,transmitted}_bytes_total`로 노출하며, `metrics.json`은 이를 `rdma_receive_bytes_per_second`·`rdma_transmit_bytes_per_second`·`rdma_errors_total`로 정의합니다.
-`network_*`만 보면 RDMA 트래픽이 잡히지 않으므로, 노드 간 collective가 실제로 RDMA를 쓰는지 확인하려면 `rdma_*`(또는 dashboard의 RDMA throughput 패널)를 함께 봐야 합니다.
+**RoCE는 TCP/IP와 RDMA counter를 함께 봅니다.**
+소켓 트래픽은 `node_network_*`, kernel을 우회하는 RDMA verbs(NCCL IB transport 포함)는 `/sys/class/infiniband`에서 집계됩니다.
+기본 활성화된 Node Exporter `infiniband` collector는 `node_infiniband_port_data_{received,transmitted}_bytes_total`을 노출합니다.
+계약의 `rdma_receive_bytes_per_second`·`rdma_transmit_bytes_per_second`·`rdma_errors_total`과 dashboard의 RDMA 패널을 확인하며 `network_*`만으로 판단하지 않습니다.
 
 ### Validate the Contract
 
@@ -234,9 +227,8 @@ JSON 문법, 허용된 이름·분류, 필수 field와 중복 이름을 확인�
 
 ### Framework Integration
 
-공통 runner는 `OBSERVATORY_RUN_ID`를 실행 output 이름으로 설정합니다.
-TRL callback과 Megatron Bridge callback은 collector와 통신하지 않고 rank별 최신 JSON을 `<output>/framework-metrics/`에 atomic replace합니다.
-이 JSON은 상시 관측이면 같은 노드의 textfile collector가 재발행하고([Live Framework Metrics](#live-framework-metrics)), 과거 조회면 `show_run`이 직접 읽습니다([Run History](#run-history)).
+Runner는 output 이름을 `OBSERVATORY_RUN_ID`로 설정하고 TRL·Megatron callback은 `<output>/framework-metrics/`의 rank JSON을 atomic replace합니다.
+실시간 조회는 [textfile collector](#live-framework-metrics), 과거 조회는 [`show_run`](#run-history)이 읽습니다.
 
 **TRL tokens/s는 Trainer의 누적 입력 token 차이이고, Megatron tokens/s는 `global_batch_size * max_length`를 callback wall time으로 나눈 configured-token 처리율입니다** — variable-length 실행의 실제 non-padding 처리율로 해석하지 않습니다.
 Megatron timer는 `timing_log_level=1`에서 이미 계산된 timer의 rank-local `active_time` 차이를 읽으며 adapter 때문에 추가 collective를 실행하지 않습니다.

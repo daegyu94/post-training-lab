@@ -1,10 +1,7 @@
 # Architecture
 
-구성 요소별 책임과 설정 계약을 정의하는 참조 문서입니다.
-실행 절차를 따라 하려면 [Getting Started](getting-started.md)를 봅니다.
-
-이 저장소는 **실행 환경**과 **실험 조건**을 분리합니다.
-Setup은 어디서 실행할지, experiment는 무엇을 실행할지, backend는 어떻게 학습·저장할지를 담당합니다.
+Setup은 실행 환경, experiment는 실험 조건, backend는 학습·저장을 담당합니다.
+이 문서는 각 책임과 설정 계약을 정의하며, 실행 절차는 [Getting Started](getting-started.md)를 따릅니다.
 
 ```mermaid
 flowchart TD
@@ -31,9 +28,8 @@ flowchart TD
 | `observability/` | 계측·baseline·trace helper | 모든 학습 loop에 자동 hook 설치 |
 | `tests/` | CPU 회귀와 mock 기반 실행 계약 검사 | 실제 GPU 실행 보장 |
 
-`observability/run_summary.py`는 공통 summary helper를 제공하지만 TRL Spark는 이 helper 대신 자체 stage summary를 생성합니다.
-TRL과 Megatron summary는 각각 실제 생성 코드를 기준으로 읽습니다.
-공통 runner는 backend summary나 가중치를 controller로 자동 수집하지 않습니다.
+TRL Spark는 `observability/run_summary.py` 대신 자체 stage summary를 생성하므로 summary는 백엔드별 생성 코드를 기준으로 읽습니다.
+Runner는 summary나 가중치를 controller로 자동 수집하지 않습니다.
 
 ## Configuration Contract
 
@@ -58,14 +54,13 @@ Megatron의 `CHECKPOINT_PLACEMENT=local`은 각 노드의 `OUTPUT_DIR/checkpoint
 
 ## Run Lifecycle
 
-기본은 dry-run이고 `--execute`가 있을 때만 SSH 학습을 시작합니다.
-Runner는 controller에서 공유 checkout의 commit과 dirty 상태를 확인하며 Spark 노드에서는 Git을 실행하지 않습니다.
-Controller commit이 `unknown`이면 commit 기록을 생략하므로 실제 실행은 반드시 Git checkout에서 수행합니다.
+기본은 dry-run이며 `--execute`로 SSH 학습을 시작합니다.
+Runner는 controller에서만 공유 checkout의 commit·dirty 상태를 확인합니다.
+Commit이 `unknown`이면 기록이 생략되므로 실제 실행은 Git checkout에서 수행합니다.
 
-참여 rank는 run별 출력을 claim하며 기존 출력을 덮어쓰지 않습니다.
-각 rank는 같은 run의 session 식별자를 확인하고 launcher를 시작하며, 공유 저장소 가시성 대기는 실행 timeout 이내에서 최대 70초로 제한됩니다.
-실패·timeout·중단 시 runner는 같은 run이 소유한 process를 정리하고 정리 실패도 manifest에 남깁니다.
-이 동작은 checkpoint 장애 복구나 무제한 자동 재시도가 아닙니다.
+각 rank는 새 run 출력을 claim하고 session 식별자를 확인한 뒤 launcher를 시작합니다.
+공유 저장소 가시성 대기는 실행 timeout 이내 최대 70초입니다.
+실패·timeout·중단 시 해당 run의 process를 정리하고 정리 실패도 manifest에 기록하며, checkpoint 복구나 자동 재시도는 하지 않습니다.
 
 Controller manifest는 설정 SHA-256, controller commit, host, 명령, rank별 종료 상태를 기록합니다.
 백엔드의 stage 순서와 원격 출력은 [TRL](backends/trl.md)·[Megatron](backends/megatron.md)을, 반복 측정은 [Experiments](experiments.md)를 따릅니다.

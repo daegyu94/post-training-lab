@@ -1,9 +1,7 @@
 # Datasets
 
-SFT는 "사용자 요청"과 "모델이 배워야 할 목표 응답"을 짝지어 학습합니다.
-이 문서는 원본 데이터를 두 백엔드가 읽는 대화형 JSONL로 바꾸고 학습에 연결하는 방법을 다룹니다.
-
-준비 경로는 원본 출처에 따라 둘로 나뉩니다.
+SFT는 사용자 요청과 목표 응답을 짝지어 학습합니다.
+원본을 두 백엔드가 읽는 대화형 JSONL로 바꾸는 경로는 다음과 같습니다.
 
 | 경로 | 원본 | 초점 |
 | --- | --- | --- |
@@ -28,7 +26,7 @@ SFT는 "사용자 요청"과 "모델이 배워야 할 목표 응답"을 짝지�
 
 ## Public Data
 
-변환 규칙과 고정 revision은 두 백엔드가 공유하는 `datasets_lab/public_data.py` 한 곳이 정의하고, 진입점은 저장소 루트의 `scripts/prepare_public_data.sh`입니다.
+변환 규칙·고정 revision은 `datasets_lab/public_data.py`에, 공통 진입점은 `scripts/prepare_public_data.sh`에 있습니다.
 
 | Preset | 원본 ID | 변환 대상 |
 | --- | --- | --- |
@@ -58,16 +56,10 @@ PYTHON='<backend-python>' bash scripts/prepare_public_data.sh \
 성공하면 마지막 줄에 `train=8 validation=2 overlap=0`이 표시됩니다.
 `manifest.json`의 `dataset`, `dataset_revision`, `train_count`, `eval_count`, `files`를 확인합니다.
 
-> **이 명령은 한 노드에서만 실행합니다.**
-> 나머지 노드에는 다시 실행하지 말고 생성된 JSONL 두 개와 manifest를 그대로 복사합니다.
-
-노드별로 다시 만들면 안 되는 이유는 두 가지입니다.
-
-- **내용이 갈릴 수 있습니다.** venv 간 라이브러리 버전 차이로 같은 seed에서도 결과가 미묘하게 달라지는데, `validate_dataset_manifest()`는 `dataset_id`·`revision`만 비교하므로 이런 drift를 잡지 못합니다.
-- **다운로드가 실패할 수 있습니다.** `huggingface_hub`/`datasets`의 재시도 로직이 환경에 따라 실패합니다. 실제 관측된 에러는 `RuntimeError: Cannot send a request, as the client has been closed.`이며, 실제 원인은 그 직전의 `[SSL: CERTIFICATE_VERIFY_FAILED] ... unable to get local issuer certificate`입니다 — venv의 `certifi` 번들이 시스템 root CA와 맞지 않을 때 발생하고, `SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt`로 시스템 번들을 쓰게 하면 해결됩니다.
-
-이미 검증된 결과물을 복사하는 쪽이 더 안전하고 빠릅니다.
-이 "한 번 만들고 검증해서 배포한다"는 원칙이 대규모 환경에서 어떻게 바뀌는지는 [30B NVMe 실습](../labs/nvme-30b/README.md#training-data-storage)을 따릅니다.
+**한 노드에서만 실행한 뒤 JSONL 두 개와 manifest를 나머지 노드에 복사합니다.**
+노드별 재생성은 라이브러리 버전에 따른 내용 차이를 만들 수 있으며, `validate_dataset_manifest()`의 ID·revision 비교로는 이를 잡지 못합니다.
+다운로드 중 `client has been closed`가 발생하면 직전의 CA 오류를 확인합니다([문제 해결](getting-started.md#troubleshooting)).
+대규모 배포 원칙은 [30B NVMe 실습](../labs/nvme-30b/README.md#training-data-storage)을 따릅니다.
 
 ### 옵션과 주의점
 
@@ -83,11 +75,8 @@ Megatron의 `prepare_spark_data.sh`는 별도의 UltraChat 전용 이전 경로�
 
 ## Internal Data
 
-여기서 말하는 "검수한 내부 대화"는 공개 데이터셋이 아니라 **사내 서비스에 쌓인 대화 로그**를 학습 데이터로 만드는 경우입니다.
-공개 데이터 경로가 "고정 revision 재현"에 초점을 둔다면, 이 경로는 "무엇을 학습해도 되는지 사람이 판단하고 남기는" 것에 초점을 둡니다.
-서비스 로그는 그 자체로 정답이 아니라 학습 예제를 만들기 위한 원본입니다.
-
-시작 전에 **이용 권한**(해당 대화를 학습에 써도 되는지), **민감정보 제거**(개인정보·비밀 키·내부 주소), **응답 검수**(과거 모델 응답을 복사하지 말고 앞으로 해야 할 응답으로 교정)를 먼저 정리합니다.
+사내 서비스 로그는 검수를 거쳐 학습 예제로 만듭니다.
+먼저 이용 권한을 확인하고 개인정보·비밀 키·내부 주소를 제거한 뒤, 과거 모델 응답을 목표 응답으로 교정합니다.
 
 ### 입력 형식
 
@@ -136,8 +125,8 @@ python -m json.tool "$trace_output/manifest.json"
 | TRL Spark | setup의 `nodes[].data_dir` | 공개 데이터 형식 manifest와 `prompt_id` 필요 |
 | Megatron Spark | setup의 `nodes[].data_dir` | 고정 ID·revision과 native completion 전처리 필요 |
 
-사내 대화 변환 결과는 두 Spark 백엔드의 manifest 검증을 그대로 통과하지 못합니다.
-임의 revision을 채워 우회하지 말고, 불변 버전과 호환 manifest를 만드는 구현이 별도로 필요하다는 제한으로 취급합니다.
+사내 변환 결과는 Spark manifest 검증을 그대로 통과하지 못합니다.
+임의 revision으로 우회하지 말고 불변 버전·호환 manifest 생성 기능을 별도로 구현해야 합니다.
 
 Spark 전처리는 모델의 native template으로 마지막 assistant 이전 prompt와 마지막 응답·EOS를 분리합니다.
 TRL은 길이 초과 행을 stderr에 기록한 뒤 제외하고, **Megatron은 길이 초과 시 중단합니다**(truncate하지 않음).

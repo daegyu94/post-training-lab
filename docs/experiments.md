@@ -4,12 +4,9 @@ Experiment 파일은 모델·데이터 revision과 학습 조건을, setup은 �
 공통 runner가 둘을 결합하며 `--execute`가 있을 때만 SSH 학습을 시작합니다.
 첫 실행은 [Getting Started](getting-started.md), 설정 책임은 [Architecture](architecture.md)를 따릅니다.
 
-현재 목표는 두 노드에서 30B 모델의 SFT 실행 경로를 확인하는 것입니다 — `Qwen/Qwen3-30B-A3B`는 TRL LoRA와 Megatron MoE로, `zai-org/GLM-4.7-Flash`는 Megatron MoE로 확인합니다.
-30B 실행에서는 모델별 준비, 메모리 배치, 2노드 통신, checkpoint와 재로딩을 봅니다.
-0.5B preset은 이 목표를 대신하는 실험이 아니라 runner·전처리·저장·재로딩 같은 기본 동작을 싸게 검사하는 smoke이며, 두 결과는 서로 다른 범위로 해석합니다.
-
-이 문서는 preset·도구 사용법부터 30B와 반복 측정에서 실제로 얻은 수치까지 한곳에서 관리합니다.
-정적 검사, CPU 테스트, dry-run, 실제 GPU 실행이 서로 다른 증거라는 원칙은 [AGENTS.md](../AGENTS.md)를, 개별 run 판정 기준은 [Getting Started](getting-started.md#6-verify-the-result)를 따릅니다.
+두 노드에서 `Qwen/Qwen3-30B-A3B`(TRL LoRA·Megatron MoE)와 `zai-org/GLM-4.7-Flash`(Megatron MoE)의 SFT를 확인합니다.
+30B는 메모리·통신·checkpoint·재로딩을, 0.5B smoke는 runner·전처리·저장 경로를 저비용으로 검사합니다.
+정적 검사·CPU 테스트·dry-run·GPU 실행은 별도 증거로 구분합니다([AGENTS.md](../AGENTS.md), [판정 기준](getting-started.md#6-verify-the-result)).
 
 ## Presets
 
@@ -26,9 +23,12 @@ Experiment 파일은 모델·데이터 revision과 학습 조건을, setup은 �
 
 앞의 smoke 네 개는 Qwen2.5-0.5B와 고정 No Robots 입력을 쓰며 모델 품질·장기 수렴·성능 비교용이 아닙니다.
 Megatron의 두 30B preset은 검증 당시와 같은 TP=1·PP=1·EP=2로 1 step, 평가 1회와 async checkpoint를 실행합니다.
-TRL NVMe preset의 `train`은 같은 process에서 평가하지 않고, 평가는 `tuned`를 별도 process로 실행해 native ZeRO checkpoint를 새 엔진에 복원한 뒤 수행합니다 — 이유와 준비 조건은 [30B NVMe 실습](../labs/nvme-30b/README.md)을 따릅니다.
+TRL NVMe preset은 `train` 후 별도 `tuned` process에서 native ZeRO checkpoint를 복원해 평가합니다([30B NVMe 실습](../labs/nvme-30b/README.md)).
 
-`qwen3-30b-full.json`은 **실측으로 검증되지 않았습니다.** 로컬 `no_robots` 5000행 중 한 행이 검증된 LoRA preset과 같은 `MAX_LENGTH=2048`을 넘어 "never truncates" 정책에 막혔습니다 — 이 경계값은 memory 비교의 기준이라 늘리지 않았습니다. [메모리 추정기](#estimate-memory-before-running)는 per-rank 149.7 GiB(파라미터 29.9 + gradient 29.9 + Adam 89.6)로 예측해 119 GiB 예산을 약 31 GiB 초과한다고 봅니다. `--optimizer sgd`는 90.0 GiB로 예산 안에 들어옵니다. 둘 다 추정이며 실행으로 확인한 값이 아닙니다.
+`qwen3-30b-full.json`은 **실측 미검증**입니다.
+로컬 `no_robots` 5000행 중 길이 초과 행에서 중단됐으며, 메모리 비교 기준인 `MAX_LENGTH=2048`은 유지했습니다.
+[메모리 추정기](#estimate-memory-before-running)의 per-rank 예측은 Adam 149.7 GiB(파라미터 29.9 + gradient 29.9 + Adam 89.6), `--optimizer sgd` 90.0 GiB입니다.
+119 GiB 예산 대비 Adam은 약 31 GiB 초과, SGD는 이내지만 둘 다 추정값입니다.
 
 `experiments/run.py`는 `--backend`, `--setup`, `--experiment`, `--output`을 요구합니다.
 기본은 dry-run이고 `--timeout`은 기본 900초의 양의 정수이며 기존 출력 디렉터리는 재사용할 수 없습니다.
@@ -37,9 +37,8 @@ Runner는 output 디렉터리 이름을 `OBSERVATORY_RUN_ID`로 예약해 framew
 
 ## Estimate Memory Before Running
 
-GPU 시간을 쓰기 전에 "이 구성이 메모리에 들어가는가"를 먼저 계산합니다.
-파라미터 크기는 아키텍처별 수식이 아니라 snapshot의 `*.safetensors` 헤더에서 **실제 텐서 바이트**를 읽으므로 MoE·dense 구분이나 새 아키텍처 대응에 코드 변경이 필요 없습니다.
-Expert 가중치는 텐서 이름으로 식별해 expert parallel sharding만 따로 적용합니다.
+실행 전 snapshot의 `*.safetensors` 헤더에서 텐서 바이트를 읽어 메모리를 추정합니다.
+아키텍처별 수식 대신 실제 크기를 쓰며, expert 가중치는 이름으로 식별해 EP sharding을 적용합니다.
 
 ```bash
 python experiments/estimate_memory.py \
@@ -56,14 +55,12 @@ python experiments/estimate_memory.py \
 | TRL FSDP2 LoRA | 32.147 GiB | 29.3 GiB |
 | Megatron LoRA EP=2 | 34.759 GiB | 30.8 GiB |
 
-**이 값은 추정이지 측정이 아닙니다.**
-CUDA context, allocator 단편화, framework workspace를 모델링하지 않아 실측보다 **낮게** 나오는 경향이 있습니다(위 표에서 최대 -11%).
-여유가 빠듯하게 `FITS`로 나오면 실제로는 안 들어갈 수 있다고 봐야 합니다.
+CUDA context·allocator 단편화·workspace를 제외한 **추정값**이므로 실측보다 낮을 수 있습니다(표에서 최대 -11%).
+예산에 근접한 `FITS`는 실제 적합성을 보장하지 않습니다.
 
 ## Build an Experiment from Knobs
 
-매번 새 JSON을 손으로 쓰는 대신 `experiments/build.py`가 backend·dataset·model·offload·epoch 같은 knob을 스키마로 매핑해 `experiments/generated/<output 이름>.json`에 쓰고, 그 파일을 그대로 `run.py`에 넘깁니다.
-검증·SSH 실행 로직은 재사용하며 새로 만들지 않습니다.
+`experiments/build.py`는 backend·dataset·model·offload·epoch 옵션을 `experiments/generated/<output 이름>.json`으로 저장하고 `run.py`에 넘깁니다.
 
 ```bash
 python experiments/build.py \
@@ -75,14 +72,14 @@ python experiments/build.py \
 
 - 기본값은 실제 2노드 클러스터에 맞춰져 있습니다(`--nnodes 2`).
 - `--dataset` 선택지는 고정 목록이 아니라 `datasets_lab.public_data.PRESETS`에서 읽습니다(`reference_only` 제외).
-- `--epochs`와 `--max-steps`는 배타적입니다. TRL은 `spark_train.py`가 HF `SFTConfig`로 직접 처리합니다. Megatron은 step 기반 scheduler라 `build.py`가 `steps = ceil(epochs * train_count / global_batch_size)`를 미리 계산하는데, 이는 dataset `manifest.json`을 controller에서 읽을 수 있을 때만 가능합니다 — `data_dir`가 node-local인 현재 구성에서는 **Megatron의 `--epochs`는 항상 오류로 멈추므로 `--max-steps`를 직접 씁니다.**
+- `--epochs`와 `--max-steps`는 배타적입니다. TRL은 `SFTConfig`로 처리합니다. Megatron은 controller에서 `manifest.json`을 읽어 `steps = ceil(epochs * train_count / global_batch_size)`로 변환하므로, **현재 node-local 데이터 구성에서는 `--max-steps`를 씁니다.**
 - `--offload {none,cpu,nvme}`는 TRL 전용입니다. `cpu`/`nvme`는 `--distributed-backend deepspeed`를 강제하고 해당 DeepSpeed 설정을 선택하며, NVMe profile은 `--finetuning-mode full`이 필요합니다. `--backend megatron`과 함께 쓰면 즉시 오류입니다.
 - Megatron 전용 `--tp`/`--pp`/`--ep`/batch 옵션은 검증된 30B preset 기본값(TP=1, PP=1, EP=2)을 그대로 씁니다. 각 옵션의 뜻은 `--help`에서 확인합니다.
-- Dataset 준비는 `build.py`가 대신 실행하지 않습니다 — Hub 다운로드 같은 부수효과를 조립 단계에 숨기지 않기 위해서이며 절차는 [Datasets](datasets.md)를 따릅니다.
+- Dataset은 [Datasets](datasets.md)에 따라 미리 준비합니다.
 
 ### 실제로 확인한 조합
 
-`build.py`가 다양한 조합에서 실제로 다른 결과를 내는지 `--execute`로 확인한 네 가지입니다.
+`build.py --execute`로 확인한 조합입니다.
 
 | Case | Backend | Model | Dataset | knob | 결과 |
 | --- | --- | --- | --- | --- | --- |
@@ -91,13 +88,12 @@ python experiments/build.py \
 | 3 | Megatron | Qwen3-30B-A3B | self_oss (40,000/8,000) | `--max-steps 1 --stage all` | base `1.402232` → tuned `1.342737` |
 | 4 | Megatron | GLM-4.7-Flash | ultrachat (160,000/30,000) | `--max-steps 1 --max-length 4096 --stage all` | base `2.269922` → tuned `2.012836` |
 
-**Case 1**은 `--epochs`가 실제로 동작하는지와 재로딩 신뢰성을 봅니다: `base` 1.4340 → `train` 1.4308 → `tuned` 1.4308.
-`train`과 `tuned`의 eval_loss가 소수점까지 같다는 것은 저장된 adapter를 다시 읽어도 수치가 흔들리지 않는다는 증거입니다.
-감소폭이 작은 건 256샘플·16 step만 학습했기 때문이며 이 값을 모델 품질 지표로 확대 해석하지 않습니다.
+**Case 1**은 256샘플·16 step에서 `base` 1.4340 → `train` 1.4308 → `tuned` 1.4308을 확인했습니다.
+저장 전후 eval loss 일치는 이 실행의 adapter 재로딩 증거이며 모델 품질 지표는 아닙니다.
 
-**Case 3·4**의 이전 실패 원인은 HF dataset이 아니라 공유 파일시스템을 전제한 `torch_dist` checkpoint를 node-local NVMe에 나눠 저장한 것이었습니다(rank 0에 metadata와 `__0_0.distcp`, rank 1에 `__1_0.distcp`만 남음).
-Runner가 checkpoint를 NFS checkout 아래 두도록 고친 뒤 두 30B MoE 모델 모두 base→train→tuned 단일 실행과 iteration 1 재로딩을 통과했고, NaN·skipped iteration은 0, `checkpoint_reload_verified`도 `true`였습니다.
-Case 4는 `--max-length` 기본값 2048에서 ultrachat 샘플 하나가 길이를 초과해 한 번 실패했고 4096으로 재실행해 통과했습니다 — preset마다 실제 대화 길이가 다르다는 실제 사례입니다.
+**Case 3·4**는 node-local에 흩어진 `torch_dist` metadata·shard를 NFS checkpoint 경로로 모은 뒤 base→train→tuned와 iteration 1 재로딩을 통과했습니다.
+NaN·skipped iteration은 0, `checkpoint_reload_verified`는 `true`였습니다.
+Case 4는 UltraChat 길이 초과로 `--max-length 2048`에서 실패한 뒤 4096으로 통과했습니다.
 
 <a id="30b-gpu-results"></a>
 
@@ -141,8 +137,8 @@ DDP는 parameter와 gradient가 unified memory 한도에 근접하고, 설치된
 `spark1`·`spark2`의 local NVMe만 사용해 30B 모델의 checkpoint I/O와 memory footprint를 반복 측정한 전용 실험입니다.
 NFS는 조건에 포함하지 않고 Megatron checkpoint는 rank별 local shard 저장 성능만 평가합니다.
 
-실행 절차·측정 field·집계식·유효성 임계값은 모두 코드가 source of truth입니다 — 진입점 `experiments/checkpoint_memory_30b.py`, read/cache 분류 `experiments/checkpoint_io_probe.py`, cohort 생성 `experiments/prepare_checkpoint_cohort.py`.
-아래는 코드에서 읽어낼 수 없는 것만 남깁니다: 왜 이렇게 측정했는지와 실제로 무엇이 나왔는지.
+실행·집계는 `experiments/checkpoint_memory_30b.py`, read/cache 분류는 `experiments/checkpoint_io_probe.py`, cohort 생성은 `experiments/prepare_checkpoint_cohort.py`를 기준으로 합니다.
+아래는 측정 이유와 결과입니다.
 
 ### 답하려는 질문
 
@@ -189,13 +185,13 @@ TRL DeepSpeed ZeRO-3는 finetuning mode·optimizer·checkpoint format·runtime o
 
 ### 측정 설계에서 의도적으로 선택한 것
 
-- **Async throughput의 분모로 `save()` 반환 시간을 쓰지 않습니다.** 그 값은 대부분 enqueue 작업만 나타냅니다. 첫 enqueue 시작부터 blocking finalization 완료까지를 씁니다.
-- **전역 `drop_caches`를 쓰지 않습니다.** 공유 cluster이기 때문이며, 대신 파일별 `POSIX_FADV_DONTNEED`로 eviction을 요청하고 관찰된 device-read delta로 cache 상태를 분류합니다. `POSIX_FADV_DONTNEED`는 advisory이므로 eviction 성공을 가정하지 않고, read-ahead 때문에 physical bytes가 logical을 넘을 수 있어 분류 임계값은 정확한 cache-hit ratio가 아닙니다.
-- **Direct I/O baseline은 storage microbenchmark입니다.** Megatron framework throughput으로 표시하지 않습니다.
-- **Cohort는 결정적으로 선택한 소수 행입니다.** Megatron 전처리는 truncate하지 않고 제한을 넘는 행에서 중단하므로 canonical split 전체를 쓸 수 없습니다. 2048 token 이하 UltraChat 32행(`ultrachat-qwen3-30b-2048-v1`)을 모든 조건에서 같은 순서·seed로 재사용합니다. 이 sample 수는 checkpoint·peak memory 측정에는 충분하지만 학습 수렴이나 dataset 품질의 근거가 아닙니다.
-- **Sequence length 효과는 framework 비교와 섞지 않습니다.** Megatron LoRA의 별도 fixed-padding sweep으로만 측정합니다. 긴 step은 async background I/O를 숨길 시간도 늘리므로 length sweep 결과로 sync/async 우열을 판단하지 않습니다.
-- **측정할 수 없는 값은 zero가 아니라 `null`로 기록하고 invalid로 분류합니다.**
-- **각 run의 checkpoint는 probe와 metric 수집 직후 삭제합니다**(`cleanup_checkpoints()`). 모든 iteration·반복의 checkpoint를 보존하면 local storage를 소진하기 때문이며, manifest·measurement record는 그대로 남습니다.
+- **Async throughput**: enqueue 반환 시간이 아니라 첫 enqueue부터 blocking finalization 완료까지를 분모로 씁니다.
+- **Cache 분류**: 공유 cluster의 전역 `drop_caches` 대신 파일별 `POSIX_FADV_DONTNEED`를 요청하고 device-read delta를 관찰합니다. Eviction은 advisory이고 read-ahead도 있으므로 임계값은 정확한 cache-hit ratio가 아닙니다.
+- **Direct I/O baseline**: storage microbenchmark이며 Megatron throughput이 아닙니다.
+- **Cohort**: 길이 초과 시 중단하는 전처리에 맞춰 2048 token 이하 UltraChat 32행(`ultrachat-qwen3-30b-2048-v1`)을 같은 순서·seed로 재사용합니다. Checkpoint·peak memory 측정용이며 수렴·데이터 품질의 근거가 아닙니다.
+- **Sequence length**: Megatron LoRA fixed-padding sweep으로 분리합니다. 긴 step은 async I/O를 숨길 시간도 늘리므로 sync/async 우열로 해석하지 않습니다.
+- **누락값**: `null`로 기록하고 invalid로 분류합니다.
+- **용량 관리**: probe·metric 수집 직후 `cleanup_checkpoints()`로 checkpoint를 삭제하고 manifest·measurement record는 보존합니다.
 
 ### 실행
 
@@ -232,7 +228,8 @@ Raw manifest·measurement record는 커밋하지 않으므로(`results/`는 giti
 | sync | 5 | 69.4 MiB | 2.356s | 3.12 GB/s | 0.57% |
 | async | 5 | 69.4 MiB | 1.301s | 3.58 GB/s | 1.62% |
 
-LoRA rank 8 고정이라 sync/async가 같은 크기를 저장하므로 크기 차이는 없고, async가 blocking host-call 기준 약 1초 빠릅니다 — enqueue만 하고 반환하는 async 설계와 일치합니다.
+LoRA rank 8에서 저장 크기는 같고 async host-call은 약 1초 짧습니다.
+이는 enqueue 반환 시간의 차이이며 전체 저장 완료 시간의 비교는 아닙니다.
 
 #### Memory footprint
 
@@ -248,15 +245,13 @@ Unified-memory hardware이므로 CUDA와 host 측정값을 더하지 않고 별�
 `EST-MEG-ADAM`(Megatron full + Adam) 추정값은 rank당 160.8 GiB로 119 GiB 예산을 초과해 실행하지 않았습니다.
 `EST-MEG-SGD`(full + SGD)는 96.6 GiB로 예산 안에 들어오지만 pilot 실행은 별도로 결정하지 않았습니다(추정만 수행).
 
-`LEN-1024`는 최초 설계에서 checkpoint phase의 2048-cohort를 그대로 재사용하다 구조적으로 항상 실패했습니다(cohort 안에 1024 초과 샘플이 있는데 native 전처리는 truncate하지 않음).
-이를 계기로 sweep 하한을 2048로 올리고 상한을 8192로 확장했습니다 — activation/attention memory가 non-trivial하게 늘어나는 구간은 위쪽에서 더 잘 드러납니다.
+`LEN-1024`는 2048-cohort의 길이 초과 행에서 실패해 sweep을 2048~8192로 변경했습니다.
 
 DeepSpeed의 Direct offload traffic과 buffered ZeRO-checkpoint traffic을 분리해 보고하는 항목은 아직 측정하지 않았습니다.
 
 ### LoRA trainable-ratio가 checkpoint I/O에 미치는 영향
 
-위 checkpoint 측정은 LoRA rank 8(전체 model-parallel shard의 약 0.03%)에서만 수행했습니다.
-같은 파이프라인에서 `LORA_DIM`만 바꿔 비율 축을 확인했습니다(sync만 사용 — sync/async 비교는 위에서 이미 끝났습니다).
+위 LoRA rank 8(약 0.03%) 측정에 이어, sync 파이프라인에서 `LORA_DIM`만 바꿔 비율의 영향을 확인했습니다.
 
 Megatron은 학습 시작 시 rank-local model-parallel shard 기준 trainable parameter 수와 비율을 로그로 남깁니다.
 `lora_dim=8`에서 trainable 5,111,808 / shard 16,041,719,808 = 0.0319%이고, LoRA는 `target_modules`에 rank당 `r × (in_dim + out_dim)`을 더하므로 trainable 수는 `lora_dim`에 정확히 비례합니다.
@@ -271,9 +266,8 @@ Megatron은 학습 시작 시 rank-local model-parallel shard 기준 trainable p
 
 12/12 run 통과(pilot 3 + 측정 9), 세 조건 모두 rMAD가 10% 기준을 크게 밑돌아 8회로 확장하지 않았습니다.
 
-**선형성**: 0.5pct/0.1pct = 5.02배(`LORA_DIM` 비 126/25 = 5.04), 1pct/0.1pct = 9.99배(비 251/25 = 10.04) — checkpoint 크기가 `LORA_DIM`에 선형 비례함을 실측으로 확인했습니다.
-벗어났다면 optimizer state 계산이나 target module 구성이 예상과 다르다는 신호입니다.
-Rank 역산 자체도 `ratio-0.1pct` pilot의 Megatron 로그로 확인했습니다: `Trainable parameters: 15,974,400`(계산값과 동일), `Trainable percentage: 0.10%`.
+Checkpoint 크기 비는 5.02배·9.99배로 `LORA_DIM` 비 5.04배·10.04배에 근접했습니다.
+`ratio-0.1pct` pilot 로그도 역산과 일치했습니다: `Trainable parameters: 15,974,400`, `Trainable percentage: 0.10%`.
 
 이 조건들은 plan만 바꿔 실행합니다.
 
@@ -288,9 +282,8 @@ python experiments/checkpoint_memory_30b.py \
 
 ## Repeated Megatron Measurements
 
-`experiments/benchmarks.py`는 [benchmark plan](../experiments/megatron/benchmark-plan.json)의 cell과 두 variant를 읽습니다.
-이 반복 측정도 Qwen2.5-0.5B와 No Robots를 고정한 저비용 A/B 비교입니다 — 설정 하나의 영향만 비교하려면 모델·데이터를 고정해야 하고, 여덟 조건을 30B로 반복하는 비용도 피할 수 있습니다.
-따라서 여기서 얻은 시간·메모리 차이를 30B 성능으로 일반화하지 않습니다.
+`experiments/benchmarks.py`는 [benchmark plan](../experiments/megatron/benchmark-plan.json)의 cell·variant를 읽어 Qwen2.5-0.5B와 No Robots를 고정한 A/B 비교를 수행합니다.
+여기서 얻은 시간·메모리 차이를 30B 성능으로 일반화하지 않습니다.
 
 기본 계획은 8개 cell, variant별 4회 측정과 별도 warmup입니다.
 길이 비교는 `MAX_LENGTH` 상한만 바꾸지 않고 고정 길이 padding을 씁니다.

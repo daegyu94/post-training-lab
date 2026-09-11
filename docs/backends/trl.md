@@ -1,15 +1,14 @@
 # TRL Backend
 
-TRL backend는 `spark1`·`spark2`에서 supervised fine-tuning을 실행합니다.
-검증된 기본 경로는 두 노드에서 노드당 process 하나를 쓰는 DDP LoRA입니다.
+TRL backend의 검증된 기본 경로는 `spark1`·`spark2`에서 노드당 process 하나를 쓰는 DDP LoRA SFT입니다.
 
 모델의 native chat template으로 prompt와 마지막 assistant completion을 분리해 SFT loss를 계산합니다.
 학습 단계는 `base` 평가 → `train` 저장 → 별도 process의 `tuned` 재로딩 평가입니다.
 LoRA는 adapter를 `output_dir/adapter`에, full SFT는 모델을 `output_dir/model`에 저장합니다.
 DPO와 RL trainer는 구현되어 있지 않습니다.
 
-Canonical JSONL은 rank별 output 아래로 순차 전처리하고 Hugging Face Arrow cache도 같은 저장장치에 둡니다.
-Trainer는 전체 split을 Python list로 올리지 않고 memory-mapped dataset에서 batch를 읽으므로, 모든 batch가 물리 storage read를 발생시키지는 않습니다(page cache).
+Canonical JSONL을 rank별 output으로 순차 전처리하고 같은 저장장치에 Arrow cache를 둡니다.
+Trainer는 memory-mapped dataset에서 batch를 읽으며 page cache 때문에 매번 물리 storage read가 발생하지는 않습니다.
 
 ## Prepare the Spark Environment
 
@@ -28,19 +27,18 @@ python -m pip install -r requirements-spark.txt
 python -c 'import torch, transformers, trl, accelerate; assert torch.__version__ == "2.10.0+cu130" and torch.version.cuda == "13.0" and torch.cuda.is_available(); print(transformers.__version__, trl.__version__, accelerate.__version__); print((torch.ones(1, device="cuda") + 1).item())'
 ```
 
-이 확인은 import와 CUDA 가용성만 검사합니다.
-NCCL 통신, 모델 적합성, 실제 학습 성공은 두 노드 smoke로 별도 확인합니다.
-의존성 충돌이 나면 실제 설치 결과를 기록하고 임의의 다른 version을 같은 검증 환경으로 취급하지 않습니다.
+Import·CUDA 확인 후 NCCL 통신, 모델 적합성, 학습은 두 노드 smoke로 검증합니다.
+의존성 충돌로 version을 바꾸면 별도 환경으로 기록합니다.
 
 ## Run the Standard Workflow
 
-공통 runner가 controller에서 각 노드로 SSH 접속해 launcher를 시작하므로 직접 SSH로 rank를 관리할 필요가 없습니다.
-준비와 실행 명령은 [Getting Started](../getting-started.md)가 한 곳에서 관리합니다.
+공통 runner가 controller에서 SSH로 각 rank를 시작합니다.
+준비·실행은 [Getting Started](../getting-started.md)를 따릅니다.
 한 노드 smoke가 필요하면 `experiments/trl/single-node-smoke.json`을 사용합니다.
 
-직접 `backends/trl/scripts/run_spark_cluster.sh`를 실행할 때는 **모든 참여 노드에서** launcher를 시작해야 합니다.
-각 노드는 같은 model·dataset·output 설정을 쓰고 `NODE_RANK`만 다르게 지정하며, `MASTER_ADDR`·`MASTER_PORT`·`NNODES`·`NPROC_PER_NODE`는 모두 같은 rendezvous 구성이어야 합니다.
-직접 실행은 runner의 checkout 검사·process lifecycle 관리·controller manifest를 제공하지 않으므로, runner가 지원하지 않는 topology를 검증할 때만 사용합니다.
+직접 `backends/trl/scripts/run_spark_cluster.sh`를 쓰면 **모든 참여 노드에서** launcher를 시작합니다.
+Model·dataset·output과 rendezvous 변수(`MASTER_ADDR`·`MASTER_PORT`·`NNODES`·`NPROC_PER_NODE`)는 맞추고 `NODE_RANK`만 달리 지정합니다.
+Checkout 검사·process 관리·controller manifest가 없으므로 runner 미지원 topology 검증에만 사용합니다.
 
 ## Configure Training
 
@@ -57,9 +55,8 @@ Model·dataset revision은 40-hex SHA여야 하고 데이터 디렉터리에는 
 | `TRAIN_SAMPLES`, `EVAL_SAMPLES` | 양의 정수 | 사용할 prepared row 수 제한 |
 | `DEEPSPEED_CONFIG` | ZeRO-2 또는 ZeRO-3 JSON | DeepSpeed 실행에서 필수 |
 
-DDP는 각 rank에 모델 복제본을 유지합니다.
-노드 수를 늘려도 가중치가 자동으로 분할되지 않으며 LoRA도 base weight의 메모리를 없애지 않습니다.
-Runner가 노드당 process 하나를 지원하므로 노드 내 multi-GPU 확장은 별도 topology·launcher 검증이 필요합니다.
+DDP는 rank마다 모델을 복제하며 LoRA도 base weight 메모리는 필요합니다.
+Runner는 노드당 process 하나만 지원하므로 노드 내 multi-GPU는 별도 topology·launcher 검증이 필요합니다.
 
 ## Choose a Distributed Backend
 
@@ -69,11 +66,11 @@ Runner가 노드당 process 하나를 지원하므로 노드 내 multi-GPU 확�
 | `fsdp2` | ✅ | ✅ | ❌ | 불필요 | sharded export·tuned reload·optimizer resume 미검증 |
 | `deepspeed` | ✅ | ✅ | ✅ | **필수** | [ZeRO-2](../../backends/trl/configs/deepspeed-zero2.json) 또는 [ZeRO-3](../../backends/trl/configs/deepspeed-zero3.json) |
 
-`tuned`는 새 process가 저장물을 다시 읽으므로 저장과 재로딩을 함께 확인할 수 있습니다.
+`tuned`는 새 process에서 저장물을 재로딩합니다.
 
-- **DDP** — 데이터만 rank별로 나누고 모델과 adapter는 각 rank에 복제합니다. `output_root`가 node-local이어도 `train`이 각 rank에 로컬 adapter를 남기므로 `tuned`가 바로 재로딩합니다.
-- **FSDP2가 `tuned`를 못 하는 이유** — 버그가 아니라 저장 방식과 storage topology의 조합 때문입니다. FSDP2는 `SHARDED_STATE_DICT`라 각 rank가 자기 shard만 저장하는데, `output_root`가 node-local이면 spark1에 shard 0, spark2에 shard 1만 남고 이를 한곳에서 보는 공유 경로가 없습니다. 새 process는 자기 shard밖에 못 보므로 아직 지원하지 않습니다.
-- **DeepSpeed** — LoRA는 기존 adapter reload 경로를 그대로 쓰고, full fine-tuning은 별도 process가 native ZeRO checkpoint를 새 엔진에 rank-local로 복원해 평가합니다.
+- **DDP**: 각 rank가 로컬 adapter를 저장하므로 node-local `output_root`에서도 재로딩합니다.
+- **FSDP2**: `SHARDED_STATE_DICT`를 rank별로 저장합니다. Node-local 출력에서는 다른 rank의 shard를 볼 수 없어 `tuned`를 지원하지 않습니다.
+- **DeepSpeed**: LoRA는 adapter를, full SFT는 native ZeRO checkpoint를 새 엔진에 rank-local로 복원해 평가합니다.
 
 ### DeepSpeed NVMe offload profile
 
