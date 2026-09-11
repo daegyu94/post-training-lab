@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import time
 from pathlib import Path
 
 from profiling_lab.prometheus_textfile import GaugeSample, write_gauges
@@ -29,20 +28,23 @@ def _iter_samples(metrics_dir: Path) -> list[dict]:
 
 
 def build_gauges(samples: list[dict]) -> list[GaugeSample]:
-    gauges = [
-        GaugeSample(
-            "training_sample_timestamp_seconds",
-            "Last successful framework-metrics read.",
-            time.time(),
-        )
-    ]
+    gauges = []
     for sample in samples:
         labels = {
             "run_id": str(sample.get("run_id", "")),
             "framework": str(sample.get("framework", "")),
             "node": str(sample.get("node", "")),
             "rank": str(sample.get("rank", "")),
+            "local_rank": str(sample.get("local_rank", "")),
         }
+        observed_at = sample.get("observed_at")
+        if isinstance(observed_at, (int, float)):
+            gauges.append(GaugeSample(
+                "training_sample_timestamp_seconds",
+                "Framework-reported sample timestamp.",
+                observed_at,
+                labels,
+            ))
         gauges.append(GaugeSample("training_step", "Latest reported training step.", sample.get("step", 0), labels))
         for name, value in sample.get("metrics", {}).items():
             gauges.append(GaugeSample(name, f"Framework-reported {name}.", value, labels))

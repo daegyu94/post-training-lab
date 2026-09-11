@@ -16,19 +16,20 @@ def test_build_gauges_emits_metrics_timers_and_step_with_shared_labels() -> None
     gauges = build_gauges([SAMPLE])
     by_name = {(g.name, g.labels.get("timer")): g for g in gauges}
 
-    labels = {"run_id": "run-1", "framework": "megatron", "node": "spark1", "rank": "0"}
+    labels = {"run_id": "run-1", "framework": "megatron", "node": "spark1", "rank": "0", "local_rank": "0"}
     assert by_name[("training_loss", None)].value == 1.25
     assert by_name[("training_loss", None)].labels == labels
     assert by_name[("training_tokens_per_second", None)].value == 42.0
     assert by_name[("training_step", None)].value == 7
     assert by_name[("training_timer_seconds", "forward-backward")].value == 0.5
     assert by_name[("training_timer_seconds", "forward-backward")].labels == {**labels, "timer": "forward-backward"}
-    assert any(g.name == "training_sample_timestamp_seconds" for g in gauges)
+    assert by_name[("training_sample_timestamp_seconds", None)].value == 100.0
+    assert by_name[("training_sample_timestamp_seconds", None)].labels == labels
 
 
 def test_build_gauges_handles_no_samples() -> None:
     gauges = build_gauges([])
-    assert [g.name for g in gauges] == ["training_sample_timestamp_seconds"]
+    assert gauges == []
 
 
 def test_iter_samples_skips_malformed_files_and_ignores_other_names(tmp_path: Path) -> None:

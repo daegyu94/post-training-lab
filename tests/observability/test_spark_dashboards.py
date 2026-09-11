@@ -30,6 +30,11 @@ def test_spark_dashboards_have_unique_uids_and_shared_cluster_filter() -> None:
             for panel in payload["panels"]
             if panel["type"] != "text"
         )
+    assert "${node:queryparam}" in payloads[0]["links"][0]["url"]
+    assert "${run_id:queryparam}" in payloads[2]["links"][0]["url"]
+    matrix = payloads[1]["panels"][0]
+    assert "profiling_gpu_sample_timestamp_seconds" in matrix["targets"][0]["expr"]
+    assert matrix["transformations"][0]["options"]["rowField"] == "node"
 
 
 def test_server_config_accepts_an_arbitrary_named_target_list(tmp_path: Path) -> None:
