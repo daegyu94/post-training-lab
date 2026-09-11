@@ -16,6 +16,7 @@
 | Preset과 반복 측정 | [Experiments](experiments.md) |
 | Monitoring·baseline·trace 실행 | [Observability](observability.md) |
 | 지표 계약·framework 연결 | [Observability Reference](observability-reference.md) |
+| Post-training 대시보드 개선 계획 | [Dashboard Plan](dashboard-plan.md) |
 | 현재 미구현 lifecycle 제안 | [Design](design.md) |
 | 실습 목록·템플릿 | [Lab Catalog](../labs/README.md) |
 | 판정·실패 한계·과거 기록 | [Verification](verification.md) |
