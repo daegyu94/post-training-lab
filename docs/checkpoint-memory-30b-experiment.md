@@ -12,6 +12,7 @@ NFS는 실험 조건에 포함하지 않으며 Megatron checkpoint는 rank별 lo
 3. Megatron의 buffered read에서 page cache가 cold·warm 성능에 미치는 영향은 얼마인가?
 4. DeepSpeed NVMe offload의 Direct I/O와 framework checkpoint의 buffered I/O는 어떻게 다른가?
 5. 같은 30B 모델에서 framework와 분산 전략에 따라 CUDA, unified host memory와 NVMe footprint가 어떻게 달라지는가?
+6. Fixed sequence length 1024, 2048, 4096에서 Megatron LoRA의 memory footprint가 어떻게 달라지는가?
 
 이 결과는 local checkpoint의 장애 복구, topology 변경 restore, power-loss durability 또는 framework 간 절대적인 우열을 증명하지 않습니다.
 
@@ -21,8 +22,8 @@ NFS는 실험 조건에 포함하지 않으며 Megatron checkpoint는 rank별 lo
 | --- | --- |
 | Model | `Qwen/Qwen3-30B-A3B` |
 | Model revision | `ad44e777bcd18fa416d9da3bd8f70d33ebb85d39` |
-| Dataset | `HuggingFaceH4/no_robots` |
-| Dataset revision | `e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b` |
+| Dataset | `HuggingFaceH4/ultrachat_200k` |
+| Dataset revision | `8049631c405ae6576f93f445c6b8166f76f5505a` |
 | Nodes | `spark1`, `spark2` |
 | Processes | 노드당 process 하나, world size 2 |
 | Precision | BF16 |
@@ -52,27 +53,31 @@ Megatron은 data file과 metadata에 `fsync()`를 호출하지만 metadata renam
 
 ## Dataset cohort와 sequence length
 
-Canonical No Robots split은 train 5,000행과 validation 1,100행입니다.
-다음 분포는 `spark1`에서 고정된 Qwen3-30B tokenizer와 저장소의 native prompt/completion renderer로 측정했습니다.
+UltraChat은 저장소가 지원하는 `HuggingFaceH4/ultrachat_200k`의 고정 revision을 사용합니다.
+기존 30B UltraChat 실측은 GLM-4.7-Flash와 `MAX_LENGTH=4096` 조합이며 Qwen3-30B와 UltraChat 조합은 아직 검증되지 않았으므로 먼저 Qwen tokenizer로 cohort를 준비하고 pilot을 실행합니다.
 
-| Split | 원본 행 | Tokenization 성공 | p50 | p95 | p99 | 최대 | 2048 초과 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Train | 5,000 | 4,933 | 235 | 628 | 1,278 | 6,732 | 11 |
-| Validation | 1,100 | 1,086 | 248 | 696 | 1,345 | 2,566 | 2 |
+Checkpoint I/O의 primary 조건에서는 `MAX_LENGTH=2048`과 fixed padding을 사용합니다.
+Dataset의 최대 길이를 모두 수용하기 위해 상한을 올리면 checkpoint artifact 크기는 거의 그대로인 반면 연산량, memory와 async I/O가 겹칠 수 있는 시간이 달라지기 때문입니다.
 
-`MAX_LENGTH=2048`은 tokenization 가능한 train 행의 약 99.78%를 포함하며 기존 30B 측정과의 비교 가능성을 보존합니다.
-일부 outlier를 포함하기 위해 8192로 높이면 checkpoint artifact 크기는 거의 그대로인 반면 연산량과 memory가 크게 달라집니다.
+준비 단계에서 canonical UltraChat split을 고정된 Qwen3-30B tokenizer와 저장소의 native prompt/completion renderer로 한 번 scan하고 다음을 manifest에 기록합니다.
+
+- source 행 수와 tokenization 성공·실패 수
+- token 길이의 minimum, p50, p90, p95, p99, p99.5와 maximum
+- 1024, 2048, 4096 token 초과 행 수
+- 각 상한에서 선택한 prompt ID와 제외 이유
 
 Megatron 전처리는 truncate하지 않고 제한을 넘는 행에서 중단하므로 성능 run에서는 canonical split 전체 대신 결정적으로 선택한 benchmark cohort를 사용합니다.
-Cohort는 tokenization에 성공하고 2048 token을 넘지 않는 32행으로 구성하며 prompt ID와 순서를 manifest에 기록합니다.
+Primary cohort는 tokenization에 성공하고 2048 token을 넘지 않는 UltraChat 32행으로 구성하며 prompt ID와 순서를 manifest에 기록합니다.
 모든 조건에서 같은 cohort, 순서와 seed를 사용합니다.
 
 8-step run 하나는 global sample 16개를 사용합니다.
 여분의 cohort는 입력 계약을 바꾸지 않고 step을 소폭 늘릴 수 있게 합니다.
 이 sample 수는 checkpoint와 peak memory 측정에는 충분하지만 학습 수렴이나 dataset 품질의 근거는 아닙니다.
 
-Memory 비교에서는 모든 backend가 2048 token까지 padding해야 합니다.
-고정 padding을 동등하게 적용할 수 없다면 1,536–2,048 token 구간의 같은 16행을 사용하며 현재 train split에는 이 조건을 만족하는 행이 17개 있습니다.
+Framework별 memory 비교에서는 모든 backend가 2048 token까지 padding해야 합니다.
+고정 padding을 동등하게 적용할 수 없다면 UltraChat scan 결과에서 2048 이하인 같은 16개 long sample을 선택하고 실제 token 길이를 결과에 기록합니다.
+
+Sequence length 자체의 memory 효과는 framework 비교와 섞지 않고 Megatron LoRA의 별도 1024/2048/4096 fixed-padding sweep으로 측정합니다.
 
 ## Part A: Megatron local checkpoint
 
@@ -274,6 +279,23 @@ GPU 실행 전에 `experiments/estimate_memory.py`를 실행하고 parameters, g
 Memory 실측 조건은 독립 run 3개로 시작합니다.
 관찰된 peak 범위가 median의 5%를 넘으면 해당 조건을 5개 run으로 늘립니다.
 
+### Sequence length sweep
+
+Checkpoint sync/async 비교에서는 2048 하나만 사용하고 sequence length 효과는 Megatron LoRA에서 따로 측정합니다.
+
+| ID | `MAX_LENGTH` | Padding | 반복 |
+| --- | ---: | --- | --- |
+| `LEN-1024` | 1024 | fixed | pilot 1회, 필요하면 측정 3회 |
+| `LEN-2048` | 2048 | fixed | checkpoint run 결과 재사용 |
+| `LEN-4096` | 4096 | fixed | pilot 1회, 안정적이면 측정 3회 |
+
+각 길이에는 해당 상한 이하로 tokenization되는 같은 선택 규칙의 UltraChat cohort를 사용합니다.
+`LEN-4096` pilot은 OOM, swap 급증, non-finite 값이나 비정상적인 step time이 없을 때만 반복 측정으로 확장합니다.
+
+Sequence length가 커지면 activation과 workspace memory가 증가하고 attention compute는 길이에 더 민감하게 증가할 수 있습니다.
+30B parameter와 optimizer state가 차지하는 고정 비용은 거의 변하지 않으므로 전체 memory가 sequence length에 정비례한다고 가정하지 않습니다.
+긴 step은 async checkpoint background I/O를 숨길 시간을 늘릴 수도 있으므로 length sweep 결과로 sync/async 우열을 판단하지 않습니다.
+
 ### 측정값
 
 Unified-memory hardware에서 CUDA와 host 측정값을 더하지 않고 다음 값을 수집합니다.
@@ -351,6 +373,7 @@ X축에는 실험 조건을 사용하고 BF16은 제목이나 manifest에 기록
 5. `Megatron read`: `warm-after-write`, `cold-buffered`, `warm-buffered`와 Direct I/O device baseline
 6. `DeepSpeed I/O`: 분리한 Direct offload와 buffered ZeRO-checkpoint panel
 7. `Memory`: 분리한 CUDA peak, host pressure, NVMe footprint와 estimator panel
+8. `Sequence length`: 1024, 2048, 4096별 CUDA peak, host pressure와 step time
 
 Legend에는 동작이 드러나는 label을 사용합니다.
 
@@ -367,17 +390,20 @@ DeepSpeed ZeRO checkpoint | buffered
 
 ## 실행 순서와 run 예산
 
-1. 0.5B run 하나로 instrumentation을 검증합니다.
-2. 통계에서 제외할 30B Megatron sync와 async pilot을 실행합니다.
-3. Megatron sync와 async를 각각 5회 측정하고 연결된 read 순서를 실행합니다.
-4. 별도 실험 없이 같은 run에서 Megatron memory 값을 수집합니다.
-5. TRL DDP와 FSDP2 LoRA memory 조건을 각각 3회 실행합니다.
-6. TRL ZeRO-3 NVMe full-SGD memory와 I/O 조건을 3회 실행합니다.
-7. 추정값과 관찰된 headroom으로 Megatron full-SGD pilot 실행 여부를 결정합니다.
-8. 유효한 run-level summary만 집계해 그래프를 생성합니다.
+1. UltraChat 고정 revision을 각 노드에 준비하고 Qwen tokenizer length manifest와 benchmark cohort를 생성합니다.
+2. 0.5B run 하나로 instrumentation을 검증합니다.
+3. 통계에서 제외할 30B Megatron sync와 async pilot을 실행합니다.
+4. Megatron sync와 async를 각각 5회 측정하고 연결된 read 순서를 실행합니다.
+5. 별도 실험 없이 같은 run에서 Megatron 2048 memory 값을 수집합니다.
+6. Megatron LoRA의 1024와 4096 length pilot을 실행하고 안정성 기준을 통과한 조건만 각각 3회 측정합니다.
+7. TRL DDP와 FSDP2 LoRA memory 조건을 각각 3회 실행합니다.
+8. TRL ZeRO-3 NVMe full-SGD memory와 I/O 조건을 3회 실행합니다.
+9. 추정값과 관찰된 headroom으로 Megatron full-SGD pilot 실행 여부를 결정합니다.
+10. 유효한 run-level summary만 집계해 그래프를 생성합니다.
 
 초기 30B 예산은 Megatron checkpoint run 10개와 TRL memory/I/O run 9개를 합한 측정 run 19개입니다.
 Pilot은 이 수에 포함하지 않습니다.
+Length sweep을 반복 측정으로 확장하면 1024와 4096 조건의 run 6개가 추가되어 최대 25개가 됩니다.
 
 모든 iteration과 반복의 checkpoint를 보존하면 local storage를 소진할 수 있습니다.
 Metric과 raw-read 검사를 마친 뒤 조건별 대표 checkpoint 하나와 manifest·measurement record를 보존하고 나머지는 명시적인 cleanup policy 아래에서만 제거합니다.
