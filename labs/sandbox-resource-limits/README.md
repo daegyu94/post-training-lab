@@ -1,22 +1,21 @@
 # Lab: Sandbox Resource Limits (cgroup v2)
 
-`systemd-run --user --scope`로 학습 process를 cgroup v2 resource control 아래 실행해 CPU와 memory 상한이 실제로 강제되는지 확인합니다.
-Docker나 다른 container runtime은 쓰지 않습니다 — 2노드 단일 사용자 환경이라 이미지 기반 격리보다 process 단위 resource fencing이 더 가볍고 검증하기 쉽습니다.
-
-**CPU quota는 실제 학습 실행으로 검증했고, memory limit은 DGX Spark의 unified memory 때문에 이 클러스터에서 유효하지 않다는 것을 확인해 한계로 기록합니다.**
+`systemd-run --user --scope`로 process 단위 cgroup v2 CPU·memory 상한을 확인합니다.
+단일 사용자 환경에서 별도 container runtime 없이 검증합니다.
+**CPU quota는 학습에서 동작했지만 이 DGX Spark의 CUDA 할당에는 memory limit이 적용되지 않았습니다.**
 
 ## Prerequisites
 
 systemd 255+, cgroup v2의 `cpu`·`memory` controller 활성화(`cat /sys/fs/cgroup/cgroup.controllers`로 확인), root 권한 불필요.
-학습 예제는 `experiments/trl/single-node-smoke.json`(Qwen2.5-0.5B, DDP, 1노드)을 그대로 쓰므로 추가 준비물이 없고 전체 실행은 노드 하나에서 1분 이내입니다.
-GPU는 memory-limit 확인에만 필요하며 CPU quota 검증은 GPU 없이도 재현됩니다.
+학습 예제는 준비된 `experiments/trl/single-node-smoke.json` 환경(Qwen2.5-0.5B, DDP, 1노드)을 사용합니다.
+아래 학습·CUDA 예제에는 GPU가 필요하며 CPU quota 자체는 CPU workload로도 확인할 수 있습니다.
 
 ## Run
 
 ### CPU quota
 
-각 실행은 `MAX_STEPS=30`으로 `run_spark_cluster.sh`의 `STAGE=train`을 서로 다른 `CPUQuota`로 감쌉니다.
-`OUTPUT_DIR`와 `OBSERVATORY_RUN_ID`는 실행마다 새 이름을 씁니다.
+Spark 노드의 `backends/trl`에서 `MAX_STEPS=30`·`STAGE=train`과 아래 설명한 환경변수를 export한 뒤 실행합니다.
+`OUTPUT_DIR`·`OBSERVATORY_RUN_ID`는 실행마다 새 이름을 씁니다.
 
 ```bash
 # baseline: 제한 없음
@@ -35,8 +34,8 @@ done
 
 ### Memory limit
 
-아래 두 명령이 "plain host 메모리는 강제되지만 CUDA 메모리는 강제되지 않는다"는 핵심 관찰을 재현합니다.
-`MemorySwapMax=0`이 없으면 초과분이 swap으로 흡수돼 강제가 관찰되지 않으므로 반드시 함께 지정합니다.
+Host·CUDA 할당을 비교하며 swap으로 초과분이 흡수되지 않도록 `MemorySwapMax=0`을 함께 지정합니다.
+CUDA 예제의 `python3`는 준비된 Torch 가상환경을 사용합니다.
 
 ```bash
 # host 메모리: 300MB 제한에서 500MB 할당 → 실패해야 함 (강제됨)
@@ -59,13 +58,14 @@ systemd-run --user --scope -p MemoryMax=1G -p MemorySwapMax=0 -- \
 | 100% (1 core) | 4.20 | 7.90 | 통과, baseline과 유의미한 차이 없음 |
 | 50% (0.5 core) | 8.28 | 4.00 | 통과, steps/s 약 절반 — quota 축소에 비례해 저하 |
 
-네 실행 모두 `summary-train.json`의 `validation.training_result_verified: true`로 finite loss와 optimizer step을 확인했습니다 — **throttling이 correctness를 깨지 않고 속도만 낮춘다**는 뜻입니다.
-이 workload는 1 core까지는 CPU가 병목이 아니고 0.5 core에서 처음 CPU-bound 구간에 들어갑니다.
+네 실행 모두 `validation.training_result_verified: true`로 finite loss·optimizer step을 확인했고, 0.5 core에서 처리율이 약 절반으로 줄었습니다.
 
-Memory limit 명령도 실제로 실행했습니다: 300MB 제한 + 500MB 할당은 즉시 실패(exit code 255), 1GB 제한 + 2GB CUDA 할당은 `allocated ok`를 출력하며 성공했습니다.
-재현 가능한 관찰이며 추측이 아닙니다 — 다만 원인(NVIDIA UMA driver가 CUDA 할당을 cgroup memory controller가 추적하지 않는 경로로 잡는지)까지는 커널·드라이버 소스 없이 확정할 수 없습니다.
+300MB 상한의 500MB host 할당은 실패(exit 255), 1GB 상한의 2GB CUDA 할당은 `allocated ok`로 성공했습니다.
+관측된 차이의 커널·드라이버 원인은 확인하지 않았습니다.
 
 ## Cleanup
+
+실행 종료와 로그 보존을 확인한 뒤 해당 run 출력만 삭제합니다.
 
 ```bash
 for run in cpu-quota-baseline cpu-quota-400 cpu-quota-100 cpu-quota-50; do
@@ -80,7 +80,6 @@ done
 **CPU quota**는 spark1 단일 노드 0.5B smoke에서만 검증했습니다.
 30B NVMe DeepSpeed 같은 CPU-heavier workload(AIO thread, tokenization)에서는 임계점이 더 높은 quota에서 나타날 수 있으며 그 값은 아직 측정하지 않았습니다.
 
-**Memory limit은 이 클러스터의 알려진 한계입니다.**
-DGX Spark GB10은 CPU와 GPU가 같은 물리 memory pool을 쓰는 unified memory architecture이고, cgroup v2 `memory.max`는 plain host allocation만 정확히 강제합니다.
-따라서 실제 학습 workload에 대한 memory ceiling 탐색이나 controlled OOM 비교는 이 하드웨어에서 실행하지 않습니다.
-풀려면 (a) NVIDIA UMA driver가 CUDA 메모리를 cgroup에 노출하는 mechanism이 있는지 확인하거나 (b) discrete GPU 노드에서 다시 검증해야 합니다.
+DGX Spark GB10은 CPU·GPU가 물리 memory를 공유하며, 위 실험의 `memory.max`는 host 할당에만 적용됐습니다.
+따라서 이 환경에서 학습 memory ceiling·controlled OOM 비교는 하지 않습니다.
+CUDA 할당의 cgroup 계측 지원을 확인하거나 discrete GPU 노드에서 별도 검증해야 합니다.
