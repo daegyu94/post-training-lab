@@ -148,6 +148,46 @@ def test_cleanup_checkpoints_removes_each_ranks_checkpoint_dir() -> None:
     assert "rm -rf -- /mnt/b/checkpoints" in seen[1][-1]
 
 
+def test_prior_terminal_status_ignores_a_run_stuck_running(tmp_path: Path) -> None:
+    manifest = tmp_path / "manifest.json"
+
+    assert checkpoint_memory_30b._prior_terminal_status(True, manifest) is None  # no prior attempt
+
+    manifest.write_text(json.dumps({"status": "running"}), encoding="utf-8")
+    assert checkpoint_memory_30b._prior_terminal_status(True, manifest) is None  # interrupted mid-run
+
+    manifest.write_text(json.dumps({"status": "passed"}), encoding="utf-8")
+    assert checkpoint_memory_30b._prior_terminal_status(True, manifest) == "passed"
+
+    manifest.write_text(json.dumps({"status": "failed"}), encoding="utf-8")
+    assert checkpoint_memory_30b._prior_terminal_status(True, manifest) == "failed"
+
+    assert checkpoint_memory_30b._prior_terminal_status(False, manifest) is None  # resume disabled
+
+
+def test_reclaim_remote_kills_and_clears_each_ranks_output(tmp_path: Path) -> None:
+    seen = []
+
+    class Result:
+        returncode = 0
+        stderr = ""
+
+    def fake_run(command, **kwargs):
+        seen.append(command)
+        return Result()
+
+    plan = {"ranks": [
+        {"rank": 0, "host": "spark@spark1", "output": "/mnt/a/run"},
+        {"rank": 1, "host": "spark@spark2", "output": "/mnt/b/run"},
+    ]}
+
+    checkpoint_memory_30b.reclaim_remote(plan, remote_run=fake_run)
+
+    assert len(seen) == 2
+    assert "pkill -9 -f -- /mnt/a/run" in seen[0][-1] and "rm -rf -- /mnt/a/run" in seen[0][-1]
+    assert "pkill -9 -f -- /mnt/b/run" in seen[1][-1] and "rm -rf -- /mnt/b/run" in seen[1][-1]
+
+
 def test_local_file_run_replays_files_in_call_order(tmp_path: Path) -> None:
     first = tmp_path / "a.jsonl"
     second = tmp_path / "b.jsonl"

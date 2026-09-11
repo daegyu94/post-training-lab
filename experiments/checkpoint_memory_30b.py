@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import shlex
+import shutil
 import statistics
 import subprocess
 import sys
@@ -186,6 +187,24 @@ def cleanup_checkpoints(
         )
         if result.returncode:
             raise RuntimeError(f"checkpoint cleanup failed on rank {rank['rank']}: {result.stderr.strip()}")
+
+
+def reclaim_remote(
+    plan: dict[str, Any], *, remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> None:
+    """Kill any orphaned training process and clear the remote output directory left
+    behind by an interrupted run, so a retry can claim that run's output fresh (the
+    session/rank claim in run.execute otherwise refuses a directory that already
+    exists). Best-effort: a controller crash means there is nothing local to compare
+    against, so failures here are not fatal -- a stale mkdir claim just means the
+    retry itself fails loudly instead of silently reusing bad state."""
+    for rank in plan["ranks"]:
+        remote_run(
+            ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", rank["host"],
+             f"pkill -9 -f -- {shlex.quote(rank['output'])} 2>/dev/null; "
+             f"rm -rf -- {shlex.quote(rank['output'])}"],
+            check=False, capture_output=True, text=True, timeout=60,
+        )
 
 
 def aggregate_probe(by_rank: dict[str, Any]) -> dict[str, Any]:
@@ -390,6 +409,16 @@ def collect_trl_summary(
     return summary
 
 
+def _prior_terminal_status(resume: bool, local_manifest: Path) -> str | None:
+    """The prior invocation's status for this run, if it reached a terminal state
+    (passed/failed). None means either no prior attempt or one interrupted mid-run
+    (stuck at "running"), both of which require executing this run fresh."""
+    if not resume or not local_manifest.exists():
+        return None
+    status = json.loads(local_manifest.read_text(encoding="utf-8")).get("status")
+    return status if status in ("passed", "failed") else None
+
+
 class _LocalFileResult:
     def __init__(self, stdout: str) -> None:
         self.returncode = 0
@@ -438,12 +467,20 @@ def run_memory_matrix(
                 # A prior, interrupted invocation may have already completed and recorded
                 # this exact run (run.execute writes its own per-run manifest.json on exit).
                 # Resuming reads that run's already-fetched local metrics back instead of
-                # re-running real 30B GPU work.
+                # re-running real 30B GPU work. A manifest stuck at "running" means the
+                # *previous* invocation was itself interrupted mid-run (not a real pass or
+                # fail) -- that local state and any orphaned remote process/directory can't
+                # be trusted, so reclaim them and execute fresh rather than recording a
+                # false failure.
                 local_manifest = run_output / "manifest.json"
-                resumed = resume and local_manifest.exists()
+                prior_status = _prior_terminal_status(resume, local_manifest)
+                resumed = prior_status is not None
                 if resumed:
-                    code = 0 if json.loads(local_manifest.read_text(encoding="utf-8")).get("status") == "passed" else 1
+                    code = 0 if prior_status == "passed" else 1
                 else:
+                    if resume and local_manifest.exists():
+                        reclaim_remote(plan)
+                        shutil.rmtree(run_output)
                     code = run.execute(plan, timeout, run_output)
                 record.update(status="passed" if code == 0 else "failed", exit_code=code)
                 if code == 0:
