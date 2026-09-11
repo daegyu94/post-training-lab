@@ -372,6 +372,92 @@
         "mode": "markdown",
         "content": "The sampler reports GPU index and utilization, and framework snapshots report rank and local rank, but neither carries a UUID-based run-to-GPU allocation mapping. Allocation is therefore not inferred from utilization. TCP/RDMA panels are port counters, not node-to-node or GPU-to-GPU traffic. Add an interconnect matrix only after topology and endpoint-pair measurements are collected."
       }
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "GPU allocation matrix",
+      "description": "Only ranks that explicitly set CUDA_VISIBLE_DEVICES are shown.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 48
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "spark-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "label_join(training_gpu_allocation{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"}, \"worker\", \"/rank-\", \"instance\", \"rank\")",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      },
+      "transformations": [
+        {
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "gpu",
+            "rowField": "worker",
+            "valueField": "Value"
+          }
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Compute topology matrix",
+      "description": "Supplied topology edges, not measured bandwidth or latency.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 48
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "spark-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max without (instance) (profiling_topology_edge_info{job=\"spark\",kind=\"compute\"})",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      },
+      "transformations": [
+        {
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "destination",
+            "rowField": "source",
+            "valueField": "Value"
+          }
+        }
+      ]
     }
   ],
   "refresh": "5s",

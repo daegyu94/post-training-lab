@@ -59,6 +59,7 @@ def write_framework_metrics(
         "node": socket.gethostname(),
         "rank": rank,
         "local_rank": int(os.environ.get("LOCAL_RANK", "0")),
+        "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES", ""),
         "step": step,
         "observed_at": time.time(),
         "metrics": dict(metrics),

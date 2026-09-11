@@ -34,6 +34,12 @@ if [[ "$role" == node ]]; then
       --textfile-dir "$output_dir/textfile" --interval "${FRAMEWORK_METRICS_INTERVAL:-2}" &
     pids+=("$!")
   fi
+  if [[ -n "${TOPOLOGY_DIR:-}" ]]; then
+    "${PYTHON:-python3}" -m profiling_lab.topology_textfile \
+      --topology-dir "$TOPOLOGY_DIR" --textfile-dir "$output_dir/textfile" \
+      --interval "${TOPOLOGY_INTERVAL:-10}" &
+    pids+=("$!")
+  fi
 elif [[ "$role" == server ]]; then
   : "${GRAFANA_ADMIN_PASSWORD:?Set a non-default Grafana password}"
   cluster_name="${CLUSTER_NAME:-spark-cluster}"

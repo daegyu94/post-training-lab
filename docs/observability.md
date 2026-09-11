@@ -90,6 +90,11 @@ GPU 행렬은 현재 sampler가 보고한 GPU index와 utilization이며 allocat
 Data & Storage의 local device·filesystem 지표도 특정 run의 단독 사용량이나 특정 storage 구현의 topology로 해석하지 않습니다.
 `FRAMEWORK_METRICS_DIR`를 지정하지 않으면 이 process는 시작되지 않고 나머지 host/GPU 모니터링은 그대로 동작합니다.
 
+GPU allocation matrix는 framework snapshot의 `CUDA_VISIBLE_DEVICES`와 `LOCAL_RANK`가 있는 rank만 표시합니다.
+`TOPOLOGY_DIR`를 한 node role에 지정하면 `compute-topology.json`과 `storage-topology.json`의 `components`와 `edges`를 Grafana에 표시합니다.
+각 component는 `id`와 선택적 `role`, 각 edge는 `source`, `destination`, 선택적 `relation`을 사용합니다.
+이 topology는 전달된 관계를 보여주며, bandwidth·latency 측정값을 뜻하지 않습니다.
+
 `FRAMEWORK_METRICS_DIR`를 NFS 공유 경로로 두 노드 모두에 지정하지는 않습니다 — 그러면 두 노드의 `node` role이 같은 파일을 각자 읽어 같은 rank가 두 `instance` label로 중복 노출됩니다.
 각 노드가 자신의 node-local `FRAMEWORK_METRICS_DIR`(기본값)만 읽게 두는 것이 맞습니다.
 

@@ -216,6 +216,81 @@
         "mode": "markdown",
         "content": "These are client-node local device and filesystem counters. They can be correlated with a run's time range, but are not attributed to a dataset, checkpoint, trajectory, replay store, or tool call without workload instrumentation. This dashboard does not assume NFS. A future 3FS, pNFS, or other remote-storage topology requires supplied component and edge IDs plus matching service metrics; metadata and data roles may share a server or be separate."
       }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Storage topology components",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "spark-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max without (instance) (profiling_topology_component_info{job=\"spark\",kind=\"storage\"})",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Storage topology matrix",
+      "description": "Supplied storage edges; values describe relationships, not I/O throughput.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "spark-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max without (instance) (profiling_topology_edge_info{job=\"spark\",kind=\"storage\"})",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      },
+      "transformations": [
+        {
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "destination",
+            "rowField": "source",
+            "valueField": "Value"
+          }
+        }
+      ]
     }
   ],
   "refresh": "5s",
