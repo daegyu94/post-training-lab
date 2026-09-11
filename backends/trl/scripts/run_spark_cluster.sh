@@ -47,6 +47,8 @@ elif [[ -n "$deepspeed_config" ]]; then
   exit 2
 fi
 output_dir="${OUTPUT_DIR:-results/spark-${model_id##*/}-${distributed_backend}}"
+pad_to_max_length="${PAD_TO_MAX_LENGTH:-false}"
+case "$pad_to_max_length" in true|false) ;; *) echo "PAD_TO_MAX_LENGTH must be true or false" >&2; exit 2 ;; esac
 stage="${STAGE:-all}"
 case "$stage" in all|base|train|tuned) ;; *) echo "STAGE must be all, base, train, or tuned" >&2; exit 2 ;; esac
 if [[ "$distributed_backend" == fsdp2 && ( "$stage" == all || "$stage" == tuned ) ]]; then
@@ -54,6 +56,21 @@ if [[ "$distributed_backend" == fsdp2 && ( "$stage" == all || "$stage" == tuned 
   exit 2
 fi
 mkdir -p "$output_dir/logs"
+sampler_pid=""
+stop_sampler() {
+  if [[ -n "$sampler_pid" ]]; then
+    kill "$sampler_pid" 2>/dev/null || true
+    wait "$sampler_pid" 2>/dev/null || true
+  fi
+}
+if [[ "${RESOURCE_SAMPLING:-false}" == "true" ]]; then
+  mkdir -p "$output_dir/measurements"
+  "$python_bin" "$repo_root/observability/resource_sampler.py" \
+    --target "$output_dir" \
+    --output "$output_dir/measurements/resources-node-${NODE_RANK}.jsonl" &
+  sampler_pid=$!
+  trap stop_sampler EXIT
+fi
 
 common_args=(
   --model-id "$model_id" --model-dir "$model_dir" --model-revision "$model_revision"
@@ -65,6 +82,7 @@ common_args=(
   --distributed-backend "$distributed_backend"
   --seed "${SEED:-42}"
 )
+if [[ "$pad_to_max_length" == "true" ]]; then common_args+=(--pad-to-max-length); fi
 if [[ -n "${NUM_TRAIN_EPOCHS:-}" ]]; then
   common_args+=(--epochs "$NUM_TRAIN_EPOCHS")
 else

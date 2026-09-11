@@ -35,6 +35,7 @@ def measure_execution(output_dir: Path, stage: str, *, manager_class=None, cuda=
             @wraps(original)
             def measured(*args, **kwargs):
                 started = time.perf_counter()
+                started_wall = time.time_ns()
                 success = False
                 try:
                     result = original(*args, **kwargs)
@@ -42,6 +43,10 @@ def measure_execution(output_dir: Path, stage: str, *, manager_class=None, cuda=
                     return result
                 finally:
                     event = {'event': name, 'seconds': time.perf_counter() - started,
+                             'started_monotonic_seconds': started,
+                             'started_wall_time_ns': started_wall,
+                             'ended_monotonic_seconds': time.perf_counter(),
+                             'ended_wall_time_ns': time.time_ns(),
                              'success': success, 'stage': stage}
                     if name == 'finalize_async_saves':
                         event['blocking'] = kwargs.get('blocking', args[2] if len(args) > 2 else False)
@@ -53,6 +58,7 @@ def measure_execution(output_dir: Path, stage: str, *, manager_class=None, cuda=
         if available:
             cuda.reset_peak_memory_stats()
         started = time.perf_counter()
+        started_wall = time.time_ns()
         success = False
         try:
             for name in ('save', 'finalize_async_saves'):
@@ -65,5 +71,9 @@ def measure_execution(output_dir: Path, stage: str, *, manager_class=None, cuda=
                 setattr(manager_class, name, original)
             emit({'event': 'stage', 'stage': stage, 'success': success,
                   'seconds': time.perf_counter() - started,
+                  'started_monotonic_seconds': started,
+                  'started_wall_time_ns': started_wall,
+                  'ended_monotonic_seconds': time.perf_counter(),
+                  'ended_wall_time_ns': time.time_ns(),
                   'peak_cuda_allocated_bytes': cuda.max_memory_allocated() if available else None,
                   'peak_cuda_reserved_bytes': cuda.max_memory_reserved() if available else None})

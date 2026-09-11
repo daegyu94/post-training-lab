@@ -30,6 +30,7 @@ TRL_ENV = {
     "FINETUNING_MODE", "OPTIMIZER", "LEARNING_RATE", "MAX_STEPS", "NUM_TRAIN_EPOCHS",
     "MAX_LENGTH", "GRADIENT_ACCUMULATION_STEPS", "DISTRIBUTED_BACKEND",
     "FSDP2", "DEEPSPEED_CONFIG", "STAGE", "TRAIN_SAMPLES", "EVAL_SAMPLES", "SEED",
+    "RESOURCE_SAMPLING", "PAD_TO_MAX_LENGTH",
 }
 MEGATRON_ENV = {
     "MODEL_ID", "MODEL_REVISION", "DATASET_ID", "DATASET_REVISION",
@@ -40,7 +41,8 @@ MEGATRON_ENV = {
     "FULLY_PARALLEL_SAVE", "FULLY_PARALLEL_LOAD", "SEQUENCE_PARALLEL",
     "OVERLAP_GRAD_REDUCE", "DIST_CKPT_OPTIM_FULLY_RESHARDABLE",
     "RESUME_AFTER_TRAIN", "RESUME_MAX_STEPS", "RESUME_TP", "RESUME_PP", "RESUME_EP",
-    "TRANSFORMER_IMPL", "MEASURE_TIMING", "STAGE",
+    "TRANSFORMER_IMPL", "MEASURE_TIMING", "RESOURCE_SAMPLING",
+    "CHECKPOINT_PLACEMENT", "STAGE",
 }
 
 
@@ -198,6 +200,11 @@ def load_experiment(path: Path) -> dict[str, Any]:
         stage = value["env"].get("STAGE", "all")
         if stage not in {"all", "base", "train", "tuned"}:
             raise ConfigError("Megatron STAGE must be all, base, train, or tuned")
+        placement = value["env"].get("CHECKPOINT_PLACEMENT", "shared")
+        if placement not in {"shared", "local"}:
+            raise ConfigError("Megatron CHECKPOINT_PLACEMENT must be shared or local")
+        if placement == "local" and stage != "train":
+            raise ConfigError("Megatron local checkpoint placement supports STAGE=train only")
         tp = _positive(value["env"], "TP", 1)
         pp = _positive(value["env"], "PP", 1)
         ep = _positive(value["env"], "EP", 2)
@@ -274,8 +281,10 @@ def build_plan(setup: dict[str, Any], experiment: dict[str, Any], setup_path: Pa
             "OBSERVATORY_RUN_ID": run_id,
         })
         if experiment["backend"] == "megatron":
-            env["CHECKPOINT_DIR"] = os.path.join(
-                node["checkout"], "artifacts", "checkpoints", run_id
+            env["CHECKPOINT_DIR"] = (
+                os.path.join(remote_output, "checkpoints")
+                if env.get("CHECKPOINT_PLACEMENT") == "local"
+                else os.path.join(node["checkout"], "artifacts", "checkpoints", run_id)
             )
         ranks.append({"rank": rank, "host": node["host"], "checkout": node["checkout"], "output": remote_output, "env": env})
     return {

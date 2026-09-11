@@ -40,6 +40,7 @@ class SparkConfig:
     deepspeed_config: Path | None = None
     train_samples: int | None = None
     eval_samples: int | None = None
+    pad_to_max_length: bool = False
 
 
 def huggingface_hub_cache() -> Path:

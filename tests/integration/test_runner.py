@@ -72,6 +72,15 @@ def test_megatron_padding_env_is_accepted_and_normalized(tmp_path: Path) -> None
     assert loaded["env"]["PAD_TO_MAX_LENGTH"] == "true"
 
 
+def test_trl_padding_env_is_accepted_and_normalized(tmp_path: Path) -> None:
+    _, experiment_path = config_files(tmp_path)
+    experiment = json.loads(experiment_path.read_text())
+    experiment["env"]["PAD_TO_MAX_LENGTH"] = True
+    experiment_path.write_text(json.dumps(experiment))
+    loaded = run.load_experiment(experiment_path)
+    assert loaded["env"]["PAD_TO_MAX_LENGTH"] == "true"
+
+
 @pytest.mark.parametrize(
     ("name", "model_id"),
     (
@@ -124,6 +133,33 @@ def test_backend_specific_output_roots(tmp_path: Path) -> None:
     assert {rank["env"]["CHECKPOINT_DIR"] for rank in plan["ranks"]} == {
         "/srv/post-training-unified/artifacts/checkpoints/nvme-run"
     }
+
+
+def test_local_checkpoint_placement_uses_each_nodes_output(tmp_path: Path) -> None:
+    setup_path, experiment_path = config_files(tmp_path, backend="megatron")
+    experiment = json.loads(experiment_path.read_text())
+    experiment["env"].update({"CHECKPOINT_PLACEMENT": "local", "STAGE": "train"})
+    experiment_path.write_text(json.dumps(experiment))
+
+    plan = run.build_plan(
+        run.load_setup(setup_path), run.load_experiment(experiment_path),
+        setup_path, experiment_path, tmp_path / "local", tmp_path,
+    )
+
+    assert {rank["env"]["CHECKPOINT_DIR"] for rank in plan["ranks"]} == {
+        "/results/controller/spark1/local/checkpoints",
+        "/results/controller/spark2/local/checkpoints",
+    }
+
+
+def test_local_checkpoint_placement_rejects_reload_stages(tmp_path: Path) -> None:
+    _, experiment_path = config_files(tmp_path, backend="megatron")
+    experiment = json.loads(experiment_path.read_text())
+    experiment["env"]["CHECKPOINT_PLACEMENT"] = "local"
+    experiment_path.write_text(json.dumps(experiment))
+
+    with pytest.raises(run.ConfigError, match="STAGE=train"):
+        run.load_experiment(experiment_path)
 
 
 def test_rejects_reserved_and_invalid_topology(tmp_path: Path) -> None:

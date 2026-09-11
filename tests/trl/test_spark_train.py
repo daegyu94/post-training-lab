@@ -222,7 +222,7 @@ def test_main_passes_cli_optimizer_and_sft_config_to_trainer(monkeypatch, tmp_pa
         model_id="Qwen/Qwen3-30B-A3B", model_dir=tmp_path / "model", model_revision="a" * 40,
         dataset_id="public/data", dataset_revision="b" * 40, data_dir=tmp_path / "data", output_dir=tmp_path / "out",
         stage="train", finetuning_mode="full", optimizer="adamw", learning_rate=0.0003,
-        max_steps=1, epochs=None, max_length=32, gradient_accumulation_steps=2, seed=42,
+        max_steps=1, epochs=None, max_length=32, pad_to_max_length=True, gradient_accumulation_steps=2, seed=42,
         distributed_backend="ddp", deepspeed_config=None,
         train_samples=None, eval_samples=None, lora_r=8, lora_alpha=16,
     )
@@ -306,6 +306,7 @@ def test_main_passes_cli_optimizer_and_sft_config_to_trainer(monkeypatch, tmp_pa
     assert captured["sft_config"]["gradient_checkpointing"] is True
     assert captured["sft_config"]["gradient_checkpointing_kwargs"] == {"use_reentrant": False}
     assert captured["sft_config"]["save_strategy"] == "no"
+    assert captured["sft_config"]["pad_to_multiple_of"] == 32
     assert captured["calls"] == ["train", "evaluate", "save"]
     assert captured["load_dataset"]["kwargs"]["cache_dir"].endswith("hf-cache")
     assert model.checkpointing_kwargs == {"gradient_checkpointing_kwargs": {"use_reentrant": False}}
@@ -319,7 +320,7 @@ def test_tuned_stage_reloads_deepspeed_checkpoint_before_evaluate(monkeypatch, t
         model_id="Qwen/Qwen3-30B-A3B", model_dir=tmp_path / "model", model_revision="a" * 40,
         dataset_id="public/data", dataset_revision="b" * 40, data_dir=tmp_path / "data", output_dir=tmp_path / "out",
         stage="tuned", finetuning_mode="full", optimizer="adamw", learning_rate=0.0003,
-        max_steps=1, epochs=None, max_length=32, gradient_accumulation_steps=2, seed=42,
+        max_steps=1, epochs=None, max_length=32, pad_to_max_length=False, gradient_accumulation_steps=2, seed=42,
         distributed_backend="deepspeed", deepspeed_config=tmp_path / "ds.json",
         train_samples=None, eval_samples=None, lora_r=8, lora_alpha=16,
     )

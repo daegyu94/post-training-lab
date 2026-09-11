@@ -107,6 +107,21 @@ fi
   --global-batch-size "$global_batch_size"
 
 mkdir -p "$output_dir/logs"
+sampler_pid=""
+stop_sampler() {
+  if [[ -n "$sampler_pid" ]]; then
+    kill "$sampler_pid" 2>/dev/null || true
+    wait "$sampler_pid" 2>/dev/null || true
+  fi
+}
+if [[ "${RESOURCE_SAMPLING:-false}" == "true" ]]; then
+  mkdir -p "$output_dir/measurements"
+  "$python_bin" "$repo_root/observability/resource_sampler.py" \
+    --target "$output_dir" \
+    --output "$output_dir/measurements/resources-node-${NODE_RANK}.jsonl" &
+  sampler_pid=$!
+  trap stop_sampler EXIT
+fi
 common_args=(
   --setup spark-cluster
   --model-id "$model_id"

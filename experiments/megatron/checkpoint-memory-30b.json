@@ -1,0 +1,42 @@
+{
+  "backend": "megatron",
+  "setup": "spark",
+  "base_experiment": "experiments/megatron/qwen3-30b-lora.json",
+  "defaults": {
+    "steps": 8,
+    "repeats": 5,
+    "within_run_warmup": 2,
+    "checkpoint_intervals": [2, 2]
+  },
+  "common_env": {
+    "MODEL_ID": "Qwen/Qwen3-30B-A3B",
+    "MODEL_REVISION": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+    "DATASET_ID": "HuggingFaceH4/ultrachat_200k",
+    "DATASET_REVISION": "8049631c405ae6576f93f445c6b8166f76f5505a",
+    "FINETUNING_MODE": "lora",
+    "GLOBAL_BATCH_SIZE": 2,
+    "MICRO_BATCH_SIZE": 1,
+    "TP": 1,
+    "PP": 1,
+    "EP": 2,
+    "MAX_LENGTH": 2048,
+    "PAD_TO_MAX_LENGTH": true,
+    "SAVE_INTERVAL": 2,
+    "SAVE_OPTIMIZER": true,
+    "CHECKPOINT_PLACEMENT": "local",
+    "RESOURCE_SAMPLING": true,
+    "MEASURE_TIMING": true,
+    "SEED": 42,
+    "STAGE": "train"
+  },
+  "cells": [
+    {
+      "name": "checkpoint-local",
+      "varying": ["CHECKPOINT_MODE"],
+      "variants": [
+        {"name": "sync", "env": {"CHECKPOINT_MODE": "sync"}},
+        {"name": "async", "env": {"CHECKPOINT_MODE": "async"}}
+      ]
+    }
+  ]
+}

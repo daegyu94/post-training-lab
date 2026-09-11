@@ -390,6 +390,32 @@ DeepSpeed ZeRO checkpoint | buffered
 
 ## 실행 순서와 run 예산
 
+실행 진입점은 `experiments/checkpoint_memory_30b.py`이며 기본값은 실제 GPU 작업을 시작하지 않는 dry-run입니다.
+먼저 두 phase의 생성된 plan과 local NVMe 경로를 확인한 뒤 서로 다른 output 이름으로 실행합니다.
+
+```bash
+python experiments/checkpoint_memory_30b.py \
+  --setup setups/spark/local.json \
+  --phase checkpoint \
+  --output results/checkpoint-30b-dry
+
+python experiments/checkpoint_memory_30b.py \
+  --setup setups/spark/local.json \
+  --phase checkpoint \
+  --output results/checkpoint-30b \
+  --execute
+
+python experiments/checkpoint_memory_30b.py \
+  --setup setups/spark/local.json \
+  --phase memory \
+  --output results/memory-30b \
+  --execute
+```
+
+Checkpoint phase는 sync/async warmup과 측정, 각 rank의 resource sampling, warm-after-write/cold/warm buffered read와 Direct I/O baseline을 한 번에 수행합니다.
+Memory phase는 1024/4096 Megatron pilot과 반복, TRL DDP/FSDP2 LoRA, TRL ZeRO-3 NVMe full-SGD를 실행하며 TRL도 `pad_to_multiple_of=MAX_LENGTH`로 fixed padding을 적용합니다.
+`LEN-2048` Megatron memory 값은 checkpoint phase 결과를 재사용합니다.
+
 1. UltraChat 고정 revision을 각 노드에 준비하고 Qwen tokenizer length manifest와 benchmark cohort를 생성합니다.
 2. 0.5B run 하나로 instrumentation을 검증합니다.
 3. 통계에서 제외할 30B Megatron sync와 async pilot을 실행합니다.

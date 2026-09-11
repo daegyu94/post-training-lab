@@ -32,6 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-steps", type=int, default=None)
     parser.add_argument("--epochs", type=float, default=None)
     parser.add_argument("--max-length", type=int, default=512)
+    parser.add_argument("--pad-to-max-length", action="store_true")
     parser.add_argument("--gradient-accumulation-steps", type=int, default=8)
     parser.add_argument("--train-samples", type=int)
     parser.add_argument("--eval-samples", type=int)
@@ -222,6 +223,7 @@ def _sft_config_kwargs(config: SparkConfig, args: argparse.Namespace) -> dict[st
             {"use_reentrant": False} if use_gradient_checkpointing else None
         ),
         "max_length": config.max_length,
+        "pad_to_multiple_of": config.max_length if getattr(config, "pad_to_max_length", False) else None,
         "completion_only_loss": True,
         "packing": False,
         "eval_strategy": "no",
@@ -319,6 +321,7 @@ def main() -> None:
         seed=args.seed, distributed_backend=args.distributed_backend,
         deepspeed_config=args.deepspeed_config,
         train_samples=args.train_samples, eval_samples=args.eval_samples,
+        pad_to_max_length=args.pad_to_max_length,
     )
     family = validate_config(config)
     with _write_log(args):

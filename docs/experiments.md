@@ -49,6 +49,7 @@ TRL NVMe preset의 `train` stage는 학습 직후 같은 프로세스에서 평�
 허용된 환경변수는 [runner](../experiments/run.py)의 `TRL_ENV`와 `MEGATRON_ENV`에서 확인합니다.
 모든 preset은 `MODEL_ID`, `MODEL_REVISION`, `DATASET_ID`, `DATASET_REVISION`을 명시해야 합니다.
 백엔드가 지원하는 모든 직접 CLI 옵션이 공통 runner에 노출된 것은 아닙니다.
+Megatron의 `CHECKPOINT_PLACEMENT=local`은 checkpoint shard를 각 노드의 local output에 기록하는 save-only 실험 옵션이며 `STAGE=train`에서만 허용합니다.
 Runner는 output 디렉터리 이름을 `OBSERVATORY_RUN_ID`로 예약해 framework metric과 host telemetry를 같은 실행에 연결합니다.
 
 ## Estimate Memory Before Running (`experiments/estimate_memory.py`)

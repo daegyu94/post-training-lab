@@ -229,7 +229,9 @@ def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execu
                   within_run_warmup: int | None = None, checkpoint_intervals: list[int] | None = None,
                   timeout: int = 900,
                   execute_fn: Callable[..., int] = runner.execute,
-                  fetch_fn: Callable[..., dict[str, Any]] = fetch_measurements) -> dict[str, Any]:
+                  fetch_fn: Callable[..., dict[str, Any]] = fetch_measurements,
+                  post_run_fn: Callable[[dict[str, Any], Path, dict[str, Any]], dict[str, Any]] | None = None,
+                  ) -> dict[str, Any]:
     if output.exists():
         raise ValueError(f"refusing to reuse existing benchmark output: {output}")
     benchmark = load_benchmark_plan(benchmark_path)
@@ -251,7 +253,12 @@ def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execu
         raise ValueError("steps must exceed within-run warmup")
     base_env = dict(base["env"])
     base_env.update(benchmark.get("common_env", {}))
-    base_env.update({"MAX_STEPS": steps, "SCHEDULE_STEPS": steps, "STAGE": "train", "MEASURE_TIMING": "true", "SEED": 42, "GLOBAL_BATCH_SIZE": 4, "EP": 1, "PP": 1})
+    for key, value in {
+        "STAGE": "train", "MEASURE_TIMING": "true", "SEED": 42,
+        "GLOBAL_BATCH_SIZE": 4, "EP": 1, "PP": 1,
+    }.items():
+        base_env.setdefault(key, value)
+    base_env.update({"MAX_STEPS": steps, "SCHEDULE_STEPS": steps})
     for cell in benchmark["cells"]:
         for variant in cell["variants"]:
             if "SAVE_INTERVAL" in variant.get("env", {}) and variant["env"]["SAVE_INTERVAL"] in defaults["checkpoint_intervals"]:
@@ -262,7 +269,8 @@ def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execu
     schedule = schedule_runs(benchmark, repeats, within_run_warmup)
     if not execute:
         return {"status": "dry-run", "steps": steps, "repeats": repeats, "within_run_warmup": within_run_warmup,
-                "planned_runs": schedule, "source_commit": _git_head(), "plan_sha256": _sha(benchmark_path)}
+                "effective_common_env": base_env, "planned_runs": schedule,
+                "source_commit": _git_head(), "plan_sha256": _sha(benchmark_path)}
     output.mkdir(parents=True)
     (output / "plan.json").write_text(json.dumps(benchmark, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     records_path = output / "records.jsonl"
@@ -318,6 +326,8 @@ def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execu
                 record["metrics"] = {key: max((v["metrics"].get(key) for v in metric_values if v["metrics"].get(key) is not None), default=None) for key in ("peak_cuda_allocated_bytes", "peak_cuda_reserved_bytes", "save_call_host_seconds_sum_per_rank", "blocking_finalization_host_seconds_sum_per_rank")}
                 record["metrics"]["save_call_host_seconds_max_across_ranks"] = record["metrics"].pop("save_call_host_seconds_sum_per_rank")
                 record["metrics"]["blocking_finalization_host_seconds_max_across_ranks"] = record["metrics"].pop("blocking_finalization_host_seconds_sum_per_rank")
+                if post_run_fn is not None and not item["warmup"]:
+                    record["post_run"] = post_run_fn(plan, run_output, item)
             else:
                 failed_variants.add(key)
         except KeyboardInterrupt:

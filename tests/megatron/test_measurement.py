@@ -31,4 +31,6 @@ def test_timing_preserves_calls_exceptions_and_restores_methods(tmp_path, fail):
     assert records[1]['success'] is not fail
     assert records[-1]['success'] is not fail
     assert all(record['seconds'] >= 0 for record in records)
+    assert all(record['ended_monotonic_seconds'] >= record['started_monotonic_seconds'] for record in records)
+    assert all(record['ended_wall_time_ns'] >= record['started_wall_time_ns'] for record in records)
     assert records[-1]['peak_cuda_allocated_bytes'] is None

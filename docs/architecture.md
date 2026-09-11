@@ -45,6 +45,7 @@ Experiment에서 덮어쓸 수 없습니다.
 현재 setup은 `spark`, 노드 수는 1 또는 2, `nproc_per_node`는 정확히 1입니다.
 모델·데이터 ID는 experiment에 명시해야 하며 revision은 40자리 SHA여야 합니다.
 TRL은 stage와 분산 backend 조합을, Megatron은 topology와 batch의 나눗셈 조건을 추가 검사합니다.
+Megatron의 `CHECKPOINT_PLACEMENT=local`은 각 노드의 `OUTPUT_DIR/checkpoints`를 사용하며 완전한 shard 재로딩을 전제로 하지 않는 `STAGE=train` 측정에서만 허용합니다.
 자세한 필드 입력은 [Getting Started](getting-started.md#configure-the-setup)를 따릅니다.
 
 ## Run Lifecycle
