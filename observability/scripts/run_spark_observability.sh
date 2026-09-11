@@ -41,7 +41,6 @@ if [[ "$role" == node ]]; then
     pids+=("$!")
   fi
 elif [[ "$role" == server ]]; then
-  : "${GRAFANA_ADMIN_PASSWORD:?Set a non-default Grafana password}"
   cluster_name="${CLUSTER_NAME:-spark-cluster}"
   if [[ ! "$cluster_name" =~ ^[A-Za-z0-9_.-]+$ ]]; then
     echo "CLUSTER_NAME must contain only letters, digits, dots, underscores, or hyphens" >&2
@@ -111,7 +110,10 @@ EOF
     --config.file="$output_dir/prometheus.yml" --storage.tsdb.path="$output_dir/prometheus-data" \
     --storage.tsdb.retention.time=1d --web.listen-address=127.0.0.1:19090 > "$output_dir/prometheus.log" 2>&1 &
   pids+=("$!")
-  export GF_SECURITY_ADMIN_PASSWORD="$GRAFANA_ADMIN_PASSWORD"
+  export GF_AUTH_ANONYMOUS_ENABLED=true GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+  if [[ -n "${GRAFANA_ADMIN_PASSWORD:-}" ]]; then
+    export GF_SECURITY_ADMIN_PASSWORD="$GRAFANA_ADMIN_PASSWORD"
+  fi
   export GF_SERVER_HTTP_ADDR=127.0.0.1 GF_SERVER_HTTP_PORT=13000
   export GF_PATHS_DATA="$output_dir/grafana-data" GF_PATHS_LOGS="$output_dir/grafana-logs"
   export GF_PATHS_PROVISIONING="$output_dir/provisioning"

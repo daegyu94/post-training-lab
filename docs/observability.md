@@ -34,13 +34,14 @@ NODE_ADDR='<node-management-address>' \
 ```
 
 도구가 설치된 ARM64 monitoring host에서는 server role을 별도 실행합니다.
-`GRAFANA_ADMIN_PASSWORD`와 cluster 이름, 이름이 붙은 monitoring target 목록을 지정합니다.
+cluster 이름과 이름이 붙은 monitoring target 목록을 지정합니다.
+Grafana는 loopback에서 anonymous Viewer로 열리므로 SSH tunnel을 통해 비밀번호 없이 dashboard를 볼 수 있습니다.
+관리자 계정이 필요할 때만 `GRAFANA_ADMIN_PASSWORD`를 지정합니다.
 `SPARK_TARGETS`는 `node=address` 항목을 쉼표로 연결한 값이므로 노드 수를 고정하지 않습니다.
 
 ```bash
 CLUSTER_NAME='<cluster-name>' \
 SPARK_TARGETS='trainer-0=<first-node-management-address>,rollout-0=<second-node-management-address>' \
-GRAFANA_ADMIN_PASSWORD='<non-default-password>' \
   bash scripts/run_spark_observability.sh server
 ```
 
@@ -65,7 +66,7 @@ Controller 자체에는 GUI(브라우저)가 없고 사용자의 실제 client �
 ssh -NT -L 13000:127.0.0.1:13000 -J <user>@<controller-ssh-alias> spark@spark1
 ```
 
-브라우저에서 `http://localhost:13000` 접속 후 `admin`과 `GRAFANA_ADMIN_PASSWORD`로 로그인합니다.
+브라우저에서 `http://localhost:13000`에 접속합니다.
 
 `server` role은 `examples/observability/`의 `spark-resources.json`(uid `spark-profiling`), `compute-communication.json`, `data-storage.json`을 함께 복사합니다.
 Run Overview는 실행 진행과 GPU 행렬을 요약하고, Compute & Communication은 GPU health·rank timer·인터페이스별 통신을, Data & Storage는 node-local device·filesystem을 다룹니다.

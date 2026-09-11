@@ -42,7 +42,6 @@ def test_server_config_accepts_an_arbitrary_named_target_list(tmp_path: Path) ->
     environment = os.environ | {
         "CLUSTER_NAME": "next-cluster",
         "SPARK_TARGETS": "trainer-0=10.0.0.10,rollout-0=rollout.example",
-        "GRAFANA_ADMIN_PASSWORD": "test-password",
         "SERVER_CONFIG_ONLY": "1",
         "OUTPUT_DIR": str(tmp_path / "monitoring"),
     }
@@ -72,7 +71,6 @@ def test_server_config_rejects_duplicate_target_names(tmp_path: Path) -> None:
     script = ROOT / "observability" / "scripts" / "run_spark_observability.sh"
     environment = os.environ | {
         "SPARK_TARGETS": "worker=10.0.0.10,worker=10.0.0.11",
-        "GRAFANA_ADMIN_PASSWORD": "test-password",
         "SERVER_CONFIG_ONLY": "1",
         "OUTPUT_DIR": str(tmp_path / "monitoring"),
     }
