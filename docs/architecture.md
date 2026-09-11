@@ -50,8 +50,8 @@ TRL은 stage와 분산 backend 조합을, Megatron은 topology와 batch의 나�
 ## Run Lifecycle
 
 Dry-run으로 계획을 먼저 확인하는 절차는 [Getting Started](getting-started.md#check-the-execution-plan)를 따릅니다.
-정상 Git checkout에서 실행하면 원격 checkout이 깨끗하고 controller와 같은 commit인지 확인합니다.
-Controller commit이 `unknown`이면 현재 구현은 commit 일치 검사를 생략하므로 실제 실행은 반드시 Git checkout에서 수행합니다.
+Runner는 controller에서 공유 checkout의 commit과 dirty 상태를 확인하고, Spark 노드에서는 Git을 실행하지 않습니다.
+Controller commit이 `unknown`이면 commit 기록을 생략하므로 실제 실행은 반드시 Git checkout에서 수행합니다.
 참여 rank는 run별 출력을 claim하며 기존 출력은 덮어쓰지 않습니다.
 
 각 rank는 같은 run의 session 식별자를 확인하고 launcher를 시작합니다.

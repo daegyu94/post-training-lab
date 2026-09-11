@@ -1,9 +1,9 @@
 # Fresh Installation Audit
 
 2026-09-11에 `1c0b03e`의 시작 가이드와 설치 명령을 검토했습니다.
-현재 가이드만으로 두 백엔드의 새 GPU 환경을 문제없이 완성할 수 있다고 판정할 수 없습니다.
-CUDA Torch 선택과 Megatron의 native dependency 설치 단계가 빠져 있으며 데이터 준비 경로에도 오류가 있습니다.
-이번 변경은 요청한 검토 결과를 기록하며 설치 코드와 기존 가이드를 수정하지 않습니다.
+당시 가이드만으로 두 백엔드의 새 GPU 환경을 문제없이 완성할 수 없었습니다.
+CUDA Torch 선택과 Megatron의 native dependency 설치 단계가 빠져 있었고 데이터 준비 경로에도 오류가 있었습니다.
+아래 내용은 최초 검토 기록이며, 같은 날 후속 수정과 새 환경 검증 결과를 문서 끝에 추가했습니다.
 
 ## 검증 방법과 결과
 
@@ -94,3 +94,32 @@ node-local 데이터 원칙을 따르려면 `--output-dir`에 해당 노드의 �
 추가로 `experiments/run.py`의 원격 명령은 Spark에서 `git rev-parse`와 `git status`를 실행합니다.
 이는 모든 Git 명령을 controller에서만 실행하도록 한 현재 `AGENTS.md`와 충돌하므로 이번 검토에서는 공통 runner의 `--execute`를 실행하지 않았습니다.
 운영 지침과 checkout 검증 구현을 일치시키는 별도 수정이 필요합니다.
+
+## 수정 후 새 환경 검증
+
+후속 수정에서는 cu130 인덱스를 명시하고 Transformer Engine source wheel build에 venv의 cuDNN·NCCL header와 library 경로를 전달하도록 했습니다.
+공개 데이터 명령은 저장소 루트와 node-local 출력 절대 경로를 사용하도록 고쳤고 `.venv-check`를 Git에서 제외했습니다.
+Runner의 checkout 검사는 NFS를 공유하는 controller에서 수행하도록 옮겨 Spark 노드의 Git 실행을 제거했습니다.
+
+2026-09-11에 기존 venv를 복사하지 않고 다음 새 node-local 경로에 Python 3.12.3 venv를 만들었습니다.
+
+- spark1 TRL: `/home/spark/.local/ptl-fresh-install-20260911/venvs/trl`
+- spark2 Megatron: `/home/spark/.local/ptl-fresh-install-20260911/venvs/megatron`
+
+두 환경은 cu130 Torch와 CUDA package를 각 노드에서 새로 다운로드해 설치했습니다.
+Megatron의 `transformer-engine-torch==2.18.0`은 source distribution에서 새 ARM64 wheel을 빌드했고, 새 Megatron venv에는 그 wheel을 설치했습니다.
+생성된 wheel의 SHA-256은 `ed1fb2f1d563056fb5b959efbc44d65ae188bb09dadb3fbaf8985f2672f09a6b`입니다.
+
+| 검사 | 결과 |
+| --- | --- |
+| TRL version·import | Torch `2.10.0+cu130`, CUDA `13.0`, Transformers `5.12.1`, TRL `1.12.0`, Accelerate `1.14.0` |
+| TRL dependency | venv 기본 pip `24.0`의 `pip check` 통과 |
+| TRL CUDA | CUDA tensor 연산 결과 `2.0` |
+| Megatron version·import | Torch `2.10.0+cu130`, CUDA `13.0`, Bridge·Core·AutoBridge·LoRA·Transformer Engine `2.18.0` import 성공 |
+| Transformer Engine CUDA | BF16 `Linear(4, 4)` 결과 shape `[2, 4]`, finite `True` |
+| 공개 데이터 진입점 | 두 새 환경에서 저장소 루트의 `scripts/prepare_public_data.sh --help` 성공 |
+| 저장소 검사 | CPU 테스트 `218 passed`, `compileall`과 지정 shell script의 `bash -n` 통과 |
+
+Megatron의 `pip check`에는 Bridge가 선언한 미설치 package 9개가 남습니다.
+이는 ARM64에서 설치할 수 없는 `fast-hadamard-transform` 등을 의도적으로 건너뛰는 지원 범위이며, 실제 사용하는 import와 Transformer Engine CUDA 연산으로 확인했습니다.
+모델·dataset 다운로드, 실제 SFT와 두 노드 NCCL은 Python 설치 검증보다 별도인 실행 검증 범위입니다.

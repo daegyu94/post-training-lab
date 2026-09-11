@@ -10,9 +10,15 @@ PYTHON_EXT_SUFFIX="$(
   "${PYTHON}" -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX") or "")'
 )"
 
-for library_dir in "${PYTHON_SITE}/nvidia/nccl/lib" "${PYTHON_SITE}/nvidia/cudnn/lib"; do
+for package_dir in "${PYTHON_SITE}/nvidia/nccl" "${PYTHON_SITE}/nvidia/cudnn"; do
+  include_dir="${package_dir}/include"
+  library_dir="${package_dir}/lib"
+  if [[ -d "${include_dir}" ]]; then
+    export CPATH="${include_dir}${CPATH:+:${CPATH}}"
+  fi
   if [[ -d "${library_dir}" ]]; then
     export LD_LIBRARY_PATH="${library_dir}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+    export LIBRARY_PATH="${library_dir}${LIBRARY_PATH:+:${LIBRARY_PATH}}"
   fi
 done
 

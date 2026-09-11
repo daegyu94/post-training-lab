@@ -41,7 +41,7 @@ python experiments/run.py \
 두 backend requirements는 서로 다르므로 하나의 가상환경을 공유하지 않습니다.
 Megatron은 기존 Spark 환경에서 2노드 smoke를 다시 통과했지만, 새 환경에 전체 의존성을 처음부터 설치하는 과정은 아직 검증되지 않았습니다.
 
-Controller에는 OpenSSH client가 필요하고 노드에는 Git, Bash, GNU `timeout`, `setsid`가 필요합니다.
+Controller에는 OpenSSH client가 필요하고 노드에는 Bash, GNU `timeout`, `setsid`가 필요합니다.
 각 노드에 대한 `ssh -o BatchMode=yes '<ssh-host>' true`가 비대화형으로 성공하는지 확인합니다.
 Rendezvous 주소·포트와 NCCL 통신 경로도 노드 사이에서 접근 가능해야 합니다.
 

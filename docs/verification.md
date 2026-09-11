@@ -21,6 +21,8 @@ for script in backends/*/scripts/*.sh observability/scripts/*.sh setups/spark/*.
 done
 ```
 
+`.venv-check`는 Git에서 제외되므로 같은 checkout의 원격 실행 상태를 오염시키지 않습니다.
+
 테스트는 mock과 작은 입력을 사용하는 회귀 검사이며 실제 GPU·NCCL·fresh installation 성공을 증명하지 않습니다.
 실제 실행 전에는 [Getting Started의 실행 계획 검토](getting-started.md#check-the-execution-plan)로 설정을 점검할 수 있습니다.
 

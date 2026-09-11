@@ -1,4 +1,5 @@
 .venv/
+.venv-check/
 data/
 results/
 __pycache__/

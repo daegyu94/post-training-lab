@@ -208,15 +208,19 @@ def test_shared_output_uses_same_session_and_rank_specific_claims(tmp_path: Path
     assert ".runner-cancel-shared-rank0" in first
 
 
-def test_remote_provenance_is_recorded_and_mismatch_is_rejected(tmp_path: Path) -> None:
+def test_remote_provenance_uses_controller_without_remote_git(tmp_path: Path) -> None:
     setup_path, experiment_path = config_files(tmp_path, nnodes=1)
     setup = run.load_setup(setup_path)
     experiment = run.load_experiment(experiment_path)
     plan = run.build_plan(setup, experiment, setup_path, experiment_path, tmp_path / "provenance", tmp_path)
     command, _ = run.remote_command(plan["ranks"][0], "trl", 900, "provenance", "deadbeef")
     assert "remote_commit" in command and "remote_dirty" in command
-    assert "remote commit mismatch" in command
-    assert "remote checkout is dirty" in command
+    assert "git -C" not in command
+
+
+def test_execute_rejects_dirty_controller_checkout(tmp_path: Path) -> None:
+    with pytest.raises(run.ConfigError, match="dirty controller checkout"):
+        run.execute({"controller_dirty": "?? .venv-check/"}, 900, tmp_path / "dirty")
 
 
 class FakeProcess:

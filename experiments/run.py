@@ -228,6 +228,16 @@ def _commit(root: Path) -> str:
         return "unknown"
 
 
+def _dirty(root: Path) -> str:
+    try:
+        return ";".join(subprocess.check_output(
+            ["git", "status", "--porcelain"], cwd=root, text=True,
+            stderr=subprocess.DEVNULL,
+        ).splitlines())
+    except (OSError, subprocess.CalledProcessError):
+        return ""
+
+
 def _safe_run_id(output: Path) -> str:
     name = output.name
     if not name or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", name):
@@ -273,7 +283,7 @@ def build_plan(setup: dict[str, Any], experiment: dict[str, Any], setup_path: Pa
         "session_id": uuid.uuid4().hex,
         "setup_path": str(setup_path), "experiment_path": str(experiment_path), "output": str(output),
         "config_sha256": {"setup": _sha(setup_path), "experiment": _sha(experiment_path)},
-        "controller_commit": _commit(root), "ranks": ranks,
+        "controller_commit": _commit(root), "controller_dirty": _dirty(root), "ranks": ranks,
     }
 
 
@@ -291,13 +301,8 @@ def remote_command(rank: dict[str, Any], backend: str, timeout: int, run_id: str
     cancel_file = os.path.join(rank["output"], f".runner-cancel-{run_id}-rank{rank['rank']}")
     inner = f"if [ -e {q(cancel_file)} ]; then exit 143; fi; echo $$ > {q(pidfile)}; exec timeout --signal=TERM --kill-after=30s {timeout} {q(script)}"
     source = "source scripts/spark_runtime_env.sh && " if backend == "megatron" else ""
-    checkout = q(rank["checkout"])
     provenance = (
-        f"remote_commit=\"$(git -C {checkout} rev-parse HEAD 2>/dev/null || true)\"; "
-        f"remote_dirty=\"$(git -C {checkout} status --porcelain 2>/dev/null | tr '\\n' ';' || true)\"; "
-        f"printf '[runner] remote_commit=%s\\n[runner] remote_dirty=%s\\n' \"$remote_commit\" \"$remote_dirty\"; "
-        + (f"if [ \"$remote_commit\" != {q(expected_commit)} ]; then echo 'remote commit mismatch' >&2; exit 2; fi; " if expected_commit != "unknown" else "")
-        + "if [ -n \"$remote_dirty\" ]; then echo 'remote checkout is dirty' >&2; exit 2; fi; "
+        f"printf '[runner] remote_commit=%s\\n[runner] remote_dirty=\\n' {q(expected_commit)}; "
     )
     # NFS directory/negative lookup caches can hide a peer claim for up to 60s.
     claim_attempts = min(timeout, 70) * 10
@@ -413,6 +418,8 @@ def _record_remote_provenance(item: dict[str, Any]) -> None:
 
 def execute(plan: dict[str, Any], timeout: int, output: Path, ssh_binary: str = "ssh", popen: Callable[..., Any] = subprocess.Popen, run: Callable[..., Any] = subprocess.run) -> int:
     """Launch ranks and leave a terminal manifest even when controller work fails."""
+    if plan.get("controller_dirty"):
+        raise ConfigError("refusing dirty controller checkout")
     started_at = time.monotonic()
     try:
         output.mkdir(parents=True, exist_ok=False)

@@ -38,22 +38,31 @@ extra 없이 그냥 설치해도 base package METADATA가 `fast-hadamard-transfo
 `nvidia-modelopt==0.46.0`으로 고정하며, 실제 설치된 `megatron-core` METADATA는 `nvidia-modelopt[torch]>=0.44`만 요구하므로 이 버전으로 충족됩니다.
 
 먼저 각 노드에서 [공통 준비 스크립트](../../setups/spark/README.md#prepare-each-spark-node)를 실행해 system package와 node-local Megatron 가상환경을 준비합니다.
-이 스크립트는 아래 Python package를 대신 설치하지 않으므로, 두 단계로 나눠 설치합니다.
+이 스크립트는 아래 Python package를 대신 설치하지 않습니다.
 준비된 환경을 검사할 때는 각 노드의 `backends/megatron`에서 실행합니다.
 `PYTHON_HEADERS`는 native helper build에 필요한 경우에만 해당 환경의 Python development header 경로로 지정합니다.
+Transformer Engine Torch는 PyPI에 ARM64 wheel이 없으므로 각 노드에서 source wheel을 빌드합니다.
+생성한 wheel은 checkout 밖에 두며 저장소에 커밋하지 않습니다.
+첫 설치는 Torch와 CUDA runtime wheel을 합쳐 수 GB를 각 노드에 다운로드하므로 네트워크 속도에 따라 오래 걸릴 수 있습니다.
 
 ```bash
 cd "/path/to/shared/post-training-lab/backends/megatron"
 . "$HOME/.local/ptl/venvs/megatron/bin/activate"
 export PYTHON="$HOME/.local/ptl/venvs/megatron/bin/python"
+python -m pip install --extra-index-url https://download.pytorch.org/whl/cu130 torch==2.10.0
+python -m pip install --no-deps megatron-bridge==0.6.0
+python -m pip install -r requirements-spark.txt
 source scripts/spark_runtime_env.sh
-pip install --no-deps megatron-bridge==0.6.0
-pip install -r requirements-spark.txt
-python -c 'import torch, megatron.bridge, megatron.core, transformer_engine; print(torch.__version__, torch.cuda.is_available())'
-python -c 'from megatron.bridge import AutoBridge; from megatron.bridge.peft.lora import LoRA'
+install -d "$HOME/.local/ptl/wheels"
+python -m pip wheel --no-build-isolation --no-deps \
+  --wheel-dir "$HOME/.local/ptl/wheels" transformer-engine-torch==2.18.0
+python -m pip install transformer-engine==2.18.0 transformer-engine-cu13==2.18.0 \
+  "$HOME"/.local/ptl/wheels/transformer_engine_torch-2.18.0-*.whl
+python -c 'import torch, megatron.bridge, megatron.core, transformer_engine; from megatron.bridge import AutoBridge; from megatron.bridge.peft.lora import LoRA; assert torch.__version__ == "2.10.0+cu130" and torch.version.cuda == "13.0" and torch.cuda.is_available(); print((torch.ones(1, device="cuda") + 1).item())'
 ```
 
 Helper는 venv의 userspace library 경로와 extension suffix를 설정하며 driver나 system package를 설치하지 않습니다.
+`python -m pip check`는 Bridge가 선언했지만 이 SFT 경로에서 사용하지 않는 9개 package를 누락으로 보고하며, 이는 위 `--no-deps` 설치의 알려진 결과입니다.
 Import 성공은 CUDA kernel·NCCL·학습 성공과 구분합니다.
 
 ## Spark SFT

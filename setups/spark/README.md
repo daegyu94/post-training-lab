@@ -56,11 +56,8 @@ Git checkout은 별도로 clone하지 않고 controller의 NFS 공유 디렉터�
 TRL과 Megatron의 고정 의존성이 다르므로 하나의 공용 가상환경을 공유하지 않습니다.
 Launcher는 각 backend의 가상환경을 기본으로 사용하고 cache 환경변수도 위 경로로 설정합니다.
 
-NFS로 공유되는 checkout은 controller 사용자와 다른 UID로 접근하므로 Git이 "dubious ownership"으로 거부할 수 있습니다.
-각 Spark 노드의 `spark` 사용자 `~/.gitconfig`에 해당 checkout 경로를 `safe.directory`로 등록해야 하며, 이 등록은 Git 저장소 상태를 바꾸지 않는 순수 설정 파일 편집이므로 `git` 명령을 실행하지 않고 파일에 직접 추가합니다(AGENTS.md의 "Spark 노드에서 Git 명령을 실행하지 않는다" 규칙 유지).
-
 각 노드에서 다음 스크립트를 한 번 실행합니다.
-이 스크립트는 compiler, Python headers, `libaio-dev`, `ninja-build` 등 native extension과 DeepSpeed async I/O에 필요한 system package를 설치하고, checkout 밖에 두 가상환경을 만들고, NFS checkout에 대한 `safe.directory` 설정을 추가합니다.
+이 스크립트는 compiler, Python headers, `libaio-dev`, `ninja-build` 등 native extension과 DeepSpeed async I/O에 필요한 system package를 설치하고 checkout 밖에 두 가상환경을 만듭니다.
 또한 TRL 30B NVMe 실습에 필요한 `spark` 사용자의 memlock 한도를 32GiB로 설정합니다.
 
 ```bash

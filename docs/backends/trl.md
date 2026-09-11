@@ -37,15 +37,18 @@ Runner가 controller에서 `ssh spark@spark1`, `ssh spark@spark2`로 접속해 �
 
 먼저 각 노드에서 [공통 준비 스크립트](../../setups/spark/README.md#prepare-each-spark-node)를 실행합니다.
 그다음 node-local TRL 가상환경에 Python package를 설치합니다.
+첫 설치는 Torch와 CUDA runtime wheel을 합쳐 수 GB를 각 노드에 다운로드하므로 네트워크 속도에 따라 오래 걸릴 수 있습니다.
 
 ```bash
 cd "/path/to/shared/post-training-lab/backends/trl"
 . "$HOME/.local/ptl/venvs/trl/bin/activate"
+python -m pip install --extra-index-url https://download.pytorch.org/whl/cu130 torch==2.10.0
 python -m pip install -r requirements-spark.txt
-python -c 'import torch, transformers, trl, accelerate; print(torch.__version__, torch.cuda.is_available()); print(transformers.__version__, trl.__version__, accelerate.__version__)'
+python -c 'import torch, transformers, trl, accelerate; assert torch.__version__ == "2.10.0+cu130" and torch.version.cuda == "13.0" and torch.cuda.is_available(); print(transformers.__version__, trl.__version__, accelerate.__version__); print((torch.ones(1, device="cuda") + 1).item())'
 ```
 
 이 확인은 package import와 CUDA 가용성만 검사합니다.
+검증된 Python 3.12 기본 venv의 pip 24.0에서는 `python -m pip check`도 통과했습니다.
 NCCL 통신, 모델 적합성, 실제 학습 성공은 두 Spark 노드의 smoke 실행으로 별도로 확인해야 합니다.
 의존성 충돌이 발생하면 실제 설치 결과를 기록하고 임의의 다른 version을 같은 검증 환경으로 취급하지 않습니다.
 

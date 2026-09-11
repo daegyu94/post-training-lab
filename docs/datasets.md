@@ -51,15 +51,15 @@ SWE-agent 기록은 참고 항목일 뿐 CLI preset이 아닙니다.
 ### 변환 실행
 
 [백엔드 환경](getting-started.md#prepare-the-nodes)을 준비한 뒤 해당 노드에서 실행합니다.
-다음은 TRL 예시이며, Megatron은 첫 줄만 `cd backends/megatron`으로 바꿉니다.
 `<backend-python>`은 의존성이 설치된 Python 절대 경로로 바꿉니다.
 명령은 Hub에 접속하고 출력 파일을 교체할 수 있으므로 새 출력 디렉터리를 사용합니다.
 
 ```bash
+cd "/path/to/shared/post-training-lab"
 PYTHON='<backend-python>' bash scripts/prepare_public_data.sh \
   --preset no_robots \
   --revision e6f9a4ac5c37faeb744ba9ecf0473184d7f8105b \
-  --output-dir data/public/no_robots \
+  --output-dir /path/to/node-local/data/no_robots \
   --train-count 8 --eval-count 2 --seed 42
 ```
 
