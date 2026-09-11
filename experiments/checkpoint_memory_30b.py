@@ -387,12 +387,31 @@ def collect_trl_summary(
     return summary
 
 
+class _LocalFileResult:
+    def __init__(self, stdout: str) -> None:
+        self.returncode = 0
+        self.stdout = stdout
+        self.stderr = ""
+
+
+def _local_file_run(paths: list[Path]) -> Callable[..., Any]:
+    """A remote_run/run stand-in that replays already-fetched local files instead
+    of SSHing, in call order. Used to resume a run whose metrics were already
+    collected before an earlier invocation was interrupted."""
+    iterator = iter(paths)
+
+    def run_fn(*_args: Any, **_kwargs: Any) -> Any:
+        return _LocalFileResult(next(iterator).read_text(encoding="utf-8"))
+
+    return run_fn
+
+
 def run_memory_matrix(
-    setup: dict[str, Any], setup_path: Path, output: Path, *, execute: bool, timeout: int,
+    setup: dict[str, Any], setup_path: Path, output: Path, *, execute: bool, timeout: int, resume: bool = False,
 ) -> dict[str, Any]:
     estimates = collect_memory_estimates(setup, execute=execute)
     if execute:
-        output.mkdir(parents=True)
+        output.mkdir(parents=True, exist_ok=resume)
     records = []
     for condition in memory_experiments():
         config_path = _write_experiment(condition["experiment"], f"{output.name}-{condition['name']}")
@@ -408,22 +427,49 @@ def run_memory_matrix(
                 "status": "dry-run", "output": str(run_output), "plan": plan,
             }
             if execute:
-                code = run.execute(plan, timeout, run_output)
+                # A prior, interrupted invocation may have already completed and recorded
+                # this exact run (run.execute writes its own per-run manifest.json on exit).
+                # Resuming reads that run's already-fetched local metrics back instead of
+                # re-running real 30B GPU work.
+                local_manifest = run_output / "manifest.json"
+                resumed = resume and local_manifest.exists()
+                if resumed:
+                    code = 0 if json.loads(local_manifest.read_text(encoding="utf-8")).get("status") == "passed" else 1
+                else:
+                    code = run.execute(plan, timeout, run_output)
                 record.update(status="passed" if code == 0 else "failed", exit_code=code)
                 if code == 0:
-                    record["resources"] = collect_run_resources(plan, run_output)
+                    resource_paths = [run_output / "measurements" / f"resources-node-{r['rank']}.jsonl" for r in plan["ranks"]]
+                    record["resources"] = collect_run_resources(
+                        plan, run_output, remote_run=_local_file_run(resource_paths) if resumed else subprocess.run
+                    )
                     if experiment["backend"] == "megatron":
-                        record["metrics_by_rank"] = benchmarks.fetch_measurements(plan, run_output)
-                        try:
-                            cleanup_checkpoints(plan, run_output, condition)
-                        except Exception as exc:
-                            record["cleanup_error"] = str(exc)
+                        if resumed:
+                            metric_paths = [run_output / "measurements" / f"rank-{r['rank']}-train.jsonl" for r in plan["ranks"]]
+                            record["metrics_by_rank"] = benchmarks.fetch_measurements(
+                                plan, run_output, run=_local_file_run(metric_paths)
+                            )
+                        else:
+                            record["metrics_by_rank"] = benchmarks.fetch_measurements(plan, run_output)
+                            try:
+                                cleanup_checkpoints(plan, run_output, condition)
+                            except Exception as exc:
+                                record["cleanup_error"] = str(exc)
                     else:
-                        record["trl_summary"] = collect_trl_summary(plan, run_output)
+                        record["trl_summary"] = collect_trl_summary(
+                            plan, run_output,
+                            remote_run=_local_file_run([run_output / "summary-train.json"]) if resumed else subprocess.run,
+                        )
                 if pilot and code != 0:
                     records.append(record)
                     break
             records.append(record)
+            if execute:
+                (output / "manifest.json").write_text(
+                    json.dumps({"status": "running", "estimates": estimates, "records": records},
+                               indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
     status = "dry-run" if not execute else (
         "passed" if all(item["status"] == "passed" for item in records) else "completed-with-failures"
     )
@@ -444,15 +490,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--phase", choices=("checkpoint", "memory"), default="checkpoint")
     parser.add_argument("--repeats", type=int, default=5)
     parser.add_argument("--timeout", type=int, default=3600)
+    parser.add_argument("--resume", action="store_true",
+                         help="memory phase only: continue into an existing --output, reusing "
+                              "already-completed runs instead of refusing or re-running them")
     args = parser.parse_args(argv)
+    if args.resume and args.phase != "memory":
+        raise SystemExit("--resume is only supported for --phase memory")
     try:
-        if args.output.exists():
+        if args.output.exists() and not args.resume:
             raise run.ConfigError(f"refusing to reuse output directory: {args.output}")
         setup = run.load_setup(args.setup)
         setup, cohort_plan = prepare_cohorts(setup, execute=args.execute)
         setup_path = generated_setup(setup, args.output)
         if args.phase == "memory":
-            result = run_memory_matrix(setup, setup_path, args.output, execute=args.execute, timeout=args.timeout)
+            result = run_memory_matrix(setup, setup_path, args.output, execute=args.execute,
+                                        timeout=args.timeout, resume=args.resume)
         else:
             result = benchmarks.run_benchmark(
                 setup_path=setup_path,

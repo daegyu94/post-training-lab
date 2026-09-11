@@ -122,3 +122,15 @@ def test_cleanup_checkpoints_removes_each_ranks_checkpoint_dir() -> None:
     assert len(seen) == 2
     assert "rm -rf -- /mnt/a/checkpoints" in seen[0][-1]
     assert "rm -rf -- /mnt/b/checkpoints" in seen[1][-1]
+
+
+def test_local_file_run_replays_files_in_call_order(tmp_path: Path) -> None:
+    first = tmp_path / "a.jsonl"
+    second = tmp_path / "b.jsonl"
+    first.write_text("first\n", encoding="utf-8")
+    second.write_text("second\n", encoding="utf-8")
+
+    run_fn = checkpoint_memory_30b._local_file_run([first, second])
+
+    assert run_fn(["ssh", "whatever"]).stdout == "first\n"
+    assert run_fn(["ssh", "whatever"]).stdout == "second\n"
