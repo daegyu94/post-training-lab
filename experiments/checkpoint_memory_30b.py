@@ -43,6 +43,50 @@ DEFAULT_PLAN = ROOT / "experiments" / "megatron" / "checkpoint-memory-30b.json"
 GENERATED = ROOT / "experiments" / "generated"
 
 
+def resolve_checkpoint_plan(model: str, path: Path | None) -> Path:
+    """Keep the plan's effective model/data identity aligned with its cohort."""
+    if path is None:
+        path = DEFAULT_PLAN if model == "qwen" else DEFAULT_PLAN.with_name("checkpoint-memory-30b-glm.json")
+    benchmark = benchmarks.load_benchmark_plan(path)
+    base = run.load_experiment(ROOT / benchmark.get("base_experiment", "experiments/megatron/smoke.json"))
+    common = {**base["env"], **benchmark.get("common_env", {})}
+    expected = {
+        "MODEL_ID": MODELS[model]["id"], "MODEL_REVISION": MODELS[model]["revision"],
+        "DATASET_ID": DATASET_ID, "DATASET_REVISION": DATASET_REVISION,
+    }
+    for cell in benchmark["cells"]:
+        for variant in cell["variants"]:
+            effective = {**common, **variant.get("env", {})}
+            for key, value in expected.items():
+                if effective.get(key) != value:
+                    raise run.ConfigError(
+                        f"checkpoint plan {path}: {cell['name']}/{variant['name']} {key} "
+                        f"does not match --model {model} and its cohort"
+                    )
+    return path
+
+
+def validate_resume_model(output: Path, model: str) -> None:
+    """Do not relabel another model's saved runs when --resume is used."""
+    manifest = output / "manifest.json"
+    if manifest.exists():
+        previous = json.loads(manifest.read_text(encoding="utf-8"))
+        if previous.get("model") not in (None, MODELS[model]["id"]):
+            raise run.ConfigError("--resume model differs from the existing output; use a new --output")
+    # A controller interruption can leave only per-run manifests. Older root
+    # manifests also lack 'model', so verify their recorded effective env too.
+    for manifest in (output / "runs").glob("*/manifest.json"):
+        previous = json.loads(manifest.read_text(encoding="utf-8"))
+        ranks = previous.get("ranks", [])
+        expected = {f"MODEL_ID={MODELS[model]['id']}", f"MODEL_REVISION={MODELS[model]['revision']}"}
+        # The runner stores the exported command, not the original rank env.
+        if not ranks or any(
+            not expected.issubset({token.rstrip(';') for token in shlex.split(rank.get("command", ""))})
+            for rank in ranks
+        ):
+            raise run.ConfigError(f"--resume model identity differs or is missing in {manifest}; use a new --output")
+
+
 def _output_root(node: dict[str, Any], backend: str) -> str:
     value = node["output_root"]
     return value[backend] if isinstance(value, dict) else value
@@ -559,7 +603,8 @@ def run_memory_matrix(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--setup", type=Path, required=True)
-    parser.add_argument("--plan", type=Path, default=DEFAULT_PLAN)
+    parser.add_argument("--plan", type=Path,
+                        help="checkpoint plan override; default follows --model")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--phase", choices=("checkpoint", "memory"), default="checkpoint")
@@ -585,6 +630,12 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.output.exists() and not args.resume:
             raise run.ConfigError(f"refusing to reuse output directory: {args.output}")
+        if args.repeats < 1 or args.timeout < 1:
+            raise run.ConfigError("--repeats and --timeout must be positive")
+        if args.resume:
+            validate_resume_model(args.output, args.model)
+        if args.phase == "checkpoint":
+            args.plan = resolve_checkpoint_plan(args.model, args.plan)
         setup = run.load_setup(args.setup)
         setup, cohort_plan = prepare_cohorts(setup, execute=args.execute, model=args.model)
         setup_path = generated_setup(setup, args.output)

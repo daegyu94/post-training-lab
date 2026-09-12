@@ -286,3 +286,64 @@ def test_memory_experiments_carry_the_selected_model_and_its_megatron_env() -> N
     trl_env = glm["trl-ddp"]["experiment"]["env"]
     assert trl_env["MODEL_ID"] == "zai-org/GLM-4.7-Flash"
     assert "TRANSFORMER_IMPL" not in trl_env
+
+
+
+def test_checkpoint_cli_selects_glm_plan_with_glm_cohort(tmp_path, monkeypatch, capsys):
+    setup = _two_node_setup()
+    setup['setup'] = 'spark'
+    for node in setup['nodes']:
+        node['model_dirs'][checkpoint_memory_30b.MODELS['glm']['id']] = '/models/glm'
+    path = tmp_path / 'setup.json'
+    path.write_text(json.dumps(setup))
+    monkeypatch.setattr(checkpoint_memory_30b, 'GENERATED', tmp_path / 'generated')
+    monkeypatch.setattr(checkpoint_memory_30b.benchmarks, '_git_head', lambda: 'test')
+    code = checkpoint_memory_30b.main([
+        '--setup', str(path), '--model', 'glm', '--output', str(tmp_path / 'out')])
+    captured = capsys.readouterr()
+    assert code == 0, captured.err
+    result = json.loads(captured.out)
+    assert result['effective_common_env']['MODEL_ID'] == checkpoint_memory_30b.MODELS['glm']['id']
+    assert result['effective_common_env']['MODEL_REVISION'] == checkpoint_memory_30b.MODELS['glm']['revision']
+    assert all('ultrachat-glm-' in item['path'] for item in result['cohorts'])
+    assert result['repeats'] == 3
+
+
+def test_checkpoint_model_mismatch_fails_before_cohort_ssh(tmp_path, monkeypatch, capsys):
+    def unexpected(*args, **kwargs):
+        raise AssertionError('cohort preparation must not start')
+    monkeypatch.setattr(checkpoint_memory_30b, 'prepare_cohorts', unexpected)
+    code = checkpoint_memory_30b.main([
+        '--setup', str(tmp_path / 'unused.json'), '--model', 'glm',
+        '--plan', str(checkpoint_memory_30b.DEFAULT_PLAN),
+        '--execute', '--output', str(tmp_path / 'out')])
+    assert code == 2
+    assert 'does not match --model glm' in capsys.readouterr().err
+
+
+def test_checkpoint_plan_validates_variant_identity_and_preserves_ratio_sweep(tmp_path):
+    import pytest
+    ratio = checkpoint_memory_30b.ROOT / 'experiments/megatron/lora-ratio-checkpoint-io.json'
+    assert checkpoint_memory_30b.resolve_checkpoint_plan('qwen', ratio) == ratio
+    plan = json.loads(ratio.read_text())
+    plan['cells'][0]['variants'][0]['env']['MODEL_REVISION'] = '0' * 40
+    changed = tmp_path / 'plan.json'
+    changed.write_text(json.dumps(plan))
+    with pytest.raises(checkpoint_memory_30b.run.ConfigError, match='MODEL_REVISION'):
+        checkpoint_memory_30b.resolve_checkpoint_plan('qwen', changed)
+
+
+def test_resume_rejects_other_model_even_without_root_manifest(tmp_path):
+    import pytest
+    model = checkpoint_memory_30b.MODELS['qwen']
+    per_run = tmp_path / 'runs' / 'completed'
+    per_run.mkdir(parents=True)
+    (per_run / 'manifest.json').write_text(json.dumps({'status': 'passed', 'ranks': [{
+        'command': f"export MODEL_ID={model['id']}; export MODEL_REVISION={model['revision']}; run"
+    }]}))
+    checkpoint_memory_30b.validate_resume_model(tmp_path, 'qwen')
+    with pytest.raises(checkpoint_memory_30b.run.ConfigError, match='model identity'):
+        checkpoint_memory_30b.validate_resume_model(tmp_path, 'glm')
+    (tmp_path / 'manifest.json').write_text(json.dumps({'model': model['id']}))
+    with pytest.raises(checkpoint_memory_30b.run.ConfigError, match='model differs'):
+        checkpoint_memory_30b.validate_resume_model(tmp_path, 'glm')
