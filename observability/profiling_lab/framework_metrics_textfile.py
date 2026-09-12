@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 
 from profiling_lab.prometheus_textfile import GaugeSample, write_gauges
@@ -37,9 +38,10 @@ def build_gauges(samples: list[dict]) -> list[GaugeSample]:
             "rank": str(sample.get("rank", "")),
             "local_rank": str(sample.get("local_rank", "")),
         }
-        visible = str(sample.get("cuda_visible_devices", "")).split(",")
+        visible = [device.strip() for device in str(sample.get("cuda_visible_devices", "")).split(",")]
         local_rank = sample.get("local_rank")
-        if isinstance(local_rank, int) and 0 <= local_rank < len(visible) and visible[local_rank]:
+        if (type(local_rank) is int and 0 <= local_rank < len(visible)
+                and visible[local_rank] and visible[local_rank] != "-1"):
             gauges.append(GaugeSample(
                 "training_gpu_allocation",
                 "Framework rank assignment from CUDA_VISIBLE_DEVICES.",

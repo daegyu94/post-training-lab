@@ -86,3 +86,37 @@ def test_server_config_rejects_duplicate_target_names(tmp_path: Path) -> None:
 
     assert result.returncode == 2
     assert "node names must be unique" in result.stderr
+
+
+def test_dashboards_keep_matrix_and_freshness_scopes_separate() -> None:
+    """A fresh rank/cluster must not mask another rank's stale or colliding cell."""
+    for name in DASHBOARDS:
+        payload = json.loads((ROOT / "observability/examples/observability" / name).read_text())
+        variables = {v["name"]: v for v in payload["templating"]["list"]}
+        for panel in payload["panels"]:
+            for target in panel.get("targets", []):
+                expr = target["expr"]
+                assert 'cluster=~"$cluster"' in expr
+                if "profiling_topology_" in expr:
+                    assert "max by (cluster," in expr
+                    assert '$node' not in expr  # The publisher need not be the selected node.
+                if "$training_max_age" in expr:
+                    assert variables["training_max_age"]["current"]["value"] == "300"
+                    assert "and on(cluster, instance, run_id, framework, node, rank, local_rank)" in expr
+                if "profiling_gpu_" in expr and "sample age" not in panel["title"].lower():
+                    assert "profiling_gpu_sample_timestamp_seconds" in expr
+                    assert "< 30" in expr
+            if panel["title"] == "GPU allocation matrix":
+                expr = panel["targets"][0]["expr"]
+                assert '"cluster", "instance", "run_id", "framework", "rank"' in expr
+                assert "$training_max_age" in expr
+            if panel["title"] in {"Compute topology matrix", "Storage topology matrix"}:
+                expr = panel["targets"][0]["expr"]
+                assert '"cluster", "source"' in expr and '"cluster", "destination"' in expr
+                options = panel["transformations"][0]["options"]
+                assert (options["rowField"], options["columnField"]) == ("source_key", "destination_key")
+            if panel["title"] == "Training sample age by rank":
+                assert "max(" not in panel["targets"][0]["expr"]
+                assert "$training_max_age" not in panel["targets"][0]["expr"]
+            if panel["type"] == "stat":
+                assert all(t.get("instant") for t in panel["targets"])

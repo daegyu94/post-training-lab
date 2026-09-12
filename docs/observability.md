@@ -85,7 +85,16 @@ FRAMEWORK_METRICS_DIR='<launcher output-directory>/framework-metrics' \
 두 노드가 같은 NFS 파일을 읽으면 같은 rank가 두 `instance`로 중복 노출됩니다.
 
 GPU allocation matrix는 framework snapshot에 `CUDA_VISIBLE_DEVICES`와 `LOCAL_RANK`가 있는 rank만 표시합니다.
+행은 cluster·node·run·framework·rank로 구분하며, 열의 device ID는 보고된 index 또는 UUID 그대로입니다.
+GPU 사용률 Matrix의 index와 UUID를 자동 매칭하지 않습니다.
+GPU 지표는 30초, 학습 지표·할당은 `Training sample max age (s)`(기본 300초)를 넘으면 숨깁니다.
+긴 step에서는 이 값을 늘리며, 오래되거나 없는 할당 정보를 GPU가 비어 있다는 뜻으로 해석하지 않습니다.
+Overview의 rank별 sample age는 오래된 값도 표시하므로 일부 rank의 갱신 중단을 확인할 수 있습니다.
 `TOPOLOGY_DIR`를 한 node role에 지정하면 `compute-topology.json`·`storage-topology.json`의 `components`(각 `id`와 선택적 `role`)와 `edges`(`source`, `destination`, 선택적 `relation`)를 Grafana에 표시합니다 — 전달된 관계를 보여줄 뿐 bandwidth·latency 측정값이 아닙니다.
+Topology는 Cluster 필터만 적용하며 Node·Run 선택과 독립적입니다.
+
+저장소 갱신 후 monitoring host의 `server` role을 다시 실행해야 새 dashboard JSON이 provisioning 경로에 복사됩니다.
+수집기 변경은 각 노드의 `node` role 재시작으로 적용합니다.
 
 ## Run History
 

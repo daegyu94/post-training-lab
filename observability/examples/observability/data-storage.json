@@ -30,13 +30,13 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "rate(node_disk_read_bytes_total{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",device=~\"$device\"}[1m])",
-          "legendFormat": "{{instance}} {{device}} read"
+          "expr": "rate(node_disk_read_bytes_total{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",device=~\"$device\"}[$__rate_interval])",
+          "legendFormat": "{{cluster}}/{{instance}} {{device}} read"
         },
         {
           "refId": "B",
-          "expr": "rate(node_disk_written_bytes_total{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",device=~\"$device\"}[1m])",
-          "legendFormat": "{{instance}} {{device}} write"
+          "expr": "rate(node_disk_written_bytes_total{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",device=~\"$device\"}[$__rate_interval])",
+          "legendFormat": "{{cluster}}/{{instance}} {{device}} write"
         }
       ],
       "fieldConfig": {
@@ -70,13 +70,13 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "rate(node_disk_reads_completed_total{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",device=~\"$device\"}[1m])",
-          "legendFormat": "{{instance}} {{device}} read"
+          "expr": "rate(node_disk_reads_completed_total{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",device=~\"$device\"}[$__rate_interval])",
+          "legendFormat": "{{cluster}}/{{instance}} {{device}} read"
         },
         {
           "refId": "B",
-          "expr": "rate(node_disk_writes_completed_total{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",device=~\"$device\"}[1m])",
-          "legendFormat": "{{instance}} {{device}} write"
+          "expr": "rate(node_disk_writes_completed_total{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",device=~\"$device\"}[$__rate_interval])",
+          "legendFormat": "{{cluster}}/{{instance}} {{device}} write"
         }
       ],
       "fieldConfig": {
@@ -111,8 +111,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "rate(node_disk_io_time_seconds_total{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",device=~\"$device\"}[1m])",
-          "legendFormat": "{{instance}} {{device}}"
+          "expr": "rate(node_disk_io_time_seconds_total{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",device=~\"$device\"}[$__rate_interval])",
+          "legendFormat": "{{cluster}}/{{instance}} {{device}}"
         }
       ],
       "fieldConfig": {
@@ -148,7 +148,7 @@
         {
           "refId": "A",
           "expr": "1 - node_filesystem_avail_bytes{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",mountpoint=~\"$mount\",fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",mountpoint=~\"$mount\",fstype!~\"tmpfs|overlay\"}",
-          "legendFormat": "{{instance}} {{mountpoint}}"
+          "legendFormat": "{{cluster}}/{{instance}} {{mountpoint}}"
         }
       ],
       "fieldConfig": {
@@ -185,7 +185,7 @@
         {
           "refId": "A",
           "expr": "node_filesystem_avail_bytes{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",mountpoint=~\"$mount\",fstype!~\"tmpfs|overlay\"}",
-          "legendFormat": "{{instance}} {{mountpoint}}"
+          "legendFormat": "{{cluster}}/{{instance}} {{mountpoint}}"
         }
       ],
       "fieldConfig": {
@@ -234,7 +234,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "max without (instance) (profiling_topology_component_info{job=\"spark\",kind=\"storage\"})",
+          "expr": "max by (cluster, kind, component, role) (profiling_topology_component_info{job=\"spark\",cluster=~\"$cluster\",kind=\"storage\"})",
           "format": "table",
           "instant": true
         }
@@ -247,13 +247,14 @@
       },
       "options": {
         "showHeader": true
-      }
+      },
+      "description": "Supplied components for the selected clusters. Independent of Node and Run filters."
     },
     {
       "id": 8,
       "type": "table",
       "title": "Storage topology matrix",
-      "description": "Supplied storage edges; values describe relationships, not I/O throughput.",
+      "description": "Cluster-filtered supplied edges, not measured traffic. Cluster-qualified endpoints prevent collisions. Node and Run filters do not restrict topology: its publisher may be a different node.",
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -267,7 +268,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "max without (instance) (profiling_topology_edge_info{job=\"spark\",kind=\"storage\"})",
+          "expr": "label_join(label_join(max by (cluster, source, destination) (profiling_topology_edge_info{job=\"spark\",cluster=~\"$cluster\",kind=\"storage\"}), \"source_key\", \"/\", \"cluster\", \"source\"), \"destination_key\", \"/\", \"cluster\", \"destination\")",
           "format": "table",
           "instant": true
         }
@@ -285,8 +286,8 @@
         {
           "id": "groupingToMatrix",
           "options": {
-            "columnField": "destination",
-            "rowField": "source",
+            "columnField": "destination_key",
+            "rowField": "source_key",
             "valueField": "Value"
           }
         }
@@ -321,7 +322,8 @@
           "value": [
             "$__all"
           ]
-        }
+        },
+        "refresh": 2
       },
       {
         "name": "node",
@@ -341,7 +343,8 @@
           "value": [
             "$__all"
           ]
-        }
+        },
+        "refresh": 2
       },
       {
         "name": "device",
@@ -361,7 +364,8 @@
           "value": [
             "$__all"
           ]
-        }
+        },
+        "refresh": 2
       },
       {
         "name": "mount",
@@ -381,7 +385,8 @@
           "value": [
             "$__all"
           ]
-        }
+        },
+        "refresh": 2
       },
       {
         "name": "run_id",
@@ -401,7 +406,8 @@
           "value": [
             "$__all"
           ]
-        }
+        },
+        "refresh": 2
       }
     ]
   },
@@ -412,5 +418,5 @@
   "timezone": "browser",
   "title": "Post-Training Data & Storage",
   "uid": "post-training-data-storage",
-  "version": 1
+  "version": 2
 }

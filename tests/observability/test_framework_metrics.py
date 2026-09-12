@@ -8,6 +8,7 @@ from profiling_lab.framework_metrics import write_framework_metrics
 
 def test_write_framework_metrics_replaces_rank_sample_atomically(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("LOCAL_RANK", "1")
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "2,5")
     path = write_framework_metrics(
         tmp_path,
         run_id="run-1",
@@ -26,6 +27,7 @@ def test_write_framework_metrics_replaces_rank_sample_atomically(tmp_path: Path,
         "node": "",
         "rank": 3,
         "local_rank": 1,
+        "cuda_visible_devices": "2,5",
         "step": 7,
         "observed_at": 0,
         "metrics": {"training_loss": 1.25, "training_tokens_per_second": 42.0},
