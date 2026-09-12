@@ -246,14 +246,7 @@ def _sft_config_kwargs(config: SparkConfig, args: argparse.Namespace) -> dict[st
                 "reshard_after_forward": True,
                 "auto_wrap_policy": "TRANSFORMER_BASED_WRAP",
                 "activation_checkpointing": True,
-                # Accelerate only calls fsdp2_load_full_state_dict() under this flag,
-                # and that function assumes every state_dict entry is a DTensor. A model
-                # with persistent buffers (GLM-4.7-Flash registers a per-layer MoE router
-                # bias without persistent=False) keeps them as plain tensors through
-                # fully_shard, so the flag has to come off for those models.
-                "cpu_ram_efficient_loading": os.environ.get(
-                    "FSDP2_CPU_RAM_EFFICIENT_LOADING", "true"
-                ).lower() != "false",
+                "cpu_ram_efficient_loading": True,
                 "state_dict_type": "SHARDED_STATE_DICT",
             },
         )
