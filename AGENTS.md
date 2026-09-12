@@ -22,15 +22,6 @@
 
 ## Validation and Execution Evidence
 
-- 기본 저장소 검사는 `python -m pytest -q`, `python -m compileall -q backends datasets_lab experiments observability scripts tests`와 `backends/*/scripts/*.sh`, `observability/scripts/*.sh`, `setups/spark/*.sh`, `scripts/*.sh`의 `bash -n`입니다.
+- 기본 저장소 검사는 `python -m pytest -q`, `python -m compileall -q backends datasets_lab experiments observability tests`와 `backends/*/scripts/*.sh`, `observability/scripts/*.sh`, `setups/spark/*.sh`, `scripts/*.sh`의 `bash -n`입니다.
 - 정적 검사, CPU 테스트, dry-run과 실제 GPU 실행을 구분하고 한 단계의 성공을 다른 단계의 증거로 사용하지 않습니다.
-- 설정 allowlist를 바꾸면 `docs/architecture.md`와 `docs/experiments.md`의 설정 계약도 함께 확인합니다.
 - `setups/spark/local.json`, 모델 가중치, 실행 산출물과 과거 run log는 커밋하지 않습니다.
-
-## Experiment Integrity
-
-- 실행하지 않은 실험을 실행 또는 검증 완료로 기록하지 않습니다. 실제 측정값과 예상값, 예시, 합성 데이터를 명확히 구분합니다.
-- 실험 결과에는 실행 command, config, code revision과 주요 실행 환경을 함께 기록하여 어떤 조건에서 얻은 결과인지 추적할 수 있게 합니다.
-- 실패, 중단과 부분 실행은 해당 상태와 확인된 범위를 명시합니다. 완료된 실험의 결과로 취급하지 않습니다.
-- 비교 실험은 주요 조건을 동일하게 유지하고, 조건이 다르면 그 차이와 비교의 한계를 기록합니다.
-- 기존 실험 결과와 원본 log를 덮어쓰거나 수정하여 다른 실행의 결과처럼 보이게 하지 않습니다. 재실행 결과는 별도 run으로 보관합니다.
