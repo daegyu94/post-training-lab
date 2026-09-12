@@ -332,7 +332,25 @@ Peak allocated는 Qwen TRL DDP LoRA(58.825 GiB)보다 **약 1.7% 낮았습니다
 **Sequence length 기울기가 다릅니다.** Qwen은 4096→8192에서 CUDA peak가 +45.8%(39.5→57.6 GB) 증가했지만, GLM은 같은 구간에서 **+12.7%(34.54→38.94 GB)만** 증가했습니다.
 GLM의 MoE·multi-head latent attention 구조가 KV state를 압축해 sequence length에 따른 activation 증가가 Qwen의 GQA보다 완만할 가능성이 있지만, 이 실험은 CUDA peak 값만 측정했고 activation 내부를 추적하지 않았으므로 **가설로만 남깁니다.**
 
-**TRL DDP의 host memory pressure도 다릅니다.** CUDA peak는 Qwen과 GLM이 거의 같은데(59.8 vs 58.24 GB) host pressure는 GLM이 57% 더 높습니다(109.50 vs 69.7 GB). 원인은 조사하지 않았습니다.
+**TRL DDP의 host memory pressure 차이는 가중치 로딩 구간에서 전부 발생합니다.**
+CUDA peak는 Qwen과 GLM이 거의 같은데(59.8 vs 58.24 GB) host pressure는 GLM이 57% 높습니다(109.50 vs 69.7 GB).
+resource sampler의 원본 시계열을 학습 시작 시점 기준으로 나눠 보면 차이가 어디서 오는지 분명합니다.
+
+| | 모델 weight(safetensors 실측) | 학습 전 avail 감소 | weight 대비 배수 | 학습 중 추가 |
+| --- | ---: | ---: | ---: | ---: |
+| Qwen | 56.9 GiB | 63.7 GiB | ×1.12 | 1.3 GiB |
+| GLM | 58.2 GiB | 105.5 GiB | ×1.81 | 4.0 GiB |
+
+Qwen은 로드 후 평평한 반면(avail 115→60→55→56 GiB) GLM은 학습 직전까지 단조 감소합니다(116→47→32→16 GiB, 최저 6.6 GiB).
+다음은 **배제된** 후보입니다.
+
+- **모델 크기 아님.** safetensors 헤더 실측으로 GLM 58.2 GiB(~31.2B), Qwen 56.9 GiB(~30.5B)로 오히려 GLM이 2.3% 큽니다(GLM의 `model.safetensors.index.json`은 `total_size`를 실제의 절반인 29.1 GiB로 기록하고 있어 이 값은 쓰면 안 됩니다).
+- **CUDA allocator 단편화 아님.** reserved−allocated 격차가 두 모델 모두 정확히 0.54 GiB입니다.
+- **학습 중 누수 아님.** 감소의 대부분이 학습 시작 전에 끝납니다.
+- **expert fusion 자체도 아님.** 두 모델 모두 디스크에는 per-expert 텐서로 저장되고 메모리에서는 fused 3D 파라미터(`experts.gate_up_proj`)를 쓰므로, 조립 비용은 양쪽 다 발생합니다.
+
+남은 유력 후보는 **shard 분할 방식**입니다 — GLM은 48 shard(평균 1.2 GiB), Qwen은 16 shard(평균 3.6 GiB)로 저장돼 있어, 하나의 fused expert 파라미터를 완성하는 데 동시에 살아 있어야 하는 source 버퍼 수가 다릅니다.
+다만 이는 위 배제 결과에서 좁혀낸 **가설이며 직접 계측하지 않았습니다.**
 
 **FSDP2는 정도가 아니라 종류가 다른 실패입니다.** Qwen은 34.1 GB로 통과하지만 GLM은 3회 모두 같은 지점에서 실패했습니다:
 
@@ -341,8 +359,20 @@ accelerate/utils/fsdp_utils.py:543, fsdp2_load_full_state_dict()
 AttributeError: 'Tensor' object has no attribute 'device_mesh'
 ```
 
-`fsdp2_prepare_model`이 FSDP2로 감싼 모든 파라미터를 `DTensor`로 가정하는데, GLM은 auto-wrap 정책이 감싸지 못한 일부 파라미터가 평범한 `Tensor`로 남아 발생합니다.
-Qwen에서 될 걸 GLM에서 다시 검증하지 않고 그대로 가정하면 안 된다는 근거이며, 재시도 없이 실패로 기록합니다.
+**원인은 persistent buffer입니다.** 두 모델을 meta device에 올려 accelerate와 같은 순서로 `fully_shard`를 적용한 뒤 `state_dict()`에서 `DTensor`가 아닌 항목을 센 결과입니다.
+
+| 모델 | 감싼 decoder layer | non-DTensor 항목 |
+| --- | ---: | --- |
+| Qwen3-30B-A3B | 48 | **0개** |
+| GLM-4.7-Flash | 47 | **46개** — 전부 `model.layers.N.mlp.gate.e_score_correction_bias` (shape 64) |
+
+`modeling_glm4_moe_lite.py:376`이 MoE 라우터의 expert-score correction bias를 `register_buffer(...)`로 등록하는데 `persistent=False`가 없어 `state_dict()`에 포함됩니다.
+FSDP2의 `fully_shard`는 `nn.Parameter`만 샤딩하고 buffer는 평범한 텐서로 남기는데, accelerate(`fsdp_utils.py:543`)는 `state_dict()`의 모든 항목이 `DTensor`라고 가정하고 `.device_mesh`를 읽습니다.
+Qwen3 MoE가 통과하는 이유도 같은 지점에서 설명됩니다 — 이 모델이 등록하는 buffer는 `inv_freq` 계열뿐이고 전부 `persistent=False`라 `state_dict()`에 아예 들어가지 않습니다.
+
+즉 이것은 GLM의 결함이 아니라 **persistent buffer를 가진 모델 전반에 적용되는 accelerate FSDP2 경로의 가정 오류**이며, MoE·MLA 여부와는 무관합니다.
+`first_k_dense_replace: 1`이라 MoE 레이어가 47개 중 46개인 것과 실패 항목 46개가 정확히 일치합니다.
+우회하려면 해당 buffer를 `persistent=False`로 바꾸거나 FSDP2 대신 DDP·DeepSpeed를 쓰는 방법뿐이라, 이 저장소에서는 재시도 없이 실패로 기록합니다.
 
 ### 실험 3: Checkpoint I/O — 같은 방향(async 우위), 다른 배수
 
