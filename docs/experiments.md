@@ -19,6 +19,7 @@ Experiment 파일은 모델·데이터 revision과 학습 조건을, setup은 �
 | `experiments/trl/nvme-offload-30b.json` | 2노드 Qwen3 30B full SFT, ZeRO-3 NVMe offload | base/train/tuned |
 | `experiments/megatron/qwen3-30b-lora.json` | 2노드 Qwen3 30B MoE LoRA, 평가와 node-local async checkpoint | train |
 | `experiments/megatron/glm-4.7-flash-30b-lora.json` | 2노드 GLM-4.7-Flash 30B MoE LoRA, 평가와 node-local async checkpoint | train |
+| `experiments/trl/glm-4.7-flash-30b-lora.json` | 2노드 GLM-4.7-Flash 30B DDP LoRA, no_robots | all |
 | `experiments/megatron/qwen3-30b-full.json` | 2노드 Qwen3 30B MoE full-parameter — 아래 참고, 메모리 적합성 미검증 | all |
 
 앞의 smoke 네 개는 Qwen2.5-0.5B와 고정 No Robots 입력을 쓰며 모델 품질·장기 수렴·성능 비교용이 아닙니다.
@@ -299,6 +300,88 @@ python experiments/checkpoint_memory_30b.py \
   --repeats 3 --execute
 ```
 
+## Qwen vs GLM: 방법론이 일반화되는가
+
+여기까지의 모든 반복 측정(checkpoint I/O, memory footprint, LoRA ratio)은 Qwen3-30B-A3B 하나에서만 실행됐습니다.
+GLM-4.7-Flash는 [30B GPU Results](#30b-gpu-results)에서 Megatron 1-step 실행 가능성만 확인됐고, TRL은 `spark_config.py`·`spark_train.py`에 `glm4_moe_lite` family와 전용 LoRA target module이 이미 있었지만 **한 번도 실행된 적이 없었습니다.**
+2026-09-12에 `--model glm`으로 같은 세 실험을 그대로 재실행해 방법론이 일반화되는지 확인했습니다(모두 3회 반복으로 통일).
+
+### 실험 1: TRL DDP LoRA — 처음 실행되는 경로
+
+`experiments/trl/glm-4.7-flash-30b-lora.json`(no_robots, MAX_STEPS=1)으로 처음 실행했습니다.
+
+| Stage | eval_loss | Peak allocated |
+| --- | --- | --- |
+| base | 1.926144 | 57.699 GiB |
+| train | 1.928212 | 57.843 GiB |
+| tuned | 1.928212 | 57.699 GiB |
+
+`train`과 `tuned`의 eval_loss가 소수점까지 일치 — Qwen Case 1과 같은 adapter 재로딩 신뢰성 증거입니다.
+Peak allocated는 Qwen TRL DDP LoRA(58.825 GiB)보다 **약 1.7% 낮았습니다.**
+
+### 실험 2: Memory footprint — 같은 방향, 다른 기울기
+
+| 조건 | Qwen CUDA / host | GLM CUDA / host | CUDA 차이 |
+| --- | ---: | ---: | ---: |
+| `LEN-4096`(Megatron LoRA) | 39.5 / 53.7 GB | 34.54 / 48.65 GB | −12.6% |
+| `LEN-8192`(Megatron LoRA) | 57.6 / 72.6 GB | 38.94 / 57.30 GB | −32.4% |
+| `MEM-TRL-DDP` | 59.8 / 69.7 GB | 58.24 / 109.50 GB | −2.6% (host는 +57%) |
+| `MEM-TRL-Z3-NVME` | 6.4 / 91.8 GB | 7.27 / 85.88 GB | +13.6% |
+| `MEM-TRL-FSDP2` | 34.1 / 104.0 GB(통과) | **3/3 실패**(아래) | — |
+
+**Sequence length 기울기가 다릅니다.** Qwen은 4096→8192에서 CUDA peak가 +45.8%(39.5→57.6 GB) 증가했지만, GLM은 같은 구간에서 **+12.7%(34.54→38.94 GB)만** 증가했습니다.
+GLM의 MoE·multi-head latent attention 구조가 KV state를 압축해 sequence length에 따른 activation 증가가 Qwen의 GQA보다 완만할 가능성이 있지만, 이 실험은 CUDA peak 값만 측정했고 activation 내부를 추적하지 않았으므로 **가설로만 남깁니다.**
+
+**TRL DDP의 host memory pressure도 다릅니다.** CUDA peak는 Qwen과 GLM이 거의 같은데(59.8 vs 58.24 GB) host pressure는 GLM이 57% 더 높습니다(109.50 vs 69.7 GB). 원인은 조사하지 않았습니다.
+
+**FSDP2는 정도가 아니라 종류가 다른 실패입니다.** Qwen은 34.1 GB로 통과하지만 GLM은 3회 모두 같은 지점에서 실패했습니다:
+
+```
+accelerate/utils/fsdp_utils.py:543, fsdp2_load_full_state_dict()
+AttributeError: 'Tensor' object has no attribute 'device_mesh'
+```
+
+`fsdp2_prepare_model`이 FSDP2로 감싼 모든 파라미터를 `DTensor`로 가정하는데, GLM은 auto-wrap 정책이 감싸지 못한 일부 파라미터가 평범한 `Tensor`로 남아 발생합니다.
+Qwen에서 될 걸 GLM에서 다시 검증하지 않고 그대로 가정하면 안 된다는 근거이며, 재시도 없이 실패로 기록합니다.
+
+### 실험 3: Checkpoint I/O — 같은 방향(async 우위), 다른 배수
+
+| Variant | Qwen(3회 재계산) | GLM(3회) | 비율 |
+| --- | ---: | ---: | ---: |
+| sync save | 2.3697s | 3.1121s | ×1.31 |
+| async save | 1.2824s | 1.5805s | ×1.23 |
+| Checkpoint 크기 | 72.8 MB | 150.2 MB | ×2.06 |
+
+두 모델 모두 **async가 sync보다 빠르다는 방향은 같습니다**(Qwen 1.85배, GLM 1.97배 — 격차도 비슷한 크기).
+rMAD는 GLM sync 0.31%, async 0.90%로 10% 기준을 크게 밑돌아 3회로 충분했습니다.
+
+**Checkpoint 크기 2.06배는 우연이 아니라 LoRA target module 구성 차이입니다.**
+`backends/megatron/megatron_lab/config.py`는 family별로 다른 target module을 씁니다.
+
+```python
+target_modules = (
+    ["linear_q_down_proj", "linear_q_up_proj", "linear_kv_down_proj", "linear_kv_up_proj", "linear_proj"]
+    if spec.family == "glm4_moe_lite"
+    else ["linear_qkv", "linear_proj"]
+)
+```
+
+Qwen은 fused QKV 1개 + proj 1개(2종류), GLM은 MLA의 Q/KV down·up projection 4개 + proj 1개(5종류)입니다.
+같은 `lora_dim=8`에서 실제 로그도 이를 뒷받침합니다: Qwen `Trainable parameters: 5,111,808`(0.0319%), GLM `Trainable parameters: 10,515,968`(0.07%) — 비율 **2.057배**로 checkpoint 크기 비율(2.063배)과 거의 일치합니다.
+[LoRA trainable-ratio 실험](#lora-trainable-ratio가-checkpoint-io에-미치는-영향)에서 확인한 "checkpoint 크기는 trainable parameter 수에 선형 비례한다"는 관계가 **모델이 달라도 유지**되며, 다만 같은 `lora_dim`에서의 절대 배수는 target module 구성에 따라 달라진다는 뜻입니다.
+
+### 종합: 일반화되는 것과 안 되는 것
+
+| 일반화됨(정성적으로 같은 방향) | 일반화 안 됨(모델·아키텍처 의존) |
+| --- | --- |
+| Async checkpoint가 sync보다 빠름 | Sequence length에 따른 activation 증가율(Qwen +45.8% vs GLM +12.7%) |
+| Checkpoint 크기 ∝ trainable parameter 수(선형) | 같은 `lora_dim`에서의 절대 trainable parameter 수(target module 구성 차이) |
+| Train/tuned eval_loss 일치 → adapter 재로딩 신뢰성 | FSDP2 지원 여부(Qwen 통과, GLM 구조적 실패) |
+| — | TRL DDP의 host memory pressure(원인 미상) |
+
+[Scaling Estimates](#scaling-estimates-100b-to-1t)의 parameter당 고정 비용(weight 2 + gradient 2 + Adam 12 bytes)은 optimizer·저장 방식에서 나오므로 모델 아키텍처와 무관하게 일반화될 가능성이 높습니다.
+반면 activation 비용과 LoRA target module 배수는 이번 비교처럼 **모델마다 실측해야 하는 값**이며, Qwen 하나의 anchor로 만든 추정을 다른 아키텍처에 그대로 적용해서는 안 됩니다.
+
 ## Scaling Estimates: 100B to 1T
 
 30B 실측을 근거로 중대형·1T 규모에서 GPU memory와 checkpoint 크기가 어떻게 변하는지 **추정**합니다.
@@ -351,6 +434,7 @@ Full fine-tuning은 `2+2+12 = 16 bytes/param`, LoRA(trainable 0.1% 가정)는 fr
 Activation(길이·batch·recompute 정책에 좌우), MoE routing 내부 버퍼, CUDA context와 allocator 단편화, NCCL 통신 버퍼, framework workspace는 모두 빠져 있습니다.
 [메모리 추정기](#estimate-memory-before-running)가 30B 실측 대비 최대 -11%로 낮게 나온 것도 같은 이유이며, 규모가 커질수록 이 누락분의 절대값도 함께 커집니다.
 따라서 위 숫자는 **하한이자 규모 감각**이며, 특정 구성이 실제로 들어가는지는 해당 규모에서 실행해 확인해야 합니다.
+이 앵커 자체도 Qwen3-30B-A3B 하나에서만 검증됐습니다 — [Qwen vs GLM 비교](#qwen-vs-glm-방법론이-일반화되는가)에서 확인했듯 weight·optimizer 비용(parameter당 고정 bytes)은 아키텍처와 무관해 보이지만, activation 비용과 LoRA target module 배수는 모델마다 달라 이 추정을 다른 아키텍처에 그대로 적용할 근거는 아직 없습니다.
 
 ## Repeated Megatron Measurements
 
