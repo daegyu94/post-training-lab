@@ -325,7 +325,7 @@ Peak allocated는 Qwen TRL DDP LoRA(58.825 GiB)보다 **약 1.7% 낮았습니다
 | --- | ---: | ---: | ---: |
 | `LEN-4096`(Megatron LoRA) | 39.5 / 53.7 GB | 34.54 / 48.65 GB | −12.6% ⚠ |
 | `LEN-8192`(Megatron LoRA) | 57.6 / 72.6 GB | 38.94 / 57.30 GB | −32.4% ⚠ |
-| `MEM-TRL-DDP` | 59.8 / 69.7 GB | 58.24 / 109.50 GB | −2.6% (host는 +57%) |
+| `MEM-TRL-DDP` | 59.8 / 69.7 GB | 58.24 / 109.50 GB | −2.6% (host 값은 아래 참고, 모델 신호 아님) |
 | `MEM-TRL-Z3-NVME` | 6.4 / 91.8 GB | 7.27 / 85.88 GB | +13.6% |
 | `MEM-TRL-FSDP2` | 34.1 / 104.0 GB(통과) | **3/3 실패**(아래) | — |
 
@@ -357,21 +357,36 @@ Qwen만 backend를 바꿔 같은 조건으로 다시 측정한 결과입니다.
 이 비교에서 배운 운영상의 교훈은 모델 비교 자체보다 큽니다: `auto`처럼 **입력에 따라 조용히 다른 구현을 고르는 설정은 A/B 비교의 통제 변수를 깨뜨립니다.**
 아래 memory footprint 표의 `LEN-*` 행도 Qwen은 `local`, GLM은 `transformer_engine` 측정이므로 두 값을 모델 차이로 읽으면 안 됩니다.
 
-**TRL DDP의 host memory pressure 차이는 가중치 로딩 구간에서 전부 발생합니다.**
-CUDA peak는 Qwen과 GLM이 거의 같은데(59.8 vs 58.24 GB) host pressure는 GLM이 57% 높습니다(109.50 vs 69.7 GB).
-resource sampler의 원본 시계열을 학습 시작 시점 기준으로 나눠 보면 차이가 어디서 오는지 분명합니다.
+**TRL DDP의 host memory pressure 차이는 모델 차이가 아니라 측정 방법의 문제였습니다.**
+처음에는 CUDA peak가 거의 같은데(59.8 vs 58.24 GB) host pressure만 GLM이 57% 높다고(109.50 vs 69.7 GB) 기록했습니다.
+통제된 재측정에서 이 결론은 **철회됩니다.**
 
-| | 모델 weight(safetensors 실측) | 학습 전 avail 감소 | weight 대비 배수 | 학습 중 추가 |
-| --- | ---: | ---: | ---: | ---: |
-| Qwen | 56.9 GiB | 63.7 GiB | ×1.12 | 1.3 GiB |
-| GLM | 58.2 GiB | 105.5 GiB | ×1.81 | 4.0 GiB |
+먼저 로딩 자체를 격리해 CPU로만 모델을 올리며 RSS를 0.2초 간격으로 샘플링했습니다(`AutoModelForCausalLM.from_pretrained`, GPU 미사용).
 
-Qwen은 로드 후 평평한 반면(avail 115→60→55→56 GiB) GLM은 학습 직전까지 단조 감소합니다(116→47→32→16 GiB, 최저 6.6 GiB).
-다음은 **배제된** 후보입니다.
+| | 로드된 parameter | peak RSS | parameter 대비 |
+| --- | ---: | ---: | ---: |
+| Qwen | 56.87 GiB | 111.02 GiB | **×1.95** |
+| GLM | 55.77 GiB | 105.47 GiB | **×1.89** |
 
-- **모델 크기 아님.** safetensors 헤더 실측으로 GLM 58.2 GiB(~31.2B), Qwen 56.9 GiB(~30.5B)로 오히려 GLM이 2.3% 큽니다(GLM의 `model.safetensors.index.json`은 `total_size`를 실제의 절반인 29.1 GiB로 기록하고 있어 이 값은 쓰면 안 됩니다).
+**두 모델의 로딩 비용은 사실상 같습니다**(둘 다 가중치의 약 2배). 따라서 "GLM만 두 벌을 쓴다"는 해석은 성립하지 않습니다.
+
+그다음 Qwen DDP를 오늘 같은 조건으로 다시 돌려 host pressure의 rank별 분포를 봤습니다.
+
+| 조건 | rank별 host pressure | 편차 |
+| --- | --- | ---: |
+| GLM(3 run × 2 rank) | 99.3 / 103.0 / 104.0 / 117.0 / 117.6 / 118.4 GB | 19.1 GB |
+| Qwen(오늘 재측정, 2 rank) | 69.1 / **122.3** GB | **53.2 GB** |
+
+같은 모델·같은 run 안에서도 두 rank가 69 GB와 122 GB로 갈렸고, Qwen의 최대값이 오히려 GLM보다 높습니다.
+즉 이 지표는 노드 상태에 크게 흔들려 **모델을 구분하는 근거로 쓸 수 없습니다.**
+원래의 57% 격차는 GLM은 rank 최대값, Qwen은 다른 세션에서 측정된 값을 비교한 데서 생긴 것이었습니다.
+
+조사 과정에서 배제한 후보도 함께 남깁니다.
+
+- **모델 크기 아님.** safetensors 헤더 실측으로 GLM 58.2 GiB(~31.2B), Qwen 56.9 GiB(~30.5B)로 오히려 GLM이 2.3% 큽니다. GLM의 `model.safetensors.index.json`은 `total_size`를 실제의 정확히 절반인 29.1 GiB로 기록하므로 **이 필드를 메모리 추정에 쓰면 2배 틀립니다.**
 - **CUDA allocator 단편화 아님.** reserved−allocated 격차가 두 모델 모두 정확히 0.54 GiB입니다.
-- **학습 중 누수 아님.** 감소의 대부분이 학습 시작 전에 끝납니다.
+- **shard 분할 아님.** GLM은 레이어별 expert 텐서가 정확히 1개 shard에 모여 있고(median 1, max 1) Qwen은 최대 2개로 오히려 더 흩어져 있습니다.
+- **dtype 변환 아님.** 두 모델 모두 파일과 목표 dtype이 BF16으로 같습니다.
 - **expert fusion 자체도 아님.** 두 모델 모두 디스크에는 per-expert 텐서로 저장되고 메모리에서는 fused 3D 파라미터(`experts.gate_up_proj`)를 쓰므로, 조립 비용은 양쪽 다 발생합니다.
 
 남은 유력 후보는 **shard 분할 방식**입니다 — GLM은 48 shard(평균 1.2 GiB), Qwen은 16 shard(평균 3.6 GiB)로 저장돼 있어, 하나의 fused expert 파라미터를 완성하는 데 동시에 살아 있어야 하는 source 버퍼 수가 다릅니다.
@@ -397,7 +412,29 @@ Qwen3 MoE가 통과하는 이유도 같은 지점에서 설명됩니다 — 이 
 
 즉 이것은 GLM의 결함이 아니라 **persistent buffer를 가진 모델 전반에 적용되는 accelerate FSDP2 경로의 가정 오류**이며, MoE·MLA 여부와는 무관합니다.
 `first_k_dense_replace: 1`이라 MoE 레이어가 47개 중 46개인 것과 실패 항목 46개가 정확히 일치합니다.
-우회하려면 해당 buffer를 `persistent=False`로 바꾸거나 FSDP2 대신 DDP·DeepSpeed를 쓰는 방법뿐이라, 이 저장소에서는 재시도 없이 실패로 기록합니다.
+**우회를 실제로 시도했고, 두 번째 장벽이 나왔습니다.**
+문제의 `fsdp2_load_full_state_dict()`는 accelerate에서 `cpu_ram_efficient_loading`이 켜져 있을 때만 호출되므로, 이 플래그를 꺼서 해당 경로를 건너뛰어 봤습니다.
+첫 장벽은 실제로 사라져 처음으로 `accelerator.prepare`를 통과하고 가중치 로딩까지 끝냈지만, 곧바로 다음에서 실패했습니다.
+
+```
+fsdp2_prepare_model → fully_shard → _move_states_to_device → tensor.to(device)
+torch.OutOfMemoryError: 119.69 GiB 중 659 MiB만 남은 상태에서 768 MiB 할당 실패
+(해당 process가 73.56 GiB 사용 중)
+```
+
+이 플래그를 끄면 **샤딩하기 전에** 각 모듈의 전체 가중치를 device로 올리는데, 이는 `cpu_ram_efficient_loading`이 애초에 막으려던 동작입니다.
+즉 버그 하나를 메모리 폭발과 맞바꾸는 셈이라 119 GiB unified memory에서는 쓸 수 없습니다.
+
+정리하면 이 조합에는 **독립적인 장벽이 두 개**이고, 둘 다 이 하드웨어에서는 넘을 수 없습니다.
+
+| 경로 | 결과 |
+| --- | --- |
+| 기본값(`cpu_ram_efficient_loading` on) | accelerate의 DTensor 가정이 persistent buffer에서 깨짐 — 3/3 실패 |
+| 우회(`cpu_ram_efficient_loading` off) | 샤딩 전 전체 가중치를 device로 이동하다 CUDA OOM |
+
+남은 선택지는 accelerate 상류 수정, 또는 모델의 buffer를 `persistent=False`로 바꾸는 것입니다.
+후자는 `cpu_ram_efficient_loading` 경로에서 rank 0만 실제 가중치를 읽으므로 다른 rank가 이 라우터 bias를 못 받아 **조용히 다른 routing 결과를 낼 위험**이 있어 채택하지 않았습니다.
+이 저장소에서 GLM을 쓸 때는 DDP 또는 DeepSpeed를 사용합니다.
 
 ### 실험 3: Checkpoint I/O — 같은 방향(async 우위), 다른 배수
 
@@ -431,8 +468,8 @@ Qwen은 fused QKV 1개 + proj 1개(2종류), GLM은 MLA의 Q/KV down·up project
 | --- | --- |
 | Async checkpoint가 sync보다 빠름 | ~~Sequence length 증가율~~ → 같은 backend에서는 동일(+12.6% vs +12.7%), 차이는 모델이 아니라 attention 구현이었음 |
 | Checkpoint 크기 ∝ trainable parameter 수(선형) | 같은 `lora_dim`에서의 절대 trainable parameter 수(target module 구성 차이) |
-| Train/tuned eval_loss 일치 → adapter 재로딩 신뢰성 | FSDP2 사용 가능 여부 — 단 원인은 모델이 아니라 persistent buffer를 만난 accelerate 경로 |
-| — | 가중치 로딩 구간의 host memory 배수(Qwen ×1.12 vs GLM ×1.81) |
+| Train/tuned eval_loss 일치 → adapter 재로딩 신뢰성 | FSDP2 사용 가능 여부 — 원인은 모델이 아니라 persistent buffer를 만난 accelerate 경로이며, 우회도 OOM으로 막힘 |
+| 가중치 로딩 비용(둘 다 parameter의 약 1.9배) | — |
 
 [Scaling Estimates](#scaling-estimates-100b-to-1t)의 parameter당 고정 비용(weight 2 + gradient 2 + Adam 12 bytes)은 optimizer·저장 방식에서 나오므로 모델 아키텍처와 무관하게 일반화될 가능성이 높습니다.
 Activation 비용도 **backend를 고정하면 두 모델이 같은 기울기**를 보였으므로(+12.6% vs +12.7%), 아키텍처보다 attention 구현이 지배적인 변수입니다.
