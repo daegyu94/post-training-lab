@@ -59,7 +59,7 @@ def main():
     assert len(rows) == 5
     fig, ax = plt.subplots(figsize=(9, 5.2))
     labels = ["Megatron LoRA\n4096 tokens", "Megatron LoRA\n8192 tokens",
-              "TRL DDP\nLoRA", "TRL FSDP2\nLoRA", "TRL ZeRO-3 NVMe\nFull + SGD"]
+              "TRL DDP\nLoRA", "TRL FSDP2\nLoRA", "TRL ZeRO-3 NVMe\nFull + Adam"]
     cuda = [number(r[2]) for r in rows]
     marks = ax.barh(labels, cuda, color=BLUE, height=0.58)
     ax.bar_label(marks, labels=[f"{value:.1f} GB" for value in cuda], padding=4)

@@ -245,7 +245,7 @@ LoRA rank 8에서 저장 크기는 같고 async host-call은 약 1초 짧습니�
 
 Megatron LoRA에서 sequence length를 4096에서 8192로 늘리면 CUDA peak allocated가 39.5 GB에서 57.6 GB로 약 46% 증가했습니다.
 같은 TRL LoRA 조건에서 FSDP2는 DDP보다 CUDA peak가 59.8 GB에서 34.1 GB로 약 43% 낮았습니다.
-ZeRO-3 NVMe의 6.4 GB는 full-SGD·runtime offload 결과이므로 LoRA 조건과 직접적인 backend 우열로 비교하지 않습니다.
+ZeRO-3 NVMe의 6.4 GB는 full fine-tuning에 runtime offload를 건 결과이므로 LoRA 조건과 직접적인 backend 우열로 비교하지 않습니다.
 
 Unified-memory hardware이므로 CUDA와 host 측정값을 더하지 않고 별도 panel로 봅니다.
 `EST-MEG-ADAM`(Megatron full + Adam) 추정값은 rank당 160.8 GiB로 119 GiB 예산을 초과해 실행하지 않았습니다.
@@ -278,7 +278,8 @@ Megatron은 학습 시작 시 rank-local model-parallel shard 기준 trainable p
 ![LoRA parameter ratio and checkpoint I/O](figures/lora-ratio-checkpoint.svg)
 
 목표 비율 0.1%에서 1.0%로 약 10배 늘리면 checkpoint 크기도 224.9 MB에서 2,246.6 MB로 9.99배 증가했습니다.
-같은 구간에서 save host-call 시간은 1.44초에서 2.61초로 약 81% 증가했으며, 이는 전체 저장 완료 시간이 아니라 sync `save()` 호출 시간입니다.
+반면 같은 구간에서 save 시간은 1.44초에서 2.61초로 1.81배만 늘었습니다 — 크기는 10배인데 시간은 1.8배이므로, 작은 checkpoint일수록 고정 비용(메타데이터 기록·rank 동기화)이 시간을 지배하고 커질수록 byte당 처리율이 좋아진다는 뜻입니다.
+이 값은 `CHECKPOINT_MODE=sync`에서 데이터 파일 `fsync()`까지 포함해 반환되는 blocking `save()` 호출 시간을 rank별로 재고 가장 느린 rank를 취한 것입니다(async의 enqueue 반환 시간과 달리 실제 쓰기를 포함하지만, 부모 디렉터리 `fsync()`는 빠져 있어 장애 durability를 뜻하지는 않습니다).
 
 12/12 run 통과(pilot 3 + 측정 9), 세 조건 모두 rMAD가 10% 기준을 크게 밑돌아 8회로 확장하지 않았습니다.
 
@@ -295,6 +296,59 @@ python experiments/checkpoint_memory_30b.py \
   --output results/lora-ratio-checkpoint-io \
   --repeats 3 --execute
 ```
+
+## Scaling Estimates: 100B to 1T
+
+30B 실측을 근거로 중대형·1T 규모에서 GPU memory와 checkpoint 크기가 어떻게 변하는지 **추정**합니다.
+전부 계산값이며 실행으로 확인한 값이 아닙니다 — 이 저장소가 실제로 돌린 최대 규모는 30B입니다.
+
+### 계산 근거와 그 검증
+
+BF16 학습의 parameter당 고정 비용은 다음과 같습니다.
+
+| 항목 | parameter당 bytes | 적용 대상 |
+| --- | ---: | --- |
+| Weights (BF16) | 2 | 전체 parameter |
+| Gradients (BF16) | 2 | trainable parameter |
+| Adam state (fp32 master + `exp_avg` + `exp_avg_sq`) | 12 | trainable parameter |
+
+이 12 bytes/param이 맞는지는 실측으로 확인됐습니다.
+Qwen3-30B-A3B(30.5B)를 2 rank로 나누면 rank당 15.25B parameter이고, 여기에 12 bytes를 곱하면 **170.4 GiB**입니다.
+같은 조건에서 실제로 디스크에 쓰인 `global_step1/offloaded_tensors`는 **171 GiB**로 **0.3% 차이**였습니다.
+즉 아래 표의 곱셈은 최소한 optimizer state 항목에 대해서는 실측에 맞춰져 있습니다.
+
+### 규모별 추정
+
+Full fine-tuning은 `2+2+12 = 16 bytes/param`, LoRA(trainable 0.1% 가정)는 frozen weight 2 bytes/param에 trainable 몫만 더합니다.
+
+| 모델 규모 | Full FT 학습 state | LoRA(0.1%) 학습 state | Checkpoint: weights만 | Checkpoint: full state | Checkpoint: LoRA adapter |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 30B (실측 anchor) | 0.44 TiB | 57.3 GiB | 56.8 GiB | 0.39 TiB | 0.40 GiB |
+| 100B | 1.46 TiB | 187.8 GiB | 186.3 GiB | 1.27 TiB | 1.30 GiB |
+| 500B | 7.28 TiB | 938.8 GiB | 931.3 GiB | 6.37 TiB | 6.52 GiB |
+| 1T | 14.55 TiB | 1.83 TiB | 1.82 TiB | 12.73 TiB | 13.04 GiB |
+
+학습 state를 device memory에만 담는다고 가정했을 때 필요한 GPU 수(활성화·통신 버퍼 제외한 하한):
+
+| 모델 규모 | DGX Spark (119 GiB) | H100 (80 GB) | H200 (141 GB) |
+| --- | ---: | ---: | ---: |
+| 30B | 3.8 | 6.1 | 3.5 |
+| 100B | 12.5 | 20.0 | 11.3 |
+| 500B | 62.6 | 100.0 | 56.7 |
+| 1T | 125.2 | 200.0 | 113.5 |
+
+### 읽는 방법
+
+- **Tuning 방법이 checkpoint 크기를 3자리수 바꿉니다.** 1T에서 full-state checkpoint는 12.73 TiB, 같은 모델의 LoRA adapter는 13.04 GiB로 약 1,000배 차이입니다. 저장 주기·보존 개수·복구 시간 설계는 모델 크기보다 tuning 방법에 먼저 좌우됩니다.
+- **Optimizer가 full FT 비용의 75%입니다.** 16 bytes 중 12가 Adam state이므로, optimizer state를 어디에 두느냐(device / CPU / NVMe)가 "이 모델이 들어가는가"를 사실상 결정합니다. 30B에서 NVMe offload로 CUDA peak가 6.4 GB까지 내려간 것이 이 구조 때문입니다.
+- **1T full FT는 이 계산만으로도 100 GPU급입니다.** 위 표는 활성화·통신 버퍼·CUDA context를 뺀 하한이므로 실제로는 더 듭니다. 반면 1T LoRA의 학습 state는 1.83 TiB로, 대부분이 frozen weight라 offload·sharding 전략의 선택지가 훨씬 넓습니다.
+- **Sequence length는 위 표에 없습니다.** 30B LoRA 실측에서 length를 4096 → 8192로 늘렸을 때 CUDA peak가 39.5 GB → 57.6 GB(약 +46%)였습니다. 이 증가분은 parameter 수와 무관한 activation 비용이라 위 곱셈에 포함되지 않습니다.
+
+### 이 추정이 담지 않는 것
+
+Activation(길이·batch·recompute 정책에 좌우), MoE routing 내부 버퍼, CUDA context와 allocator 단편화, NCCL 통신 버퍼, framework workspace는 모두 빠져 있습니다.
+[메모리 추정기](#estimate-memory-before-running)가 30B 실측 대비 최대 -11%로 낮게 나온 것도 같은 이유이며, 규모가 커질수록 이 누락분의 절대값도 함께 커집니다.
+따라서 위 숫자는 **하한이자 규모 감각**이며, 특정 구성이 실제로 들어가는지는 해당 규모에서 실행해 확인해야 합니다.
 
 ## Repeated Megatron Measurements
 
