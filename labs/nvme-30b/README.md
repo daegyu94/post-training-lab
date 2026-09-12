@@ -77,7 +77,8 @@ Arrow dataset은 memory map과 page cache를 쓰므로 같은 batch를 다시 �
 
 ## Why NVMe Offload Is Necessary Here
 
-2026-09-09 Qwen3-30B-A3B full SFT(ZeRO-3, SGD, world size 2)에서 각 노드의 `/mnt/post-training/trl/zero_stage_3`는 **약 256GiB**, 물리 RAM은 **119GiB**였습니다.
+2026-09-09 Qwen3-30B-A3B full SFT(ZeRO-3, world size 2)에서 각 노드의 `/mnt/post-training/trl/zero_stage_3`는 **약 256GiB**, 물리 RAM은 **119GiB**였습니다.
+이 실행은 `OPTIMIZER=sgd`로 설정됐지만 DeepSpeed가 offload 시 `DeepSpeedCPUAdam`으로 교체하므로 실제 swap 내용은 Adam 모멘트(`exp_avg`·`exp_avg_sq`)였고, 256GiB라는 크기도 그 때문입니다([정정 근거](../../docs/experiments.md#실측-결과)).
 이 footprint는 RAM의 두 배 이상으로 `offload_param`·`offload_optimizer`의 `device: nvme` 선택을 뒷받침합니다.
 단, `cpu`·`none` 대조 실행의 OOM을 관찰한 것은 아니며 다른 optimizer·병렬 구성으로 일반화하지 않습니다.
 

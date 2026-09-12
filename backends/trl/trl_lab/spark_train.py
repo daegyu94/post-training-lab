@@ -270,29 +270,9 @@ def _uses_deepspeed_nvme(config: SparkConfig) -> bool:
     return any(zero.get(name, {}).get("device") == "nvme" for name in ("offload_param", "offload_optimizer"))
 
 
-def _write_checkpoint_timing(output_dir: Path, event: str, start_wall_ns: int, end_wall_ns: int, path: str) -> None:
-    """Record a save/restore host-call window as wall-clock nanoseconds (not
-    perf_counter, which is not comparable across processes) so it can later be
-    matched against observability/resource_sampler.py's wall_time_ns samples to
-    isolate this call's device I/O from the rest of the run."""
-    destination = output_dir / "measurements"
-    destination.mkdir(parents=True, exist_ok=True)
-    payload = {
-        "event": event, "rank": _rank(),
-        "host_seconds": (end_wall_ns - start_wall_ns) / 1e9,
-        "start_wall_ns": start_wall_ns, "end_wall_ns": end_wall_ns,
-        "path": path,
-    }
-    (destination / f"checkpoint-{event}-timing-rank-{_rank()}.json").write_text(
-        json.dumps(payload, indent=2) + "\n", encoding="utf-8"
-    )
-
-
 def _save_trained_model(trainer: Any, config: SparkConfig) -> None:
     destination = config.output_dir / ("adapter" if config.finetuning_mode == "lora" else "model")
-    started = time.time_ns()
     trainer.save_model(str(destination))
-    _write_checkpoint_timing(config.output_dir, "save", started, time.time_ns(), str(destination))
     if config.distributed_backend == "ddp" and config.finetuning_mode == "lora" and _rank() != 0:
         trainer.accelerator.unwrap_model(trainer.model).save_pretrained(str(destination))
 
@@ -421,9 +401,7 @@ def main() -> None:
 
                 train_dataloader = trainer.get_train_dataloader()
                 trainer._prepare_for_training(max_steps=1, train_dataloader=train_dataloader, resume_from_checkpoint=None)
-                started = time.time_ns()
                 deepspeed_load_checkpoint(trainer.model_wrapped, str(checkpoint_dir), load_module_strict=True)
-                _write_checkpoint_timing(config.output_dir, "restore", started, time.time_ns(), str(checkpoint_dir))
             evaluation = trainer.evaluate()
             update_count = 0
         else:

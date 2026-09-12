@@ -187,21 +187,6 @@ def test_deepspeed_nvme_profile_is_detected(tmp_path: Path) -> None:
     assert spark_train._uses_deepspeed_nvme(config)
 
 
-def test_save_trained_model_records_wall_clock_timing(monkeypatch, tmp_path: Path) -> None:
-    trainer = types.SimpleNamespace(save_model=lambda path: None)
-    config = types.SimpleNamespace(output_dir=tmp_path, finetuning_mode="lora", distributed_backend="fsdp2")
-    monkeypatch.setenv("RANK", "0")
-
-    spark_train._save_trained_model(trainer, config)
-
-    payload = json.loads((tmp_path / "measurements" / "checkpoint-save-timing-rank-0.json").read_text())
-    assert payload["event"] == "save"
-    assert payload["rank"] == 0
-    assert payload["path"] == str(tmp_path / "adapter")
-    assert payload["end_wall_ns"] >= payload["start_wall_ns"]
-    assert payload["host_seconds"] == pytest.approx((payload["end_wall_ns"] - payload["start_wall_ns"]) / 1e9)
-
-
 def test_nonzero_ddp_rank_saves_lora_to_its_node_local_output(monkeypatch, tmp_path: Path) -> None:
     calls = []
     model = types.SimpleNamespace(save_pretrained=lambda path: calls.append(("local", path)))

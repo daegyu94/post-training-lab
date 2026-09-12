@@ -257,6 +257,17 @@ def validate_config(config: SparkConfig) -> str:
             for name in ("offload_param", "offload_optimizer")
         ):
             raise ValueError("LoRA with DeepSpeed NVMe offload is unsupported; use DDP or full fine-tuning")
+        # DeepSpeed replaces a client optimizer with DeepSpeedCPUAdam whenever
+        # optimizer state is offloaded (engine.py refuses any other client
+        # optimizer unless zero_force_ds_cpu_optimizer is disabled). A run
+        # requesting SGD here would still train with Adam and write Adam
+        # exp_avg/exp_avg_sq state, so the label -- and any memory or
+        # checkpoint-size number derived from it -- would be wrong.
+        if config.optimizer == "sgd" and zero.get("offload_optimizer", {}).get("device") in {"cpu", "nvme"}:
+            raise ValueError(
+                "DeepSpeed offload_optimizer replaces SGD with DeepSpeedCPUAdam; "
+                "use --optimizer adamw so the recorded optimizer matches what runs"
+            )
     elif config.deepspeed_config is not None:
         raise ValueError("deepspeed_config is valid only with distributed_backend=deepspeed")
     if config.distributed_backend == "fsdp2" and config.stage == "tuned":

@@ -42,35 +42,6 @@ def test_resource_summary_reports_peak_pressure() -> None:
     assert result["swap_used_max_bytes"] == 10
 
 
-def test_resource_window_isolates_bytes_inside_the_window() -> None:
-    def sample(wall_ns, read_bytes, write_bytes):
-        return json.dumps({"wall_time_ns": wall_ns, "read_bytes": read_bytes, "write_bytes": write_bytes})
-
-    lines = [
-        sample(1_000, 0, 0),
-        sample(2_000, 100, 200),
-        sample(3_000, 150, 260),
-        sample(4_000, 999, 999),
-    ]
-
-    result = checkpoint_memory_30b.summarize_resources_window(lines, 2_000, 3_000)
-
-    assert result["sample_count"] == 2
-    assert result["insufficient_resolution"] is False
-    assert result["device_read_bytes_delta"] == 50
-    assert result["device_write_bytes_delta"] == 60
-
-
-def test_resource_window_flags_insufficient_resolution_below_two_samples() -> None:
-    lines = [json.dumps({"wall_time_ns": 2_000, "read_bytes": 100, "write_bytes": 200})]
-
-    result = checkpoint_memory_30b.summarize_resources_window(lines, 1_000, 3_000)
-
-    assert result["sample_count"] == 1
-    assert result["insufficient_resolution"] is True
-    assert result["device_read_bytes_delta"] is None
-
-
 def test_relative_mad_drives_extension_rule() -> None:
     assert checkpoint_memory_30b.relative_mad([10, 10, 11, 9, 10]) == 0
     assert checkpoint_memory_30b.relative_mad([5, 7, 10, 13, 20]) == 0.3
@@ -103,18 +74,15 @@ def test_checkpoint_summary_derives_variant_names_from_records() -> None:
 def test_memory_matrix_matches_fixed_length_and_backend_contract() -> None:
     conditions = {item["name"]: item for item in checkpoint_memory_30b.memory_experiments()}
 
-    assert set(conditions) == {
-        "len-4096", "len-8192", "trl-ddp", "trl-fsdp2", "trl-zero3-nvme", "trl-zero3-nvme-checkpoint-io",
-    }
+    assert set(conditions) == {"len-4096", "len-8192", "trl-ddp", "trl-fsdp2", "trl-zero3-nvme"}
     assert conditions["len-4096"]["experiment"]["env"]["PAD_TO_MAX_LENGTH"] is True
     assert conditions["trl-ddp"]["experiment"]["env"]["PAD_TO_MAX_LENGTH"] is True
     zero = conditions["trl-zero3-nvme"]["experiment"]["env"]
     assert zero["FINETUNING_MODE"] == "full"
-    assert zero["OPTIMIZER"] == "sgd"
+    # DeepSpeed substitutes DeepSpeedCPUAdam whenever optimizer state is offloaded,
+    # so this condition must record adamw to match what actually runs.
+    assert zero["OPTIMIZER"] == "adamw"
     assert zero["DEEPSPEED_CONFIG"].endswith("deepspeed-zero3-nvme.json")
-    checkpoint_io = conditions["trl-zero3-nvme-checkpoint-io"]["experiment"]["env"]
-    assert checkpoint_io["STAGE"] == "all"
-    assert checkpoint_io["FINETUNING_MODE"] == "full"
 
 
 def test_memory_estimates_include_non_runnable_full_adam() -> None:
@@ -256,100 +224,6 @@ def test_local_file_run_falls_back_when_a_file_is_missing(tmp_path: Path) -> Non
     assert seen == [(["ssh", "b"],)]
 
 
-def test_collect_deepspeed_checkpoint_io_fetches_timing_and_probe_and_windows_bytes(tmp_path: Path) -> None:
-    run_output = tmp_path
-    (run_output / "measurements").mkdir()
-    resource_lines = "\n".join([
-        json.dumps({"wall_time_ns": 1_000, "read_bytes": 0, "write_bytes": 0}),
-        json.dumps({"wall_time_ns": 2_000, "read_bytes": 500, "write_bytes": 700}),
-    ]) + "\n"
-    (run_output / "measurements" / "resources-node-0.jsonl").write_text(resource_lines)
-
-    save_timing = {
-        "event": "save", "rank": 0, "host_seconds": 1.0,
-        "start_wall_ns": 1_000, "end_wall_ns": 2_000, "path": "/mnt/a/run/model",
-    }
-    probe_result = {
-        "inventory": {"groups": {"metadata": {"logical_bytes": 10}, "offloaded_tensors": {"logical_bytes": 20}}},
-        "reads": {},
-    }
-
-    def fake_run(command, **kwargs):
-        tail = command[-1]
-        if "checkpoint-save-timing-rank-0.json" in tail:
-            return SimpleNamespace(returncode=0, stdout=json.dumps(save_timing) + "\n", stderr="")
-        if "checkpoint-restore-timing-rank-0.json" in tail:
-            return SimpleNamespace(returncode=1, stdout="", stderr="")
-        if "checkpoint_io_probe.py" in tail:
-            return SimpleNamespace(returncode=0, stdout=json.dumps(probe_result) + "\n", stderr="")
-        raise AssertionError(f"unexpected command: {tail}")
-
-    plan = {"ranks": [
-        {"rank": 0, "host": "spark@spark1", "checkout": "/repo", "output": "/mnt/a/run",
-         "env": {"PYTHON": "/venv/bin/python"}},
-    ]}
-
-    result = checkpoint_memory_30b.collect_deepspeed_checkpoint_io(plan, run_output, remote_run=fake_run)
-
-    rank0 = result["0"]
-    assert rank0["timing"]["save"]["host_seconds"] == 1.0
-    assert rank0["timing"]["restore"] is None
-    assert rank0["checkpoint_io"]["inventory"]["groups"]["offloaded_tensors"]["logical_bytes"] == 20
-    assert rank0["windows"]["save"]["device_read_bytes_delta"] == 500
-    assert rank0["windows"]["restore"] is None
-    assert (run_output / "measurements" / "deepspeed-checkpoint-io-rank-0.json").exists()
-
-
-def test_cleanup_trl_checkpoint_removes_each_ranks_model_dir() -> None:
-    seen = []
-
-    def fake_run(command, **kwargs):
-        seen.append(command)
-        return SimpleNamespace(returncode=0, stderr="")
-
-    plan = {"ranks": [
-        {"rank": 0, "host": "spark@spark1", "output": "/mnt/a/run"},
-        {"rank": 1, "host": "spark@spark2", "output": "/mnt/b/run"},
-    ]}
-
-    checkpoint_memory_30b.cleanup_trl_checkpoint(plan, Path("/unused"), {}, remote_run=fake_run)
-
-    assert len(seen) == 2
-    assert "rm -rf -- /mnt/a/run/model" in seen[0][-1]
-    assert "rm -rf -- /mnt/b/run/model" in seen[1][-1]
-
-
-def test_deepspeed_checkpoint_summary_reports_medians_and_missing_restore() -> None:
-    def record(save_seconds, restore_seconds, metadata_bytes, offloaded_bytes):
-        per_rank = {
-            "0": {
-                "timing": {
-                    "save": {"host_seconds": save_seconds},
-                    "restore": {"host_seconds": restore_seconds} if restore_seconds is not None else None,
-                },
-                "checkpoint_io": {"inventory": {"groups": {
-                    "metadata": {"logical_bytes": metadata_bytes},
-                    "offloaded_tensors": {"logical_bytes": offloaded_bytes},
-                }}},
-            },
-        }
-        return {"status": "passed", "warmup": False, "deepspeed_checkpoint_io": per_rank}
-
-    records = [
-        record(1.0, None, 100, 0),
-        record(1.2, 0.5, 100, 0),
-        record(1.1, 0.6, 100, 0),
-    ]
-
-    summary = checkpoint_memory_30b.deepspeed_checkpoint_summary(records)
-
-    assert summary["run_count"] == 3
-    assert summary["metadata_bytes_median"] == 100
-    assert summary["offloaded_tensors_bytes_median"] == 0
-    assert summary["save_call_seconds_median_max_across_ranks"] == 1.1
-    assert summary["restore_call_seconds_median_max_across_ranks"] == 0.55
-
-
 def _two_node_setup() -> dict:
     node = {
         "host": "spark@spark1", "checkout": "/repo",
@@ -368,10 +242,10 @@ def test_run_memory_matrix_condition_filter_selects_one_condition(tmp_path: Path
 
     result = checkpoint_memory_30b.run_memory_matrix(
         setup, setup_path, tmp_path / "output",
-        execute=False, timeout=60, conditions=["trl-zero3-nvme-checkpoint-io"],
+        execute=False, timeout=60, conditions=["trl-zero3-nvme"],
     )
 
-    assert {item["condition"] for item in result["records"]} == {"trl-zero3-nvme-checkpoint-io"}
+    assert {item["condition"] for item in result["records"]} == {"trl-zero3-nvme"}
 
 
 def test_run_memory_matrix_condition_filter_rejects_unknown_name(tmp_path: Path) -> None:

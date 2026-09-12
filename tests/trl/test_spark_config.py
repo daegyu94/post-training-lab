@@ -208,6 +208,30 @@ def test_deepspeed_nvme_rejects_lora(tmp_path: Path) -> None:
         }))
 
 
+def test_deepspeed_offloaded_optimizer_rejects_sgd(tmp_path: Path) -> None:
+    """DeepSpeed swaps in DeepSpeedCPUAdam when optimizer state is offloaded, so a
+    run recorded as SGD would in fact train with Adam and write exp_avg/exp_avg_sq."""
+    config = make_inputs(tmp_path)
+    profile = Path(__file__).parents[2] / "backends" / "trl" / "configs" / "deepspeed-zero3-nvme.json"
+
+    with pytest.raises(ValueError, match="replaces SGD with DeepSpeedCPUAdam"):
+        validate_config(SparkConfig(**{
+            **config.__dict__,
+            "distributed_backend": "deepspeed",
+            "deepspeed_config": profile,
+            "finetuning_mode": "full",
+            "optimizer": "sgd",
+        }))
+
+    validate_config(SparkConfig(**{
+        **config.__dict__,
+        "distributed_backend": "deepspeed",
+        "deepspeed_config": profile,
+        "finetuning_mode": "full",
+        "optimizer": "adamw",
+    }))
+
+
 @pytest.mark.parametrize("name, stage", [
     ("deepspeed-zero2.json", 2),
     ("deepspeed-zero3.json", 3),
