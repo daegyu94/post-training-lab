@@ -261,3 +261,28 @@ def test_run_memory_matrix_condition_filter_rejects_unknown_name(tmp_path: Path)
         raise AssertionError("expected ConfigError")
     except checkpoint_memory_30b.run.ConfigError as exc:
         assert "not-a-real-condition" in str(exc)
+
+
+def test_model_registry_gives_each_model_its_own_cohort_and_megatron_env() -> None:
+    """Row selection depends on the tokenizer, so Qwen and GLM must not share a
+    cohort directory; GLM additionally needs the Transformer Engine path."""
+    node = {"output_root": {"megatron": "/mnt/megatron"}}
+
+    qwen = checkpoint_memory_30b.cohort_path(node, "qwen")
+    glm = checkpoint_memory_30b.cohort_path(node, "glm")
+
+    assert qwen != glm
+    assert checkpoint_memory_30b.MODELS["qwen"]["megatron_env"] == {}
+    assert checkpoint_memory_30b.MODELS["glm"]["megatron_env"] == {"TRANSFORMER_IMPL": "auto"}
+
+
+def test_memory_experiments_carry_the_selected_model_and_its_megatron_env() -> None:
+    glm = {item["name"]: item for item in checkpoint_memory_30b.memory_experiments("glm")}
+
+    megatron_env = glm["len-4096"]["experiment"]["env"]
+    assert megatron_env["MODEL_ID"] == "zai-org/GLM-4.7-Flash"
+    assert megatron_env["TRANSFORMER_IMPL"] == "auto"
+    # TRL conditions take the same model but never the Megatron-only switch.
+    trl_env = glm["trl-ddp"]["experiment"]["env"]
+    assert trl_env["MODEL_ID"] == "zai-org/GLM-4.7-Flash"
+    assert "TRANSFORMER_IMPL" not in trl_env

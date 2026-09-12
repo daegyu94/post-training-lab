@@ -18,8 +18,25 @@ if str(ROOT) not in sys.path:
 
 from experiments import benchmarks, run  # noqa: E402
 
-MODEL_ID = "Qwen/Qwen3-30B-A3B"
-MODEL_REVISION = "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39"
+MODELS = {
+    "qwen": {
+        "id": "Qwen/Qwen3-30B-A3B",
+        "revision": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+        "cohort": "ultrachat-qwen3-30b-2048-v1",
+        # Megatron picks the local attention path for Qwen; GLM needs the
+        # Transformer Engine one, matching the two verified 30B presets.
+        "megatron_env": {},
+    },
+    "glm": {
+        "id": "zai-org/GLM-4.7-Flash",
+        "revision": "7dd20894a642a0aa287e9827cb1a1f7f91386b67",
+        "cohort": "ultrachat-glm-4.7-flash-2048-v1",
+        "megatron_env": {"TRANSFORMER_IMPL": "auto"},
+    },
+}
+DEFAULT_MODEL = "qwen"
+MODEL_ID = MODELS[DEFAULT_MODEL]["id"]
+MODEL_REVISION = MODELS[DEFAULT_MODEL]["revision"]
 DATASET_ID = "HuggingFaceH4/ultrachat_200k"
 DATASET_REVISION = "8049631c405ae6576f93f445c6b8166f76f5505a"
 DEFAULT_PLAN = ROOT / "experiments" / "megatron" / "checkpoint-memory-30b.json"
@@ -31,18 +48,20 @@ def _output_root(node: dict[str, Any], backend: str) -> str:
     return value[backend] if isinstance(value, dict) else value
 
 
-def cohort_path(node: dict[str, Any]) -> str:
-    return str(Path(_output_root(node, "megatron")) / "cohorts" / "ultrachat-qwen3-30b-2048-v1")
+def cohort_path(node: dict[str, Any], model: str = DEFAULT_MODEL) -> str:
+    """Cohort directory for one model. Row selection depends on the tokenizer, so
+    each model gets its own cohort rather than sharing Qwen's selection."""
+    return str(Path(_output_root(node, "megatron")) / "cohorts" / MODELS[model]["cohort"])
 
 
-def _cohort_command(node: dict[str, Any], output: str) -> str:
+def _cohort_command(node: dict[str, Any], output: str, model: str = DEFAULT_MODEL) -> str:
     q = shlex.quote
     manifest = str(Path(output) / "manifest.json")
     script = str(Path(node["checkout"]) / "experiments" / "prepare_checkpoint_cohort.py")
-    model_dir = node["model_dirs"][MODEL_ID]
+    model_dir = node["model_dirs"][MODELS[model]["id"]]
     create = " ".join([
         q(node["python"]["megatron"]), q(script), "--source-dir", q(node["data_dir"]),
-        "--output-dir", q(output), "--model-dir", q(model_dir), "--model-revision", MODEL_REVISION,
+        "--output-dir", q(output), "--model-dir", q(model_dir), "--model-revision", MODELS[model]["revision"],
         "--dataset-id", DATASET_ID, "--dataset-revision", DATASET_REVISION,
         "--max-length", "2048", "--train-count", "32", "--eval-count", "8",
     ])
@@ -53,16 +72,17 @@ def prepare_cohorts(
     setup: dict[str, Any],
     *,
     execute: bool,
+    model: str = DEFAULT_MODEL,
     remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
 ) -> tuple[dict[str, Any], list[dict[str, str]]]:
     updated = json.loads(json.dumps(setup))
     planned = []
     manifests = []
     for node in updated["nodes"]:
-        if MODEL_ID not in node["model_dirs"]:
-            raise run.ConfigError(f"node {node['host']} has no {MODEL_ID} model path")
-        destination = cohort_path(node)
-        command = _cohort_command(node, destination)
+        if MODELS[model]["id"] not in node["model_dirs"]:
+            raise run.ConfigError(f"node {node['host']} has no {MODELS[model]['id']} model path")
+        destination = cohort_path(node, model)
+        command = _cohort_command(node, destination, model)
         planned.append({"host": node["host"], "path": destination, "command": command})
         node["data_dir"] = destination
         if not execute:
@@ -80,7 +100,7 @@ def prepare_cohorts(
         if (
             manifest.get("dataset") != DATASET_ID
             or manifest.get("dataset_revision") != DATASET_REVISION
-            or manifest.get("model_revision") != MODEL_REVISION
+            or manifest.get("model_revision") != MODELS[model]["revision"]
             or manifest.get("max_length") != 2048
             or manifest.get("train_count") != 32
             or manifest.get("eval_count") != 8
@@ -276,9 +296,9 @@ def generated_setup(setup: dict[str, Any], output: Path) -> Path:
     return path
 
 
-def memory_experiments() -> list[dict[str, Any]]:
+def memory_experiments(model: str = DEFAULT_MODEL) -> list[dict[str, Any]]:
     common = {
-        "MODEL_ID": MODEL_ID, "MODEL_REVISION": MODEL_REVISION,
+        "MODEL_ID": MODELS[model]["id"], "MODEL_REVISION": MODELS[model]["revision"],
         "DATASET_ID": DATASET_ID, "DATASET_REVISION": DATASET_REVISION,
         "MAX_LENGTH": 2048, "PAD_TO_MAX_LENGTH": True,
         "RESOURCE_SAMPLING": True, "SEED": 42, "STAGE": "train",
@@ -289,6 +309,7 @@ def memory_experiments() -> list[dict[str, Any]]:
         "TP": 1, "PP": 1, "EP": 2, "SAVE_INTERVAL": 4,
         "CHECKPOINT_MODE": "sync", "SAVE_OPTIMIZER": True,
         "CHECKPOINT_PLACEMENT": "local", "MEASURE_TIMING": True,
+        **MODELS[model]["megatron_env"],
     }
     trl = {
         **common, "FINETUNING_MODE": "lora", "OPTIMIZER": "adamw",
@@ -332,12 +353,12 @@ def _write_experiment(experiment: dict[str, Any], name: str) -> Path:
 
 
 def collect_memory_estimates(
-    setup: dict[str, Any], *, execute: bool,
+    setup: dict[str, Any], *, execute: bool, model: str = DEFAULT_MODEL,
     remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
 ) -> list[dict[str, Any]]:
     node = setup["nodes"][0]
     script = str(Path(node["checkout"]) / "experiments" / "estimate_memory.py")
-    model_dir = node["model_dirs"][MODEL_ID]
+    model_dir = node["model_dirs"][MODELS[model]["id"]]
     specs = [
         ("meg-lora-2048", ["--backend", "megatron", "--finetuning-mode", "lora", "--optimizer", "adam", "--ep", "2", "--seq-len", "2048"]),
         ("meg-lora-4096", ["--backend", "megatron", "--finetuning-mode", "lora", "--optimizer", "adam", "--ep", "2", "--seq-len", "4096"]),
@@ -445,13 +466,13 @@ def _local_file_run(paths: list[Path], fallback: Callable[..., Any] = subprocess
 
 def run_memory_matrix(
     setup: dict[str, Any], setup_path: Path, output: Path, *, execute: bool, timeout: int, resume: bool = False,
-    conditions: list[str] | None = None,
+    conditions: list[str] | None = None, model: str = DEFAULT_MODEL,
 ) -> dict[str, Any]:
-    estimates = collect_memory_estimates(setup, execute=execute)
+    estimates = collect_memory_estimates(setup, execute=execute, model=model)
     if execute:
         output.mkdir(parents=True, exist_ok=resume)
     records = []
-    selected_conditions = memory_experiments()
+    selected_conditions = memory_experiments(model)
     if conditions is not None:
         available = {item["name"] for item in selected_conditions}
         unknown = set(conditions) - available
@@ -519,14 +540,15 @@ def run_memory_matrix(
             records.append(record)
             if execute:
                 (output / "manifest.json").write_text(
-                    json.dumps({"status": "running", "estimates": estimates, "records": records},
+                    json.dumps({"status": "running", "model": MODELS[model]["id"],
+                                "estimates": estimates, "records": records},
                                indent=2, sort_keys=True) + "\n",
                     encoding="utf-8",
                 )
     status = "dry-run" if not execute else (
         "passed" if all(item["status"] == "passed" for item in records) else "completed-with-failures"
     )
-    result = {"status": status, "estimates": estimates, "records": records}
+    result = {"status": status, "model": MODELS[model]["id"], "estimates": estimates, "records": records}
     if execute:
         (output / "manifest.json").write_text(
             json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -546,6 +568,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--resume", action="store_true",
                          help="memory phase only: continue into an existing --output, reusing "
                               "already-completed runs instead of refusing or re-running them")
+    parser.add_argument("--model", choices=sorted(MODELS), default=DEFAULT_MODEL,
+                         help="which verified 30B model to measure (default: qwen)")
     parser.add_argument("--condition", action="append",
                          help="memory phase only: run only this condition name (repeatable). "
                               "Default runs the full matrix from memory_experiments().")
@@ -558,11 +582,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.output.exists() and not args.resume:
             raise run.ConfigError(f"refusing to reuse output directory: {args.output}")
         setup = run.load_setup(args.setup)
-        setup, cohort_plan = prepare_cohorts(setup, execute=args.execute)
+        setup, cohort_plan = prepare_cohorts(setup, execute=args.execute, model=args.model)
         setup_path = generated_setup(setup, args.output)
         if args.phase == "memory":
             result = run_memory_matrix(setup, setup_path, args.output, execute=args.execute,
-                                        timeout=args.timeout, resume=args.resume, conditions=args.condition)
+                                        timeout=args.timeout, resume=args.resume, conditions=args.condition,
+                                        model=args.model)
         else:
             result = benchmarks.run_benchmark(
                 setup_path=setup_path,
