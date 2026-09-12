@@ -241,6 +241,12 @@ LoRA rank 8에서 저장 크기는 같고 async host-call은 약 1초 짧습니�
 | `MEM-TRL-FSDP2` | 3 | 34.1 GB | 104.0 GB |
 | `MEM-TRL-Z3-NVME` | 3 | 6.4 GB | 91.8 GB |
 
+![30B CUDA memory footprint](figures/memory-footprint.svg)
+
+Megatron LoRA에서 sequence length를 4096에서 8192로 늘리면 CUDA peak allocated가 39.5 GB에서 57.6 GB로 약 46% 증가했습니다.
+같은 TRL LoRA 조건에서 FSDP2는 DDP보다 CUDA peak가 59.8 GB에서 34.1 GB로 약 43% 낮았습니다.
+ZeRO-3 NVMe의 6.4 GB는 full-SGD·runtime offload 결과이므로 LoRA 조건과 직접적인 backend 우열로 비교하지 않습니다.
+
 Unified-memory hardware이므로 CUDA와 host 측정값을 더하지 않고 별도 panel로 봅니다.
 `EST-MEG-ADAM`(Megatron full + Adam) 추정값은 rank당 160.8 GiB로 119 GiB 예산을 초과해 실행하지 않았습니다.
 `EST-MEG-SGD`(full + SGD)는 96.6 GiB로 예산 안에 들어오지만 pilot 실행은 별도로 결정하지 않았습니다(추정만 수행).
@@ -268,6 +274,11 @@ Megatron은 학습 시작 시 rank-local model-parallel shard 기준 trainable p
 | `ratio-0.1pct` | 25 | 0.0996% | 224.9 MB | 1.44s | 2.10% |
 | `ratio-0.5pct` | 126 | 0.5019% | 1,128.4 MB | 2.03s | 0.13% |
 | `ratio-1pct` | 251 | 0.9998% | 2,246.6 MB | 2.61s | 0.60% |
+
+![LoRA parameter ratio and checkpoint I/O](figures/lora-ratio-checkpoint.svg)
+
+목표 비율 0.1%에서 1.0%로 약 10배 늘리면 checkpoint 크기도 224.9 MB에서 2,246.6 MB로 9.99배 증가했습니다.
+같은 구간에서 save host-call 시간은 1.44초에서 2.61초로 약 81% 증가했으며, 이는 전체 저장 완료 시간이 아니라 sync `save()` 호출 시간입니다.
 
 12/12 run 통과(pilot 3 + 측정 9), 세 조건 모두 rMAD가 10% 기준을 크게 밑돌아 8회로 확장하지 않았습니다.
 
