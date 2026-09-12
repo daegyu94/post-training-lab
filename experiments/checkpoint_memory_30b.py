@@ -563,7 +563,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--phase", choices=("checkpoint", "memory"), default="checkpoint")
-    parser.add_argument("--repeats", type=int, default=5)
+    # 3, matching the memory phase's per-condition repeats. Qwen's published
+    # 5-repeat checkpoint result re-medianed over its first 3 runs moves by
+    # +0.57% (sync) / -1.41% (async) with rMAD still ~1-2.5%, far under the 10%
+    # rule that would call for more runs, so the extra two runs bought nothing.
+    parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--timeout", type=int, default=3600)
     parser.add_argument("--resume", action="store_true",
                          help="memory phase only: continue into an existing --output, reusing "

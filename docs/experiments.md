@@ -222,6 +222,8 @@ Raw manifest·measurement record는 커밋하지 않으므로(`results/`는 giti
 #### Megatron local checkpoint (sync vs async)
 
 5회 반복 모두 종료 기준(rMAD ≤ 10%)을 만족해 8회로 확장하지 않았습니다.
+이후 반복 수는 memory phase와 같은 **3회로 통일**했습니다(`--repeats` 기본값).
+아래 표의 5회 결과를 앞 3회만으로 다시 median을 내면 sync `2.3697s`(+0.57%), async `1.2824s`(-1.41%)로 rMAD는 1.06%·2.49%에 머물러, 나머지 2회가 결론을 바꾸지 않았기 때문입니다.
 
 | Variant | Run 수 | Checkpoint 크기(median) | Save 호출 시간(median) | Cold-buffered read(median) | rMAD |
 | --- | ---: | ---: | ---: | ---: | ---: |
