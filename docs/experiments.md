@@ -4,9 +4,40 @@ Experiment 파일은 모델·데이터 revision과 학습 조건을, setup은 �
 공통 runner가 둘을 결합하며 `--execute`가 있을 때만 SSH 학습을 시작합니다.
 첫 실행은 [Getting Started](getting-started.md), 설정 책임은 [Architecture](architecture.md)를 따릅니다.
 
-두 노드에서 `Qwen/Qwen3-30B-A3B`(TRL LoRA·Megatron MoE)와 `zai-org/GLM-4.7-Flash`(Megatron MoE)의 SFT를 확인합니다.
+두 노드에서 `Qwen/Qwen3-30B-A3B`(TRL LoRA·Megatron MoE)와 `zai-org/GLM-4.7-Flash`(TRL DDP LoRA·Megatron MoE)의 SFT를 확인합니다.
 30B는 메모리·통신·checkpoint·재로딩을, 0.5B smoke는 runner·전처리·저장 경로를 저비용으로 검사합니다.
 정적 검사·CPU 테스트·dry-run·GPU 실행은 별도 증거로 구분합니다([AGENTS.md](../AGENTS.md), [판정 기준](getting-started.md#6-verify-the-result)).
+
+## Read the Results First
+
+이 문서는 **실행 가능성**, **반복 측정**, **규모 추정**을 다룹니다. 아래 표에서 질문을 고른 뒤 해당 결과의 조건과 지표를 함께 읽습니다.
+
+| 알고 싶은 것 | 먼저 볼 결과 | 현재 확인된 범위 |
+| --- | --- | --- |
+| 30B SFT와 checkpoint 재로딩이 되는가? | [30B GPU Results](#30b-gpu-results) | 짧은 실행·재로딩 확인. 장기 수렴·모델 품질 검증은 아님 |
+| Async가 학습을 덜 막는가? | [Local Checkpoint Results](#local-checkpoint-results) | Qwen의 run당 save 호출 누적 시간이 2.356 → 1.301 s. 전체 저장 완료·학습 throughput 개선은 이 값만으로 판단 불가 |
+| 분산 방식에 따라 CUDA 메모리가 얼마나 필요한가? | [Memory Footprint](#memory-footprint) | Qwen TRL LoRA에서 DDP 59.8 → FSDP2 34.1 GB. Full FT + NVMe 6.4 GB는 다른 workload |
+| LoRA를 더 많이 학습하면 checkpoint도 커지는가? | [LoRA Ratio and Checkpoint I/O](#lora-ratio-and-checkpoint-io) | 고정된 Qwen target module에서 trainable 비율 약 10배 → 최신 checkpoint shard 크기 약 10배 |
+| Qwen 결과를 GLM에도 적용할 수 있는가? | [Qwen and GLM Comparison](#qwen-and-glm-comparison) | Attention backend를 맞추면 관측 증가율이 유사함. GLM host memory가 더 크다는 기존 결론은 철회 |
+| 100B~1T에 필요한 용량은? | [Scaling Estimates](#scaling-estimates-100b-to-1t) | 가정한 dtype·optimizer·sharding에 따른 계산. 해당 규모 GPU 실행 결과가 아님 |
+
+### Metric Definitions
+
+`rank`는 분산 학습 process 번호입니다. 이 실험은 노드당 1 rank이며, **rank별 합·최대값·반복 median은 서로 다른 집계**입니다.
+
+| 지표 | 계산·범위 | 해석 |
+| --- | --- | --- |
+| Save 호출 누적 시간 | 한 run에서 rank별 성공한 `save()` 호출 시간을 합한 뒤 rank 최대값, 이후 run 간 median | 단일 checkpoint latency가 아님. Async에서는 background 완료를 기다리지 않은 반환 시간 포함 |
+| Blocking finalization | rank별 blocking `finalize_async_saves` 호출 시간의 합과 rank 최대값 | 아직 끝나지 않은 async 작업을 기다리는 시간. Save 합에 단순히 더해도 첫 enqueue부터 완료까지의 wall time은 아님 |
+| Checkpoint 크기 | probe 시점의 **최신 iteration**에 있는 `.distcp` shard bytes를 rank 간 합산 | 한 checkpoint의 논리 크기. 모든 저장 iteration의 합·device write traffic·metadata 전체 크기가 아님 |
+| CUDA peak allocated | PyTorch allocator가 기록한 peak allocation | 전체 device 사용량이 아님. 측정 구간·rank 집계가 같은 값끼리 비교 |
+| Host memory pressure | 노드의 첫 `MemAvailable` − 측정 중 최소 `MemAvailable` | process RSS가 아닌 노드 전체 변화량. 다른 process·page cache·초기 노드 상태의 영향 포함 |
+| Buffered read 처리율 | rank별 logical read bytes 합 ÷ rank별 read 시간 최대값 | probe는 rank 순서로 실행되므로 동시 실행한 cluster throughput이 아닌 집계 지표. Cache 분류도 함께 확인 |
+| rMAD | `median(abs(x - median(x))) / median(x)` | 반복 간 산포. 10% 이하는 추가 반복 판단 규칙이며 통계적 유의성·정확성 보장은 아님 |
+
+MB/GB는 10진 bytes, MiB/GiB/TiB는 2진 bytes입니다. 예를 들어 69.4 MiB는 약 72.8 MB입니다.
+Spark는 unified memory를 사용하므로 CUDA peak와 host pressure를 더해서 총 메모리로 해석하지 않습니다.
+원본 manifest는 커밋되지 않으므로 기존 표의 수치는 보고된 요약값이며, 새 집계·오차 검증에는 해당 run의 원본이 필요합니다.
 
 ## Presets
 
@@ -78,7 +109,9 @@ python experiments/build.py \
 - Megatron 전용 `--tp`/`--pp`/`--ep`/batch 옵션은 검증된 30B preset 기본값(TP=1, PP=1, EP=2)을 그대로 씁니다. 각 옵션의 뜻은 `--help`에서 확인합니다.
 - Dataset은 [Datasets](datasets.md)에 따라 미리 준비합니다.
 
-### 실제로 확인한 조합
+<a id="실제로-확인한-조합"></a>
+
+### Verified Runs
 
 `build.py --execute`로 확인한 조합입니다.
 
@@ -123,7 +156,7 @@ TRL은 Qwen3-30B-A3B, 같은 precision·길이·batch와 attention LoRA를 사�
 ### NVMe and Full SFT
 
 두 노드의 `/mnt/post-training`은 로컬 NVMe root filesystem에 있고 backend별 디렉터리에 `spark` 쓰기 권한이 있습니다.
-Megatron Qwen3-30B-A3B와 GLM-4.7-Flash LoRA는 로컬 NVMe에 데이터 cache와 로그를 쓰고, NFS의 공통 `torch_dist` checkpoint에서 iteration 1을 새 process로 재로딩해 `STAGE=all`을 완료했습니다 — 정확한 수치는 위 [실제로 확인한 조합](#실제로-확인한-조합)의 Case 3·4와 같습니다.
+Megatron Qwen3-30B-A3B와 GLM-4.7-Flash LoRA는 로컬 NVMe에 데이터 cache와 로그를 쓰고, NFS의 공통 `torch_dist` checkpoint에서 iteration 1을 새 process로 재로딩해 `STAGE=all`을 완료했습니다 — 정확한 수치는 위 [Verified Runs](#verified-runs)의 Case 3·4와 같습니다.
 Megatron은 NVMe를 native training state offload 대상으로 지원하지 않으므로 이 결과는 dataset cache와 checkpoint I/O 검증입니다.
 
 30B full SFT의 DDP·FSDP2 실패는 dataset 전체 적재가 원인이 아닙니다.
@@ -141,7 +174,7 @@ NFS는 조건에 포함하지 않고 Megatron checkpoint는 rank별 local shard 
 실행·집계는 `experiments/checkpoint_memory_30b.py`, read/cache 분류는 `experiments/checkpoint_io_probe.py`, cohort 생성은 `experiments/prepare_checkpoint_cohort.py`를 기준으로 합니다.
 아래는 측정 이유와 결과입니다.
 
-### 답하려는 질문
+### Research Questions
 
 1. Megatron distributed checkpoint의 논리 크기와 실제 local NVMe write traffic은 얼마인가?
 2. Sync와 async checkpoint가 save latency, finalization과 학습 step time에 어떤 차이를 만드는가?
@@ -153,7 +186,7 @@ NFS는 조건에 포함하지 않고 Megatron checkpoint는 rank별 local shard 
 
 이 결과는 local checkpoint의 장애 복구, topology 변경 restore, power-loss durability 또는 framework 간 절대적 우열을 증명하지 않습니다.
 
-### 고정 조건
+### Fixed Conditions
 
 | 항목 | 값 |
 | --- | --- |
@@ -167,7 +200,7 @@ NFS는 조건에 포함하지 않고 Megatron checkpoint는 rank별 local shard 
 `spark1`과 `spark2`에서 같은 경로 문자열은 서로 다른 물리 disk를 가리킵니다.
 Metadata와 shard가 독립 filesystem에 나뉘면 새 process가 완전한 checkpoint를 찾을 수 없으므로 이 실험에서는 `tuned`·`resume`을 실행하지 않고 save 경로만 측정합니다(`CHECKPOINT_PLACEMENT=local`, `STAGE=train`).
 
-### I/O 동작
+### I/O Paths
 
 설치된 구현의 I/O 동작이 서로 다르므로 하나의 `NVMe I/O` 항목으로 묶지 않습니다.
 
@@ -184,9 +217,9 @@ Megatron은 data file과 metadata에 `fsync()`를 호출하지만 metadata renam
 
 TRL DeepSpeed ZeRO-3는 finetuning mode·optimizer·checkpoint format·runtime offload가 모두 다르므로 Megatron의 순수 baseline이 아니라 framework-native system 비교입니다.
 
-### 측정 설계에서 의도적으로 선택한 것
+### Measurement Design
 
-- **Async throughput**: enqueue 반환 시간이 아니라 첫 enqueue부터 blocking finalization 완료까지를 분모로 씁니다.
+- **Async 완료 시간**: 비교하려면 첫 enqueue부터 blocking finalization 완료까지의 wall time이 필요합니다. 현재 `checkpoint_summary`는 save 호출 누적 시간만 요약하므로 async 저장 완료 throughput을 계산하지 않습니다.
 - **Cache 분류**: 공유 cluster의 전역 `drop_caches` 대신 파일별 `POSIX_FADV_DONTNEED`를 요청하고 device-read delta를 관찰합니다. Eviction은 advisory이고 read-ahead도 있으므로 임계값은 정확한 cache-hit ratio가 아닙니다.
 - **Direct I/O baseline**: storage microbenchmark이며 Megatron throughput이 아닙니다.
 - **Cohort**: 길이 초과 시 중단하는 전처리에 맞춰 2048 token 이하 UltraChat 32행(`ultrachat-qwen3-30b-2048-v1`)을 같은 순서·seed로 재사용합니다. Checkpoint·peak memory 측정용이며 수렴·데이터 품질의 근거가 아닙니다.
@@ -194,7 +227,7 @@ TRL DeepSpeed ZeRO-3는 finetuning mode·optimizer·checkpoint format·runtime o
 - **누락값**: `null`로 기록하고 invalid로 분류합니다.
 - **용량 관리**: probe·metric 수집 직후 `cleanup_checkpoints()`로 checkpoint를 삭제하고 manifest·measurement record는 보존합니다.
 
-### 실행
+### Run the Measurements
 
 기본값은 실제 GPU 작업을 시작하지 않는 dry-run입니다.
 
@@ -202,39 +235,55 @@ TRL DeepSpeed ZeRO-3는 finetuning mode·optimizer·checkpoint format·runtime o
 python experiments/checkpoint_memory_30b.py \
   --setup setups/spark/local.json \
   --phase checkpoint \
-  --output results/checkpoint-30b \
-  --execute
+  --output results/checkpoint-30b
 
 python experiments/checkpoint_memory_30b.py \
   --setup setups/spark/local.json \
   --phase memory \
-  --output results/memory-30b \
-  --execute
+  --output results/memory-30b
 ```
+
+계획을 확인한 뒤 같은 명령에 `--execute`를 붙입니다. Setup은 [Getting Started](getting-started.md)에 따라 실제 경로로 준비하고, 각 노드에 선택 모델의 고정 snapshot과 원본 UltraChat을 준비합니다.
+
+GLM checkpoint는 다음처럼 선택합니다. `--model glm`이 GLM cohort와 checkpoint plan을 함께 선택합니다.
+
+```bash
+python experiments/checkpoint_memory_30b.py \
+  --setup setups/spark/local.json --model glm --phase checkpoint \
+  --output results/checkpoint-30b-glm
+```
+
+`--plan`을 직접 지정하면 모든 variant의 model·dataset ID/revision이 선택한 cohort와 맞아야 합니다. 예를 들어 Qwen plan에 `--model glm`을 함께 주면 SSH 전에 실패합니다.
+Memory phase에서도 `--model glm`을 사용합니다. `--condition trl-ddp`처럼 조건을 선택할 수 있고, 전체 matrix의 GLM FSDP2는 현재 실패가 기록된 조건입니다.
+`--resume`은 memory phase의 기존 run 수집·실행 재개 옵션이며 모델 checkpoint에서 학습을 이어가는 `STAGE=resume`과 다릅니다. 다른 모델의 출력 경로는 재사용할 수 없습니다.
 
 Checkpoint phase는 sync/async warmup과 측정, rank별 resource sampling, warm-after-write/cold/warm buffered read와 Direct I/O baseline을 한 번에 수행합니다.
 Memory phase는 4096/8192 Megatron pilot과 반복, TRL DDP/FSDP2 LoRA, TRL ZeRO-3 NVMe full fine-tuning을 실행합니다.
 `LEN-2048` Megatron memory 값은 checkpoint phase 결과를 재사용합니다.
 
-### 실측 결과
+<a id="실측-결과"></a>
+
+### Measured Results
 
 Raw manifest·measurement record는 커밋하지 않으므로(`results/`는 gitignore 대상) 아래는 요약값입니다.
 
-#### Megatron local checkpoint (sync vs async)
+<a id="megatron-local-checkpoint-sync-vs-async"></a>
+
+#### Local Checkpoint Results
 
 5회 반복 모두 종료 기준(rMAD ≤ 10%)을 만족해 8회로 확장하지 않았습니다.
 이후 반복 수는 memory phase와 같은 **3회로 통일**했습니다(`--repeats` 기본값).
 아래 표의 5회 결과를 앞 3회만으로 다시 median을 내면 sync `2.3697s`(+0.57%), async `1.2824s`(-1.41%)로 rMAD는 1.06%·2.49%에 머물러, 나머지 2회가 결론을 바꾸지 않았기 때문입니다.
 
-| Variant | Run 수 | Checkpoint 크기(median) | Save 호출 시간(median) | Cold-buffered read(median) | rMAD |
+| Variant | Run 수 | Checkpoint 크기(median) | Run당 save 호출 누적 시간(median) | Cold-buffered read(median) | rMAD |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | sync | 5 | 69.4 MiB | 2.356s | 3.12 GB/s | 0.57% |
 | async | 5 | 69.4 MiB | 1.301s | 3.58 GB/s | 1.62% |
 
-LoRA rank 8에서 저장 크기는 같고 async host-call은 약 1초 짧습니다.
-이는 enqueue 반환 시간의 차이이며 전체 저장 완료 시간의 비교는 아닙니다.
+LoRA rank 8에서 최신 checkpoint 크기는 같고 async의 run당 save 호출 누적 시간은 약 1초 짧습니다.
+이는 rank별 save 호출 시간을 run 안에서 합산한 값의 차이이며, 단일 save latency나 전체 저장 완료 시간의 비교는 아닙니다. Async의 background I/O와 finalization, 학습 step time을 함께 봐야 학습 중단 비용을 평가할 수 있습니다.
 
-#### Memory footprint
+#### Memory Footprint
 
 | 조건 | Run 수 | CUDA peak allocated(median) | Host memory pressure(median) |
 | --- | ---: | ---: | ---: |
@@ -263,7 +312,9 @@ Unified-memory hardware이므로 CUDA와 host 측정값을 더하지 않고 별�
 
 DeepSpeed의 Direct offload traffic과 buffered ZeRO-checkpoint traffic을 분리해 보고하는 항목은 아직 측정하지 않았습니다.
 
-### LoRA trainable-ratio가 checkpoint I/O에 미치는 영향
+<a id="lora-trainable-ratio가-checkpoint-io에-미치는-영향"></a>
+
+### LoRA Ratio and Checkpoint I/O
 
 위 LoRA rank 8(약 0.03%) 측정에 이어, sync 파이프라인에서 `LORA_DIM`만 바꿔 비율의 영향을 확인했습니다.
 
@@ -272,7 +323,7 @@ Megatron은 학습 시작 시 rank-local model-parallel shard 기준 trainable p
 따라서 rank 1당 638,976이고 목표 비율 `R`은 `lora_dim = round(R × 16,041,719,808 / 638,976)`으로 역산합니다.
 비율은 global 30.52B가 아니라 Megatron이 실제로 로그에 남기는 rank-local shard 기준입니다.
 
-| Variant | `LORA_DIM` | 역산 비율 | Checkpoint 크기(median) | Save 호출 시간(median) | rMAD |
+| Variant | `LORA_DIM` | 역산 비율 | Checkpoint 크기(median) | Run당 save 호출 누적 시간(median) | rMAD |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `ratio-0.1pct` | 25 | 0.0996% | 224.9 MB | 1.44s | 2.10% |
 | `ratio-0.5pct` | 126 | 0.5019% | 1,128.4 MB | 2.03s | 0.13% |
@@ -281,8 +332,8 @@ Megatron은 학습 시작 시 rank-local model-parallel shard 기준 trainable p
 ![LoRA parameter ratio and checkpoint I/O](figures/lora-ratio-checkpoint.svg)
 
 목표 비율 0.1%에서 1.0%로 약 10배 늘리면 checkpoint 크기도 224.9 MB에서 2,246.6 MB로 9.99배 증가했습니다.
-반면 같은 구간에서 save 시간은 1.44초에서 2.61초로 1.81배만 늘었습니다 — 크기는 10배인데 시간은 1.8배이므로, 작은 checkpoint일수록 고정 비용(메타데이터 기록·rank 동기화)이 시간을 지배하고 커질수록 byte당 처리율이 좋아진다는 뜻입니다.
-이 값은 `CHECKPOINT_MODE=sync`에서 데이터 파일 `fsync()`까지 포함해 반환되는 blocking `save()` 호출 시간을 rank별로 재고 가장 느린 rank를 취한 것입니다(async의 enqueue 반환 시간과 달리 실제 쓰기를 포함하지만, 부모 디렉터리 `fsync()`는 빠져 있어 장애 durability를 뜻하지는 않습니다).
+반면 같은 구간에서 save 시간은 1.44초에서 2.61초로 1.81배만 늘었습니다 — 동일한 저장 횟수에서 크기에 비례하지 않는 비용이 있음을 시사합니다. 메타데이터·동기화·직렬화 중 어떤 비용이 지배적인지는 별도 계측이 필요합니다.
+이 시간은 `CHECKPOINT_MODE=sync`에서 데이터 파일 `fsync()`까지 포함한 blocking `save()` 호출들을 rank별로 합한 뒤 최대값을 취한 것입니다. 크기는 최신 iteration 하나의 shard 합이므로 이 두 값으로 단일 checkpoint의 write bandwidth를 계산하지 않습니다(async의 enqueue 반환 시간과 달리 실제 쓰기를 포함하지만, 부모 디렉터리 `fsync()`는 빠져 있어 장애 durability를 뜻하지는 않습니다).
 
 12/12 run 통과(pilot 3 + 측정 9), 세 조건 모두 rMAD가 10% 기준을 크게 밑돌아 8회로 확장하지 않았습니다.
 
@@ -293,20 +344,22 @@ Checkpoint 크기 비는 5.02배·9.99배로 `LORA_DIM` 비 5.04배·10.04배에
 
 ```bash
 python experiments/checkpoint_memory_30b.py \
-  --setup setups/spark/local-checkpoint-memory-30b.json \
+  --setup setups/spark/local.json \
   --phase checkpoint \
   --plan experiments/megatron/lora-ratio-checkpoint-io.json \
   --output results/lora-ratio-checkpoint-io \
   --repeats 3 --execute
 ```
 
-## Qwen vs GLM: 방법론이 일반화되는가
+<a id="qwen-vs-glm-방법론이-일반화되는가"></a>
+
+## Qwen and GLM Comparison
 
 여기까지의 모든 반복 측정(checkpoint I/O, memory footprint, LoRA ratio)은 Qwen3-30B-A3B 하나에서만 실행됐습니다.
 GLM-4.7-Flash는 [30B GPU Results](#30b-gpu-results)에서 Megatron 1-step 실행 가능성만 확인됐고, TRL은 `spark_config.py`·`spark_train.py`에 `glm4_moe_lite` family와 전용 LoRA target module이 이미 있었지만 **한 번도 실행된 적이 없었습니다.**
-2026-09-12에 `--model glm`으로 같은 세 실험을 그대로 재실행해 방법론이 일반화되는지 확인했습니다(모두 3회 반복으로 통일).
+2026-09-12에 GLM의 TRL adapter 재로딩, memory matrix와 checkpoint I/O를 확인했습니다. Memory·checkpoint 반복 측정은 조건당 3회이며, 아래 1-step adapter 재로딩 표는 별도 실행입니다. LoRA 비율 sweep은 Qwen 결과이며 GLM에서 반복한 것으로 해석하지 않습니다.
 
-### 실험 1: TRL DDP LoRA — 처음 실행되는 경로
+### Adapter Reload
 
 `experiments/trl/glm-4.7-flash-30b-lora.json`(no_robots, MAX_STEPS=1)으로 처음 실행했습니다.
 
@@ -317,9 +370,9 @@ GLM-4.7-Flash는 [30B GPU Results](#30b-gpu-results)에서 Megatron 1-step 실�
 | tuned | 1.928212 | 57.699 GiB |
 
 `train`과 `tuned`의 eval_loss가 소수점까지 일치 — Qwen Case 1과 같은 adapter 재로딩 신뢰성 증거입니다.
-Peak allocated는 Qwen TRL DDP LoRA(58.825 GiB)보다 **약 1.7% 낮았습니다.**
+Qwen의 별도 1-step 실행 수치와는 run·입력 조건이 다르므로 이 표로 모델별 메모리 우열을 판단하지 않습니다.
 
-### 실험 2: Memory footprint — 같은 방향, 다른 기울기
+### Memory Comparison
 
 | 조건 | Qwen CUDA / host | GLM CUDA / host | CUDA 차이 |
 | --- | ---: | ---: | ---: |
@@ -351,11 +404,11 @@ Qwen만 backend를 바꿔 같은 조건으로 다시 측정한 결과입니다.
 | Qwen + `transformer_engine`(대조 실험) | 36.85 GB | 41.51 GB | **+12.6%** |
 | GLM + `transformer_engine` | 34.54 GB | 38.94 GB | **+12.7%** |
 
-**같은 backend에서 두 모델의 기울기는 +12.6% vs +12.7%로 사실상 동일합니다.**
+**이 두 길이에서 같은 backend를 사용한 관측 증가율은 +12.6%와 +12.7%로 유사합니다.** 다른 길이·batch·recompute 정책에서도 같은 증가율을 보장하지는 않습니다.
 따라서 원래 세웠던 "GLM의 MLA가 KV를 압축해 완만하다"는 가설은 **기각됩니다** — 차이를 만든 것은 Megatron `local` 경로가 attention 행렬을 materialize해 sequence length에 제곱으로 증가하는 항을 남기는 반면, Transformer Engine의 fused attention은 그렇지 않다는 점입니다.
 
 이 비교에서 배운 운영상의 교훈은 모델 비교 자체보다 큽니다: `auto`처럼 **입력에 따라 조용히 다른 구현을 고르는 설정은 A/B 비교의 통제 변수를 깨뜨립니다.**
-아래 memory footprint 표의 `LEN-*` 행도 Qwen은 `local`, GLM은 `transformer_engine` 측정이므로 두 값을 모델 차이로 읽으면 안 됩니다.
+위 memory comparison 표의 `LEN-*` 행도 Qwen은 `local`, GLM은 `transformer_engine` 측정이므로 두 값을 모델 차이로 읽으면 안 됩니다.
 
 **TRL DDP의 host memory pressure 차이는 모델 차이가 아니라 측정 방법의 문제였습니다.**
 처음에는 CUDA peak가 거의 같은데(59.8 vs 58.24 GB) host pressure만 GLM이 57% 높다고(109.50 vs 69.7 GB) 기록했습니다.
@@ -368,7 +421,7 @@ Qwen만 backend를 바꿔 같은 조건으로 다시 측정한 결과입니다.
 | Qwen | 56.87 GiB | 111.02 GiB | **×1.95** |
 | GLM | 55.77 GiB | 105.47 GiB | **×1.89** |
 
-**두 모델의 로딩 비용은 사실상 같습니다**(둘 다 가중치의 약 2배). 따라서 "GLM만 두 벌을 쓴다"는 해석은 성립하지 않습니다.
+**이 격리 실험에서 두 모델의 peak RSS는 각각 로드된 parameter bytes의 약 1.9배였습니다.** 따라서 "GLM만 두 벌을 쓴다"는 해석은 성립하지 않습니다.
 
 그다음 Qwen DDP를 오늘 같은 조건으로 다시 돌려 host pressure의 rank별 분포를 봤습니다.
 
@@ -389,8 +442,9 @@ Qwen만 backend를 바꿔 같은 조건으로 다시 측정한 결과입니다.
 - **dtype 변환 아님.** 두 모델 모두 파일과 목표 dtype이 BF16으로 같습니다.
 - **expert fusion 자체도 아님.** 두 모델 모두 디스크에는 per-expert 텐서로 저장되고 메모리에서는 fused 3D 파라미터(`experts.gate_up_proj`)를 쓰므로, 조립 비용은 양쪽 다 발생합니다.
 
-남은 유력 후보는 **shard 분할 방식**입니다 — GLM은 48 shard(평균 1.2 GiB), Qwen은 16 shard(평균 3.6 GiB)로 저장돼 있어, 하나의 fused expert 파라미터를 완성하는 데 동시에 살아 있어야 하는 source 버퍼 수가 다릅니다.
-다만 이는 위 배제 결과에서 좁혀낸 **가설이며 직접 계측하지 않았습니다.**
+기존의 “shard 분할 때문에 GLM host memory가 더 크다”는 가설도 유지하지 않습니다. 비교의 전제인 모델별 pressure 격차가 통제된 재측정에서 성립하지 않았기 때문입니다.
+
+### FSDP2 Compatibility
 
 **FSDP2는 정도가 아니라 종류가 다른 실패입니다.** Qwen은 34.1 GB로 통과하지만 GLM은 3회 모두 같은 지점에서 실패했습니다:
 
@@ -425,27 +479,26 @@ torch.OutOfMemoryError: 119.69 GiB 중 659 MiB만 남은 상태에서 768 MiB �
 이 플래그를 끄면 **샤딩하기 전에** 각 모듈의 전체 가중치를 device로 올리는데, 이는 `cpu_ram_efficient_loading`이 애초에 막으려던 동작입니다.
 즉 버그 하나를 메모리 폭발과 맞바꾸는 셈이라 119 GiB unified memory에서는 쓸 수 없습니다.
 
-정리하면 이 조합에는 **독립적인 장벽이 두 개**이고, 둘 다 이 하드웨어에서는 넘을 수 없습니다.
+정리하면 이 조합에는 **관찰된 실패 경로가 두 개**입니다. 현재 설치 버전과 시도한 설정에서 성공하지 못했으며, 하드웨어 자체의 영구적인 불가능성을 입증한 것은 아닙니다.
 
 | 경로 | 결과 |
 | --- | --- |
 | 기본값(`cpu_ram_efficient_loading` on) | accelerate의 DTensor 가정이 persistent buffer에서 깨짐 — 3/3 실패 |
 | 우회(`cpu_ram_efficient_loading` off) | 샤딩 전 전체 가중치를 device로 이동하다 CUDA OOM |
 
-남은 선택지는 accelerate 상류 수정, 또는 모델의 buffer를 `persistent=False`로 바꾸는 것입니다.
-후자는 `cpu_ram_efficient_loading` 경로에서 rank 0만 실제 가중치를 읽으므로 다른 rank가 이 라우터 bias를 못 받아 **조용히 다른 routing 결과를 낼 위험**이 있어 채택하지 않았습니다.
+호환성을 개선하려면 persistent buffer의 값을 rank 간 올바르게 전달하는 로딩 경로가 필요합니다. 단순히 buffer를 `persistent=False`로 바꾸는 우회는 `cpu_ram_efficient_loading` 경로에서 rank 0만 실제 가중치를 읽으므로 다른 rank가 이 라우터 bias를 못 받아 **조용히 다른 routing 결과를 낼 위험**이 있어 채택하지 않았습니다.
 이 저장소에서 GLM을 쓸 때는 DDP 또는 DeepSpeed를 사용합니다.
 
-### 실험 3: Checkpoint I/O — 같은 방향(async 우위), 다른 배수
+### Checkpoint Comparison
 
 | Variant | Qwen(3회 재계산) | GLM(3회) | 비율 |
 | --- | ---: | ---: | ---: |
-| sync save | 2.3697s | 3.1121s | ×1.31 |
-| async save | 1.2824s | 1.5805s | ×1.23 |
+| Sync run당 save 호출 합 | 2.3697s | 3.1121s | ×1.31 |
+| Async run당 save 호출 합 | 1.2824s | 1.5805s | ×1.23 |
 | Checkpoint 크기 | 72.8 MB | 150.2 MB | ×2.06 |
 
-두 모델 모두 **async가 sync보다 빠르다는 방향은 같습니다**(Qwen 1.85배, GLM 1.97배 — 격차도 비슷한 크기).
-rMAD는 GLM sync 0.31%, async 0.90%로 10% 기준을 크게 밑돌아 3회로 충분했습니다.
+두 모델 모두 **async의 run당 save 호출 누적 시간이 더 짧습니다**(sync/async 비율: Qwen 1.85배, GLM 1.97배). Background 저장 완료나 학습 throughput이 같은 배수로 개선됐다는 뜻은 아닙니다.
+rMAD는 GLM sync 0.31%, async 0.90%로 10% 기준을 크게 밑돌아 사전에 정한 규칙상 추가 반복을 요구하지 않았습니다.
 
 **Checkpoint 크기 2.06배는 우연이 아니라 LoRA target module 구성 차이입니다.**
 `backends/megatron/megatron_lab/config.py`는 family별로 다른 target module을 씁니다.
@@ -460,76 +513,71 @@ target_modules = (
 
 Qwen은 fused QKV 1개 + proj 1개(2종류), GLM은 MLA의 Q/KV down·up projection 4개 + proj 1개(5종류)입니다.
 같은 `lora_dim=8`에서 실제 로그도 이를 뒷받침합니다: Qwen `Trainable parameters: 5,111,808`(0.0319%), GLM `Trainable parameters: 10,515,968`(0.07%) — 비율 **2.057배**로 checkpoint 크기 비율(2.063배)과 거의 일치합니다.
-[LoRA trainable-ratio 실험](#lora-trainable-ratio가-checkpoint-io에-미치는-영향)에서 확인한 "checkpoint 크기는 trainable parameter 수에 선형 비례한다"는 관계가 **모델이 달라도 유지**되며, 다만 같은 `lora_dim`에서의 절대 배수는 target module 구성에 따라 달라진다는 뜻입니다.
+[LoRA trainable-ratio 실험](#lora-ratio-and-checkpoint-io)에서 확인한 "checkpoint 크기는 trainable parameter 수에 거의 비례한다"는 관계와 두 모델의 관측값이 부합합니다. 다만 GLM의 여러 LoRA dimension을 sweep한 결과는 아니므로, 새 target module·저장 형식에서의 선형성은 별도 확인이 필요합니다.
 
-### 종합: 일반화되는 것과 안 되는 것
+### Supported Conclusions
 
-| 일반화됨(정성적으로 같은 방향) | 일반화 안 됨(모델·아키텍처 의존) |
-| --- | --- |
-| Async checkpoint가 sync보다 빠름 | ~~Sequence length 증가율~~ → 같은 backend에서는 동일(+12.6% vs +12.7%), 차이는 모델이 아니라 attention 구현이었음 |
-| Checkpoint 크기 ∝ trainable parameter 수(선형) | 같은 `lora_dim`에서의 절대 trainable parameter 수(target module 구성 차이) |
-| Train/tuned eval_loss 일치 → adapter 재로딩 신뢰성 | FSDP2 사용 가능 여부 — 원인은 모델이 아니라 persistent buffer를 만난 accelerate 경로이며, 우회도 OOM으로 막힘 |
-| 가중치 로딩 비용(둘 다 parameter의 약 1.9배) | — |
+| 관측 | 현재 해석 | 추가로 확인할 것 |
+| --- | --- | --- |
+| 두 모델의 async save 호출 합이 sync보다 작음 | Host가 save API 안에 머무는 시간 감소 | Finalization 포함 완료 시간, step time, 장기 throughput |
+| Qwen LoRA 비율 약 10배 → checkpoint 크기 약 10배 | 고정 target module에서 trainable 수와 저장 크기가 거의 비례 | 다른 target module·checkpoint 형식 |
+| GLM은 같은 LoRA dimension에서 checkpoint 약 2.06배 | Target module 구성과 trainable parameter 수가 다름 | 같은 `LORA_DIM`을 동일 학습 비율로 취급하지 않기 |
+| TE에서 Qwen·GLM의 길이 증가율이 유사 | 기존 +45.8% 대 +12.7% 차이는 backend가 혼재한 비교 | 더 긴 sequence·batch·recompute별 실측 |
+| GLM host pressure가 더 크다는 결론 철회 | 노드 전체 pressure를 모델 고유 사용량으로 해석할 수 없음 | 동일 초기 상태와 process RSS·loading 구간별 계측 |
+| GLM FSDP2 실패 | 설치된 로딩 경로의 buffer 호환성과 우회 시 OOM | 수정된 로딩 경로에서 정확성·메모리 재검증 |
+| Train/tuned eval loss 일치 | 해당 입력에서 adapter 재로딩을 뒷받침 | 학습 품질·장기 안정성은 별도 평가 |
 
-[Scaling Estimates](#scaling-estimates-100b-to-1t)의 parameter당 고정 비용(weight 2 + gradient 2 + Adam 12 bytes)은 optimizer·저장 방식에서 나오므로 모델 아키텍처와 무관하게 일반화될 가능성이 높습니다.
-Activation 비용도 **backend를 고정하면 두 모델이 같은 기울기**를 보였으므로(+12.6% vs +12.7%), 아키텍처보다 attention 구현이 지배적인 변수입니다.
-남는 모델 의존 항목은 LoRA target module 구성에 따른 trainable parameter 배수와 가중치 로딩 시 host memory 배수이며, 이 둘은 새 모델마다 실측해야 합니다.
-
-이번 조사에서 가장 재사용성이 높은 교훈은 방법론 쪽입니다 — **모델 A에서 관측한 차이를 모델 B의 속성으로 귀속하기 전에, 두 실행이 정말 같은 구현 경로였는지 먼저 확인해야 합니다.** 여기서는 `TRANSFORMER_IMPL=auto`가 모델별로 다른 backend를 조용히 선택하고 있었고, 그 사실을 확인하기 전까지는 backend 차이가 아키텍처 차이로 보였습니다.
+비교 전에 모델·데이터 revision, tokenizer cohort, 실제 attention backend, optimizer, padding, 저장 주기와 집계 범위를 맞춥니다. `auto`라는 같은 문자열만으로 같은 구현 경로라고 판단하지 않습니다.
 
 ## Scaling Estimates: 100B to 1T
 
-30B 실측을 근거로 중대형·1T 규모에서 GPU memory와 checkpoint 크기가 어떻게 변하는지 **추정**합니다.
-전부 계산값이며 실행으로 확인한 값이 아닙니다 — 이 저장소가 실제로 돌린 최대 규모는 30B입니다.
+아래는 **용량 계산**입니다. 실제 GPU 검증은 30B급까지이며, 100B~1T 실행 결과나 GPU 구매·배치 수량을 뜻하지 않습니다.
 
-### 계산 근거와 그 검증
+### Assumptions
 
-BF16 학습의 parameter당 고정 비용은 다음과 같습니다.
+`P`는 full FT의 전체 parameter 수, LoRA에서는 frozen base parameter 수입니다. `f=0.001`은 base 대비 추가 adapter parameter 비율(0.1%)입니다. 앞선 LoRA sweep의 **rank-local shard 기준 비율과 분모가 다릅니다.**
 
-| 항목 | parameter당 bytes | 적용 대상 |
-| --- | ---: | --- |
-| Weights (BF16) | 2 | 전체 parameter |
-| Gradients (BF16) | 2 | trainable parameter |
-| Adam state (fp32 master + `exp_avg` + `exp_avg_sq`) | 12 | trainable parameter |
+| 저장 항목 | 가정한 bytes/parameter |
+| --- | ---: |
+| BF16 weight | 2 |
+| BF16 gradient | 2 (학습 대상만) |
+| FP32 master weight + Adam 1차·2차 moment | 12 (학습 대상만) |
 
-이 12 bytes/param이 맞는지는 실측으로 확인됐습니다.
-Qwen3-30B-A3B(30.5B)를 2 rank로 나누면 rank당 15.25B parameter이고, 여기에 12 bytes를 곱하면 **170.4 GiB**입니다.
-같은 조건에서 실제로 디스크에 쓰인 `global_step1/offloaded_tensors`는 **171 GiB**로 **0.3% 차이**였습니다.
-즉 아래 표의 곱셈은 최소한 optimizer state 항목에 대해서는 실측에 맞춰져 있습니다.
+Full FT 학습 state는 `16P`, weights-only checkpoint는 `2P`, optimizer를 포함한 checkpoint는 `14P` bytes로 계산합니다. Checkpoint에는 gradient를 포함하지 않는 가정입니다.
+LoRA 학습 state는 `2P + 16fP`, 배포용 adapter weight만 저장하면 `2fP`, **adapter와 Adam state를 함께 저장하면 `14fP`**입니다. LoRA checkpoint는 frozen base를 포함하지 않으므로 base model의 revision과 가중치를 별도로 보존해야 합니다.
 
-### 규모별 추정
+12 bytes는 Adam moment만의 크기가 아니라 **master weight를 포함한 이 저장 방식의 가정**입니다. Framework의 gradient dtype·master copy·optimizer state 저장 정책에 따라 달라집니다.
+Qwen 약 30.5B를 2 rank로 균등 분할한 optimizer 저장량은 `30.5e9 / 2 × 12` = 약 170.4 GiB/rank이고, 보고된 `offloaded_tensors` 171 GiB/rank와 가깝습니다. 이 일치가 다른 모델·framework의 모든 상태 배치를 검증하지는 않습니다.
 
-Full fine-tuning은 `2+2+12 = 16 bytes/param`, LoRA(trainable 0.1% 가정)는 frozen weight 2 bytes/param에 trainable 몫만 더합니다.
+### State and Checkpoint Capacity
 
-| 모델 규모 | Full FT 학습 state | LoRA(0.1%) 학습 state | Checkpoint: weights만 | Checkpoint: full state | Checkpoint: LoRA adapter |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| 30B (실측 anchor) | 0.44 TiB | 57.3 GiB | 56.8 GiB | 0.39 TiB | 0.40 GiB |
-| 100B | 1.46 TiB | 187.8 GiB | 186.3 GiB | 1.27 TiB | 1.30 GiB |
-| 500B | 7.28 TiB | 938.8 GiB | 931.3 GiB | 6.37 TiB | 6.52 GiB |
-| 1T | 14.55 TiB | 1.83 TiB | 1.82 TiB | 12.73 TiB | 13.04 GiB |
+전체 모델에 대한 합계이며 rank당 크기가 아닙니다. Metadata·padding·중복 저장은 제외합니다.
 
-학습 state를 device memory에만 담는다고 가정했을 때 필요한 GPU 수(활성화·통신 버퍼 제외한 하한):
+| 모델 규모 | Full FT 학습 state | LoRA 학습 state | Base weights만 | Full-state checkpoint | LoRA weights만 | LoRA + Adam checkpoint |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 30.5B (anchor) | 0.44 TiB | 57.3 GiB | 56.8 GiB | 0.39 TiB | 0.06 GiB | 0.40 GiB |
+| 100B | 1.46 TiB | 187.8 GiB | 186.3 GiB | 1.27 TiB | 0.19 GiB | 1.30 GiB |
+| 500B | 7.28 TiB | 938.8 GiB | 931.3 GiB | 6.37 TiB | 0.93 GiB | 6.52 GiB |
+| 1T | 14.55 TiB | 1877.5 GiB | 1862.6 GiB | 12.73 TiB | 1.86 GiB | 13.04 GiB |
 
-| 모델 규모 | DGX Spark (119 GiB) | H100 (80 GB) | H200 (141 GB) |
+1T의 배포용 LoRA weight는 약 **1.86 GiB**, optimizer를 포함한 LoRA checkpoint는 **13.04 GiB**입니다. 이전 표의 13.04 GiB는 adapter weight만의 크기가 아니었습니다. Full-state 12.73 TiB와 비교할 때도 같은 저장 범위를 사용합니다.
+
+### Ideal Sharding Lower Bound
+
+Full FT의 `16P` bytes를 모든 GPU에 균등하게 나누고, offload 없이 전체 예산을 학습 state에 사용할 수 있다고 가정합니다. 표는 `ceil(16P / device budget)`인 **정수 용량 하한**입니다. DDP는 상태를 복제하므로 이 나눗셈을 적용할 수 없고, 실제 sharding에도 비분할·중복 항목과 topology 제약이 있습니다.
+
+| 모델 규모 | 119 GiB/device 예산 | 80 GB/device 예산 | 141 GB/device 예산 |
 | --- | ---: | ---: | ---: |
-| 30B | 3.8 | 6.1 | 3.5 |
-| 100B | 12.5 | 20.0 | 11.3 |
-| 500B | 62.6 | 100.0 | 56.7 |
-| 1T | 125.2 | 200.0 | 113.5 |
+| 30.5B | 4 | 7 | 4 |
+| 100B | 13 | 20 | 12 |
+| 500B | 63 | 100 | 57 |
+| 1T | 126 | 200 | 114 |
 
-### 읽는 방법
+### Limits of the Estimate
 
-- **Tuning 방법이 checkpoint 크기를 3자리수 바꿉니다.** 1T에서 full-state checkpoint는 12.73 TiB, 같은 모델의 LoRA adapter는 13.04 GiB로 약 1,000배 차이입니다. 저장 주기·보존 개수·복구 시간 설계는 모델 크기보다 tuning 방법에 먼저 좌우됩니다.
-- **Optimizer가 full FT 비용의 75%입니다.** 16 bytes 중 12가 Adam state이므로, optimizer state를 어디에 두느냐(device / CPU / NVMe)가 "이 모델이 들어가는가"를 사실상 결정합니다. 30B에서 NVMe offload로 CUDA peak가 6.4 GB까지 내려간 것이 이 구조 때문입니다.
-- **1T full FT는 이 계산만으로도 100 GPU급입니다.** 위 표는 활성화·통신 버퍼·CUDA context를 뺀 하한이므로 실제로는 더 듭니다. 반면 1T LoRA의 학습 state는 1.83 TiB로, 대부분이 frozen weight라 offload·sharding 전략의 선택지가 훨씬 넓습니다.
-- **Sequence length는 위 표에 없습니다.** 30B LoRA 실측에서 length를 4096 → 8192로 늘렸을 때 CUDA peak가 39.5 GB → 57.6 GB(약 +46%)였습니다. 이 증가분은 parameter 수와 무관한 activation 비용이라 위 곱셈에 포함되지 않습니다.
+Activation, MoE routing·communication buffer, workspace, CUDA context와 allocator 여유분은 제외했습니다. BF16 gradient 대신 FP32 gradient를 유지하면 full FT에서 parameter당 2 bytes가 추가됩니다. Spark의 119 GiB도 CPU와 공유하는 예산이므로 실제 GPU 전용 여유 공간과 같지 않습니다.
 
-### 이 추정이 담지 않는 것
-
-Activation(길이·batch·recompute 정책에 좌우), MoE routing 내부 버퍼, CUDA context와 allocator 단편화, NCCL 통신 버퍼, framework workspace는 모두 빠져 있습니다.
-[메모리 추정기](#estimate-memory-before-running)가 30B 실측 대비 최대 -11%로 낮게 나온 것도 같은 이유이며, 규모가 커질수록 이 누락분의 절대값도 함께 커집니다.
-따라서 위 숫자는 **하한이자 규모 감각**이며, 특정 구성이 실제로 들어가는지는 해당 규모에서 실행해 확인해야 합니다.
-이 앵커 자체도 Qwen3-30B-A3B 하나에서만 검증됐습니다 — [Qwen vs GLM 비교](#qwen-vs-glm-방법론이-일반화되는가)에서 weight·optimizer 비용과 sequence length 기울기는 모델이 달라도 같았지만(후자는 attention backend를 맞췄을 때), LoRA target module 배수와 로딩 시 host memory 배수는 모델마다 달랐습니다.
+Sequence length 효과는 별도입니다. Qwen의 4096→8192 CUDA peak는 `local`에서 +45.8%, `transformer_engine`에서 +12.6%였습니다. 이 관측값을 모든 규모에 일정 배수로 적용하지 않습니다. 새 모델에서는 실제 target module·optimizer·attention 구현과 loading peak를 확인한 뒤 [메모리 추정기](#estimate-memory-before-running)와 pilot으로 실행 가능성을 판단합니다.
 
 ## Repeated Megatron Measurements
 
@@ -556,6 +604,16 @@ Cell 이름의 checkpoint interval 16/32는 유지되지만 실제 interval은 �
 
 ## Read the Outputs
 
+| 확인할 질문 | 기록 위치 | 읽는 방법 |
+| --- | --- | --- |
+| 개별 실행이 성공했는가? | `runs/<run>/manifest.json`의 `status`, `ranks` | 각 rank 종료 상태부터 확인. 실패·pilot·warmup을 측정 median에 섞지 않음 |
+| Checkpoint 반복 결과는? | 최상위 `manifest.json`의 `checkpoint_summary.<variant>` | `run_count`, `save_call_seconds_median`, `logical_checkpoint_bytes_median`, rMAD 확인 |
+| Save와 finalization을 따로 보려면? | 각 record의 `metrics`, `measurements/rank-<rank>-train.jsonl` | Save는 rank별 호출 합, finalization은 별도 blocking 호출 합. 누락된 값은 0으로 대체하지 않음 |
+| Read가 정말 cold였는가? | record의 `post_run.ranks`, `post_run.aggregate.reads` | `rank_classifications`와 physical/logical bytes를 함께 확인. cold 요청 성공만으로 실제 eviction을 단정하지 않음 |
+| Memory condition의 값은? | Memory manifest의 `records[].resources`, `metrics_by_rank` 또는 `trl_summary` | `condition`, `pilot`, `status`로 실행을 고른 뒤 동일 rank 집계 방식으로 비교 |
+
+`run_count`는 post-run probe가 있는 성공한 measured run 수입니다. 개별 metric 누락 여부는 원본 record에서 추가로 확인합니다. `extend_to_eight_runs=true`는 추가 반복 권고이며 자동 실행 기능은 아닙니다.
+
 출력에는 계획·실행 설정, manifest, rank 로그, measurement JSONL과 `records.jsonl`이 남습니다.
 기록은 성공·실패·생략을 포함하며 정상 종료·예상 step 수·finite 값 검사를 통과한 measured run만 비교합니다.
 Warmup 성공은 측정 반복 수에 포함하지 않습니다.
@@ -568,3 +626,4 @@ Warmup 성공은 측정 반복 수에 포함하지 않습니다.
 - Async background I/O의 자원 경쟁이 학습 시간에 영향을 줄 수 있습니다.
 
 반복 결과는 각 실행의 manifest와 `records.jsonl`에서 판정하며 과거 run log를 저장소에 복제해 보관하지 않습니다.
+

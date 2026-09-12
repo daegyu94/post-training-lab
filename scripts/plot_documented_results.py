@@ -55,7 +55,7 @@ def main():
                          "svg.hashsalt": "post-training-results", "figure.facecolor": "white"})
     doc = ROOT / "docs/experiments.md"
 
-    rows = table(doc, "#### Memory footprint")
+    rows = table(doc, "#### Memory Footprint")
     assert len(rows) == 5
     fig, ax = plt.subplots(figsize=(9, 5.2))
     labels = ["Megatron LoRA\n4096 tokens", "Megatron LoRA\n8192 tokens",
@@ -68,16 +68,16 @@ def main():
     ax.grid(axis="x", alpha=0.2)
     ax.set_axisbelow(True)
     ax.spines[["top", "right"]].set_visible(False)
-    save(fig, args.output_dir, "memory-footprint", "30B CUDA memory footprint",
-         "Peak CUDA memory allocated; medians of 3 runs per condition.\n"
+    save(fig, args.output_dir, "memory-footprint", "Qwen3-30B-A3B CUDA memory footprint",
+         "Peak CUDA memory allocated; medians of 3 runs. Megatron attention: local.\n"
          "Workloads differ by framework, tuning mode, and sequence length; compare only matching conditions.")
 
-    rows = table(doc, "### LoRA trainable-ratio가 checkpoint I/O에 미치는 영향")
+    rows = table(doc, "### LoRA Ratio and Checkpoint I/O")
     assert [int(r[1]) for r in rows] == [25, 126, 251]
     measured_x = [number(r[2]) for r in rows]
     display_x = [0.1, 0.5, 1.0]
     fig, axes = plt.subplots(1, 2, figsize=(10, 4.8))
-    for ax, column, title, unit, color in zip(axes, [3, 4], ["Checkpoint size", "Save host-call time"], ["MB", "Seconds"], [BLUE, ORANGE]):
+    for ax, column, title, unit, color in zip(axes, [3, 4], ["Checkpoint size", "Save calls per run (sum)"], ["MB", "Seconds"], [BLUE, ORANGE]):
         values = [number(r[column]) for r in rows]
         ax.plot(display_x, values, "o-", color=color, linewidth=1.8, markersize=6)
         for xv, yv in zip(display_x, values):
@@ -89,10 +89,11 @@ def main():
         ax.grid(alpha=0.2)
         ax.spines[["top", "right"]].set_visible(False)
     save(fig, args.output_dir, "lora-ratio-checkpoint", "LoRA parameter ratio and checkpoint I/O",
-         "Sync only; medians of 3 measured runs per condition; LORA_DIM = 25 / 126 / 251.\n"
+         "Sync only; 3-run medians. Size: latest checkpoint. Time: max rank sum of save calls per run.\n"
          "The x-axis shows target ratios; measured ratios were "
          + " / ".join(f"{value:.4f}%" for value in measured_x) + ".\n"
          "Ratios use the rank-local shard reference, not the full 30B model. Lines connect measured points.")
 
 if __name__ == "__main__":
     main()
+
