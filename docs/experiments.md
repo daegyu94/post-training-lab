@@ -323,14 +323,39 @@ Peak allocated는 Qwen TRL DDP LoRA(58.825 GiB)보다 **약 1.7% 낮았습니다
 
 | 조건 | Qwen CUDA / host | GLM CUDA / host | CUDA 차이 |
 | --- | ---: | ---: | ---: |
-| `LEN-4096`(Megatron LoRA) | 39.5 / 53.7 GB | 34.54 / 48.65 GB | −12.6% |
-| `LEN-8192`(Megatron LoRA) | 57.6 / 72.6 GB | 38.94 / 57.30 GB | −32.4% |
+| `LEN-4096`(Megatron LoRA) | 39.5 / 53.7 GB | 34.54 / 48.65 GB | −12.6% ⚠ |
+| `LEN-8192`(Megatron LoRA) | 57.6 / 72.6 GB | 38.94 / 57.30 GB | −32.4% ⚠ |
 | `MEM-TRL-DDP` | 59.8 / 69.7 GB | 58.24 / 109.50 GB | −2.6% (host는 +57%) |
 | `MEM-TRL-Z3-NVME` | 6.4 / 91.8 GB | 7.27 / 85.88 GB | +13.6% |
 | `MEM-TRL-FSDP2` | 34.1 / 104.0 GB(통과) | **3/3 실패**(아래) | — |
 
-**Sequence length 기울기가 다릅니다.** Qwen은 4096→8192에서 CUDA peak가 +45.8%(39.5→57.6 GB) 증가했지만, GLM은 같은 구간에서 **+12.7%(34.54→38.94 GB)만** 증가했습니다.
-GLM의 MoE·multi-head latent attention 구조가 KV state를 압축해 sequence length에 따른 activation 증가가 Qwen의 GQA보다 완만할 가능성이 있지만, 이 실험은 CUDA peak 값만 측정했고 activation 내부를 추적하지 않았으므로 **가설로만 남깁니다.**
+⚠ 두 `LEN-*` 행은 attention backend가 서로 다릅니다(Qwen `local`, GLM `transformer_engine`). 모델 차이로 읽으면 안 되며, 통제된 비교는 [아래 대조 실험](#sequence-length-기울기)을 따릅니다.
+
+<a id="sequence-length-기울기"></a>
+
+**Sequence length 기울기 차이는 모델이 아니라 attention 구현 때문입니다.**
+표면적으로 Qwen은 4096→8192에서 CUDA peak가 +45.8%(39.5→57.6 GB), GLM은 +12.7%(34.54→38.94 GB)만 증가해 아키텍처 차이처럼 보입니다.
+하지만 두 측정은 **애초에 같은 attention 경로가 아니었습니다** — `megatron_lab/config.py`의 `select_transformer_impl()`은 `TRANSFORMER_IMPL=auto`를 family별로 다르게 해석합니다.
+
+```python
+selected = ("transformer_engine" if requested == "auto" and family == "glm4_moe_lite"
+            else "local" if requested == "auto" else requested)
+```
+
+즉 Qwen은 `local`, GLM은 `transformer_engine`으로 측정됐습니다(GLM은 MLA provider 제약으로 `local`을 아예 거부합니다).
+Qwen만 backend를 바꿔 같은 조건으로 다시 측정한 결과입니다.
+
+| 조건 | 4096 | 8192 | 기울기 |
+| --- | ---: | ---: | ---: |
+| Qwen + `local`(기존 측정) | 39.5 GB | 57.6 GB | **+45.8%** |
+| Qwen + `transformer_engine`(대조 실험) | 36.85 GB | 41.51 GB | **+12.6%** |
+| GLM + `transformer_engine` | 34.54 GB | 38.94 GB | **+12.7%** |
+
+**같은 backend에서 두 모델의 기울기는 +12.6% vs +12.7%로 사실상 동일합니다.**
+따라서 원래 세웠던 "GLM의 MLA가 KV를 압축해 완만하다"는 가설은 **기각됩니다** — 차이를 만든 것은 Megatron `local` 경로가 attention 행렬을 materialize해 sequence length에 제곱으로 증가하는 항을 남기는 반면, Transformer Engine의 fused attention은 그렇지 않다는 점입니다.
+
+이 비교에서 배운 운영상의 교훈은 모델 비교 자체보다 큽니다: `auto`처럼 **입력에 따라 조용히 다른 구현을 고르는 설정은 A/B 비교의 통제 변수를 깨뜨립니다.**
+아래 memory footprint 표의 `LEN-*` 행도 Qwen은 `local`, GLM은 `transformer_engine` 측정이므로 두 값을 모델 차이로 읽으면 안 됩니다.
 
 **TRL DDP의 host memory pressure 차이는 가중치 로딩 구간에서 전부 발생합니다.**
 CUDA peak는 Qwen과 GLM이 거의 같은데(59.8 vs 58.24 GB) host pressure는 GLM이 57% 높습니다(109.50 vs 69.7 GB).
@@ -404,13 +429,16 @@ Qwen은 fused QKV 1개 + proj 1개(2종류), GLM은 MLA의 Q/KV down·up project
 
 | 일반화됨(정성적으로 같은 방향) | 일반화 안 됨(모델·아키텍처 의존) |
 | --- | --- |
-| Async checkpoint가 sync보다 빠름 | Sequence length에 따른 activation 증가율(Qwen +45.8% vs GLM +12.7%) |
+| Async checkpoint가 sync보다 빠름 | ~~Sequence length 증가율~~ → 같은 backend에서는 동일(+12.6% vs +12.7%), 차이는 모델이 아니라 attention 구현이었음 |
 | Checkpoint 크기 ∝ trainable parameter 수(선형) | 같은 `lora_dim`에서의 절대 trainable parameter 수(target module 구성 차이) |
-| Train/tuned eval_loss 일치 → adapter 재로딩 신뢰성 | FSDP2 지원 여부(Qwen 통과, GLM 구조적 실패) |
-| — | TRL DDP의 host memory pressure(원인 미상) |
+| Train/tuned eval_loss 일치 → adapter 재로딩 신뢰성 | FSDP2 사용 가능 여부 — 단 원인은 모델이 아니라 persistent buffer를 만난 accelerate 경로 |
+| — | 가중치 로딩 구간의 host memory 배수(Qwen ×1.12 vs GLM ×1.81) |
 
 [Scaling Estimates](#scaling-estimates-100b-to-1t)의 parameter당 고정 비용(weight 2 + gradient 2 + Adam 12 bytes)은 optimizer·저장 방식에서 나오므로 모델 아키텍처와 무관하게 일반화될 가능성이 높습니다.
-반면 activation 비용과 LoRA target module 배수는 이번 비교처럼 **모델마다 실측해야 하는 값**이며, Qwen 하나의 anchor로 만든 추정을 다른 아키텍처에 그대로 적용해서는 안 됩니다.
+Activation 비용도 **backend를 고정하면 두 모델이 같은 기울기**를 보였으므로(+12.6% vs +12.7%), 아키텍처보다 attention 구현이 지배적인 변수입니다.
+남는 모델 의존 항목은 LoRA target module 구성에 따른 trainable parameter 배수와 가중치 로딩 시 host memory 배수이며, 이 둘은 새 모델마다 실측해야 합니다.
+
+이번 조사에서 가장 재사용성이 높은 교훈은 방법론 쪽입니다 — **모델 A에서 관측한 차이를 모델 B의 속성으로 귀속하기 전에, 두 실행이 정말 같은 구현 경로였는지 먼저 확인해야 합니다.** 여기서는 `TRANSFORMER_IMPL=auto`가 모델별로 다른 backend를 조용히 선택하고 있었고, 그 사실을 확인하기 전까지는 backend 차이가 아키텍처 차이로 보였습니다.
 
 ## Scaling Estimates: 100B to 1T
 
@@ -464,7 +492,7 @@ Full fine-tuning은 `2+2+12 = 16 bytes/param`, LoRA(trainable 0.1% 가정)는 fr
 Activation(길이·batch·recompute 정책에 좌우), MoE routing 내부 버퍼, CUDA context와 allocator 단편화, NCCL 통신 버퍼, framework workspace는 모두 빠져 있습니다.
 [메모리 추정기](#estimate-memory-before-running)가 30B 실측 대비 최대 -11%로 낮게 나온 것도 같은 이유이며, 규모가 커질수록 이 누락분의 절대값도 함께 커집니다.
 따라서 위 숫자는 **하한이자 규모 감각**이며, 특정 구성이 실제로 들어가는지는 해당 규모에서 실행해 확인해야 합니다.
-이 앵커 자체도 Qwen3-30B-A3B 하나에서만 검증됐습니다 — [Qwen vs GLM 비교](#qwen-vs-glm-방법론이-일반화되는가)에서 확인했듯 weight·optimizer 비용(parameter당 고정 bytes)은 아키텍처와 무관해 보이지만, activation 비용과 LoRA target module 배수는 모델마다 달라 이 추정을 다른 아키텍처에 그대로 적용할 근거는 아직 없습니다.
+이 앵커 자체도 Qwen3-30B-A3B 하나에서만 검증됐습니다 — [Qwen vs GLM 비교](#qwen-vs-glm-방법론이-일반화되는가)에서 weight·optimizer 비용과 sequence length 기울기는 모델이 달라도 같았지만(후자는 attention backend를 맞췄을 때), LoRA target module 배수와 로딩 시 host memory 배수는 모델마다 달랐습니다.
 
 ## Repeated Megatron Measurements
 
