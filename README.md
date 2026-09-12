@@ -22,7 +22,6 @@ Controller에는 Python 3.10 이상과 Git이, 학습에는 준비된 Spark 노�
 
 실습:
 [30B NVMe data movement](labs/nvme-30b/README.md) — ZeRO-3 NVMe offload와 Megatron checkpoint I/O.
-[Sandbox resource limits](labs/sandbox-resource-limits/README.md) — cgroup v2 CPU·memory 상한과 unified memory 한계.
 
 디렉터리별 책임과 각 경로가 포함하지 않는 책임은 [Architecture](docs/architecture.md#responsibilities)에 있습니다.
 
