@@ -32,6 +32,18 @@ def test_spark_dashboards_have_unique_uids_and_shared_cluster_filter() -> None:
         )
     assert "${node:queryparam}" in payloads[0]["links"][0]["url"]
     assert "${run_id:queryparam}" in payloads[2]["links"][0]["url"]
+    storage_variables = {item["name"] for item in payloads[2]["templating"]["list"]}
+    assert {"storage_system", "storage_node", "ssd"} <= storage_variables
+    storage_titles = {panel["title"] for panel in payloads[2]["panels"]}
+    assert {
+        "SSDs with critical warnings",
+        "Maximum SSD temperature",
+        "Maximum endurance used",
+        "Minimum available spare",
+        "NVMe media errors",
+        "Lifetime host bytes written by SSD",
+        "SSD inventory and SMART status",
+    } <= storage_titles
     matrix = payloads[1]["panels"][0]
     assert "profiling_gpu_sample_timestamp_seconds" in matrix["targets"][0]["expr"]
     assert matrix["transformations"][0]["options"]["rowField"] == "node"
@@ -42,6 +54,8 @@ def test_server_config_accepts_an_arbitrary_named_target_list(tmp_path: Path) ->
     environment = os.environ | {
         "CLUSTER_NAME": "next-cluster",
         "SPARK_TARGETS": "trainer-0=10.0.0.10,rollout-0=rollout.example",
+        "STORAGE_TARGETS": "storage-0=10.0.1.10,storage-1=storage.example",
+        "STORAGE_SYSTEM": "3fs",
         "SERVER_CONFIG_ONLY": "1",
         "OUTPUT_DIR": str(tmp_path / "monitoring"),
     }
@@ -62,6 +76,11 @@ def test_server_config_accepts_an_arbitrary_named_target_list(tmp_path: Path) ->
     assert "cluster: next-cluster" in config
     assert "nodename: trainer-0" in config
     assert "nodename: rollout-0" in config
+    assert "job_name: storage-smart" in config
+    assert "targets: ['10.0.1.10:19633']" in config
+    assert "targets: ['storage.example:19633']" in config
+    assert "storage_system: 3fs" in config
+    assert "nodename: storage-0" in config
     assert {
         path.name for path in (tmp_path / "monitoring" / "dashboards").iterdir()
     } == set(DASHBOARDS)
@@ -86,6 +105,40 @@ def test_server_config_rejects_duplicate_target_names(tmp_path: Path) -> None:
 
     assert result.returncode == 2
     assert "node names must be unique" in result.stderr
+
+
+def test_storage_role_starts_smartctl_exporter_with_slow_polling(tmp_path: Path) -> None:
+    script = ROOT / "observability" / "scripts" / "run_spark_observability.sh"
+    smartctl = tmp_path / "smartctl"
+    exporter = tmp_path / "smartctl_exporter"
+    arguments = tmp_path / "arguments.txt"
+    smartctl.write_text("#!/usr/bin/env bash\nexit 0\n")
+    exporter.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$EXPORTER_ARGS"\n')
+    smartctl.chmod(0o755)
+    exporter.chmod(0o755)
+    environment = os.environ | {
+        "NODE_ADDR": "127.0.0.1",
+        "SMARTCTL": str(smartctl),
+        "SMARTCTL_EXPORTER": str(exporter),
+        "EXPORTER_ARGS": str(arguments),
+        "OUTPUT_DIR": str(tmp_path / "monitoring"),
+    }
+
+    result = subprocess.run(
+        ["bash", str(script), "storage"],
+        cwd=ROOT,
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert arguments.read_text().splitlines() == [
+        f"--smartctl.path={smartctl}",
+        "--smartctl.interval=60s",
+        "--web.listen-address=127.0.0.1:19633",
+    ]
 
 
 def test_dashboards_keep_matrix_and_freshness_scopes_separate() -> None:

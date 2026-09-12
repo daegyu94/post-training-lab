@@ -292,6 +292,411 @@
           }
         }
       ]
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "SSDs with critical warnings",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 32
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "spark-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(smartctl_device_critical_warning{job=\"storage-smart\",cluster=~\"$cluster\",storage_system=~\"$storage_system\",instance=~\"$storage_node\",device=~\"$ssd\"} != 0)",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "description": "Number of selected SSDs whose NVMe critical-warning bitmask is non-zero."
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Maximum SSD temperature",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 32
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "spark-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(smartctl_device_temperature{job=\"storage-smart\",cluster=~\"$cluster\",storage_system=~\"$storage_system\",instance=~\"$storage_node\",device=~\"$ssd\",temperature_type=\"current\"})",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Maximum endurance used",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 32
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "spark-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(smartctl_device_percentage_used{job=\"storage-smart\",cluster=~\"$cluster\",storage_system=~\"$storage_system\",instance=~\"$storage_node\",device=~\"$ssd\"})",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "description": "Vendor-estimated NVMe endurance consumed. It is coarse and may update only once per power-on hour."
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Minimum available spare",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 32
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "spark-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "min(smartctl_device_available_spare{job=\"storage-smart\",cluster=~\"$cluster\",storage_system=~\"$storage_system\",instance=~\"$storage_node\",device=~\"$ssd\"})",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "green",
+                "value": 20
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "SSD temperature",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 36
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "spark-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "smartctl_device_temperature{job=\"storage-smart\",cluster=~\"$cluster\",storage_system=~\"$storage_system\",instance=~\"$storage_node\",device=~\"$ssd\",temperature_type=\"current\"}",
+          "legendFormat": "{{storage_system}}/{{instance}} {{device}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "SSD endurance and available spare",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 36
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "spark-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "smartctl_device_percentage_used{job=\"storage-smart\",cluster=~\"$cluster\",storage_system=~\"$storage_system\",instance=~\"$storage_node\",device=~\"$ssd\"}",
+          "legendFormat": "{{storage_system}}/{{instance}} {{device}} used"
+        },
+        {
+          "refId": "B",
+          "expr": "smartctl_device_available_spare{job=\"storage-smart\",cluster=~\"$cluster\",storage_system=~\"$storage_system\",instance=~\"$storage_node\",device=~\"$ssd\"}",
+          "legendFormat": "{{storage_system}}/{{instance}} {{device}} spare"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "NVMe media errors",
+      "description": "Lifetime unrecovered media-error counters. Any increase requires investigation.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 44
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "spark-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "smartctl_device_media_errors{job=\"storage-smart\",cluster=~\"$cluster\",storage_system=~\"$storage_system\",instance=~\"$storage_node\",device=~\"$ssd\"}",
+          "legendFormat": "{{storage_system}}/{{instance}} {{device}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "type": "bargauge",
+      "title": "Lifetime host bytes written by SSD",
+      "description": "Host writes reported by the device. This does not include internal NAND writes from garbage collection or wear leveling.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 44
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "spark-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "smartctl_device_bytes_written{job=\"storage-smart\",cluster=~\"$cluster\",storage_system=~\"$storage_system\",instance=~\"$storage_node\",device=~\"$ssd\"}",
+          "legendFormat": "{{storage_system}}/{{instance}} {{device}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0,
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "showUnfilled": true
+      }
+    },
+    {
+      "id": 17,
+      "type": "table",
+      "title": "SSD inventory and SMART status",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 52
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "spark-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by (cluster, storage_system, instance, device, protocol, model_name, firmware_version) (smartctl_device{job=\"storage-smart\",cluster=~\"$cluster\",storage_system=~\"$storage_system\",instance=~\"$storage_node\",device=~\"$ssd\"})",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "smartctl_device_smart_status{job=\"storage-smart\",cluster=~\"$cluster\",storage_system=~\"$storage_system\",instance=~\"$storage_node\",device=~\"$ssd\"}",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "smartctl_device_smartctl_exit_status{job=\"storage-smart\",cluster=~\"$cluster\",storage_system=~\"$storage_system\",instance=~\"$storage_node\",device=~\"$ssd\"}",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      },
+      "description": "Device identity omits the serial-number label. SMART status 1 means passed; smartctl exit status 0 means collection succeeded."
     }
   ],
   "refresh": "5s",
@@ -389,6 +794,69 @@
         "refresh": 2
       },
       {
+        "name": "storage_system",
+        "label": "Storage system",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "spark-prometheus"
+        },
+        "definition": "label_values(up{job=\"storage-smart\", cluster=~\"$cluster\"}, storage_system)",
+        "query": "label_values(up{job=\"storage-smart\", cluster=~\"$cluster\"}, storage_system)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "refresh": 2
+      },
+      {
+        "name": "storage_node",
+        "label": "Storage node",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "spark-prometheus"
+        },
+        "definition": "label_values(up{job=\"storage-smart\", cluster=~\"$cluster\", storage_system=~\"$storage_system\"}, instance)",
+        "query": "label_values(up{job=\"storage-smart\", cluster=~\"$cluster\", storage_system=~\"$storage_system\"}, instance)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "refresh": 2
+      },
+      {
+        "name": "ssd",
+        "label": "SSD",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "spark-prometheus"
+        },
+        "definition": "label_values(smartctl_device{job=\"storage-smart\", cluster=~\"$cluster\", storage_system=~\"$storage_system\", instance=~\"$storage_node\"}, device)",
+        "query": "label_values(smartctl_device{job=\"storage-smart\", cluster=~\"$cluster\", storage_system=~\"$storage_system\", instance=~\"$storage_node\"}, device)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "refresh": 2
+      },
+      {
         "name": "run_id",
         "label": "Run",
         "type": "query",
@@ -418,5 +886,5 @@
   "timezone": "browser",
   "title": "Post-Training Data & Storage",
   "uid": "post-training-data-storage",
-  "version": 2
+  "version": 3
 }

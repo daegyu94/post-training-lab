@@ -6,7 +6,7 @@ tools_dir="${TOOLS_DIR:-$HOME/.local/share/profiling-lab-tools}"
 output_dir="${OUTPUT_DIR:-$PWD/artifacts/spark/monitoring-$(hostname)}"
 mkdir -p "$output_dir"
 output_dir="$(cd "$output_dir" && pwd)"
-role="${1:?Use node or server}"
+role="${1:?Use node, storage, or server}"
 pids=()
 cleanup() {
   trap - EXIT INT TERM
@@ -17,6 +17,25 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
+start_smartctl_exporter() {
+  : "${NODE_ADDR:?Set NODE_ADDR to this storage node management address}"
+  local exporter smartctl_path
+  exporter="${SMARTCTL_EXPORTER:-$tools_dir/smartctl_exporter-0.14.0.linux-arm64/smartctl_exporter}"
+  if [[ ! -x "$exporter" ]]; then
+    echo "smartctl_exporter not found or not executable: $exporter" >&2
+    exit 1
+  fi
+  if ! smartctl_path="$(command -v "${SMARTCTL:-smartctl}")"; then
+    echo "smartctl is required for SSD health collection" >&2
+    exit 1
+  fi
+  "$exporter" \
+    --smartctl.path="$smartctl_path" \
+    --smartctl.interval="${SMARTCTL_INTERVAL:-60s}" \
+    --web.listen-address="$NODE_ADDR:${SMARTCTL_PORT:-19633}" \
+    > "$output_dir/smartctl-exporter.log" 2>&1 &
+  pids+=("$!")
+}
 if [[ "$role" == node ]]; then
   : "${NODE_ADDR:?Set NODE_ADDR to this node management address}"
   mkdir -p "$output_dir/textfile"
@@ -24,6 +43,9 @@ if [[ "$role" == node ]]; then
     --web.listen-address="$NODE_ADDR:19100" \
     --collector.textfile.directory="$output_dir/textfile" > "$output_dir/node-exporter.log" 2>&1 &
   pids+=("$!")
+  if [[ "${ENABLE_SSD_HEALTH:-0}" == 1 ]]; then
+    start_smartctl_exporter
+  fi
   "${PYTHON:-python3}" -m profiling_lab.spark_telemetry \
     --output "$output_dir/gpu-$(date -u +%Y%m%dT%H%M%S).jsonl" \
     --textfile-dir "$output_dir/textfile" --duration "${DURATION:-900}" &
@@ -40,6 +62,8 @@ if [[ "$role" == node ]]; then
       --interval "${TOPOLOGY_INTERVAL:-10}" &
     pids+=("$!")
   fi
+elif [[ "$role" == storage ]]; then
+  start_smartctl_exporter
 elif [[ "$role" == server ]]; then
   cluster_name="${CLUSTER_NAME:-spark-cluster}"
   if [[ ! "$cluster_name" =~ ^[A-Za-z0-9_.-]+$ ]]; then
@@ -86,6 +110,45 @@ EOF
       - source_labels: [nodename]
         target_label: instance
 EOF
+  if [[ -n "${STORAGE_TARGETS:-}" ]]; then
+    storage_system="${STORAGE_SYSTEM:-local}"
+    if [[ ! "$storage_system" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+      echo "STORAGE_SYSTEM must contain only letters, digits, dots, underscores, or hyphens" >&2
+      exit 2
+    fi
+    IFS=',' read -r -a storage_targets <<< "$STORAGE_TARGETS"
+    cat >> "$output_dir/prometheus.yml" <<EOF
+  - job_name: storage-smart
+    scrape_interval: 60s
+    static_configs:
+EOF
+    seen_storage_nodes=""
+    for target in "${storage_targets[@]}"; do
+      node="${target%%=*}"
+      address="${target#*=}"
+      if [[ "$node" == "$target" || ! "$node" =~ ^[A-Za-z0-9_.-]+$ || ! "$address" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+        echo "STORAGE_TARGETS entries must be node=address with letters, digits, dots, underscores, or hyphens" >&2
+        exit 2
+      fi
+      if [[ " $seen_storage_nodes " == *" $node "* ]]; then
+        echo "STORAGE_TARGETS node names must be unique: $node" >&2
+        exit 2
+      fi
+      seen_storage_nodes+=" $node"
+      cat >> "$output_dir/prometheus.yml" <<EOF
+      - targets: ['$address:${SMARTCTL_PORT:-19633}']
+        labels:
+          cluster: $cluster_name
+          nodename: $node
+          storage_system: $storage_system
+EOF
+    done
+    cat >> "$output_dir/prometheus.yml" <<EOF
+    relabel_configs:
+      - source_labels: [nodename]
+        target_label: instance
+EOF
+  fi
   cat > "$output_dir/provisioning/datasources/default.yaml" <<EOF
 apiVersion: 1
 datasources:
@@ -121,7 +184,7 @@ EOF
     --homepath="$tools_dir/grafana-v12.1.0" > "$output_dir/grafana.log" 2>&1 &
   pids+=("$!")
 else
-  echo 'Use node or server' >&2
+  echo 'Use node, storage, or server' >&2
   exit 2
 fi
 # Exit and clean up siblings when one service exits; external timeout bounds the lab.

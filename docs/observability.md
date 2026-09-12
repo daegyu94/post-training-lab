@@ -56,7 +56,7 @@ ssh -NT -L 13000:127.0.0.1:13000 -J <user>@<controller-ssh-alias> spark@spark1
 
 - Run Overview(`spark-resources.json`, uid `spark-profiling`): 실행 진행·GPU 행렬
 - Compute & Communication: GPU health·rank timer·인터페이스 통신
-- Data & Storage: node-local device·filesystem
+- Data & Storage: node-local device·filesystem 성능과 선택적 storage-node SSD health
 
 화면 링크는 시간·cluster·node·run 선택을 유지합니다.
 같은 경로의 `grafana/`와 `compose.yaml`은 별도 Docker Compose 예시이며 이 ARM64 경로에서는 쓰지 않습니다.
@@ -68,6 +68,78 @@ ssh -NT -L 13000:127.0.0.1:13000 -J <user>@<controller-ssh-alias> spark@spark1
 - GPU 행렬은 sampler가 보고한 index와 utilization이며 allocation이 아닙니다.
 - 통신 패널은 interface·RDMA port counter이고 endpoint 쌍별 traffic matrix가 아닙니다.
 - Data & Storage의 device·filesystem 지표를 특정 run의 단독 사용량으로 읽지 않습니다.
+
+### SSD Health
+
+SSD health는 실험별 write attribution이 아니라 장치 이상과 장기 열화를 확인하는 선택 기능입니다.
+`smartctl_exporter`는 기본 설치 스크립트에 포함되지만 `smartctl`은 운영체제의 `smartmontools` package로 설치해야 합니다.
+장치 SMART 조회 권한도 별도로 필요합니다.
+
+실제 SSD가 장착된 노드에서 health 수집을 활성화합니다.
+로컬 SSD라면 기존 Spark node role에 함께 실행합니다.
+
+```bash
+NODE_ADDR='<spark-node-management-address>' \
+ENABLE_SSD_HEALTH=1 \
+  bash scripts/run_spark_observability.sh node
+```
+
+3FS·pNFS처럼 storage node가 분리된 구성에서는 GPU sampler를 실행하지 않는 storage role을 각 storage node에서 사용합니다.
+ARM64 Spark 설치 스크립트가 맞지 않는 storage node에서는 `smartctl_exporter`를 따로 설치하고 `SMARTCTL_EXPORTER`에 실행 파일 경로를 지정합니다.
+
+```bash
+NODE_ADDR='<storage-node-management-address>' \
+SMARTCTL_EXPORTER='<smartctl-exporter-path>' \
+  bash scripts/run_spark_observability.sh storage
+```
+
+기본 exporter port는 19633이고 SMART 조회 주기는 60초입니다.
+필요하면 `SMARTCTL_PORT`, `SMARTCTL_INTERVAL`, `SMARTCTL_EXPORTER`, `SMARTCTL`을 지정합니다.
+짧은 scrape 주기를 사용해도 SSD firmware가 내부 SMART 값을 같은 주기로 갱신한다는 보장은 없습니다.
+
+Monitoring server에는 compute node와 별도로 storage target을 전달합니다.
+
+```bash
+CLUSTER_NAME='<cluster-name>' \
+SPARK_TARGETS='trainer-0=<trainer-address>,trainer-1=<trainer-address>' \
+STORAGE_SYSTEM='3fs' \
+STORAGE_TARGETS='storage-0=<storage-address>,storage-1=<storage-address>' \
+  bash scripts/run_spark_observability.sh server
+```
+
+`STORAGE_SYSTEM`은 `local`, `3fs`, `pnfs`처럼 배치를 식별하는 값입니다.
+Data & Storage dashboard는 `cluster → storage system → storage node → SSD` 순서로 필터링합니다.
+3FS의 replication과 pNFS의 data-server layout 때문에 client write와 개별 SSD write는 일대일로 대응하지 않으므로 health metric을 특정 run이나 client에 귀속하지 않습니다.
+Storage topology component·edge는 기존 `storage-topology.json`으로 공급하고, SMART 시계열의 `storage_node`와 topology component ID는 같은 이름을 사용합니다.
+
+Dashboard는 다음 값을 표시합니다.
+
+- NVMe critical warning과 SMART collection status
+- 현재 온도
+- vendor가 추정한 endurance percentage used
+- available spare
+- unrecovered media error 누계
+- 장치가 보고한 lifetime host bytes written
+
+`smartctl_device_bytes_written`은 host가 controller에 기록한 누계입니다.
+Garbage collection과 wear leveling에서 발생한 내부 NAND write는 포함하지 않으며 SSD write amplification으로 해석하지 않습니다.
+`percentage_used`는 짧은 실험에서 변하지 않을 수 있으므로 장기 추세에 사용합니다.
+
+Docker Compose 예시는 `targets/storage.json`을 읽습니다.
+기본 파일은 빈 목록이며 exporter를 배치한 뒤 다음처럼 target과 topology label을 추가합니다.
+
+```json
+[
+  {
+    "targets": ["storage-0.example:19633"],
+    "labels": {
+      "cluster": "spark-cluster",
+      "storage_system": "pnfs",
+      "instance": "storage-0"
+    }
+  }
+]
+```
 
 ## Live Framework Metrics
 
