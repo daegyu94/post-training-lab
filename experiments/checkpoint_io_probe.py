@@ -33,6 +33,42 @@ def shard_files(iteration_dir: Path) -> list[Path]:
     return files
 
 
+def latest_global_step(checkpoint_dir: Path) -> Path:
+    candidates = []
+    for path in checkpoint_dir.glob("global_step*"):
+        try:
+            step = int(path.name.removeprefix("global_step"))
+        except ValueError:
+            continue
+        if path.is_dir():
+            candidates.append((step, path))
+    if not candidates:
+        raise FileNotFoundError(f"no global_step checkpoint under {checkpoint_dir}")
+    return max(candidates)[1]
+
+
+def deepspeed_checkpoint_groups(step_dir: Path) -> dict[str, list[Path]]:
+    """Split a DeepSpeed ZeRO-3 NVMe checkpoint into its two distinct I/O paths.
+
+    `metadata` is the small per-rank state DeepSpeed always writes with
+    TorchCheckpointEngine.save() (torch.save, no fsync): shapes, RNG/scheduler
+    state and (with stage3_gather_16bit_weights_on_model_save=false) EMPTY
+    parameter tensors -- no weight bytes live here. `offloaded_tensors` only
+    exists when offload_optimizer.device is nvme: DeepSpeedEngine.save_checkpoint()
+    shutil.copytree()s the live optimizer NVMe swap folder into
+    global_step*/offloaded_tensors/rank<N>/ so the checkpoint owns its own copy.
+    There is no equivalent copy step for offload_param -- an NVMe-offloaded
+    parameter's real values live only in the runtime swap folder at the
+    configured nvme_path, not in this checkpoint tree, so restoring them is
+    reusing that runtime offload location rather than reading a checkpoint copy.
+    """
+    metadata = sorted(p for p in step_dir.glob("*.pt") if p.is_file())
+    offloaded = sorted(p for p in step_dir.glob("offloaded_tensors/**/*") if p.is_file())
+    if not metadata and not offloaded:
+        raise FileNotFoundError(f"no checkpoint files under {step_dir}")
+    return {"metadata": metadata, "offloaded_tensors": offloaded}
+
+
 def _device_reader(path: Path) -> tuple[str, Callable[[], dict[str, int]]]:
     device = os.stat(path).st_dev
     major_minor = f"{os.major(device)}:{os.minor(device)}"
@@ -133,16 +169,34 @@ def direct_read(
     }
 
 
-def run_probe(checkpoint_dir: Path, *, include_direct: bool = True) -> dict[str, object]:
-    iteration_dir = latest_iteration(checkpoint_dir)
-    files = shard_files(iteration_dir)
+def run_probe(checkpoint_dir: Path, *, include_direct: bool = True, layout: str = "megatron") -> dict[str, object]:
+    if layout == "megatron":
+        iteration_dir = latest_iteration(checkpoint_dir)
+        files = shard_files(iteration_dir)
+        iteration = int(iteration_dir.name.removeprefix("iter_"))
+        groups = {"shards": files}
+    elif layout == "deepspeed":
+        iteration_dir = latest_global_step(checkpoint_dir)
+        groups = deepspeed_checkpoint_groups(iteration_dir)
+        iteration = int(iteration_dir.name.removeprefix("global_step"))
+        files = groups["metadata"] + groups["offloaded_tensors"]
+    else:
+        raise ValueError(f"unknown layout: {layout}")
     major_minor, read_device = _device_reader(checkpoint_dir)
     inventory = {
-        "iteration": int(iteration_dir.name.removeprefix("iter_")),
+        "layout": layout,
+        "iteration": iteration,
         "directory": str(iteration_dir),
         "file_count": len(files),
         "logical_bytes": sum(path.stat().st_size for path in files),
         "allocated_bytes": sum(path.stat().st_blocks * 512 for path in files),
+        "groups": {
+            name: {
+                "file_count": len(paths),
+                "logical_bytes": sum(path.stat().st_size for path in paths),
+            }
+            for name, paths in groups.items()
+        },
         "files": [{"name": path.name, "bytes": path.stat().st_size} for path in files],
     }
     warm_after_write = buffered_read(files, read_device)
@@ -157,8 +211,12 @@ def run_probe(checkpoint_dir: Path, *, include_direct: bool = True) -> dict[str,
         "valid" if warm["physical_to_logical_ratio"] is not None and warm["physical_to_logical_ratio"] <= 0.1
         else "unexpected-cache-miss"
     )
+    scope = (
+        "raw local-shard read; not Megatron restore" if layout == "megatron"
+        else "raw checkpoint-file read; not deepspeed_load_checkpoint() restore"
+    )
     return {
-        "scope": "raw local-shard read; not Megatron restore",
+        "scope": scope,
         "device_major_minor": major_minor,
         "inventory": inventory,
         "reads": {
@@ -175,10 +233,11 @@ def main() -> None:
     parser.add_argument("--checkpoint-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--skip-direct", action="store_true")
+    parser.add_argument("--layout", choices=("megatron", "deepspeed"), default="megatron")
     args = parser.parse_args()
     if args.output.exists():
         raise SystemExit(f"refusing to overwrite output: {args.output}")
-    result = run_probe(args.checkpoint_dir, include_direct=not args.skip_direct)
+    result = run_probe(args.checkpoint_dir, include_direct=not args.skip_direct, layout=args.layout)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(result, sort_keys=True))

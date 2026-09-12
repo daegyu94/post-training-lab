@@ -130,6 +130,42 @@ def summarize_resources(lines: list[str]) -> dict[str, Any]:
     }
 
 
+def summarize_resources_window(lines: list[str], start_wall_ns: int, end_wall_ns: int) -> dict[str, Any]:
+    """Same device-byte accounting as summarize_resources but restricted to the
+    samples whose wall_time_ns falls inside [start_wall_ns, end_wall_ns]. Used to
+    isolate a checkpoint save/restore call's device I/O from the rest of a run's
+    (e.g. DeepSpeed NVMe parameter/optimizer offload) traffic on the same device.
+    The 0.2s default sampler interval cannot resolve a window shorter than that;
+    such windows are reported with insufficient_resolution=True instead of a
+    fabricated rate."""
+    samples = [json.loads(line) for line in lines if line.strip()]
+    windowed = [item for item in samples if start_wall_ns <= item["wall_time_ns"] <= end_wall_ns]
+    if len(windowed) < 2:
+        return {
+            "sample_count": len(windowed),
+            "window_seconds": (end_wall_ns - start_wall_ns) / 1e9,
+            "insufficient_resolution": True,
+            "device_read_bytes_delta": None,
+            "device_write_bytes_delta": None,
+            "device_read_bytes_per_second": None,
+            "device_write_bytes_per_second": None,
+        }
+    first, last = windowed[0], windowed[-1]
+    elapsed = (last["wall_time_ns"] - first["wall_time_ns"]) / 1e9
+    read_bytes = last["read_bytes"] - first["read_bytes"]
+    write_bytes = last["write_bytes"] - first["write_bytes"]
+    return {
+        "sample_count": len(windowed),
+        "window_seconds": (end_wall_ns - start_wall_ns) / 1e9,
+        "insufficient_resolution": False,
+        "elapsed_seconds": elapsed,
+        "device_read_bytes_delta": read_bytes,
+        "device_write_bytes_delta": write_bytes,
+        "device_read_bytes_per_second": read_bytes / elapsed if elapsed > 0 else None,
+        "device_write_bytes_per_second": write_bytes / elapsed if elapsed > 0 else None,
+    }
+
+
 def collect_post_run(
     plan: dict[str, Any],
     run_output: Path,
@@ -321,6 +357,20 @@ def memory_experiments() -> list[dict[str, Any]]:
                 "FINETUNING_MODE": "full", "OPTIMIZER": "sgd", "MAX_STEPS": 1,
             },
         }},
+        # STAGE=all (not just "train" like trl-zero3-nvme above) so a tuned
+        # process also runs deepspeed_load_checkpoint(), giving a restore event
+        # to time and probe alongside the save. Kept as its own condition so it
+        # doesn't disturb the already-published MEM-TRL-Z3-NVME peak-memory
+        # numbers from the sibling condition above.
+        {"name": "trl-zero3-nvme-checkpoint-io", "repeats": 3, "pilot": True, "experiment": {
+            "backend": "trl", "setup": "spark", "nnodes": 2, "nproc_per_node": 1,
+            "env": {
+                **trl, "DISTRIBUTED_BACKEND": "deepspeed",
+                "DEEPSPEED_CONFIG": "configs/deepspeed-zero3-nvme.json",
+                "FINETUNING_MODE": "full", "OPTIMIZER": "sgd", "MAX_STEPS": 1,
+                "STAGE": "all",
+            },
+        }},
     ]
 
 
@@ -409,6 +459,141 @@ def collect_trl_summary(
     return summary
 
 
+def _fetch_optional_json(
+    host: str, remote_path: str,
+    *, remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> dict[str, Any] | None:
+    """Some checkpoint-timing files only exist when that event happened this run
+    (e.g. a restore-timing file only exists if STAGE included tuned), so a missing
+    file is a normal case to report as None, not an error."""
+    result = remote_run(
+        ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", host,
+         f"test -f {shlex.quote(remote_path)} && cat -- {shlex.quote(remote_path)}"],
+        check=False, capture_output=True, text=True, timeout=35,
+    )
+    if result.returncode or not result.stdout.strip():
+        return None
+    return json.loads(result.stdout)
+
+
+def collect_deepspeed_checkpoint_io(
+    plan: dict[str, Any], run_output: Path,
+    *, remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> dict[str, Any]:
+    """Fetch DeepSpeed checkpoint save/restore wall-clock timing (written by
+    spark_train.py's _write_checkpoint_timing), run checkpoint_io_probe.py in
+    --layout deepspeed against the resulting checkpoint tree, and slice the
+    whole-run resource samples (already fetched to run_output/measurements by
+    collect_run_resources, which must run first) into a per-event device-byte
+    window. A rank with no restore event (STAGE=train only) reports that half
+    as null rather than a fabricated zero."""
+    by_rank: dict[str, Any] = {}
+    for rank in plan["ranks"]:
+        remote_output = rank["output"]
+        timing = {
+            event: _fetch_optional_json(
+                rank["host"],
+                str(Path(remote_output) / "measurements" / f"checkpoint-{event}-timing-rank-{rank['rank']}.json"),
+                remote_run=remote_run,
+            )
+            for event in ("save", "restore")
+        }
+        remote_probe = str(Path(remote_output) / "measurements" / f"deepspeed-checkpoint-io-rank-{rank['rank']}.json")
+        script = str(Path(rank["checkout"]) / "experiments" / "checkpoint_io_probe.py")
+        command = " ".join([
+            shlex.quote(rank["env"]["PYTHON"]), shlex.quote(script),
+            "--checkpoint-dir", shlex.quote(str(Path(remote_output) / "model")),
+            "--output", shlex.quote(remote_probe), "--layout", "deepspeed",
+        ])
+        result = remote_run(
+            ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", rank["host"], command],
+            check=False, capture_output=True, text=True, timeout=1800,
+        )
+        if result.returncode:
+            raise RuntimeError(f"deepspeed checkpoint probe failed on rank {rank['rank']}: {result.stderr.strip()}")
+        probe = json.loads(result.stdout.strip().splitlines()[-1])
+        destination = run_output / "measurements"
+        destination.mkdir(parents=True, exist_ok=True)
+        (destination / f"deepspeed-checkpoint-io-rank-{rank['rank']}.json").write_text(
+            json.dumps(probe, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        resource_path = destination / f"resources-node-{rank['rank']}.jsonl"
+        resource_lines = resource_path.read_text(encoding="utf-8").splitlines() if resource_path.exists() else []
+        windows = {
+            event: (
+                summarize_resources_window(resource_lines, record["start_wall_ns"], record["end_wall_ns"])
+                if record is not None else None
+            )
+            for event, record in timing.items()
+        }
+        by_rank[str(rank["rank"])] = {"timing": timing, "checkpoint_io": probe, "windows": windows}
+    return by_rank
+
+
+def cleanup_trl_checkpoint(
+    plan: dict[str, Any], _run_output: Path, _item: dict[str, Any],
+    *, remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> None:
+    """TRL has no separate CHECKPOINT_DIR (unlike Megatron): the model/adapter is
+    saved node-local under each rank's own OUTPUT_DIR. Delete it once the
+    checkpoint probe has read it, so repeated pilot+repeat runs of a large
+    NVMe-offloaded checkpoint don't accumulate on local NVMe."""
+    for rank in plan["ranks"]:
+        result = remote_run(
+            ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", rank["host"],
+             f"rm -rf -- {shlex.quote(str(Path(rank['output']) / 'model'))}"],
+            check=False, capture_output=True, text=True, timeout=1800,
+        )
+        if result.returncode:
+            raise RuntimeError(f"TRL checkpoint cleanup failed on rank {rank['rank']}: {result.stderr.strip()}")
+
+
+def deepspeed_checkpoint_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Median/rMAD summary for the trl-zero3-nvme-checkpoint-io condition, kept
+    separate from checkpoint_summary() (Megatron torch_dist shards) because the
+    fields differ: DeepSpeed has no async save to compare, and save/restore each
+    carry their own checkpoint-window device bytes."""
+    selected = [
+        item for item in records
+        if item.get("status") == "passed" and not item.get("warmup") and item.get("deepspeed_checkpoint_io")
+    ]
+
+    def _median_across_ranks(event: str, field: str) -> float | None:
+        values = []
+        for item in selected:
+            per_rank = [
+                r["timing"][event]["host_seconds"] for r in item["deepspeed_checkpoint_io"].values()
+                if r["timing"].get(event) is not None
+            ]
+            if per_rank:
+                values.append(max(per_rank) if field == "max" else statistics.median(per_rank))
+        return statistics.median(values) if values else None
+
+    def _sizes() -> dict[str, list[float]]:
+        metadata, offloaded = [], []
+        for item in selected:
+            per_rank = item["deepspeed_checkpoint_io"].values()
+            metadata.append(sum(r["checkpoint_io"]["inventory"]["groups"]["metadata"]["logical_bytes"] for r in per_rank))
+            offloaded.append(sum(r["checkpoint_io"]["inventory"]["groups"]["offloaded_tensors"]["logical_bytes"] for r in per_rank))
+        return {"metadata": metadata, "offloaded_tensors": offloaded}
+
+    sizes = _sizes()
+    save_seconds = [
+        max(r["timing"]["save"]["host_seconds"] for r in item["deepspeed_checkpoint_io"].values() if r["timing"].get("save"))
+        for item in selected if any(r["timing"].get("save") for r in item["deepspeed_checkpoint_io"].values())
+    ]
+    dispersion = relative_mad(save_seconds)
+    return {
+        "run_count": len(selected),
+        "metadata_bytes_median": statistics.median(sizes["metadata"]) if sizes["metadata"] else None,
+        "offloaded_tensors_bytes_median": statistics.median(sizes["offloaded_tensors"]) if sizes["offloaded_tensors"] else None,
+        "save_call_seconds_median_max_across_ranks": _median_across_ranks("save", "max"),
+        "restore_call_seconds_median_max_across_ranks": _median_across_ranks("restore", "max"),
+        "save_call_relative_mad": dispersion,
+        "extend_to_eight_runs": dispersion is not None and dispersion > 0.1,
+    }
+
+
 def _prior_terminal_status(resume: bool, local_manifest: Path) -> str | None:
     """The prior invocation's status for this run, if it reached a terminal state
     (passed/failed). None means either no prior attempt or one interrupted mid-run
@@ -445,12 +630,20 @@ def _local_file_run(paths: list[Path], fallback: Callable[..., Any] = subprocess
 
 def run_memory_matrix(
     setup: dict[str, Any], setup_path: Path, output: Path, *, execute: bool, timeout: int, resume: bool = False,
+    conditions: list[str] | None = None,
 ) -> dict[str, Any]:
     estimates = collect_memory_estimates(setup, execute=execute)
     if execute:
         output.mkdir(parents=True, exist_ok=resume)
     records = []
-    for condition in memory_experiments():
+    selected_conditions = memory_experiments()
+    if conditions is not None:
+        available = {item["name"] for item in selected_conditions}
+        unknown = set(conditions) - available
+        if unknown:
+            raise run.ConfigError(f"unknown --condition value(s): {', '.join(sorted(unknown))}")
+        selected_conditions = [item for item in selected_conditions if item["name"] in conditions]
+    for condition in selected_conditions:
         config_path = _write_experiment(condition["experiment"], f"{output.name}-{condition['name']}")
         experiment = run.load_experiment(config_path)
         count = condition["repeats"] + int(condition["pilot"])
@@ -505,6 +698,12 @@ def run_memory_matrix(
                             plan, run_output,
                             remote_run=_local_file_run([run_output / "summary-train.json"]) if resumed else subprocess.run,
                         )
+                        if condition["name"] == "trl-zero3-nvme-checkpoint-io" and not resumed:
+                            record["deepspeed_checkpoint_io"] = collect_deepspeed_checkpoint_io(plan, run_output)
+                            try:
+                                cleanup_trl_checkpoint(plan, run_output, condition)
+                            except Exception as exc:
+                                record["cleanup_error"] = str(exc)
                 if pilot and code != 0:
                     records.append(record)
                     break
@@ -520,6 +719,9 @@ def run_memory_matrix(
     )
     result = {"status": status, "estimates": estimates, "records": records}
     if execute:
+        deepspeed_records = [item for item in records if item["condition"] == "trl-zero3-nvme-checkpoint-io"]
+        if deepspeed_records:
+            result["deepspeed_checkpoint_summary"] = deepspeed_checkpoint_summary(deepspeed_records)
         (output / "manifest.json").write_text(
             json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
@@ -538,9 +740,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--resume", action="store_true",
                          help="memory phase only: continue into an existing --output, reusing "
                               "already-completed runs instead of refusing or re-running them")
+    parser.add_argument("--condition", action="append",
+                         help="memory phase only: run only this condition name (repeatable). "
+                              "Default runs the full matrix from memory_experiments().")
     args = parser.parse_args(argv)
     if args.resume and args.phase != "memory":
         raise SystemExit("--resume is only supported for --phase memory")
+    if args.condition and args.phase != "memory":
+        raise SystemExit("--condition is only supported for --phase memory")
     try:
         if args.output.exists() and not args.resume:
             raise run.ConfigError(f"refusing to reuse output directory: {args.output}")
@@ -549,7 +756,7 @@ def main(argv: list[str] | None = None) -> int:
         setup_path = generated_setup(setup, args.output)
         if args.phase == "memory":
             result = run_memory_matrix(setup, setup_path, args.output, execute=args.execute,
-                                        timeout=args.timeout, resume=args.resume)
+                                        timeout=args.timeout, resume=args.resume, conditions=args.condition)
         else:
             result = benchmarks.run_benchmark(
                 setup_path=setup_path,
