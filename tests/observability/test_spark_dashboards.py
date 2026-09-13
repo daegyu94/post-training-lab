@@ -259,7 +259,6 @@ def test_dashboards_keep_matrix_and_freshness_scopes_separate() -> None:
                 assert all(t.get("instant") for t in panel["targets"])
 
 
-
 def test_storage_role_fails_before_exporter_when_sudo_denied(tmp_path: Path) -> None:
     smartctl = tmp_path / "smartctl"
     exporter = tmp_path / "exporter"
@@ -272,19 +271,29 @@ def test_storage_role_fails_before_exporter_when_sudo_denied(tmp_path: Path) -> 
         path.chmod(0o755)
     env = os.environ | {
         "PATH": str(tmp_path) + os.pathsep + os.environ["PATH"],
-        "SMARTCTL": str(smartctl), "SMARTCTL_EXPORTER": str(exporter),
-        "SMARTCTL_SUDO": "1", "NODE_ADDR": "127.0.0.1",
-        "OUTPUT_DIR": str(tmp_path / "output"), "MARKER": str(marker),
+        "SMARTCTL": str(smartctl),
+        "SMARTCTL_EXPORTER": str(exporter),
+        "SMARTCTL_SUDO": "1",
+        "NODE_ADDR": "127.0.0.1",
+        "OUTPUT_DIR": str(tmp_path / "output"),
+        "MARKER": str(marker),
     }
-    result = subprocess.run(["bash", str(ROOT / "observability/scripts/run_spark_observability.sh"), "storage"],
-                            env=env, capture_output=True, text=True, timeout=10)
+    result = subprocess.run(
+        ["bash", str(ROOT / "observability/scripts/run_spark_observability.sh"), "storage"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
     assert result.returncode != 0
     assert "preflight failed" in result.stderr
     assert not marker.exists()
 
 
 def test_healthy_ssd_count_preserves_zero_without_faking_missing_data() -> None:
-    dashboard = json.loads((ROOT / "observability/examples/observability/data-storage.json").read_text())
+    dashboard = json.loads(
+        (ROOT / "observability/examples/observability/data-storage.json").read_text()
+    )
     panel = next(p for p in dashboard["panels"] if p["title"] == "SSDs with critical warnings")
     expr = panel["targets"][0]["expr"]
     assert expr.startswith("sum(") and "!= bool 0" in expr

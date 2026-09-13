@@ -225,4 +225,3 @@ else
 fi
 # Exit and clean up siblings when one service exits; external timeout bounds the lab.
 wait -n "${pids[@]}"
-

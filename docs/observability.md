@@ -347,4 +347,3 @@ with selected_rank_profile(
 CPU의 kernel 제출 지연, NCCL과 compute의 겹침, rank별 collective 도착 시점, copy·동기화 집중 구간을 확인한 뒤, 원인을 수정하면 profiler를 끈 실행에서 효과를 다시 검증합니다.
 
 [verl profiler 설정](../observability/examples/verl/torch-profiler.yaml)은 외부 framework 연동 참고이며 이 저장소에 verl backend가 있다는 뜻이 아닙니다.
-
