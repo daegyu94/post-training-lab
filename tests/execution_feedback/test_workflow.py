@@ -116,3 +116,36 @@ def test_compare_requires_identical_test_tasks(tmp_path: Path) -> None:
 def test_manifest_is_valid_json(tmp_path: Path) -> None:
     prepare(SYNTHETIC_TASKS, tmp_path, "synthetic-python-functions", "synthetic-v1")
     json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))
+
+
+def test_timeout_output_is_json_serializable_and_cleans_container(monkeypatch) -> None:
+    import subprocess
+    calls = []
+    def run(command, **kwargs):
+        calls.append(command)
+        if command[1] == "run":
+            raise subprocess.TimeoutExpired(command, 1, output=b"progress\n", stderr=b"\xff")
+        return subprocess.CompletedProcess(command, 0)
+    monkeypatch.setattr("execution_feedback.evaluate.subprocess.run", run)
+    task = {"task_id": "timeout", "split": "train", "source": "test", "tests": ["assert True"]}
+    result = evaluate_candidate(task, {"response": "while True: pass"}, timeout_seconds=1)
+    assert result["status"] == "timeout"
+    assert result["stdout"] == "progress\n"
+    json.dumps(result)
+    assert calls[1][:3] == ["docker", "rm", "--force"]
+
+
+@pytest.mark.parametrize("payload", [
+    {"total": 0, "passed": 0},
+    {"total": 2, "passed": 2},
+    {"total": "one", "passed": "one"},
+    {"total": 1, "passed": -1},
+])
+def test_invalid_grade_cannot_pass(monkeypatch, payload) -> None:
+    import subprocess
+    from execution_feedback.evaluate import RESULT_PREFIX
+    monkeypatch.setattr("execution_feedback.evaluate.subprocess.run",
+        lambda command, **kwargs: subprocess.CompletedProcess(command, 0, RESULT_PREFIX + json.dumps(payload), ""))
+    task = {"task_id": "grade", "split": "test", "source": "test", "tests": ["assert True"]}
+    result = evaluate_candidate(task, {"response": "pass"})
+    assert result["status"] == "fail"

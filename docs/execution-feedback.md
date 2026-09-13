@@ -218,3 +218,22 @@ ENGINE=local bash scripts/run_execution_feedback_smoke.sh /tmp/execution-feedbac
 
 `ENGINE=local`은 격리 검증이 아닙니다.
 실제 후보를 사용하기 전 `ENGINE=docker`로 다시 실행해 Docker image와 제한 설정을 검증합니다.
+
+
+## Verification Evidence
+
+Spark 실행 기록은 commit 메시지에서 확인할 수 있습니다.
+
+- `f7b9f0b`: spark1의 실제 Docker에서 단일 timeout과 workers=4 평가 후 container 잔존 여부를 확인했고, network·filesystem·PID 제한을 검사했습니다.
+- `8efc8e0b`: 설치된 TRL 1.12.0 source에서 full DPO의 reference precompute 경로를 확인했습니다. GPU 학습 완료나 메모리 실측 결과를 의미하지 않습니다.
+
+현재 기록만으로 A/B/C/D 학습 cycle 완료나 성공률 개선을 판단할 수는 없습니다.
+실험 비교에는 각 variant의 generation manifest, training summary와 test evaluation이 필요합니다.
+
+평가 timeout의 stdout/stderr는 UTF-8 문자열로 변환하고 마지막 4,000자만 저장합니다.
+출력이 있는 후보가 timeout되어도 JSONL 저장을 계속할 수 있습니다.
+채점 결과의 test 개수와 pass 개수를 검사하며, 모든 task test가 통과한 경우에만 pass로 판정합니다.
+이 검사는 runner 출력의 형식 검사이며, 같은 process에서 실행되는 코드에 대한 부정행위 방지 장치는 아닙니다.
+
+Trainer는 입력 token 계측을 명시적으로 활성화합니다.
+이 변경 이전 summary의 0 또는 누락된 token 수를 실제 처리량 0으로 해석하지 않습니다.

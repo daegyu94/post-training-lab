@@ -67,7 +67,7 @@ def main() -> None:
         gradient_checkpointing_kwargs={"use_reentrant": False} if args.gradient_checkpointing else None,
         seed=args.seed, logging_steps=1, save_strategy="steps", save_steps=args.max_steps,
         eval_strategy="steps" if args.eval_file else "no", eval_steps=args.max_steps if args.eval_file else None,
-        report_to="none", remove_unused_columns=False,
+        report_to="none", remove_unused_columns=False, include_num_input_tokens_seen=True,
     )
     if args.mode == "sft":
         from trl import SFTConfig, SFTTrainer
@@ -110,3 +110,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

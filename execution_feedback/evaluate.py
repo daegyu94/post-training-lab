@@ -89,6 +89,13 @@ def _kill_container(name: str) -> None:
         pass
 
 
+def _output_text(value: str | bytes | None) -> str:
+    # TimeoutExpired.output/stderr can be bytes even with text=True.
+    if isinstance(value, bytes):
+        value = value.decode("utf-8", errors="replace")
+    return (value or "")[-4000:]
+
+
 def _parse_result(stdout: str) -> dict[str, Any] | None:
     for line in reversed(stdout.splitlines()):
         if line.startswith(RESULT_PREFIX):
@@ -96,7 +103,12 @@ def _parse_result(stdout: str) -> dict[str, Any] | None:
                 value = json.loads(line[len(RESULT_PREFIX):])
             except json.JSONDecodeError:
                 return None
-            return value if isinstance(value, dict) else None
+            if not isinstance(value, dict):
+                return None
+            total, passed = value.get("total"), value.get("passed")
+            if type(total) is not int or type(passed) is not int or not 0 <= passed <= total:
+                return None
+            return value
     return None
 
 
@@ -129,7 +141,7 @@ def evaluate_candidate(
         except subprocess.TimeoutExpired as exc:
             if engine == "docker":
                 _kill_container(container_name)
-            return {**base, "status": "timeout", "score": 0.0, "passed_tests": 0, "total_tests": len(task["tests"]), "failure_phase": "timeout", "failures": [f"exceeded {timeout_seconds}s"], "stdout": exc.stdout or "", "stderr": exc.stderr or "", "duration_seconds": time.perf_counter() - started}
+            return {**base, "status": "timeout", "score": 0.0, "passed_tests": 0, "total_tests": len(task["tests"]), "failure_phase": "timeout", "failures": [f"exceeded {timeout_seconds}s"], "stdout": _output_text(exc.stdout), "stderr": _output_text(exc.stderr), "duration_seconds": time.perf_counter() - started}
         except (FileNotFoundError, OSError) as exc:
             return {**base, "status": "infra_error", "score": 0.0, "passed_tests": 0, "total_tests": len(task["tests"]), "failure_phase": "worker", "failures": [f"{type(exc).__name__}: {exc}"], "duration_seconds": time.perf_counter() - started}
     parsed = _parse_result(completed.stdout)
@@ -138,7 +150,7 @@ def evaluate_candidate(
     elif parsed is None:
         status = "fail"
     else:
-        status = "pass" if completed.returncode == 0 and parsed.get("total") == parsed.get("passed") else "fail"
+        status = "pass" if completed.returncode == 0 and parsed.get("total") == parsed.get("passed") == len(task["tests"]) and len(task["tests"]) > 0 else "fail"
     reported_total = int(parsed.get("total", 0)) if parsed else 0
     total = reported_total or len(task["tests"])
     passed = int(parsed.get("passed", 0)) if parsed else 0
@@ -200,3 +212,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
