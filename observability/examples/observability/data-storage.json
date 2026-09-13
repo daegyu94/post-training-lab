@@ -310,7 +310,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "count(smartctl_device_critical_warning{job=\"storage-smart\",cluster=~\"$cluster\",storage_system=~\"$storage_system\",instance=~\"$storage_node\",device=~\"$ssd\"} != 0)",
+          "expr": "sum(smartctl_device_critical_warning{job=\"storage-smart\",cluster=~\"$cluster\",storage_system=~\"$storage_system\",instance=~\"$storage_node\",device=~\"$ssd\"} != bool 0)",
           "instant": true
         }
       ],
@@ -696,7 +696,7 @@
       "options": {
         "showHeader": true
       },
-      "description": "Device identity omits the serial-number label. SMART status 1 means passed; smartctl exit status 0 means collection succeeded."
+      "description": "Device identity omits the serial-number label. SMART status 1 means passed. The smartctl exit status is a bitmask: non-zero can indicate collection errors or device health findings; inspect the bits and exporter logs."
     }
   ],
   "refresh": "5s",
@@ -888,3 +888,4 @@
   "uid": "post-training-data-storage",
   "version": 3
 }
+

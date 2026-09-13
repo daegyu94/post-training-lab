@@ -19,7 +19,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 start_smartctl_exporter() {
   : "${NODE_ADDR:?Set NODE_ADDR to this storage node management address}"
-  local exporter smartctl_path smartctl_cmd sudo_mode needs_sudo first_device
+  local exporter smartctl_path smartctl_cmd sudo_mode needs_sudo first_device scan_output
   exporter="${SMARTCTL_EXPORTER:-$tools_dir/smartctl_exporter-0.14.0.linux-arm64/smartctl_exporter}"
   if [[ ! -x "$exporter" ]]; then
     echo "smartctl_exporter not found or not executable: $exporter" >&2
@@ -31,6 +31,10 @@ start_smartctl_exporter() {
   fi
   smartctl_cmd="$smartctl_path"
   sudo_mode="${SMARTCTL_SUDO:-auto}"
+  case "$sudo_mode" in
+    auto|0|1) ;;
+    *) echo "SMARTCTL_SUDO must be auto, 0, or 1" >&2; exit 2 ;;
+  esac
   needs_sudo=0
   if [[ "$sudo_mode" == 1 ]]; then
     needs_sudo=1
@@ -40,7 +44,10 @@ start_smartctl_exporter() {
     # sibling block device's group (/dev/nvmeXn1, disk-group readable).
     # Observed directly on a Spark node: smartctl_exporter reports
     # "Permission denied" and exports zero SMART fields as a plain user.
-    first_device="$("$smartctl_path" --scan 2>/dev/null | awk 'NR==1{print $1}')"
+    if ! scan_output="$("$smartctl_path" --scan 2>/dev/null)"; then
+      needs_sudo=1
+    fi
+    first_device="$(awk 'NR==1{print $1}' <<< "$scan_output")"
     if [[ -n "$first_device" ]] && ! "$smartctl_path" -i "$first_device" >/dev/null 2>&1; then
       needs_sudo=1
     fi
@@ -48,6 +55,10 @@ start_smartctl_exporter() {
   if [[ "$needs_sudo" == 1 ]]; then
     if ! command -v sudo >/dev/null 2>&1; then
       echo "smartctl needs root for NVMe SMART queries but sudo is unavailable; set SMARTCTL_SUDO=0 or grant access another way" >&2
+      exit 1
+    fi
+    if ! sudo -n "$smartctl_path" --scan >/dev/null 2>&1; then
+      echo "passwordless sudo smartctl preflight failed; check sudo permissions before starting SSD health collection" >&2
       exit 1
     fi
     smartctl_cmd="$output_dir/smartctl-sudo"
@@ -214,3 +225,4 @@ else
 fi
 # Exit and clean up siblings when one service exits; external timeout bounds the lab.
 wait -n "${pids[@]}"
+

@@ -74,8 +74,10 @@ ssh -NT -L 13000:127.0.0.1:13000 -J <user>@<controller-ssh-alias> spark@spark1
 SSD health는 실험별 write attribution이 아니라 장치 이상과 장기 열화를 확인하는 선택 기능입니다.
 `smartctl_exporter`는 기본 설치 스크립트에 포함되지만 `smartctl`은 운영체제의 `smartmontools` package로 설치해야 합니다.
 
-NVMe SMART 조회는 controller device(`/dev/nvmeN`)에 admin-passthrough ioctl을 열며 이 장치는 sibling block device(`/dev/nvmeXn1`, disk group 읽기 가능)와 달리 group 권한이 없는 root:root 0600으로 남습니다.
+Spark 검증 환경에서 NVMe SMART 조회는 controller device(`/dev/nvmeN`)에 admin-passthrough ioctl을 열며 이 장치는 sibling block device(`/dev/nvmeXn1`, disk group 읽기 가능)와 달리 group 권한이 없는 root:root 0600으로 남습니다.
 `node`/`storage` role은 이를 자동 감지해 필요하면 passwordless sudo로 `smartctl`만 감싸 실행합니다(`smartctl_exporter` 자체는 root로 올리지 않습니다).
+sudo 경로를 선택하면 exporter 시작 전에 `sudo -n smartctl --scan`으로 비대화식 실행 권한을 확인하고 실패 시 중단합니다.
+이 검사는 각 장치의 SMART 조회 성공을 보장하지 않으므로 exporter log와 실제 SMART metric도 확인합니다.
 자동 감지를 강제로 켜거나 끄려면 `SMARTCTL_SUDO=1` 또는 `SMARTCTL_SUDO=0`을 지정합니다.
 sudo 없이 이미 권한이 있는 환경(예: 별도 udev rule이나 capability 설정)에서는 자동 감지가 sudo를 건너뜁니다.
 
@@ -114,8 +116,9 @@ STORAGE_TARGETS='storage-0=<storage-address>,storage-1=<storage-address>' \
 `STORAGE_SYSTEM`은 `local`, `3fs`, `pnfs`처럼 배치를 식별하는 값입니다.
 Data & Storage dashboard는 `cluster → storage system → storage node → SSD` 순서로 필터링합니다.
 3FS의 replication과 pNFS의 data-server layout 때문에 client write와 개별 SSD write는 일대일로 대응하지 않으므로 health metric을 특정 run이나 client에 귀속하지 않습니다.
-Storage topology component·edge는 기존 `storage-topology.json`으로 공급하고, SMART 시계열의 `storage_node`와 topology component ID는 같은 이름을 사용합니다.
+Storage topology component·edge는 기존 `storage-topology.json`으로 공급하고, SMART 시계열의 `instance` label(화면의 `storage_node` 변수)과 topology component ID는 같은 이름을 사용합니다.
 
+Critical-warning 개수는 정상 metric이 있으면 0, metric 자체가 없으면 N/A로 표시합니다.
 Dashboard는 다음 값을 표시합니다.
 
 - NVMe critical warning과 SMART collection status
@@ -344,3 +347,4 @@ with selected_rank_profile(
 CPU의 kernel 제출 지연, NCCL과 compute의 겹침, rank별 collective 도착 시점, copy·동기화 집중 구간을 확인한 뒤, 원인을 수정하면 profiler를 끈 실행에서 효과를 다시 검증합니다.
 
 [verl profiler 설정](../observability/examples/verl/torch-profiler.yaml)은 외부 framework 연동 참고이며 이 저장소에 verl backend가 있다는 뜻이 아닙니다.
+

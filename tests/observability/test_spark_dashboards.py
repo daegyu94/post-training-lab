@@ -156,12 +156,16 @@ def test_storage_role_wraps_smartctl_with_sudo_when_forced(tmp_path: Path) -> No
     exporter.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$EXPORTER_ARGS"\n')
     smartctl.chmod(0o755)
     exporter.chmod(0o755)
+    sudo = tmp_path / "sudo"
+    sudo.write_text('#!/usr/bin/env bash\nshift\nexec "$@"\n')
+    sudo.chmod(0o755)
     output_dir = tmp_path / "monitoring"
     environment = os.environ | {
         "NODE_ADDR": "127.0.0.1",
         "SMARTCTL": str(smartctl),
         "SMARTCTL_EXPORTER": str(exporter),
         "SMARTCTL_SUDO": "1",
+        "PATH": str(tmp_path) + os.pathsep + os.environ["PATH"],
         "EXPORTER_ARGS": str(arguments),
         "OUTPUT_DIR": str(output_dir),
     }
@@ -253,3 +257,35 @@ def test_dashboards_keep_matrix_and_freshness_scopes_separate() -> None:
                 assert "$training_max_age" not in panel["targets"][0]["expr"]
             if panel["type"] == "stat":
                 assert all(t.get("instant") for t in panel["targets"])
+
+
+
+def test_storage_role_fails_before_exporter_when_sudo_denied(tmp_path: Path) -> None:
+    smartctl = tmp_path / "smartctl"
+    exporter = tmp_path / "exporter"
+    sudo = tmp_path / "sudo"
+    marker = tmp_path / "started"
+    smartctl.write_text("#!/bin/sh\nexit 0\n")
+    sudo.write_text("#!/bin/sh\nexit 1\n")
+    exporter.write_text('#!/bin/sh\ntouch "$MARKER"\n')
+    for path in (smartctl, exporter, sudo):
+        path.chmod(0o755)
+    env = os.environ | {
+        "PATH": str(tmp_path) + os.pathsep + os.environ["PATH"],
+        "SMARTCTL": str(smartctl), "SMARTCTL_EXPORTER": str(exporter),
+        "SMARTCTL_SUDO": "1", "NODE_ADDR": "127.0.0.1",
+        "OUTPUT_DIR": str(tmp_path / "output"), "MARKER": str(marker),
+    }
+    result = subprocess.run(["bash", str(ROOT / "observability/scripts/run_spark_observability.sh"), "storage"],
+                            env=env, capture_output=True, text=True, timeout=10)
+    assert result.returncode != 0
+    assert "preflight failed" in result.stderr
+    assert not marker.exists()
+
+
+def test_healthy_ssd_count_preserves_zero_without_faking_missing_data() -> None:
+    dashboard = json.loads((ROOT / "observability/examples/observability/data-storage.json").read_text())
+    panel = next(p for p in dashboard["panels"] if p["title"] == "SSDs with critical warnings")
+    expr = panel["targets"][0]["expr"]
+    assert expr.startswith("sum(") and "!= bool 0" in expr
+    assert "or vector(0)" not in expr
