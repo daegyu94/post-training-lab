@@ -41,6 +41,7 @@ def main() -> None:
     parser.add_argument("--gradient-checkpointing", action="store_true")
     parser.add_argument("--lora-r", type=int, default=0)
     parser.add_argument("--resume-from-checkpoint")
+    parser.add_argument("--save-checkpoint", action="store_true")
     args = parser.parse_args()
     if args.max_steps < 1 or args.per_device_batch_size < 1 or args.gradient_accumulation_steps < 1:
         parser.error("step and batch values must be positive")
@@ -82,7 +83,13 @@ def main() -> None:
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         bf16=True, gradient_checkpointing=args.gradient_checkpointing,
         gradient_checkpointing_kwargs={"use_reentrant": False} if args.gradient_checkpointing else None,
-        seed=args.seed, logging_steps=1, save_strategy="steps", save_steps=args.max_steps,
+        # A Trainer-native checkpoint duplicates trainer.save_model()'s output
+        # below plus a full optimizer state (observed: ~2x the adapter size in
+        # fp32 moment buffers, e.g. 8GB optimizer.pt next to a 4GB LoRA adapter
+        # on a 30B model). It's only useful for --resume-from-checkpoint after a
+        # crash, so it's opt-in rather than paid on every successful run.
+        seed=args.seed, logging_steps=1,
+        save_strategy="steps" if args.save_checkpoint else "no", save_steps=args.max_steps,
         eval_strategy="steps" if args.eval_file else "no", eval_steps=args.max_steps if args.eval_file else None,
         report_to="none", remove_unused_columns=False, include_num_input_tokens_seen=True,
     )

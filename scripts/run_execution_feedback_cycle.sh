@@ -14,6 +14,7 @@ TRAIN_TOP_P="${TRAIN_TOP_P:-0.95}"
 DOCKER_WORKERS="${DOCKER_WORKERS:-1}"
 LORA_R="${LORA_R:-0}"
 GRADIENT_CHECKPOINTING="${GRADIENT_CHECKPOINTING:-0}"
+SAVE_CHECKPOINT="${SAVE_CHECKPOINT:-0}"
 MAX_STEPS="${MAX_STEPS:-64}"
 
 read -r -a train_launch <<<"$TRAIN_LAUNCH"
@@ -44,6 +45,9 @@ fi
 common_train=(--max-steps "$MAX_STEPS" --per-device-batch-size 1 --gradient-accumulation-steps 4 --seed 42)
 if [[ "$GRADIENT_CHECKPOINTING" == 1 ]]; then
   common_train+=(--gradient-checkpointing)
+fi
+if [[ "$SAVE_CHECKPOINT" == 1 ]]; then
+  common_train+=(--save-checkpoint)
 fi
 "${train_launch[@]}" -m execution_feedback.train --mode sft --model-dir "$SFT_CHECKPOINT" \
   --train-file "$WORK_DIR/feedback/filtered_sft.jsonl" --eval-file "$WORK_DIR/data/initial_sft_validation.jsonl" \

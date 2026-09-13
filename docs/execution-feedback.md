@@ -181,12 +181,15 @@ LoRA checkpoint(새로 만든 adapter거나 이미 있는 adapter)는 TRL이 ada
 ## End-to-End Cycle
 
 순차 실행 wrapper는 generation, Docker evaluation, B/C/D 추가 학습, 고정 test 평가와 비교를 연결합니다.
-GPU 연산은 Spark 노드에서 실행하고 dataset·checkpoint·결과는 NFS, Docker 임시는 local NVMe에 둡니다.
+GPU 연산은 Spark 노드에서 실행하고 Docker 임시는 local NVMe에 둡니다.
+`WORK_DIR`(dataset·checkpoint·결과)은 30B 규모에서는 각 노드의 local NVMe(`/mnt/post-training/execution-feedback/...`, 다른 backend와 같은 관례)를 권장합니다.
+NFS(`/home/spark/shared/...`)는 controller에서 바로 확인하기 편하지만 30B checkpoint(adapter만 써도 수 GB)가 매 단계 네트워크를 타므로, 여러 checkpoint를 오가는 A/B/C/D 전체 cycle에서는 local이 더 안전합니다.
+비교·공유가 필요한 최종 산출물(`comparison.json`, 작은 manifest)만 다 끝난 뒤 NFS로 복사합니다.
 
 ```bash
 cd /home/spark/shared/post-training-lab
 SFT_CHECKPOINT=/path/to/common-sft-checkpoint \
-WORK_DIR=/home/spark/shared/execution-feedback/run-001 \
+WORK_DIR=/mnt/post-training/execution-feedback/run-001 \
 DOCKER_WORKERS=4 \
 bash scripts/run_execution_feedback_cycle.sh
 ```
@@ -211,7 +214,12 @@ DPO pair가 없으면 C와 D를 건너뛰고 A/B만 비교합니다.
 | `TRAIN_TEMPERATURE` / `TRAIN_TOP_P` | 0.8 / 0.95 | train candidate 생성 sampling 설정 |
 | `MAX_STEPS` | 64 | B/C/D 공통 학습 step 수 |
 | `GRADIENT_CHECKPOINTING` | 0 | `1`이면 B/C/D 학습에 `--gradient-checkpointing` 적용 |
+| `SAVE_CHECKPOINT` | 0 | `1`이면 B/C/D 학습에 `--save-checkpoint` 적용(중간 재개용 Trainer checkpoint 저장) |
 | `LORA_R` | 0 | 0이면 `SFT_CHECKPOINT`를 adapter로 간주하고 이어서 학습 |
+
+`--save-checkpoint`(기본 off)는 HF Trainer의 자체 중간 checkpoint(전체 optimizer state 포함)를 저장할지 정합니다.
+이 checkpoint는 `--resume-from-checkpoint`로 재개할 때만 쓰이고, `trainer.save_model()`이 저장하는 실제 결과물(`output_dir/model`)과 별개로 중복 저장됩니다.
+실측으로 LoRA adapter 4GB에 optimizer state만 8GB가 추가로 붙어 checkpoint당 2배 이상 커졌습니다 — 재개 계획이 없다면 기본값(off)을 유지합니다.
 
 쉬운 task와 충분히 학습된 checkpoint를 쓰면 sampling만으로는 fail이 전혀 안 나올 수 있습니다.
 실제로 Qwen3-30B-A3B(LoRA)로 4개 synthetic train task를 시도했을 때 `temperature=1.4, top_p=1.0`, candidate 6개까지도 24/24 전부 pass했습니다.
