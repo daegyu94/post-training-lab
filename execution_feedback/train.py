@@ -69,9 +69,20 @@ def main() -> None:
         # repo's MoE models (Qwen3-30B-A3B's fused-expert-parameter MoE, GLM's MLA
         # attention), so leaving target_modules unset raises "No target_modules
         # passed but also no target_parameters found" before training starts.
-        # all-linear auto-detects every real Linear (and, on this PEFT version,
-        # fused-expert) layer regardless of architecture.
-        model = get_peft_model(model, LoraConfig(r=args.lora_r, lora_alpha=args.lora_r * 2, lora_dropout=0.0, bias="none", task_type="CAUSAL_LM", target_modules="all-linear"))
+        # target_modules="all-linear" fixes that but also auto-adapts the fused
+        # MoE expert parameters (experts.gate_up_proj/down_proj); under
+        # device_map="auto" some of those can land on the CPU/meta device, and
+        # backward through the model's custom grouped-matmul op then crashes
+        # with "GroupedMmBackward0 returned an invalid gradient ... expected
+        # device meta but got cuda:0" (observed directly on Qwen3-30B-A3B).
+        # Listing attention projections (covering both GQA and GLM-style MLA
+        # naming) plus the router gate avoids the fused-expert parameters
+        # entirely. Don't add up_proj/gate_proj/down_proj here: on this MoE
+        # architecture those suffixes also match the fused expert parameter
+        # names (gate_up_proj, down_proj) and would reintroduce the crash;
+        # they're only safe to add for a dense (non-MoE) model's MLP.
+        target_modules = ["q_proj", "k_proj", "v_proj", "o_proj", "q_a_proj", "q_b_proj", "kv_a_proj_with_mqa", "kv_b_proj", "gate"]
+        model = get_peft_model(model, LoraConfig(r=args.lora_r, lora_alpha=args.lora_r * 2, lora_dropout=0.0, bias="none", task_type="CAUSAL_LM", target_modules=target_modules))
     files = {"train": str(args.train_file)}
     if args.eval_file:
         files["validation"] = str(args.eval_file)

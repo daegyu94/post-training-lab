@@ -145,10 +145,13 @@ Validation과 test 평가가 입력되면 feedback 생성은 실패합니다.
 분산 실행에서는 각 rank가 이미 자기 device를 알고 있으므로 이 옵션을 켜지 않습니다(켜면 보이는 GPU 전체에 잘못 분산됩니다).
 `--mode sft`는 `loss_type="nll"`을 명시적으로 지정합니다 — 기본값 `chunked_nll`은 model forward를 patch하는데, `device_map="auto"`가 메모리 부족으로 일부 layer를 CPU offload하면 그 layer의 forward가 `functools.partial`로 감싸져 patch가 `'functools.partial' object has no attribute '__func__'`로 깨집니다.
 
-`--lora-r`는 PEFT의 `target_modules="all-linear"`로 적용됩니다.
+`--lora-r`는 attention projection(GQA의 `q/k/v/o_proj`, GLM MLA의 `q_a/q_b/kv_a_with_mqa/kv_b_proj`)과 MoE router(`gate`)를 명시적 `target_modules` 목록으로 적용합니다.
 PEFT의 architecture 자동 매핑은 이 repo가 다루는 MoE 구조(Qwen3-30B-A3B의 fused-expert parameter, GLM의 MLA attention)를 모르기 때문에, target_modules를 지정하지 않으면 `--lora-r`가 `No target_modules passed but also no target_parameters found`로 즉시 실패합니다.
+`target_modules="all-linear"`는 이 에러는 피하지만 MoE expert의 fused parameter(`experts.gate_up_proj`/`down_proj`)까지 LoRA 대상에 포함시킵니다 — `device_map="auto"`가 그중 일부를 CPU/meta device로 offload하면 backward에서 `GroupedMmBackward0 returned an invalid gradient ... expected device meta but got cuda:0`로 깨집니다(Qwen3-30B-A3B에서 실제로 재현).
+그래서 expert parameter는 아예 건드리지 않는 명시적 목록을 씁니다.
+`up_proj`/`gate_proj`/`down_proj`는 여기 넣지 않습니다 — 이 이름들이 이 MoE 구조의 fused expert parameter 이름(`gate_up_proj`, `down_proj`)과 suffix가 겹쳐서 같은 문제를 다시 끌어들이기 때문입니다(dense MLP만 있는 모델이라면 안전하게 추가할 수 있습니다).
 
-Qwen3-30B-A3B(LoRA, 48 layer 전체 all-linear)로 이 세 단계 모두 실제 GPU에서 검증했습니다.
+Qwen3-30B-A3B(LoRA, attention+router target_modules)로 이 세 단계 모두 실제 GPU에서 검증했습니다.
 `--gradient-checkpointing` 없이는 이 하드웨어(GB10, 통합 메모리 119GiB)에서 backward 시점에 CUDA OOM이 발생했습니다 — LoRA라도 48 layer 활성화를 전부 들고 있으면 여유가 없습니다.
 30B 스케일에서는 `--gradient-checkpointing`을 기본으로 켜는 것을 권장합니다.
 
@@ -266,10 +269,14 @@ Spark 실행 기록은 commit 메시지에서 확인할 수 있습니다.
 - `f7b9f0b`: spark1의 실제 Docker에서 단일 timeout과 workers=4 평가 후 container 잔존 여부를 확인했고, network·filesystem·PID 제한을 검사했습니다.
 - `8efc8e0b`: 설치된 TRL 1.12.0 source에서 full DPO의 reference precompute 경로를 확인했습니다. GPU 학습 완료나 메모리 실측 결과를 의미하지 않습니다.
 
-이후 spark1에서 Qwen3-30B-A3B(실제 base checkpoint, LoRA r=16 all-linear)로 A/B/C/D 전체 cycle을 처음부터 끝까지(초기 SFT → train candidate 생성 → 실제 Docker 평가 → feedback → B/C/D 학습 → test candidate 생성·평가 → compare)를 실제로 실행해 완료했습니다.
-그 과정에서 이 문서 위쪽에 기록된 네 가지 실제 버그(`target_modules` 누락, 단일 process `device_map`, `chunked_nll`/CPU-offload 충돌, reasoning 모델의 `<think>` 예산 소진)를 GPU 실행 중 발견하고 고쳤습니다.
-DPO(C, D)는 loss가 0.70→0.04~0.09로, `rewards/accuracies`가 1.0으로, `rewards/margins`가 계속 증가하는 정상적인 학습 곡선을 보였습니다.
-Test task가 2개뿐이고 synthetic task 자체가 이 모델에는 쉬워서 A/B/C/D 모두 pass@1=1.0으로 나와 성공률 차이는 관측되지 않았습니다 — 이는 이 실행의 task 난이도·표본 크기 한계이며 pipeline 결함이 아닙니다.
+이후 spark1에서 Qwen3-30B-A3B(실제 base checkpoint, LoRA r=16)로 A/B/C/D 전체 cycle을 처음부터 끝까지(초기 SFT → train candidate 생성 → 실제 Docker 평가 → feedback → B/C/D 학습 → test candidate 생성·평가 → compare)를 두 번 실제로 실행해 완료했습니다.
+
+첫 실행은 `WORK_DIR`를 NFS(`/home/spark/shared/execution-feedback/run-30b-poc`)로 두고 진행했고, 이 과정에서 이 문서에 기록된 네 가지 실제 버그(`target_modules` 누락, 단일 process `device_map`, `chunked_nll`/CPU-offload 충돌, reasoning 모델의 `<think>` 예산 소진)와 checkpoint I/O가 네트워크를 타는 문제를 발견했습니다.
+그 결과 위 "End-to-End Cycle"에 local NVMe 권장 사항을 추가했고, `target_modules="all-linear"`가 MoE expert의 fused parameter까지 건드리면서 `device_map="auto"`의 CPU/meta offload와 만나 `GroupedMmBackward0 returned an invalid gradient ... expected device meta but got cuda:0`로 깨지는 다섯 번째 버그를 추가로 발견해 attention+router 명시적 target_modules로 고쳤습니다.
+
+두 번째 실행은 이 다섯 가지 수정을 모두 반영한 뒤 `WORK_DIR`를 local NVMe(`/mnt/post-training/execution-feedback/run-local-verify`)로 두고 처음부터 다시 실행해 완료했습니다.
+DPO(C, D)는 loss가 0.70→0.15~0.25로, `rewards/accuracies`가 1.0으로, `rewards/margins`가 계속 증가하는 정상적인 학습 곡선을 보였고, LoRA target이 attention+router로 줄어 adapter 크기도 4GB에서 60MB로 작아졌습니다(trainable parameter가 크게 줄었으므로 step당 속도도 훨씬 빨라짐).
+A/B/C/D 모두 이번에도 test pass@1=1.0으로 나왔습니다 — synthetic test task가 2개뿐이고 이 모델에 쉬워서 성공률 차이가 안 보이는 것이며, pipeline 결함이 아닙니다.
 실험 비교(성공률 차이 관측 포함)에는 더 크거나 어려운 test set과 각 variant의 generation manifest, training summary, test evaluation이 필요합니다.
 
 MBPP(`sanitized` config)도 `prepare`와 실제 Docker 평가로 검증했습니다.
