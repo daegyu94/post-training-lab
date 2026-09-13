@@ -19,7 +19,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 start_smartctl_exporter() {
   : "${NODE_ADDR:?Set NODE_ADDR to this storage node management address}"
-  local exporter smartctl_path
+  local exporter smartctl_path smartctl_cmd sudo_mode needs_sudo first_device
   exporter="${SMARTCTL_EXPORTER:-$tools_dir/smartctl_exporter-0.14.0.linux-arm64/smartctl_exporter}"
   if [[ ! -x "$exporter" ]]; then
     echo "smartctl_exporter not found or not executable: $exporter" >&2
@@ -29,8 +29,33 @@ start_smartctl_exporter() {
     echo "smartctl is required for SSD health collection" >&2
     exit 1
   fi
+  smartctl_cmd="$smartctl_path"
+  sudo_mode="${SMARTCTL_SUDO:-auto}"
+  needs_sudo=0
+  if [[ "$sudo_mode" == 1 ]]; then
+    needs_sudo=1
+  elif [[ "$sudo_mode" == auto ]]; then
+    # NVMe SMART needs an admin-passthrough ioctl on the controller char
+    # device (/dev/nvmeN), which stays root:root mode 0600 regardless of the
+    # sibling block device's group (/dev/nvmeXn1, disk-group readable).
+    # Observed directly on a Spark node: smartctl_exporter reports
+    # "Permission denied" and exports zero SMART fields as a plain user.
+    first_device="$("$smartctl_path" --scan 2>/dev/null | awk 'NR==1{print $1}')"
+    if [[ -n "$first_device" ]] && ! "$smartctl_path" -i "$first_device" >/dev/null 2>&1; then
+      needs_sudo=1
+    fi
+  fi
+  if [[ "$needs_sudo" == 1 ]]; then
+    if ! command -v sudo >/dev/null 2>&1; then
+      echo "smartctl needs root for NVMe SMART queries but sudo is unavailable; set SMARTCTL_SUDO=0 or grant access another way" >&2
+      exit 1
+    fi
+    smartctl_cmd="$output_dir/smartctl-sudo"
+    printf '#!/usr/bin/env bash\nexec sudo -n %q "$@"\n' "$smartctl_path" > "$smartctl_cmd"
+    chmod 0755 "$smartctl_cmd"
+  fi
   "$exporter" \
-    --smartctl.path="$smartctl_path" \
+    --smartctl.path="$smartctl_cmd" \
     --smartctl.interval="${SMARTCTL_INTERVAL:-60s}" \
     --web.listen-address="$NODE_ADDR:${SMARTCTL_PORT:-19633}" \
     > "$output_dir/smartctl-exporter.log" 2>&1 &

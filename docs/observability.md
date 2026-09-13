@@ -73,7 +73,11 @@ ssh -NT -L 13000:127.0.0.1:13000 -J <user>@<controller-ssh-alias> spark@spark1
 
 SSD health는 실험별 write attribution이 아니라 장치 이상과 장기 열화를 확인하는 선택 기능입니다.
 `smartctl_exporter`는 기본 설치 스크립트에 포함되지만 `smartctl`은 운영체제의 `smartmontools` package로 설치해야 합니다.
-장치 SMART 조회 권한도 별도로 필요합니다.
+
+NVMe SMART 조회는 controller device(`/dev/nvmeN`)에 admin-passthrough ioctl을 열며 이 장치는 sibling block device(`/dev/nvmeXn1`, disk group 읽기 가능)와 달리 group 권한이 없는 root:root 0600으로 남습니다.
+`node`/`storage` role은 이를 자동 감지해 필요하면 passwordless sudo로 `smartctl`만 감싸 실행합니다(`smartctl_exporter` 자체는 root로 올리지 않습니다).
+자동 감지를 강제로 켜거나 끄려면 `SMARTCTL_SUDO=1` 또는 `SMARTCTL_SUDO=0`을 지정합니다.
+sudo 없이 이미 권한이 있는 환경(예: 별도 udev rule이나 capability 설정)에서는 자동 감지가 sudo를 건너뜁니다.
 
 실제 SSD가 장착된 노드에서 health 수집을 활성화합니다.
 로컬 SSD라면 기존 Spark node role에 함께 실행합니다.

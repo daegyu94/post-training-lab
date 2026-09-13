@@ -141,6 +141,86 @@ def test_storage_role_starts_smartctl_exporter_with_slow_polling(tmp_path: Path)
     ]
 
 
+def test_storage_role_wraps_smartctl_with_sudo_when_forced(tmp_path: Path) -> None:
+    # /dev/nvmeN (the admin-passthrough device SMART needs) stays root:root
+    # 0600 even when the sibling block device is disk-group readable, so
+    # smartctl_exporter gets "Permission denied" and reports no SMART fields
+    # as a plain user (confirmed on real Spark hardware). SMARTCTL_SUDO=1
+    # forces the sudo wrapper without depending on the test host's own sudo
+    # configuration.
+    script = ROOT / "observability" / "scripts" / "run_spark_observability.sh"
+    smartctl = tmp_path / "smartctl"
+    exporter = tmp_path / "smartctl_exporter"
+    arguments = tmp_path / "arguments.txt"
+    smartctl.write_text("#!/usr/bin/env bash\nexit 0\n")
+    exporter.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$EXPORTER_ARGS"\n')
+    smartctl.chmod(0o755)
+    exporter.chmod(0o755)
+    output_dir = tmp_path / "monitoring"
+    environment = os.environ | {
+        "NODE_ADDR": "127.0.0.1",
+        "SMARTCTL": str(smartctl),
+        "SMARTCTL_EXPORTER": str(exporter),
+        "SMARTCTL_SUDO": "1",
+        "EXPORTER_ARGS": str(arguments),
+        "OUTPUT_DIR": str(output_dir),
+    }
+
+    result = subprocess.run(
+        ["bash", str(script), "storage"],
+        cwd=ROOT,
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    wrapper = output_dir / "smartctl-sudo"
+    assert arguments.read_text().splitlines()[0] == f"--smartctl.path={wrapper}"
+    assert os.access(wrapper, os.X_OK)
+    wrapper_text = wrapper.read_text()
+    assert "sudo -n" in wrapper_text
+    assert str(smartctl) in wrapper_text
+
+
+def test_storage_role_skips_sudo_when_smartctl_already_has_permission(tmp_path: Path) -> None:
+    script = ROOT / "observability" / "scripts" / "run_spark_observability.sh"
+    smartctl = tmp_path / "smartctl"
+    exporter = tmp_path / "smartctl_exporter"
+    arguments = tmp_path / "arguments.txt"
+    smartctl.write_text(
+        '#!/usr/bin/env bash\n'
+        'case "$1" in\n'
+        '  --scan) echo "/dev/nvme0 -d nvme # comment" ;;\n'
+        '  -i) exit 0 ;;\n'
+        '  *) exit 0 ;;\n'
+        'esac\n'
+    )
+    exporter.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$EXPORTER_ARGS"\n')
+    smartctl.chmod(0o755)
+    exporter.chmod(0o755)
+    environment = os.environ | {
+        "NODE_ADDR": "127.0.0.1",
+        "SMARTCTL": str(smartctl),
+        "SMARTCTL_EXPORTER": str(exporter),
+        "EXPORTER_ARGS": str(arguments),
+        "OUTPUT_DIR": str(tmp_path / "monitoring"),
+    }
+
+    result = subprocess.run(
+        ["bash", str(script), "storage"],
+        cwd=ROOT,
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert arguments.read_text().splitlines()[0] == f"--smartctl.path={smartctl}"
+
+
 def test_dashboards_keep_matrix_and_freshness_scopes_separate() -> None:
     """A fresh rank/cluster must not mask another rank's stale or colliding cell."""
     for name in DASHBOARDS:
