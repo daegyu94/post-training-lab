@@ -112,6 +112,9 @@ python -m execution_feedback.evaluate \
 
 후보는 최초 SFT checkpoint로 train 문제에서 한 번만 생성합니다.
 
+Reasoning 모델(Qwen3 계열 등)은 코드보다 먼저 `<think>...</think>` 블록을 출력하므로 `enable_thinking=False`로 미리 닫아 생성을 요청합니다.
+이걸 하지 않으면 짧은 `--max-new-tokens`에서 사고 과정만으로 예산이 소진되어 코드가 전혀 나오지 않을 수 있습니다(Qwen3-30B-A3B, `--max-new-tokens 64`에서 12/12 후보가 잘린 `<think>` 텍스트만 반환한 사례로 확인).
+
 ```bash
 python -m execution_feedback.generate \
   --model-dir /path/to/sft-checkpoint \
@@ -135,6 +138,16 @@ Validation과 test 평가가 입력되면 feedback 생성은 실패합니다.
 
 `execution_feedback.train`은 TRL의 `SFTTrainer`와 `DPOTrainer`를 사용합니다.
 단일 GPU에서는 `python`, 분산 실행에서는 준비된 환경의 `torchrun` 또는 `accelerate launch` 뒤에 `-m execution_feedback.train ...`을 붙입니다.
+단일 process 실행(`WORLD_SIZE=1`)에서는 모델을 `device_map="auto"`로 불러 GPU에 shard 단위로 직접 올립니다.
+분산 실행에서는 각 rank가 이미 자기 device를 알고 있으므로 이 옵션을 켜지 않습니다(켜면 보이는 GPU 전체에 잘못 분산됩니다).
+`--mode sft`는 `loss_type="nll"`을 명시적으로 지정합니다 — 기본값 `chunked_nll`은 model forward를 patch하는데, `device_map="auto"`가 메모리 부족으로 일부 layer를 CPU offload하면 그 layer의 forward가 `functools.partial`로 감싸져 patch가 `'functools.partial' object has no attribute '__func__'`로 깨집니다.
+
+`--lora-r`는 PEFT의 `target_modules="all-linear"`로 적용됩니다.
+PEFT의 architecture 자동 매핑은 이 repo가 다루는 MoE 구조(Qwen3-30B-A3B의 fused-expert parameter, GLM의 MLA attention)를 모르기 때문에, target_modules를 지정하지 않으면 `--lora-r`가 `No target_modules passed but also no target_parameters found`로 즉시 실패합니다.
+
+Qwen3-30B-A3B(LoRA, 48 layer 전체 all-linear)로 이 세 단계 모두 실제 GPU에서 검증했습니다.
+`--gradient-checkpointing` 없이는 이 하드웨어(GB10, 통합 메모리 119GiB)에서 backward 시점에 CUDA OOM이 발생했습니다 — LoRA라도 48 layer 활성화를 전부 들고 있으면 여유가 없습니다.
+30B 스케일에서는 `--gradient-checkpointing`을 기본으로 켜는 것을 권장합니다.
 
 ```bash
 python -m execution_feedback.train \
@@ -186,6 +199,21 @@ bash scripts/run_execution_feedback_cycle.sh
 Wrapper는 GPU generation, Docker evaluation과 training을 순차 실행해 자원 경쟁을 피합니다.
 DPO pair가 없으면 C와 D를 건너뛰고 A/B만 비교합니다.
 
+다음 환경변수로 규모를 조정합니다(기본값은 30B 전체 규모, 필요하면 축소).
+
+| 변수 | 기본값 | 의미 |
+| --- | --- | --- |
+| `NUM_TRAIN_CANDIDATES` | 8 | train task당 생성할 candidate 수 |
+| `MAX_NEW_TOKENS` | 512 | candidate 생성 최대 token 수(train·test 공통) |
+| `TRAIN_TEMPERATURE` / `TRAIN_TOP_P` | 0.8 / 0.95 | train candidate 생성 sampling 설정 |
+| `MAX_STEPS` | 64 | B/C/D 공통 학습 step 수 |
+| `GRADIENT_CHECKPOINTING` | 0 | `1`이면 B/C/D 학습에 `--gradient-checkpointing` 적용 |
+| `LORA_R` | 0 | 0이면 `SFT_CHECKPOINT`를 adapter로 간주하고 이어서 학습 |
+
+쉬운 task와 충분히 학습된 checkpoint를 쓰면 sampling만으로는 fail이 전혀 안 나올 수 있습니다.
+실제로 Qwen3-30B-A3B(LoRA)로 4개 synthetic train task를 시도했을 때 `temperature=1.4, top_p=1.0`, candidate 6개까지도 24/24 전부 pass했습니다.
+이 경우 DPO pair를 얻으려면 같은 task에 대해 `--max-new-tokens`를 의도적으로 줄인 별도 생성을 추가해 진짜 truncation fail을 섞는 방법이 있습니다 — 조작된 label이 아니라 짧은 예산에서 나온 실제 모델 출력입니다.
+
 ## Final Comparison
 
 각 variant는 같은 test task, seed, decoding 설정으로 후보 하나만 생성합니다.
@@ -227,8 +255,11 @@ Spark 실행 기록은 commit 메시지에서 확인할 수 있습니다.
 - `f7b9f0b`: spark1의 실제 Docker에서 단일 timeout과 workers=4 평가 후 container 잔존 여부를 확인했고, network·filesystem·PID 제한을 검사했습니다.
 - `8efc8e0b`: 설치된 TRL 1.12.0 source에서 full DPO의 reference precompute 경로를 확인했습니다. GPU 학습 완료나 메모리 실측 결과를 의미하지 않습니다.
 
-현재 기록만으로 A/B/C/D 학습 cycle 완료나 성공률 개선을 판단할 수는 없습니다.
-실험 비교에는 각 variant의 generation manifest, training summary와 test evaluation이 필요합니다.
+이후 spark1에서 Qwen3-30B-A3B(실제 base checkpoint, LoRA r=16 all-linear)로 A/B/C/D 전체 cycle을 처음부터 끝까지(초기 SFT → train candidate 생성 → 실제 Docker 평가 → feedback → B/C/D 학습 → test candidate 생성·평가 → compare)를 실제로 실행해 완료했습니다.
+그 과정에서 이 문서 위쪽에 기록된 네 가지 실제 버그(`target_modules` 누락, 단일 process `device_map`, `chunked_nll`/CPU-offload 충돌, reasoning 모델의 `<think>` 예산 소진)를 GPU 실행 중 발견하고 고쳤습니다.
+DPO(C, D)는 loss가 0.70→0.04~0.09로, `rewards/accuracies`가 1.0으로, `rewards/margins`가 계속 증가하는 정상적인 학습 곡선을 보였습니다.
+Test task가 2개뿐이고 synthetic task 자체가 이 모델에는 쉬워서 A/B/C/D 모두 pass@1=1.0으로 나와 성공률 차이는 관측되지 않았습니다 — 이는 이 실행의 task 난이도·표본 크기 한계이며 pipeline 결함이 아닙니다.
+실험 비교(성공률 차이 관측 포함)에는 더 크거나 어려운 test set과 각 variant의 generation manifest, training summary, test evaluation이 필요합니다.
 
 평가 timeout의 stdout/stderr는 UTF-8 문자열로 변환하고 마지막 4,000자만 저장합니다.
 출력이 있는 후보가 timeout되어도 JSONL 저장을 계속할 수 있습니다.

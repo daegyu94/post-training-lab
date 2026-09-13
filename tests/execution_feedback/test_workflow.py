@@ -10,7 +10,7 @@ from execution_feedback.compare import compare
 from execution_feedback.evaluate import _kill_container, docker_command, evaluate_candidate, extract_code
 from execution_feedback.feedback import build_feedback
 from execution_feedback.prepare import SYNTHETIC_TASKS, prepare
-from execution_feedback.train import dpo_needs_precomputed_ref_logps
+from execution_feedback.train import dpo_needs_precomputed_ref_logps, single_process_device_map
 
 
 def test_prepare_writes_disjoint_splits_and_sft_files(tmp_path: Path) -> None:
@@ -92,6 +92,15 @@ def test_dpo_precomputes_ref_logps_only_for_full_fine_tuning() -> None:
     assert dpo_needs_precomputed_ref_logps(is_adapter=False, lora_r=0) is True
     assert dpo_needs_precomputed_ref_logps(is_adapter=True, lora_r=0) is False
     assert dpo_needs_precomputed_ref_logps(is_adapter=False, lora_r=8) is False
+
+
+def test_device_map_is_auto_only_outside_distributed_launch() -> None:
+    # "auto" loads a large model shard-by-shard straight into the one visible
+    # GPU; under torchrun/accelerate (world_size > 1) each rank already owns its
+    # device, and "auto" would wrongly try to shard across every GPU it sees.
+    assert single_process_device_map(1) == "auto"
+    assert single_process_device_map(2) is None
+    assert single_process_device_map(8) is None
 
 
 def test_feedback_rejects_non_train_rows(tmp_path: Path) -> None:

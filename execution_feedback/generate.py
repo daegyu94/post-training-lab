@@ -42,7 +42,14 @@ def main() -> None:
     started = time.perf_counter()
     for task in tasks:
         messages = [{"role": "user", "content": task["prompt"]}]
-        prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        # Reasoning models (e.g. Qwen3) emit a <think>...</think> block before any
+        # code; on a bounded --max-new-tokens budget that reasoning can consume the
+        # whole budget and leave zero code tokens, failing every candidate. Observed
+        # directly: 12/12 real candidates from Qwen3-30B-A3B were bare truncated
+        # <think> text at max-new-tokens=64. enable_thinking=False pre-closes the
+        # think block in the prompt itself; templates that don't support it ignore
+        # the extra kwarg.
+        prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True, enable_thinking=False)
         inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
         for ordinal in range(args.num_candidates):
             with torch.inference_mode():
