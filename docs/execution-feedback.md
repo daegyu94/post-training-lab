@@ -56,6 +56,9 @@ python -m execution_feedback.prepare \
   --output-dir /path/to/shared/execution-feedback/data
 ```
 
+synthetic과 MBPP(`google-research-datasets/mbpp`, `sanitized` config, cc-by-4.0) 둘 다 실제로 `prepare` → 실제 Docker 평가까지 검증했습니다.
+MBPP `sanitized` config의 문제 설명 필드는 `prompt`입니다(`text`가 아님) — 다른 config나 향후 dataset 개정에서 필드명이 다시 바뀔 수 있으니, 새 revision으로 바꿀 때는 `datasets.load_dataset(...).column_names`로 실제 스키마를 먼저 확인합니다.
+
 `initial_sft_train.jsonl`과 `initial_sft_validation.jsonl`은 최초 SFT 입력입니다.
 다음처럼 최초 SFT checkpoint를 만든 뒤 아래 cycle의 공통 시작점으로 전달할 수 있습니다.
 
@@ -260,6 +263,10 @@ Spark 실행 기록은 commit 메시지에서 확인할 수 있습니다.
 DPO(C, D)는 loss가 0.70→0.04~0.09로, `rewards/accuracies`가 1.0으로, `rewards/margins`가 계속 증가하는 정상적인 학습 곡선을 보였습니다.
 Test task가 2개뿐이고 synthetic task 자체가 이 모델에는 쉬워서 A/B/C/D 모두 pass@1=1.0으로 나와 성공률 차이는 관측되지 않았습니다 — 이는 이 실행의 task 난이도·표본 크기 한계이며 pipeline 결함이 아닙니다.
 실험 비교(성공률 차이 관측 포함)에는 더 크거나 어려운 test set과 각 variant의 generation manifest, training summary, test evaluation이 필요합니다.
+
+MBPP(`sanitized` config)도 `prepare`와 실제 Docker 평가로 검증했습니다.
+`adapt_mbpp`가 존재하지 않는 `text` 필드를 읽어 모든 MBPP row에서 `KeyError`로 즉시 실패하는 버그가 있었습니다(실제 필드명은 `prompt`) — 이 경로는 네트워크와 실제 dataset이 필요해 CPU tier 테스트가 전혀 커버하지 못했습니다.
+고친 뒤 실제 MBPP revision(`4bb6404fdc6cacfda99d4ac4205087b89d32030c`)으로 4개 task를 준비하고 참조 정답을 실제 Docker에서 평가해 4/4 pass를 확인했습니다.
 
 평가 timeout의 stdout/stderr는 UTF-8 문자열로 변환하고 마지막 4,000자만 저장합니다.
 출력이 있는 후보가 timeout되어도 JSONL 저장을 계속할 수 있습니다.

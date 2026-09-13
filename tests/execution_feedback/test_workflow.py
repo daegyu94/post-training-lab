@@ -9,7 +9,7 @@ from execution_feedback.common import index_tasks, read_jsonl, write_jsonl
 from execution_feedback.compare import compare
 from execution_feedback.evaluate import _kill_container, docker_command, evaluate_candidate, extract_code
 from execution_feedback.feedback import build_feedback
-from execution_feedback.prepare import SYNTHETIC_TASKS, prepare
+from execution_feedback.prepare import SYNTHETIC_TASKS, adapt_mbpp, prepare
 from execution_feedback.train import dpo_needs_precomputed_ref_logps, single_process_device_map
 
 
@@ -22,6 +22,23 @@ def test_prepare_writes_disjoint_splits_and_sft_files(tmp_path: Path) -> None:
     test_ids = {row["task_id"] for row in read_jsonl(tmp_path / "test.jsonl")}
     assert train_ids.isdisjoint(test_ids)
     assert all(row["messages"][-1]["role"] == "assistant" for row in read_jsonl(tmp_path / "initial_sft_train.jsonl"))
+
+
+def test_adapt_mbpp_reads_the_sanitized_configs_actual_field_names() -> None:
+    # The "sanitized" MBPP config uses 'prompt' for the problem text, not
+    # 'text' (that was the bug: real data has no 'text' field, so this raised
+    # KeyError on every row before hitting Docker or a model at all).
+    row = {
+        "source_file": "Benchmark Questions Verification V2.ipynb", "task_id": 602,
+        "prompt": "Write a python function to find the first repeated character in a given string.",
+        "code": "def first_repeated_char(str1):\n    return str1[0]",
+        "test_imports": [], "test_list": ['assert first_repeated_char("abcabc") == "a"'],
+    }
+    task = adapt_mbpp(row, "train")
+    assert task["task_id"] == "mbpp-602"
+    assert task["prompt"].startswith("Write a python function")
+    assert task["reference_solution"] == row["code"]
+    assert task["tests"] == row["test_list"]
 
 
 def test_extract_code_prefers_largest_python_fence() -> None:

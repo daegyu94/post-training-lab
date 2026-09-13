@@ -29,7 +29,8 @@ def adapt_mbpp(row: dict[str, Any], split: str) -> dict[str, Any]:
         raise ValueError(f"MBPP task {task_id} has no test_list")
     return {
         "task_id": f"mbpp-{task_id}",
-        "prompt": f"{row['text'].strip()}\nReturn only Python code.",
+        "prompt": f"{row['prompt'].strip()}\nReturn only Python code.",  # MBPP's own 'prompt' field, not this dict's
+
         "reference_solution": row["code"],
         "test_setup": row.get("test_setup_code", ""),
         "tests": tests,
