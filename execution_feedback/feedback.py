@@ -18,6 +18,7 @@ def build_feedback(
     if max_sft_per_task < 1 or max_pairs_per_task < 1:
         raise ValueError("per-task limits must be positive")
     tasks = index_tasks(tasks_path)
+    evaluations_sha256 = sha256(evaluations_path)
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in read_jsonl(evaluations_path):
         task_id = row.get("task_id")
@@ -53,7 +54,7 @@ def build_feedback(
                     "prompt": [{"role": "user", "content": task["prompt"]}],
                     "chosen": [{"role": "assistant", "content": chosen["code"]}],
                     "rejected": [{"role": "assistant", "content": rejected["code"]}],
-                    "provenance": {"candidate_pool_sha256": sha256(evaluations_path), "chosen_candidate_id": chosen["candidate_id"], "rejected_candidate_id": rejected["candidate_id"]},
+                    "provenance": {"candidate_pool_sha256": evaluations_sha256, "chosen_candidate_id": chosen["candidate_id"], "rejected_candidate_id": rejected["candidate_id"]},
                 })
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -64,7 +65,7 @@ def build_feedback(
     manifest = {
         "manifest_version": 1,
         "policy": "train-only; pass->filtered SFT; pass/fail from same pool->DPO; timeout and infra_error excluded",
-        "tasks_sha256": sha256(tasks_path), "evaluations_sha256": sha256(evaluations_path),
+        "tasks_sha256": sha256(tasks_path), "evaluations_sha256": evaluations_sha256,
         "max_sft_per_task": max_sft_per_task, "max_pairs_per_task": max_pairs_per_task,
         "filtered_sft_count": len(filtered), "dpo_pair_count": len(pairs), "dpo_eligible_task_count": eligible_tasks,
         "files": {"filtered_sft": {"path": filtered_path.name, "sha256": sha256(filtered_path)}, "dpo": {"path": dpo_path.name, "sha256": sha256(dpo_path)}},

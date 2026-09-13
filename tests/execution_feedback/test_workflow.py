@@ -10,6 +10,7 @@ from execution_feedback.compare import compare
 from execution_feedback.evaluate import docker_command, evaluate_candidate, extract_code
 from execution_feedback.feedback import build_feedback
 from execution_feedback.prepare import SYNTHETIC_TASKS, prepare
+from execution_feedback.train import dpo_needs_precomputed_ref_logps
 
 
 def test_prepare_writes_disjoint_splits_and_sft_files(tmp_path: Path) -> None:
@@ -65,6 +66,16 @@ def test_feedback_uses_same_train_pool_and_excludes_timeout(tmp_path: Path) -> N
     pair = next(read_jsonl(tmp_path / "feedback" / "dpo.jsonl"))
     assert pair["provenance"]["chosen_candidate_id"] == "p"
     assert pair["provenance"]["rejected_candidate_id"] == "f"
+    assert pair["provenance"]["candidate_pool_sha256"]
+
+
+def test_dpo_precomputes_ref_logps_only_for_full_fine_tuning() -> None:
+    # ref_model=None + no PEFT makes DPOTrainer reload a whole second copy of the
+    # model to keep as reference; PEFT models (fresh --lora-r or a resumed
+    # adapter checkpoint) already avoid that via adapter-disable.
+    assert dpo_needs_precomputed_ref_logps(is_adapter=False, lora_r=0) is True
+    assert dpo_needs_precomputed_ref_logps(is_adapter=True, lora_r=0) is False
+    assert dpo_needs_precomputed_ref_logps(is_adapter=False, lora_r=8) is False
 
 
 def test_feedback_rejects_non_train_rows(tmp_path: Path) -> None:

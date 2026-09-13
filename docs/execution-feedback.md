@@ -152,6 +152,11 @@ python -m execution_feedback.train \
 D는 C와 정확히 같은 `dpo.jsonl`과 hyperparameter를 사용합니다.
 D의 총 학습 token과 시간이 더 크므로 성공률만으로 효율이 더 좋다고 판단하지 않습니다.
 
+`--lora-r`를 생략한 full fine-tuning DPO(위 C·D)는 `precompute_ref_log_probs=True`를 자동으로 켭니다.
+DPOTrainer는 `ref_model=None`이고 PEFT가 아니면 기본적으로 모델 전체를 한 번 더 로드해 reference로 상주시키는데, 이는 30B에서 resident weight를 조용히 두 배로 만듭니다.
+이 옵션은 그 대신 학습 시작 전 현재 모델로 reference logprob을 한 번만 계산해 캐싱하고 두 번째 사본을 만들지 않습니다.
+LoRA checkpoint(새로 만든 adapter거나 이미 있는 adapter)는 TRL이 adapter를 끄는 것만으로 reference를 저렴하게 얻으므로 이 옵션이 필요 없습니다.
+
 ## End-to-End Cycle
 
 순차 실행 wrapper는 generation, Docker evaluation, B/C/D 추가 학습, 고정 test 평가와 비교를 연결합니다.

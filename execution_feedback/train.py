@@ -8,6 +8,13 @@ from pathlib import Path
 import time
 
 
+def dpo_needs_precomputed_ref_logps(is_adapter: bool, lora_r: int) -> bool:
+    """True for full fine-tuning only. With ref_model=None, DPOTrainer keeps a
+    second full copy of a non-PEFT model resident for the whole run; PEFT models
+    already avoid that cheaply via adapter-disable, so they don't need this."""
+    return not (is_adapter or bool(lora_r))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=("sft", "dpo"), required=True)
@@ -68,7 +75,20 @@ def main() -> None:
         trainer = SFTTrainer(model=model, args=training_args, train_dataset=dataset["train"], eval_dataset=dataset.get("validation"), processing_class=tokenizer)
     else:
         from trl import DPOConfig, DPOTrainer
-        training_args = DPOConfig(max_length=args.max_length, beta=args.beta, **common)
+        # With ref_model=None and no PEFT adapter, DPOTrainer reloads the whole
+        # base model a second time to keep as a frozen reference (dpo_trainer.py:
+        # "Reference model" branch, ref_model_init_kwargs -> create_model_from_path),
+        # doubling resident weights for the run's full duration. On a 30B model
+        # that is the difference between fitting and not. precompute_ref_log_probs
+        # instead runs the model once over the dataset before training (using its
+        # own pre-update weights as the reference) and never keeps a second copy
+        # (trainer stays ref_model=None; see _precompute_ref_logps). PEFT already
+        # avoids the second copy cheaply via adapter-disable, so this only needs
+        # to be forced on for true full fine-tuning.
+        training_args = DPOConfig(
+            max_length=args.max_length, beta=args.beta,
+            precompute_ref_log_probs=dpo_needs_precomputed_ref_logps(is_adapter, args.lora_r), **common,
+        )
         trainer = DPOTrainer(model=model, ref_model=None, args=training_args, train_dataset=dataset["train"], eval_dataset=dataset.get("validation"), processing_class=tokenizer)
     started = time.perf_counter()
     result = trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
