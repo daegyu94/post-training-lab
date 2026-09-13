@@ -7,7 +7,7 @@ import pytest
 
 from execution_feedback.common import index_tasks, read_jsonl, write_jsonl
 from execution_feedback.compare import compare
-from execution_feedback.evaluate import docker_command, evaluate_candidate, extract_code
+from execution_feedback.evaluate import _kill_container, docker_command, evaluate_candidate, extract_code
 from execution_feedback.feedback import build_feedback
 from execution_feedback.prepare import SYNTHETIC_TASKS, prepare
 from execution_feedback.train import dpo_needs_precomputed_ref_logps
@@ -30,13 +30,29 @@ def test_extract_code_prefers_largest_python_fence() -> None:
 
 
 def test_docker_command_applies_isolation(tmp_path: Path) -> None:
-    command = docker_command(tmp_path, "python:3.12-slim", "256m", 1.0, 64)
+    command = docker_command(tmp_path, "python:3.12-slim", "256m", 1.0, 64, "execution-feedback-test")
     joined = " ".join(command)
     assert "--network none" in joined
     assert "--read-only" in command
     assert "--cap-drop ALL" in joined
     assert "no-new-privileges" in joined
     assert "readonly" in joined
+    assert "--name execution-feedback-test" in joined
+
+
+def test_kill_container_is_best_effort(monkeypatch) -> None:
+    # A TimeoutExpired-killed `docker run` client leaves its container running
+    # unattended (observed directly: a `while True: pass` candidate stayed at
+    # 100% CPU indefinitely after being classified "timeout"). The forced
+    # `docker rm` cleanup must not raise even if the daemon is unreachable --
+    # a failed cleanup must not turn a valid timeout result into a crash.
+    seen = []
+    monkeypatch.setattr(
+        "execution_feedback.evaluate.subprocess.run",
+        lambda *args, **kwargs: seen.append(args[0]) or (_ for _ in ()).throw(FileNotFoundError("no docker")),
+    )
+    _kill_container("execution-feedback-test")
+    assert seen == [["docker", "rm", "--force", "execution-feedback-test"]]
 
 
 def test_local_evaluator_reports_pass_and_partial_failure() -> None:

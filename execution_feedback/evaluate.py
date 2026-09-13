@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 from typing import Any
 
 from execution_feedback.common import index_tasks, read_jsonl, write_jsonl
@@ -60,15 +61,32 @@ def extract_code(response: str) -> str:
     return max(matches, key=len).strip() + "\n" if matches else response.strip() + "\n"
 
 
-def docker_command(work_dir: Path, image: str, memory: str, cpus: float, pids_limit: int) -> list[str]:
+def docker_command(work_dir: Path, image: str, memory: str, cpus: float, pids_limit: int, name: str) -> list[str]:
     return [
-        "docker", "run", "--rm", "--network", "none", "--read-only",
+        "docker", "run", "--rm", "--name", name, "--network", "none", "--read-only",
         "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
         "--memory", memory, "--cpus", str(cpus), "--pids-limit", str(pids_limit),
         "--tmpfs", "/tmp:rw,noexec,nosuid,size=16m", "--user", "65534:65534",
         "--mount", f"type=bind,src={work_dir.resolve()},dst=/work,readonly",
         "--workdir", "/work", image, "python", "_runner.py",
     ]
+
+
+def _kill_container(name: str) -> None:
+    """subprocess.run(timeout=...) only kills the `docker run` client on
+    TimeoutExpired; the container it started keeps running unattended (no
+    stop signal reaches it), still holding its full CPU/memory allocation.
+    Observed directly: an evaluated `while True: pass` candidate stayed at
+    100% CPU indefinitely after being classified as a timeout. --rm only
+    removes a container on its own exit, not on the client disconnecting, so
+    a forced removal is required. Best-effort: the daemon may already be
+    gone, and a failure here must not turn a valid timeout result into a
+    worse one.
+    """
+    try:
+        subprocess.run(["docker", "rm", "--force", name], capture_output=True, timeout=10, check=False)
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
 
 
 def _parse_result(stdout: str) -> dict[str, Any] | None:
@@ -104,10 +122,13 @@ def evaluate_candidate(
         for path in work_dir.iterdir():
             path.chmod(0o444)
         work_dir.chmod(0o755)
-        command = docker_command(work_dir, image, memory, cpus, pids_limit) if engine == "docker" else [sys.executable, "_runner.py"]
+        container_name = f"execution-feedback-{uuid.uuid4().hex}"
+        command = docker_command(work_dir, image, memory, cpus, pids_limit, container_name) if engine == "docker" else [sys.executable, "_runner.py"]
         try:
             completed = subprocess.run(command, cwd=None if engine == "docker" else work_dir, text=True, capture_output=True, timeout=timeout_seconds, check=False)
         except subprocess.TimeoutExpired as exc:
+            if engine == "docker":
+                _kill_container(container_name)
             return {**base, "status": "timeout", "score": 0.0, "passed_tests": 0, "total_tests": len(task["tests"]), "failure_phase": "timeout", "failures": [f"exceeded {timeout_seconds}s"], "stdout": exc.stdout or "", "stderr": exc.stderr or "", "duration_seconds": time.perf_counter() - started}
         except (FileNotFoundError, OSError) as exc:
             return {**base, "status": "infra_error", "score": 0.0, "passed_tests": 0, "total_tests": len(task["tests"]), "failure_phase": "worker", "failures": [f"{type(exc).__name__}: {exc}"], "duration_seconds": time.perf_counter() - started}

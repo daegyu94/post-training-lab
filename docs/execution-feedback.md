@@ -97,6 +97,11 @@ python -m execution_feedback.evaluate \
   --workers 4 --cpus 1 --memory 256m --pids-limit 64 --timeout-seconds 10
 ```
 
+`timeout`으로 분류된 후보의 container는 강제로 제거됩니다.
+`subprocess.run(timeout=...)`은 `docker run` client 프로세스만 죽이고 그 client가 daemon에 띄운 container는 그대로 남아 CPU·memory 자원을 계속 점유합니다(`--rm`은 container가 스스로 끝났을 때만 정리하며 client 연결 종료로는 정리되지 않습니다).
+각 실행에 고유한 `--name`을 부여하고 timeout 시 `docker rm --force`로 정리해 이를 막습니다.
+정리는 best-effort이며 실패해도 timeout 판정 자체는 그대로 유지됩니다.
+
 `--engine local`은 저장소의 신뢰할 수 있는 smoke test에만 사용합니다.
 모델 출력이나 공개 dataset 코드를 local engine으로 실행하지 않습니다.
 
