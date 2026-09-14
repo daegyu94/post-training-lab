@@ -67,6 +67,8 @@ Metadata와 shard가 독립 filesystem에 나뉘면 새 process가 완전한 che
 
 설치된 구현의 I/O 동작이 서로 다르므로 하나의 `NVMe I/O` 항목으로 묶지 않습니다.
 
+**한 줄 요약**: Megatron sync·async, TRL FSDP2 DCP, DeepSpeed ZeRO checkpoint artifact는 모두 page cache를 쓰는 **buffered I/O**입니다. **Direct I/O(`O_DIRECT`, page cache 우회)는 DeepSpeed의 parameter/optimizer offload 한 경로뿐**입니다 — 같은 DeepSpeed 안에서도 offload와 checkpoint 저장은 다른 I/O 경로를 씁니다.
+
 | 경로 | File I/O | Page cache | 완료 기준 |
 | --- | --- | --- | --- |
 | Megatron sync checkpoint write | buffered | 사용 | data-file `fsync()` 포함 |
