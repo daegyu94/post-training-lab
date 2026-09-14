@@ -3,10 +3,27 @@
 <a id="checkpoint-and-memory-experiment"></a>
 
 `spark1`·`spark2`의 local NVMe만 사용해 30B 모델의 checkpoint I/O와 memory footprint를 반복 측정한 전용 실험입니다.
-NFS는 조건에 포함하지 않고 Megatron checkpoint는 rank별 local shard 저장 성능만 평가합니다.
+NFS는 repository checkout에만 사용하고 Megatron checkpoint는 rank별 local shard 저장 성능만 평가합니다.
 
 실행·집계는 `experiments/checkpoint_memory_30b.py`, read/cache 분류는 `experiments/checkpoint_io_probe.py`, cohort 생성은 `experiments/prepare_checkpoint_cohort.py`를 기준으로 합니다.
-아래는 측정 이유와 결과입니다.
+최신 authoritative 수치는 [30B Controlled Results](30b-results.md#controlled-results-2026-09-15)에 한 번만 기록합니다.
+이 문서는 실행 방법과 2026-09-14 이전 historical 결과를 보존합니다.
+
+## Current Matrix
+
+2026-09-15 matrix는 두 30B 모델에 같은 UltraChat revision, TP=1·PP=1·EP=2, BF16, micro/global batch 1/2, seed 42와 `TRANSFORMER_IMPL=transformer_engine`을 고정했습니다.
+각 cell은 별도 warmup 또는 pilot 뒤 3회 측정했고 save-call rMAD가 10%를 넘으면 8회로 연장하도록 했지만 연장이 필요한 cell은 없었습니다.
+
+| 구분 | Qwen | GLM | 결과 |
+| --- | --- | --- | --- |
+| Distributed write | sync/async, EP2 `torch_dist`, DP2 `fsdp_dtensor` | 동일 | 각각 12/12 통과 |
+| TE memory | length 4096/8192 | 동일 | 각각 8/8 통과 |
+| Multi-step checkpoint | 8 steps, interval 2, sync/async | 동일 | 각각 8/8 통과 |
+| Recompute | length 2048/4096, full/selective | 모델 간 비교 대상 아님 | Qwen 16/16 통과 |
+| Full-SFT capacity | SGD 1-step pilot | 미계획 | Qwen은 첫 step 전 global OOM |
+
+Distributed restore는 shared checkpoint store가 없으므로 계획하지 않습니다.
+Recompute를 모델 간 결론으로 쓸 때만 GLM matrix를 추가하고, async 장기 throughput이 필요할 때만 100-step 이상 실험을 추가합니다.
 
 ## Research Questions
 
@@ -21,7 +38,7 @@ NFS는 조건에 포함하지 않고 Megatron checkpoint는 rank별 local shard 
 
 이 결과는 local checkpoint의 장애 복구, topology 변경 restore, power-loss durability 또는 framework 간 절대적 우열을 증명하지 않습니다.
 
-## Revised I/O Conditions (2026-09-14)
+## Historical I/O Conditions (2026-09-14)
 
 | 항목 | 값 |
 | --- | --- |
@@ -166,11 +183,12 @@ Memory phase는 4096/8192 Megatron pilot과 반복, TRL DDP/FSDP2 LoRA, TRL ZeRO
 
 <a id="실측-결과"></a>
 
-## Measured Results
+## Historical Measured Results (2026-09-14)
 
 Raw manifest·measurement record는 커밋하지 않으므로(`results/`는 gitignore 대상) 아래는 요약값입니다.
+아래의 n=1 후속 권고와 혼합-backend memory 표는 위 current matrix로 대체됐습니다.
 
-### Revised Distributed Write Results (2026-09-14)
+### Historical Distributed Write Results (2026-09-14)
 
 분산 결과는 실행 시간이 길어 조건당 1회만 수행한 exploratory 측정입니다.
 모든 checkpoint는 각 노드의 local NVMe에 기록하고 inventory 수집 뒤 삭제했으며, 공유 remote filesystem을 사용하지 않으므로 restore는 실행하지 않았습니다.
@@ -205,7 +223,7 @@ GLM TRL 실패 증거는 `results/distributed-io-trl-dcp-glm-n1-v3-20260914`과 
 
 기존 실험과 이번 개정의 차이는 다음과 같습니다.
 
-| 기존 측정 | 이번 개정 | 다시 측정할 필요 |
+| 기존 측정 | 2026-09-14 개정 | 당시 후속 판단 |
 | --- | --- | --- |
 | 순차 shard read probe | 실제 새 process TRL model restore를 cold/warm로 측정 | probe는 cache 진단용으로만 유지 |
 | Qwen 중심 checkpoint 결과 | Qwen·GLM 모두 같은 512-token, 1-step 조건 | n=1이므로 결론이 필요하면 성공 셀만 3회 반복 |
@@ -247,7 +265,7 @@ ZeRO-3 NVMe의 6.4 GB는 full fine-tuning에 runtime offload를 건 결과이므
 
 Unified-memory hardware이므로 CUDA와 host 측정값을 더하지 않고 별도 panel로 봅니다.
 `EST-MEG-ADAM`(Megatron full + Adam) 추정값은 rank당 160.8 GiB로 119 GiB 예산을 초과해 실행하지 않았습니다.
-`EST-MEG-SGD`(full + SGD)는 96.6 GiB로 예산 안에 들어오지만 pilot 실행은 별도로 결정하지 않았습니다(추정만 수행).
+`EST-MEG-SGD`(full + SGD)는 96.6 GiB로 예산 안에 들었지만 이후 2노드 pilot이 global OOM으로 종료되어 fit 판정이 기각됐습니다.
 
 > **`MEM-TRL-Z3-NVME`의 optimizer 표기 정정(2026-09-12).**
 > 이 조건은 `OPTIMIZER=sgd`로 실행됐지만, DeepSpeed는 optimizer state를 offload하면 client optimizer를 `DeepSpeedCPUAdam`으로 교체합니다(`deepspeed/runtime/engine.py`는 다른 client optimizer를 `zero_force_ds_cpu_optimizer` 기본값에서 거부).

@@ -1,12 +1,108 @@
 # 30B Results
 
 30B Qwen과 GLM의 검증 실행, GPU·메모리 결과와 framework 호환성 비교입니다.
+현재 판단은 아래 2026-09-15 통제 실험을 기준으로 하며, 뒤의 2026-09-14 이전 결과는 historical context입니다.
+
+## Controlled Results (2026-09-15)
+
+Checkpoint·memory·recompute matrix는 commit `bee4520e05a04aaf48f8fe971a6b2a1726f6250b`의 깨끗한 worktree에서 실행했습니다.
+두 모델은 같은 UltraChat revision, TP=1·PP=1·EP=2, BF16, micro/global batch 1/2, seed 42와 `transformer_engine`을 사용했습니다.
+NFS는 repository checkout에만 사용했고 checkpoint는 node-local NVMe에 저장했으므로 distributed restore는 측정하지 않았습니다.
+
+비교 cell은 별도 warmup 또는 pilot 뒤 3회 측정했습니다.
+Save-call relative MAD가 10%를 넘으면 8회로 늘리기로 했지만 모든 checkpoint cell이 기준 이하여서 추가 반복은 필요하지 않았습니다.
+
+### Distributed checkpoint write
+
+Qwen과 GLM은 각각 12/12 run을 통과했습니다.
+완료 시간은 save/enqueue와 async blocking finalization을 합한 host 시간이며 storage throughput으로 해석하지 않습니다.
+
+| Model | Variant | 논리 크기 median | Save/enqueue median | Finalize median | 완료 median | rMAD |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Qwen | sync `torch_dist`, EP2 | 10.64 MB | 1.045 s | 0.000 s | 1.046 s | 0.30% |
+| Qwen | async `torch_dist`, EP2 | 10.64 MB | 0.204 s | 0.769 s | 0.972 s | 2.15% |
+| Qwen | phase-2 `torch_dist`, EP2 | 10.64 MB | 1.065 s | 0.000 s | 1.066 s | 1.38% |
+| Qwen | phase-2 `fsdp_dtensor`, DP2 | 20.92 MB | 0.441 s | 0.000 s | 0.441 s | 2.21% |
+| GLM | sync `torch_dist`, EP2 | 22.04 MB | 1.064 s | 0.000 s | 1.064 s | 0.92% |
+| GLM | async `torch_dist`, EP2 | 22.04 MB | 0.173 s | 0.689 s | 0.862 s | 0.83% |
+| GLM | phase-2 `torch_dist`, EP2 | 22.04 MB | 1.063 s | 0.000 s | 1.064 s | 1.27% |
+| GLM | phase-2 `fsdp_dtensor`, DP2 | 43.14 MB | 0.410 s | 0.000 s | 0.410 s | 1.14% |
+
+Async는 API blocking 시간을 줄였지만 finalization을 포함한 차이는 Qwen 7.0%, GLM 19.0%였습니다.
+Format/layout 행은 payload와 memory placement가 달라 framework 우열 비교에 쓰지 않습니다.
+Raw manifests는 `results/refresh-distributed-{qwen|glm}-bee4520/manifest.json`입니다.
+
+### Multi-step checkpoint impact
+
+각 측정은 8 optimizer steps 중 2 step마다 저장해 총 4개 checkpoint를 만들었고, 앞의 2 step은 steady-step 집계에서 제외했습니다.
+두 모델 모두 warmup 2회와 측정 6회, 합계 8/8 run을 통과했습니다.
+
+| Model | Variant | 4개 논리 크기 median | Save/enqueue 합 median | Finalize median | 완료 median | Steady step median |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Qwen | sync | 291.86 MB | 2.441 s | 0.000 s | 2.441 s | 3239.25 ms |
+| Qwen | async | 291.86 MB | 1.119 s | 0.774 s | 1.881 s | 3304.50 ms |
+| GLM | sync | 602.56 MB | 2.822 s | 0.000 s | 2.822 s | 3410.05 ms |
+| GLM | async | 602.56 MB | 1.573 s | 0.818 s | 2.391 s | 3442.35 ms |
+
+Async 완료 시간은 sync보다 Qwen 23.0%, GLM 15.3% 짧았지만 steady-step median은 각각 2.0%, 0.9% 길었습니다.
+8-step run은 장기 throughput 근거가 아닙니다.
+Raw manifests는 `results/refresh-checkpoint-impact-{qwen|glm}-bee4520/manifest.json`입니다.
+
+### Transformer Engine memory
+
+두 모델 모두 length별 pilot 1회와 측정 3회, 합계 8/8 run을 통과했습니다.
+표는 측정 run마다 두 rank 중 큰 값을 취한 뒤의 median입니다.
+
+| Model | Length | Peak allocated median | Peak reserved median |
+| --- | ---: | ---: | ---: |
+| Qwen | 4096 | 34.320 GiB | 40.738 GiB |
+| Qwen | 8192 | 38.662 GiB | 48.500 GiB |
+| GLM | 4096 | 34.537 GiB | 41.311 GiB |
+| GLM | 8192 | 38.942 GiB | 49.859 GiB |
+
+4096에서 8192로 늘릴 때 allocated 증가는 Qwen 12.65%, GLM 12.75%로 유사했습니다.
+Raw manifests는 `results/refresh-memory-te-{qwen|glm}-bee4520/manifest.json`입니다.
+
+### Qwen recompute
+
+각 cell은 warmup 1회와 측정 3회로 총 16/16 run을 통과했습니다.
+표는 4-step run에서 첫 step을 제외한 median과 측정 run의 최대 CUDA peak입니다.
+
+| Length | Recompute | Steady step median | Peak allocated max | Peak reserved max |
+| ---: | --- | ---: | ---: | ---: |
+| 2048 | full | 3148.1 ms | 32.150 GiB | 36.564 GiB |
+| 2048 | selective | 2304.3 ms | 43.413 GiB | 46.270 GiB |
+| 4096 | full | 6343.5 ms | 34.321 GiB | 39.990 GiB |
+| 4096 | selective | 4572.3 ms | 55.905 GiB | 59.492 GiB |
+
+Selective는 step median을 26.8%와 27.9% 줄이는 대신 peak allocated를 35.0%와 62.9% 늘렸습니다.
+실행 뒤 read는 raw local-shard probe이며 checkpoint API restore가 아닙니다.
+Raw manifest는 `results/refresh-recompute-qwen-bee4520/manifest.json`입니다.
+
+### Full-SFT capacity
+
+`experiments/megatron/qwen3-30b-full-sgd-pilot.json`은 Qwen full parameter, distributed SGD, TE, EP2, length 2048와 1 optimizer step을 고정합니다.
+Commit `ed40ca702f07470d2378c441d392a2a89d71ddfa`에서 runner와 launcher가 `OPTIMIZER=sgd`를 전달하는 것을 검증했습니다.
+
+Node-local 2048 코호트 실행은 설정 로그에서 SGD와 full recompute를 확인했지만 FP32 main gradient 구성 중 NVIDIA allocation failure와 global OOM으로 첫 optimizer step 전에 종료됐습니다.
+따라서 96.6 GiB 사전 추정은 이 장치의 fit을 보장하지 않았고 같은 2노드 설정은 재실행하지 않습니다.
+Controller 로그는 `results/refresh-full-sft-sgd-qwen-ed40ca7-cohort1/rank-0.log`이며 spark2 kernel log에서 실행 Python process의 OOM reaping을 확인했습니다.
+
+### Remaining experiments
+
+1. Full-SFT는 FP32 main gradient까지 shard하는 지원 topology를 확인하고 다시 추정한 뒤 1-step pilot부터 시작합니다.
+2. Recompute를 모델 간 결론으로 쓸 필요가 생기면 같은 4-cell matrix를 GLM에서 3회 반복합니다. 현재 결과는 Qwen trade-off로만 해석합니다.
+3. Async 장기 throughput이 운영 결정에 필요할 때만 100 step 이상 고정 workload를 추가합니다.
+4. Shared checkpoint store가 생기기 전에는 distributed restore를 계획하지 않습니다.
+
+0.5B smoke, NFS checkpoint와 backend-mixed exploratory 결과는 이 통제 비교에 포함하지 않습니다.
 
 <a id="실제로-확인한-조합"></a>
 
-## Verified Runs
+## Historical Results (through 2026-09-14)
 
-`build.py --execute`로 확인한 조합입니다.
+아래는 이전 조건에서 `build.py --execute`로 확인한 기록입니다.
+Dataset·attention backend·반복 수가 위 통제 실험과 다르므로 최신 표와 합쳐 비교하지 않습니다.
 
 | Case | Backend | Model | Dataset | knob | 결과 |
 | --- | --- | --- | --- | --- | --- |
@@ -79,9 +175,8 @@ Qwen 2-node raw 결과는 `results/trl-ultrachat-fullsft-2node-20260914`, GLM 2-
 
 ## Qwen and GLM Comparison
 
-여기까지의 모든 반복 측정(checkpoint I/O, memory footprint, LoRA ratio)은 Qwen3-30B-A3B 하나에서만 실행됐습니다.
-GLM-4.7-Flash는 [30B GPU Results](#30b-gpu-results)에서 Megatron 1-step 실행 가능성만 확인됐고, TRL은 `spark_config.py`·`spark_train.py`에 `glm4_moe_lite` family와 전용 LoRA target module이 이미 있었지만 **한 번도 실행된 적이 없었습니다.**
-2026-09-12에 GLM의 TRL adapter 재로딩, memory matrix와 checkpoint I/O를 확인했습니다. Memory·checkpoint 반복 측정은 조건당 3회이며, 아래 1-step adapter 재로딩 표는 별도 실행입니다. LoRA 비율 sweep은 Qwen 결과이며 GLM에서 반복한 것으로 해석하지 않습니다.
+2026-09-14까지의 반복 측정은 조건이 혼재했으며, 위 2026-09-15 matrix에서 Qwen·GLM checkpoint와 TE memory를 같은 조건으로 다시 측정했습니다.
+아래 adapter reload와 TRL 결과는 별도 historical run이고 LoRA 비율 sweep과 recompute는 Qwen 결과입니다.
 
 ### Adapter Reload
 
@@ -134,84 +229,15 @@ Qwen만 backend를 바꿔 같은 조건으로 다시 측정한 결과입니다.
 이 비교에서 배운 운영상의 교훈은 모델 비교 자체보다 큽니다: `auto`처럼 **입력에 따라 조용히 다른 구현을 고르는 설정은 A/B 비교의 통제 변수를 깨뜨립니다.**
 위 memory comparison 표의 `LEN-*` 행도 Qwen은 `local`, GLM은 `transformer_engine` 측정이므로 두 값을 모델 차이로 읽으면 안 됩니다.
 
-**TRL DDP의 host memory pressure 차이는 모델 차이가 아니라 측정 방법의 문제였습니다.**
-처음에는 CUDA peak가 거의 같은데(59.8 vs 58.24 GB) host pressure만 GLM이 57% 높다고(109.50 vs 69.7 GB) 기록했습니다.
-통제된 재측정에서 이 결론은 **철회됩니다.**
-
-먼저 로딩 자체를 격리해 CPU로만 모델을 올리며 RSS를 0.2초 간격으로 샘플링했습니다(`AutoModelForCausalLM.from_pretrained`, GPU 미사용).
-
-| | 로드된 parameter | peak RSS | parameter 대비 |
-| --- | ---: | ---: | ---: |
-| Qwen | 56.87 GiB | 111.02 GiB | **×1.95** |
-| GLM | 55.77 GiB | 105.47 GiB | **×1.89** |
-
-**이 격리 실험에서 두 모델의 peak RSS는 각각 로드된 parameter bytes의 약 1.9배였습니다.** 따라서 "GLM만 두 벌을 쓴다"는 해석은 성립하지 않습니다.
-
-그다음 Qwen DDP를 오늘 같은 조건으로 다시 돌려 host pressure의 rank별 분포를 봤습니다.
-
-| 조건 | rank별 host pressure | 편차 |
-| --- | --- | ---: |
-| GLM(3 run × 2 rank) | 99.3 / 103.0 / 104.0 / 117.0 / 117.6 / 118.4 GB | 19.1 GB |
-| Qwen(오늘 재측정, 2 rank) | 69.1 / **122.3** GB | **53.2 GB** |
-
-같은 모델·같은 run 안에서도 두 rank가 69 GB와 122 GB로 갈렸고, Qwen의 최대값이 오히려 GLM보다 높습니다.
-즉 이 지표는 노드 상태에 크게 흔들려 **모델을 구분하는 근거로 쓸 수 없습니다.**
-원래의 57% 격차는 GLM은 rank 최대값, Qwen은 다른 세션에서 측정된 값을 비교한 데서 생긴 것이었습니다.
-
-조사 과정에서 배제한 후보도 함께 남깁니다.
-
-- **모델 크기 아님.** safetensors 헤더 실측으로 GLM 58.2 GiB(~31.2B), Qwen 56.9 GiB(~30.5B)로 오히려 GLM이 2.3% 큽니다. GLM의 `model.safetensors.index.json`은 `total_size`를 실제의 정확히 절반인 29.1 GiB로 기록하므로 **이 필드를 메모리 추정에 쓰면 2배 틀립니다.**
-- **CUDA allocator 단편화 아님.** reserved−allocated 격차가 두 모델 모두 정확히 0.54 GiB입니다.
-- **shard 분할 아님.** GLM은 레이어별 expert 텐서가 정확히 1개 shard에 모여 있고(median 1, max 1) Qwen은 최대 2개로 오히려 더 흩어져 있습니다.
-- **dtype 변환 아님.** 두 모델 모두 파일과 목표 dtype이 BF16으로 같습니다.
-- **expert fusion 자체도 아님.** 두 모델 모두 디스크에는 per-expert 텐서로 저장되고 메모리에서는 fused 3D 파라미터(`experts.gate_up_proj`)를 쓰므로, 조립 비용은 양쪽 다 발생합니다.
-
-기존의 “shard 분할 때문에 GLM host memory가 더 크다”는 가설도 유지하지 않습니다. 비교의 전제인 모델별 pressure 격차가 통제된 재측정에서 성립하지 않았기 때문입니다.
+TRL DDP의 host memory pressure 차이는 노드 전체 상태에 크게 흔들려 모델 고유 사용량으로 해석할 수 없었습니다.
+CPU-only loading에서도 두 모델의 peak RSS가 parameter bytes의 약 1.9배로 유사했으므로 기존의 “GLM만 두 벌을 쓴다”와 shard 원인 가설은 철회합니다.
+이 historical 지표는 최신 통제 결과에 사용하지 않습니다.
 
 ### FSDP2 Compatibility
 
-**FSDP2는 정도가 아니라 종류가 다른 실패입니다.** Qwen은 34.1 GB로 통과하지만 GLM은 3회 모두 같은 지점에서 실패했습니다:
-
-```
-accelerate/utils/fsdp_utils.py:543, fsdp2_load_full_state_dict()
-AttributeError: 'Tensor' object has no attribute 'device_mesh'
-```
-
-**원인은 persistent buffer입니다.** 두 모델을 meta device에 올려 accelerate와 같은 순서로 `fully_shard`를 적용한 뒤 `state_dict()`에서 `DTensor`가 아닌 항목을 센 결과입니다.
-
-| 모델 | 감싼 decoder layer | non-DTensor 항목 |
-| --- | ---: | --- |
-| Qwen3-30B-A3B | 48 | **0개** |
-| GLM-4.7-Flash | 47 | **46개** — 전부 `model.layers.N.mlp.gate.e_score_correction_bias` (shape 64) |
-
-`modeling_glm4_moe_lite.py:376`이 MoE 라우터의 expert-score correction bias를 `register_buffer(...)`로 등록하는데 `persistent=False`가 없어 `state_dict()`에 포함됩니다.
-FSDP2의 `fully_shard`는 `nn.Parameter`만 샤딩하고 buffer는 평범한 텐서로 남기는데, accelerate(`fsdp_utils.py:543`)는 `state_dict()`의 모든 항목이 `DTensor`라고 가정하고 `.device_mesh`를 읽습니다.
-Qwen3 MoE가 통과하는 이유도 같은 지점에서 설명됩니다 — 이 모델이 등록하는 buffer는 `inv_freq` 계열뿐이고 전부 `persistent=False`라 `state_dict()`에 아예 들어가지 않습니다.
-
-즉 이것은 GLM의 결함이 아니라 **persistent buffer를 가진 모델 전반에 적용되는 accelerate FSDP2 경로의 가정 오류**이며, MoE·MLA 여부와는 무관합니다.
-`first_k_dense_replace: 1`이라 MoE 레이어가 47개 중 46개인 것과 실패 항목 46개가 정확히 일치합니다.
-**우회를 실제로 시도했고, 두 번째 장벽이 나왔습니다.**
-문제의 `fsdp2_load_full_state_dict()`는 accelerate에서 `cpu_ram_efficient_loading`이 켜져 있을 때만 호출되므로, 이 플래그를 꺼서 해당 경로를 건너뛰어 봤습니다.
-첫 장벽은 실제로 사라져 처음으로 `accelerator.prepare`를 통과하고 가중치 로딩까지 끝냈지만, 곧바로 다음에서 실패했습니다.
-
-```
-fsdp2_prepare_model → fully_shard → _move_states_to_device → tensor.to(device)
-torch.OutOfMemoryError: 119.69 GiB 중 659 MiB만 남은 상태에서 768 MiB 할당 실패
-(해당 process가 73.56 GiB 사용 중)
-```
-
-이 플래그를 끄면 **샤딩하기 전에** 각 모듈의 전체 가중치를 device로 올리는데, 이는 `cpu_ram_efficient_loading`이 애초에 막으려던 동작입니다.
-즉 버그 하나를 메모리 폭발과 맞바꾸는 셈이라 119 GiB unified memory에서는 쓸 수 없습니다.
-
-정리하면 이 조합에는 **관찰된 실패 경로가 두 개**입니다. 현재 설치 버전과 시도한 설정에서 성공하지 못했으며, 하드웨어 자체의 영구적인 불가능성을 입증한 것은 아닙니다.
-
-| 경로 | 결과 |
-| --- | --- |
-| 기본값(`cpu_ram_efficient_loading` on) | accelerate의 DTensor 가정이 persistent buffer에서 깨짐 — 3/3 실패 |
-| 우회(`cpu_ram_efficient_loading` off) | 샤딩 전 전체 가중치를 device로 이동하다 CUDA OOM |
-
-호환성을 개선하려면 persistent buffer의 값을 rank 간 올바르게 전달하는 로딩 경로가 필요합니다. 단순히 buffer를 `persistent=False`로 바꾸는 우회는 `cpu_ram_efficient_loading` 경로에서 rank 0만 실제 가중치를 읽으므로 다른 rank가 이 라우터 bias를 못 받아 **조용히 다른 routing 결과를 낼 위험**이 있어 채택하지 않았습니다.
-이 저장소에서 GLM을 쓸 때는 DDP 또는 DeepSpeed를 사용합니다.
+설치된 Accelerate 1.14의 GLM FSDP2 load는 persistent buffer를 `DTensor`로 가정해 3회 모두 학습 전에 실패했습니다.
+CPU-efficient loading을 끄는 우회는 sharding 전 full replica 이동에서 OOM이 발생해 채택하지 않았습니다.
+이는 historical TRL compatibility 기록이며 최신 Megatron matrix의 성공 여부와 무관합니다.
 
 ### Checkpoint Comparison
 
@@ -261,7 +287,8 @@ Qwen은 fused QKV 1개 + proj 1개(2종류), GLM은 MLA의 Q/KV down·up project
 
 기본 계획은 8개 cell, variant별 4회 측정과 별도 warmup입니다.
 길이 비교는 `MAX_LENGTH` 상한만 바꾸지 않고 고정 길이 padding을 씁니다.
-Selective recompute는 현재 설정 오류로 warmup에서 실패하므로 full/selective 비교가 완결된다고 기대하지 않습니다.
+30B Qwen full/selective recompute는 위 전용 matrix에서 완결했습니다.
+이 절의 0.5B benchmark plan은 smoke 도구 설명으로만 남기며 현재 30B 결과에는 사용하지 않습니다.
 
 ```bash
 python experiments/benchmarks.py \

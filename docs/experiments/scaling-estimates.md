@@ -47,3 +47,6 @@ Full FT의 `16P` bytes를 모든 GPU에 균등하게 나누고, offload 없이 �
 Activation, MoE routing·communication buffer, workspace, CUDA context와 allocator 여유분은 제외했습니다. BF16 gradient 대신 FP32 gradient를 유지하면 full FT에서 parameter당 2 bytes가 추가됩니다. Spark의 119 GiB도 CPU와 공유하는 예산이므로 실제 GPU 전용 여유 공간과 같지 않습니다.
 
 Sequence length 효과는 별도입니다. Qwen의 4096→8192 CUDA peak는 `local`에서 +45.8%, `transformer_engine`에서 +12.6%였습니다. 이 관측값을 모든 규모에 일정 배수로 적용하지 않습니다. 새 모델에서는 실제 target module·optimizer·attention 구현과 loading peak를 확인한 뒤 [메모리 추정기](running.md#estimate-memory-before-running)와 pilot으로 실행 가능성을 판단합니다.
+
+2026-09-15 Qwen 30B Megatron full-SFT SGD는 추정상 96.6 GiB/rank로 119 GiB 예산 안이었지만, 실제 2노드 pilot은 FP32 main gradient 구성 중 global OOM으로 종료됐습니다.
+따라서 budget 이내라는 판정은 실행 허가가 아니라 하한 점검이며, allocator·unsharded 임시 상태까지 포함한 bounded pilot을 통과해야 합니다.

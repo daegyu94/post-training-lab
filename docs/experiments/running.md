@@ -17,15 +17,15 @@
 | `experiments/megatron/glm-4.7-flash-30b-lora.json` | 2노드 GLM-4.7-Flash 30B MoE LoRA, 평가와 node-local async checkpoint | train |
 | `experiments/trl/glm-4.7-flash-30b-lora.json` | 2노드 GLM-4.7-Flash 30B DDP LoRA, no_robots | all |
 | `experiments/megatron/qwen3-30b-full.json` | 2노드 Qwen3 30B MoE full-parameter — 아래 참고, 메모리 적합성 미검증 | all |
+| `experiments/megatron/qwen3-30b-full-sgd-pilot.json` | 2노드 Qwen3 30B full-SFT SGD 용량 pilot | train |
 
 앞의 smoke 네 개는 Qwen2.5-0.5B와 고정 No Robots 입력을 쓰며 모델 품질·장기 수렴·성능 비교용이 아닙니다.
-Megatron의 두 30B preset은 검증 당시와 같은 TP=1·PP=1·EP=2로 1 step, 평가 1회와 async checkpoint를 실행합니다.
+Megatron의 두 30B LoRA preset은 검증 당시와 같은 TP=1·PP=1·EP=2로 1 step, 평가 1회와 async checkpoint를 실행합니다.
 TRL NVMe preset은 `train` 후 별도 `tuned` process에서 native ZeRO checkpoint를 복원해 평가합니다([30B NVMe 실습](../../labs/nvme-30b/README.md)).
 
-`qwen3-30b-full.json`은 **실측 미검증**입니다.
-로컬 `no_robots` 5000행 중 길이 초과 행에서 중단됐으며, 메모리 비교 기준인 `MAX_LENGTH=2048`은 유지했습니다.
-[메모리 추정기](#estimate-memory-before-running)의 per-rank 예측은 Adam 149.7 GiB(파라미터 29.9 + gradient 29.9 + Adam 89.6), `--optimizer sgd` 90.0 GiB입니다.
-119 GiB 예산 대비 Adam은 약 31 GiB 초과, SGD는 이내지만 둘 다 추정값입니다.
+`qwen3-30b-full.json`의 Adam 구성은 per-rank 추정부터 장치 예산을 넘으므로 실행 대상이 아닙니다.
+`qwen3-30b-full-sgd-pilot.json`은 UltraChat 2048 고정 코호트와 SGD로 범위를 줄였지만 FP32 main gradient 구성 중 global OOM으로 첫 optimizer step을 완료하지 못했습니다.
+같은 2노드 구성을 반복하지 말고 [현재 결과와 후속 조건](30b-results.md#full-sft-capacity)을 먼저 확인합니다.
 
 `experiments/run.py`는 `--backend`, `--setup`, `--experiment`, `--output`을 요구합니다.
 기본은 dry-run이고 `--timeout`은 기본 900초의 양의 정수이며 기존 출력 디렉터리는 재사용할 수 없습니다.
@@ -71,7 +71,7 @@ python experiments/build.py \
 - `--dataset` 선택지는 고정 목록이 아니라 `datasets_lab.public_data.PRESETS`에서 읽습니다(`reference_only` 제외).
 - `--epochs`와 `--max-steps`는 배타적입니다. TRL은 `SFTConfig`로 처리합니다. Megatron은 controller에서 `manifest.json`을 읽어 `steps = ceil(epochs * train_count / global_batch_size)`로 변환하므로, **현재 node-local 데이터 구성에서는 `--max-steps`를 씁니다.**
 - `--offload {none,cpu,nvme}`는 TRL 전용입니다. `cpu`/`nvme`는 `--distributed-backend deepspeed`를 강제하고 해당 DeepSpeed 설정을 선택하며, NVMe profile은 `--finetuning-mode full`이 필요합니다. `--backend megatron`과 함께 쓰면 즉시 오류입니다.
-- Megatron 전용 `--tp`/`--pp`/`--ep`/batch 옵션은 검증된 30B preset 기본값(TP=1, PP=1, EP=2)을 그대로 씁니다. 각 옵션의 뜻은 `--help`에서 확인합니다.
+- Megatron 전용 `--tp`/`--pp`/`--ep`/batch 옵션은 검증된 30B preset 기본값(TP=1, PP=1, EP=2)을 그대로 씁니다. `--optimizer` 기본값은 Megatron `adam`, TRL `adamw`이며 명시한 값은 launcher까지 전달됩니다.
 - Dataset은 [Datasets](../datasets.md)에 따라 미리 준비합니다.
 
 ## Read the Outputs
@@ -98,3 +98,6 @@ Warmup 성공은 측정 반복 수에 포함하지 않습니다.
 - Async background I/O의 자원 경쟁이 학습 시간에 영향을 줄 수 있습니다.
 
 반복 결과는 각 실행의 manifest와 `records.jsonl`에서 판정하며 과거 run log를 저장소에 복제해 보관하지 않습니다.
+
+현재 30B 통제 matrix와 재실험 우선순위는 [30B Controlled Results](30b-results.md#controlled-results-2026-09-15)를 따릅니다.
+NFS는 repository checkout에만 사용하므로 distributed checkpoint restore 예시는 제공하지 않습니다.
