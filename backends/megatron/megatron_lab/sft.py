@@ -242,7 +242,8 @@ def main() -> None:
 
     if os.environ.get("MEASURE_TIMING", "false") == "true":
         from megatron_lab.measurement import measure_execution
-        with measure_execution(args.output_dir, args.stage):
+        with measure_execution(args.output_dir, args.stage) as timing_callback:
+            finetune_kwargs.setdefault("callbacks", []).append(timing_callback)
             finetune(**finetune_kwargs)
     else:
         finetune(**finetune_kwargs)

@@ -173,6 +173,19 @@ def test_local_checkpoint_placement_rejects_reload_stages(tmp_path: Path) -> Non
         run.load_experiment(experiment_path)
 
 
+def test_explicit_load_checkpoint_is_tuned_only(tmp_path: Path) -> None:
+    _, experiment_path = config_files(tmp_path, backend="megatron")
+    experiment = json.loads(experiment_path.read_text())
+    experiment["env"].update({"STAGE": "tuned", "LOAD_CHECKPOINT": "/mnt/checkpoint"})
+    experiment_path.write_text(json.dumps(experiment))
+
+    assert run.load_experiment(experiment_path)["env"]["LOAD_CHECKPOINT"] == "/mnt/checkpoint"
+    experiment["env"]["STAGE"] = "train"
+    experiment_path.write_text(json.dumps(experiment))
+    with pytest.raises(run.ConfigError, match="tuned"):
+        run.load_experiment(experiment_path)
+
+
 def test_rejects_reserved_and_invalid_topology(tmp_path: Path) -> None:
     setup_path, experiment_path = config_files(tmp_path, backend="megatron")
     experiment = json.loads(experiment_path.read_text())

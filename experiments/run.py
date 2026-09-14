@@ -42,7 +42,7 @@ MEGATRON_ENV = {
     "OVERLAP_GRAD_REDUCE", "DIST_CKPT_OPTIM_FULLY_RESHARDABLE",
     "RESUME_AFTER_TRAIN", "RESUME_MAX_STEPS", "RESUME_TP", "RESUME_PP", "RESUME_EP",
     "TRANSFORMER_IMPL", "MEASURE_TIMING", "RESOURCE_SAMPLING",
-    "CHECKPOINT_PLACEMENT", "STAGE",
+    "CHECKPOINT_PLACEMENT", "LOAD_CHECKPOINT", "STAGE",
 }
 
 
@@ -205,6 +205,8 @@ def load_experiment(path: Path) -> dict[str, Any]:
             raise ConfigError("Megatron CHECKPOINT_PLACEMENT must be shared or local")
         if placement == "local" and stage != "train":
             raise ConfigError("Megatron local checkpoint placement supports STAGE=train only")
+        if "LOAD_CHECKPOINT" in value["env"] and stage not in {"tuned"}:
+            raise ConfigError("Megatron LOAD_CHECKPOINT is valid only for STAGE=tuned")
         tp = _positive(value["env"], "TP", 1)
         pp = _positive(value["env"], "PP", 1)
         ep = _positive(value["env"], "EP", 2)

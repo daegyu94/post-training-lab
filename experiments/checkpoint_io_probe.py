@@ -98,6 +98,18 @@ def evict(files: list[Path]) -> None:
             os.close(descriptor)
 
 
+def evict_checkpoint(checkpoint_dir: Path) -> dict[str, object]:
+    files = sorted(path for path in checkpoint_dir.rglob("*") if path.is_file())
+    if not files:
+        raise FileNotFoundError(f"no checkpoint files under {checkpoint_dir}")
+    evict(files)
+    return {
+        "scope": "advisory checkpoint page-cache eviction",
+        "file_count": len(files),
+        "logical_bytes": sum(path.stat().st_size for path in files),
+    }
+
+
 def direct_read(
     files: list[Path],
     read_device: Callable[[], dict[str, int]],
@@ -173,9 +185,15 @@ def run_probe(checkpoint_dir: Path, *, include_direct: bool = True) -> dict[str,
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint-dir", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--output", type=Path)
     parser.add_argument("--skip-direct", action="store_true")
+    parser.add_argument("--evict-only", action="store_true")
     args = parser.parse_args()
+    if args.evict_only:
+        print(json.dumps(evict_checkpoint(args.checkpoint_dir), sort_keys=True))
+        return
+    if args.output is None:
+        raise SystemExit("--output is required unless --evict-only is used")
     if args.output.exists():
         raise SystemExit(f"refusing to overwrite output: {args.output}")
     result = run_probe(args.checkpoint_dir, include_direct=not args.skip_direct)

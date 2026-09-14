@@ -163,6 +163,10 @@ def parse_measurement_lines(lines: list[str]) -> dict[str, Any]:
     reserved: list[float] = []
     saves: list[float] = []
     finalizations: list[float] = []
+    loads: list[float] = []
+    load_logical_reads: list[float] = []
+    load_storage_reads: list[float] = []
+    model_ready: list[float] = []
     recognized_events = 0
     for line in lines:
         if not line.strip():
@@ -177,6 +181,14 @@ def parse_measurement_lines(lines: list[str]) -> dict[str, Any]:
               and item.get("success", True) and bool(item.get("blocking", False))):
             recognized_events += 1
             finalizations.append(seconds)
+        elif event == "load" and seconds is not None and item.get("success", True):
+            recognized_events += 1
+            loads.append(seconds)
+            load_logical_reads.append(float(item.get("process_logical_read_bytes", 0)))
+            load_storage_reads.append(float(item.get("process_storage_read_bytes", 0)))
+        elif event == "model_ready" and seconds is not None and item.get("success", True):
+            recognized_events += 1
+            model_ready.append(seconds)
         elif event == "stage":
             recognized_events += 1
             value = _metric_number(item, ("peak_cuda_allocated_bytes",))
@@ -187,6 +199,11 @@ def parse_measurement_lines(lines: list[str]) -> dict[str, Any]:
             "peak_cuda_reserved_bytes": max(reserved) if reserved else None,
             "save_call_host_seconds_sum_per_rank": sum(saves) if saves else None,
             "blocking_finalization_host_seconds_sum_per_rank": sum(finalizations) if finalizations else None,
+            "load_call_host_seconds_sum_per_rank": sum(loads) if loads else None,
+            "load_call_count_per_rank": len(loads),
+            "load_process_logical_read_bytes_sum_per_rank": sum(load_logical_reads) if loads else None,
+            "load_process_storage_read_bytes_sum_per_rank": sum(load_storage_reads) if loads else None,
+            "model_ready_seconds_per_rank": max(model_ready) if model_ready else None,
             "recognized_events": recognized_events}
 
 
@@ -198,16 +215,22 @@ def validate_fetched_metrics(metrics_by_rank: dict[str, Any]) -> None:
         raise ValueError("measurement JSONL is missing or empty for one or more ranks")
 
 
-def fetch_measurements(plan: dict[str, Any], run_output: Path, *, run: Callable[..., Any] = subprocess.run) -> dict[str, Any]:
+def fetch_measurements(
+    plan: dict[str, Any],
+    run_output: Path,
+    *,
+    stage: str = "train",
+    run: Callable[..., Any] = subprocess.run,
+) -> dict[str, Any]:
     by_rank: dict[str, Any] = {}
     for rank in plan["ranks"]:
-        remote = str(Path(rank["output"]) / "measurements" / f"rank-{rank['rank']}-train.jsonl")
+        remote = str(Path(rank["output"]) / "measurements" / f"rank-{rank['rank']}-{stage}.jsonl")
         command = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", rank["host"], f"cat -- {shlex.quote(remote)}"]
         result = run(command, check=False, capture_output=True, text=True, timeout=35)
         if getattr(result, "returncode", 1) != 0:
             raise RuntimeError(f"cannot fetch measurements for rank {rank['rank']}")
         raw = result.stdout or ""
-        destination = run_output / "measurements" / f"rank-{rank['rank']}-train.jsonl"
+        destination = run_output / "measurements" / f"rank-{rank['rank']}-{stage}.jsonl"
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(raw, encoding="utf-8")
         by_rank[str(rank["rank"])] = {"path": str(destination), "sha256": _sha(destination), "metrics": parse_measurement_lines(raw.splitlines())}

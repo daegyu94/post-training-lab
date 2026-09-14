@@ -9,6 +9,9 @@ from megatron_lab.measurement import measure_execution
 @pytest.mark.parametrize('fail', [False, True])
 def test_timing_preserves_calls_exceptions_and_restores_methods(tmp_path, fail):
     class Manager:
+        def load(self, value):
+            return value
+
         def save(self, value, callback=None):
             if fail:
                 raise ValueError('save failed')
@@ -19,16 +22,30 @@ def test_timing_preserves_calls_exceptions_and_restores_methods(tmp_path, fail):
 
     original = Manager.save
     cuda = SimpleNamespace(is_available=lambda: False)
+    io_samples = iter([
+        {"rchar": 10, "read_bytes": 100}, {"rchar": 30, "read_bytes": 110},
+        {"rchar": 30, "read_bytes": 110}, {"rchar": 30, "read_bytes": 110},
+        {"rchar": 30, "read_bytes": 110}, {"rchar": 30, "read_bytes": 110},
+    ])
     try:
-        with measure_execution(tmp_path, 'train', manager_class=Manager, cuda=cuda):
+        with measure_execution(
+            tmp_path, 'train', manager_class=Manager, cuda=cuda,
+            process_io=lambda: next(io_samples), callback_class=object,
+        ) as callback:
+            assert Manager().load(7) == 7
+            callback.on_data_init_start(None)
             assert Manager().finalize_async_saves('state', True, terminate=True) == ('state', True, True)
             assert Manager().save(42) == 42
     except ValueError as exc:
         assert fail and str(exc) == 'save failed'
     assert Manager.save is original
     records = [json.loads(line) for line in (tmp_path / 'measurements/rank-0-train.jsonl').read_text().splitlines()]
-    assert records[0]['blocking'] is True and records[0]['terminate'] is True
-    assert records[1]['success'] is not fail
+    assert records[0]['event'] == 'load'
+    assert records[0]['process_logical_read_bytes'] == 20
+    assert records[0]['process_storage_read_bytes'] == 10
+    assert records[1]['event'] == 'model_ready'
+    assert records[2]['blocking'] is True and records[2]['terminate'] is True
+    assert records[3]['success'] is not fail
     assert records[-1]['success'] is not fail
     assert all(record['seconds'] >= 0 for record in records)
     assert all(record['ended_monotonic_seconds'] >= record['started_monotonic_seconds'] for record in records)

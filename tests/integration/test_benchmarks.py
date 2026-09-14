@@ -59,11 +59,21 @@ def test_measurement_events_keep_enqueue_and_finalize_separate() -> None:
     result = benchmarks.parse_measurement_lines([
         json.dumps({"event": "save", "host_seconds": 1.25, "success": True}),
         json.dumps({"event": "finalize_async_saves", "host_seconds": 4.5, "blocking": True, "success": True}),
+        json.dumps({"event": "load", "seconds": 2, "process_logical_read_bytes": 100,
+                    "process_storage_read_bytes": 80, "success": True}),
+        json.dumps({"event": "model_ready", "seconds": 9, "success": True}),
         json.dumps({"event": "stage", "peak_cuda_allocated_bytes": 10, "peak_cuda_reserved_bytes": 20}),
         json.dumps({"event": "stage", "peak_cuda_allocated_bytes": 30, "peak_cuda_reserved_bytes": 25}),
     ])
     assert result == {"peak_cuda_allocated_bytes": 30.0, "peak_cuda_reserved_bytes": 25.0,
-                      "save_call_host_seconds_sum_per_rank": 1.25, "blocking_finalization_host_seconds_sum_per_rank": 4.5, "recognized_events": 4}
+                      "save_call_host_seconds_sum_per_rank": 1.25,
+                      "blocking_finalization_host_seconds_sum_per_rank": 4.5,
+                      "load_call_host_seconds_sum_per_rank": 2.0,
+                      "load_call_count_per_rank": 1,
+                      "load_process_logical_read_bytes_sum_per_rank": 100.0,
+                      "load_process_storage_read_bytes_sum_per_rank": 80.0,
+                      "model_ready_seconds_per_rank": 9.0,
+                      "recognized_events": 6}
 
 
 def test_summary_excludes_warmup_and_failed_records() -> None:
@@ -95,6 +105,20 @@ def test_fetch_quotes_remote_path_and_writes_checksum(tmp_path: Path) -> None:
     result = benchmarks.fetch_measurements(plan, tmp_path, run=fake_run)
     assert "'/shared/out/a b/measurements/rank-0-train.jsonl'" in seen[0][-1]
     assert result["0"]["sha256"]
+
+
+def test_fetch_accepts_restore_stage(tmp_path: Path) -> None:
+    class Result:
+        returncode = 0
+        stdout = json.dumps({"event": "load", "seconds": 1, "success": True}) + "\n"
+
+    seen = []
+    plan = {"ranks": [{"rank": 0, "host": "spark1", "output": "/out"}]}
+    benchmarks.fetch_measurements(
+        plan, tmp_path, stage="tuned", run=lambda command, **kwargs: seen.append(command) or Result()
+    )
+
+    assert "rank-0-tuned.jsonl" in seen[0][-1]
 
 
 
