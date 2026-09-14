@@ -53,9 +53,9 @@ def main():
     args.output_dir.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10,
                          "svg.hashsalt": "post-training-results", "figure.facecolor": "white"})
-    doc = ROOT / "docs/experiments.md"
+    doc = ROOT / "docs/experiments/checkpoint-io.md"
 
-    rows = table(doc, "#### Memory Footprint")
+    rows = table(doc, "### Memory Footprint")
     assert len(rows) == 5
     fig, ax = plt.subplots(figsize=(9, 5.2))
     labels = ["Megatron LoRA\n4096 tokens", "Megatron LoRA\n8192 tokens",
@@ -72,7 +72,7 @@ def main():
          "Peak CUDA memory allocated; medians of 3 runs. Megatron attention: local.\n"
          "Workloads differ by framework, tuning mode, and sequence length; compare only matching conditions.")
 
-    rows = table(doc, "### LoRA Ratio and Checkpoint I/O")
+    rows = table(doc, "## LoRA Ratio and Checkpoint I/O")
     assert [int(r[1]) for r in rows] == [25, 126, 251]
     measured_x = [number(r[2]) for r in rows]
     display_x = [0.1, 0.5, 1.0]
@@ -96,4 +96,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -90,4 +90,4 @@ DDP summary는 sample한 trainable parameter의 변화도 기록합니다.
 FSDP2·DeepSpeed summary의 `parameter_update_evidence`가 `optimizer steps only`이면 parameter 변화 자체를 검증한 결과로 읽을 수 없습니다.
 
 0.5B smoke 성공을 30B full SFT의 메모리 적합성이나 장기 수렴 증거로 해석하지 않습니다.
-판정 기준은 [Getting Started](../getting-started.md#6-verify-the-result), 30B 실측값은 [Experiments](../experiments.md#30b-gpu-results)를 따릅니다.
+판정 기준은 [Getting Started](../getting-started.md#6-verify-the-result), 30B 실측값은 [Experiments](../experiments/30b-results.md#30b-gpu-results)를 따릅니다.
