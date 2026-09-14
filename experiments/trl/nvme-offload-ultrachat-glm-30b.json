@@ -1,0 +1,25 @@
+{
+  "backend": "trl",
+  "env": {
+    "DATASET_ID": "HuggingFaceH4/ultrachat_200k",
+    "DATASET_REVISION": "8049631c405ae6576f93f445c6b8166f76f5505a",
+    "DEEPSPEED_CONFIG": "configs/deepspeed-zero3-nvme.json",
+    "DISTRIBUTED_BACKEND": "deepspeed",
+    "EVAL_SAMPLES": 1,
+    "FINETUNING_MODE": "full",
+    "GRADIENT_ACCUMULATION_STEPS": 1,
+    "LEARNING_RATE": "2e-5",
+    "MAX_LENGTH": 512,
+    "MAX_STEPS": 1,
+    "MODEL_ID": "zai-org/GLM-4.7-Flash",
+    "MODEL_REVISION": "7dd20894a642a0aa287e9827cb1a1f7f91386b67",
+    "OPTIMIZER": "adamw",
+    "RESOURCE_SAMPLING": true,
+    "SEED": 42,
+    "STAGE": "all",
+    "TRAIN_SAMPLES": 4
+  },
+  "nnodes": 2,
+  "nproc_per_node": 1,
+  "setup": "spark"
+}
