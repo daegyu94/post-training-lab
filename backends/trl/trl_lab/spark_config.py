@@ -41,6 +41,8 @@ class SparkConfig:
     train_samples: int | None = None
     eval_samples: int | None = None
     pad_to_max_length: bool = False
+    load_dir: Path | None = None
+    restore_only: bool = False
 
 
 def huggingface_hub_cache() -> Path:
@@ -274,6 +276,10 @@ def validate_config(config: SparkConfig) -> str:
         raise ValueError(
             "tuned stage is disabled for fsdp2 until export/reload is verified"
         )
+    if config.load_dir is not None and config.stage != "tuned":
+        raise ValueError("load_dir is valid only for the tuned stage")
+    if config.restore_only and config.stage != "tuned":
+        raise ValueError("restore_only requires the tuned stage")
     validate_revision(config.model_revision, "model_revision")
     validate_revision(config.dataset_revision, "dataset_revision")
     is_30b_target = config.model_id in {QWEN3_ID, GLM_ID}
@@ -288,12 +294,13 @@ def validate_config(config: SparkConfig) -> str:
     family = detect_model_family(config.model_dir)
     validate_model_identity(config.model_id, family)
     validate_dataset_manifest(config.data_dir, config.dataset_id, config.dataset_revision)
+    load_root = config.load_dir or config.output_dir
     if config.stage == "tuned" and config.finetuning_mode == "lora":
-        if not (config.output_dir / "adapter").is_dir():
-            raise ValueError("tuned LoRA stage requires output_dir/adapter")
+        if not (load_root / "adapter").is_dir():
+            raise ValueError("tuned LoRA stage requires load_dir/adapter")
     if config.stage == "tuned" and config.finetuning_mode == "full":
-        if not (config.output_dir / "model").is_dir():
-            raise ValueError("tuned full stage requires output_dir/model")
+        if not (load_root / "model").is_dir():
+            raise ValueError("tuned full stage requires load_dir/model")
     return family
 
 

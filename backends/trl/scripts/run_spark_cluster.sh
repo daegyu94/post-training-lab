@@ -81,6 +81,7 @@ common_args=(
   --max-length "${MAX_LENGTH:-512}" --gradient-accumulation-steps "${GRADIENT_ACCUMULATION_STEPS:-8}"
   --distributed-backend "$distributed_backend"
   --seed "${SEED:-42}"
+  --lora-r "${LORA_R:-8}" --lora-alpha "${LORA_ALPHA:-16}"
 )
 if [[ "$pad_to_max_length" == "true" ]]; then common_args+=(--pad-to-max-length); fi
 if [[ -n "${NUM_TRAIN_EPOCHS:-}" ]]; then
@@ -93,6 +94,8 @@ if [[ -n "${EVAL_SAMPLES:-}" ]]; then common_args+=(--eval-samples "$EVAL_SAMPLE
 if [[ "$distributed_backend" == deepspeed ]]; then
   common_args+=(--deepspeed-config "$deepspeed_config")
 fi
+if [[ -n "${LOAD_DIR:-}" ]]; then common_args+=(--load-dir "$LOAD_DIR"); fi
+if [[ "${RESTORE_ONLY:-false}" == true ]]; then common_args+=(--restore-only); fi
 
 echo "[workflow] stage=$stage rank=$NODE_RANK/$nnodes model=$model_id model_dir=$model_dir backend=$distributed_backend"
 run_stage() {

@@ -45,6 +45,8 @@ def parse_args() -> argparse.Namespace:
         default="ddp",
     )
     parser.add_argument("--deepspeed-config", type=Path)
+    parser.add_argument("--load-dir", type=Path)
+    parser.add_argument("--restore-only", action="store_true")
     args = parser.parse_args()
     if args.epochs is not None and args.max_steps is not None:
         parser.error("--epochs and --max-steps are mutually exclusive")
@@ -144,7 +146,8 @@ def _load_tokenizer(config: SparkConfig, transformers: Any) -> Any:
 
 
 def _load_model(config: SparkConfig, torch: Any, transformers: Any, peft: Any, load_tuned: bool = False) -> Any:
-    model_path = config.output_dir / "model" if load_tuned and config.finetuning_mode == "full" else config.model_dir
+    load_root = getattr(config, "load_dir", None) or config.output_dir
+    model_path = load_root / "model" if load_tuned and config.finetuning_mode == "full" else config.model_dir
     index_path = model_path / "model.safetensors.index.json"
     if load_tuned and config.finetuning_mode == "full" and config.distributed_backend == "deepspeed":
         # output_dir/model is a native DeepSpeed ZeRO checkpoint (no safetensors index); the
@@ -172,7 +175,7 @@ def _load_model(config: SparkConfig, torch: Any, transformers: Any, peft: Any, l
     else:
         model = transformers.AutoModelForCausalLM.from_pretrained(str(model_path), dtype=torch.bfloat16, local_files_only=True, revision=config.model_revision)
     if load_tuned and config.finetuning_mode == "lora":
-        model = peft.PeftModel.from_pretrained(model, str(config.output_dir / "adapter"), is_trainable=False)
+        model = peft.PeftModel.from_pretrained(model, str(load_root / "adapter"), is_trainable=False)
     model.config.use_cache = False
     return model
 
@@ -270,11 +273,28 @@ def _uses_deepspeed_nvme(config: SparkConfig) -> bool:
     return any(zero.get(name, {}).get("device") == "nvme" for name in ("offload_param", "offload_optimizer"))
 
 
-def _save_trained_model(trainer: Any, config: SparkConfig) -> None:
+def _save_trained_model(trainer: Any, config: SparkConfig) -> Path:
     destination = config.output_dir / ("adapter" if config.finetuning_mode == "lora" else "model")
     trainer.save_model(str(destination))
     if config.distributed_backend == "ddp" and config.finetuning_mode == "lora" and _rank() != 0:
         trainer.accelerator.unwrap_model(trainer.model).save_pretrained(str(destination))
+    return destination
+
+
+def _process_io() -> dict[str, int]:
+    values = {}
+    for line in Path("/proc/self/io").read_text(encoding="utf-8").splitlines():
+        name, value = line.split(":", 1)
+        values[name] = int(value)
+    return values
+
+
+def _io_delta(before: dict[str, int], after: dict[str, int]) -> dict[str, int]:
+    return {name: after[name] - value for name, value in before.items()}
+
+
+def _tree_bytes(path: Path) -> int:
+    return sum(item.stat().st_size for item in path.rglob("*") if item.is_file())
 
 
 def _sample_trainable_parameters(trainable_named: list[tuple[str, Any]], limit: int = 8) -> list[tuple[str, Any]]:
@@ -322,6 +342,7 @@ def main() -> None:
         deepspeed_config=args.deepspeed_config,
         train_samples=args.train_samples, eval_samples=args.eval_samples,
         pad_to_max_length=args.pad_to_max_length,
+        load_dir=getattr(args, "load_dir", None), restore_only=getattr(args, "restore_only", False),
     )
     family = validate_config(config)
     with _write_log(args):
@@ -360,7 +381,11 @@ def main() -> None:
             data_files={name: str(path) for name, path in prepared_paths.items()},
             cache_dir=str(prepared_dir / "hf-cache"),
         )
+        restore_started = time.perf_counter() if args.stage == "tuned" else None
+        restore_io_before = _process_io() if args.stage == "tuned" else None
+        model_load_started = time.perf_counter()
         model = _load_model(config, torch, transformers, __import__("peft"), load_tuned=args.stage == "tuned")
+        model_load_seconds = time.perf_counter() - model_load_started
         if training_args.gradient_checkpointing:
             if not hasattr(model, "gradient_checkpointing_enable"):
                 raise RuntimeError("model does not expose gradient_checkpointing_enable")
@@ -384,11 +409,13 @@ def main() -> None:
         trainer = SFTTrainer(**trainer_kwargs)
         train_metrics: dict[str, Any] = {}
         train_seconds = None
+        checkpoint_save_seconds = None
+        checkpoint_logical_bytes = None
         if args.stage in {"base", "tuned"}:
             if args.stage == "tuned" and config.distributed_backend == "deepspeed" and args.finetuning_mode == "full":
                 from transformers.integrations.deepspeed import deepspeed_load_checkpoint
 
-                checkpoint_dir = config.output_dir / "model"
+                checkpoint_dir = (config.load_dir or config.output_dir) / "model"
                 latest_marker = checkpoint_dir / "latest"
                 if not latest_marker.is_file():
                     # DeepSpeed writes "latest" only on the node hosting global rank 0;
@@ -402,7 +429,12 @@ def main() -> None:
                 train_dataloader = trainer.get_train_dataloader()
                 trainer._prepare_for_training(max_steps=1, train_dataloader=train_dataloader, resume_from_checkpoint=None)
                 deepspeed_load_checkpoint(trainer.model_wrapped, str(checkpoint_dir), load_module_strict=True)
-            evaluation = trainer.evaluate()
+            model_restore_seconds = time.perf_counter() - restore_started if restore_started is not None else None
+            restore_process_io = _io_delta(restore_io_before, _process_io()) if restore_io_before is not None else None
+            evaluation = (
+                {"skipped": True, "reason": "restore-only I/O measurement"}
+                if config.restore_only else trainer.evaluate()
+            )
             update_count = 0
         else:
             started = time.perf_counter()
@@ -412,10 +444,15 @@ def main() -> None:
                 if _uses_deepspeed_nvme(config)
                 else trainer.evaluate()
             )
-            _save_trained_model(trainer, config)
+            save_started = time.perf_counter()
+            checkpoint_path = _save_trained_model(trainer, config)
+            checkpoint_save_seconds = time.perf_counter() - save_started
+            checkpoint_logical_bytes = _tree_bytes(checkpoint_path)
             train_metrics = dict(result.metrics)
             update_count = int(result.global_step)
             train_seconds = time.perf_counter() - started
+            model_restore_seconds = None
+            restore_process_io = None
         optimizer_instance = getattr(trainer, "optimizer", None) if args.stage == "train" else None
         after_sample = {name: parameter.detach().reshape(-1)[:16].float().cpu() for name, parameter in sample_candidates} if args.stage == "train" else {}
         update_deltas = {name: float((after_sample[name] - before_sample[name]).abs().max().item()) for name in before_sample}
@@ -447,7 +484,7 @@ def main() -> None:
                 validation_errors.append("trainer reported no optimizer steps")
             if args.stage == "train" and config.distributed_backend == "ddp" and not sampled_nonzero_update:
                 validation_errors.append("no sampled trainable parameter changed")
-            summary = {"stage": args.stage, "rank": _rank(), "world_size": int(os.environ.get("WORLD_SIZE", "1")), "node_rank": int(os.environ.get("NODE_RANK", "0")), "distributed_backend": config.distributed_backend, "deepspeed_config": str(config.deepspeed_config) if config.deepspeed_config else None, "model_id": args.model_id, "model_family": family, "model_revision": args.model_revision, "model_snapshot_evidence": model_snapshot_evidence(config.model_dir), "dataset_id": args.dataset_id, "dataset_revision": args.dataset_revision, "finetuning_mode": args.finetuning_mode, "optimizer": args.optimizer, "learning_rate": args.learning_rate, "precision": "bf16", "gradient_checkpointing": {"enabled": training_args.gradient_checkpointing, "use_reentrant": False if training_args.gradient_checkpointing else None, "fsdp_activation_checkpointing": config.distributed_backend == "fsdp2"}, "optimizer_state_estimate_bytes": _estimated_optimizer_state_bytes(trainable, args.optimizer) if args.stage == "train" else None, "optimizer_state_actual_bytes": optimizer_actual_bytes, "optimizer_state_scope": "rank-local shard" if config.distributed_backend != "ddp" else "replicated rank-local optimizer", "optimizer_state_dtypes": optimizer_dtypes, "memory_components_scope": "pre-wrap logical model view; not a rank-local sharded allocation" if config.distributed_backend != "ddp" else "replicated model view", "memory_components_bytes": {"parameters_by_dtype": _parameter_bytes(all_parameters), "trainable_gradients_by_dtype": _parameter_bytes(trainable), "optimizer_state_estimate": _estimated_optimizer_state_bytes(trainable, args.optimizer) if args.stage == "train" else 0, "optimizer_state_actual": optimizer_actual_bytes}, "max_steps": args.max_steps, "requested_epochs": args.epochs, "actual_optimizer_steps": update_count, "train_seconds": train_seconds, "train_metrics": train_metrics, "trainable_parameter_count": trainable_parameter_count, "total_parameter_count": total_parameter_count, "trainable_parameter_fraction": trainable_parameter_count / total_parameter_count if total_parameter_count else 0.0, "sampled_parameter_names": [name for name, _ in sample_candidates], "sampled_parameter_update_max_abs": update_deltas, "peak_cuda_memory_allocated_gib": allocated, "peak_cuda_memory_reserved_gib": reserved, "data": data_meta, "evaluation": evaluation, "validation": {"summary_writer_rank": 0, "evaluation_completed": evaluation_completed, "finite_eval_loss": finite_eval_loss, "finite_train_loss": finite_train_loss, "supervision_policy": "native chat-template prompt plus final assistant completion and EOS", "parameter_update_evidence": "sampled parameter delta" if config.distributed_backend == "ddp" else "optimizer steps only; sharded parameter delta not collected", "sampled_nonzero_update": sampled_nonzero_update, "training_result_verified": not validation_errors, "failure_reasons": validation_errors}}
+            summary = {"stage": args.stage, "rank": _rank(), "world_size": int(os.environ.get("WORLD_SIZE", "1")), "node_rank": int(os.environ.get("NODE_RANK", "0")), "distributed_backend": config.distributed_backend, "deepspeed_config": str(config.deepspeed_config) if config.deepspeed_config else None, "model_id": args.model_id, "model_family": family, "model_revision": args.model_revision, "model_snapshot_evidence": model_snapshot_evidence(config.model_dir), "dataset_id": args.dataset_id, "dataset_revision": args.dataset_revision, "finetuning_mode": args.finetuning_mode, "lora_r": args.lora_r if args.finetuning_mode == "lora" else None, "optimizer": args.optimizer, "learning_rate": args.learning_rate, "precision": "bf16", "gradient_checkpointing": {"enabled": training_args.gradient_checkpointing, "use_reentrant": False if training_args.gradient_checkpointing else None, "fsdp_activation_checkpointing": config.distributed_backend == "fsdp2"}, "optimizer_state_estimate_bytes": _estimated_optimizer_state_bytes(trainable, args.optimizer) if args.stage == "train" else None, "optimizer_state_actual_bytes": optimizer_actual_bytes, "optimizer_state_scope": "rank-local shard" if config.distributed_backend != "ddp" else "replicated rank-local optimizer", "optimizer_state_dtypes": optimizer_dtypes, "memory_components_scope": "pre-wrap logical model view; not a rank-local sharded allocation" if config.distributed_backend != "ddp" else "replicated model view", "memory_components_bytes": {"parameters_by_dtype": _parameter_bytes(all_parameters), "trainable_gradients_by_dtype": _parameter_bytes(trainable), "optimizer_state_estimate": _estimated_optimizer_state_bytes(trainable, args.optimizer) if args.stage == "train" else 0, "optimizer_state_actual": optimizer_actual_bytes}, "max_steps": args.max_steps, "requested_epochs": args.epochs, "actual_optimizer_steps": update_count, "train_seconds": train_seconds, "train_metrics": train_metrics, "model_load_seconds": model_load_seconds, "model_restore_seconds": model_restore_seconds, "restore_process_io": restore_process_io, "checkpoint_save_seconds": checkpoint_save_seconds, "checkpoint_logical_bytes": checkpoint_logical_bytes, "trainable_parameter_count": trainable_parameter_count, "total_parameter_count": total_parameter_count, "trainable_parameter_fraction": trainable_parameter_count / total_parameter_count if total_parameter_count else 0.0, "sampled_parameter_names": [name for name, _ in sample_candidates], "sampled_parameter_update_max_abs": update_deltas, "peak_cuda_memory_allocated_gib": allocated, "peak_cuda_memory_reserved_gib": reserved, "data": data_meta, "evaluation": evaluation, "validation": {"summary_writer_rank": 0, "evaluation_completed": evaluation_completed, "finite_eval_loss": finite_eval_loss, "finite_train_loss": finite_train_loss, "supervision_policy": "native chat-template prompt plus final assistant completion and EOS", "parameter_update_evidence": "sampled parameter delta" if config.distributed_backend == "ddp" else "optimizer steps only; sharded parameter delta not collected", "sampled_nonzero_update": sampled_nonzero_update, "training_result_verified": not validation_errors, "failure_reasons": validation_errors}}
             (config.output_dir / f"summary-{args.stage}.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             print(json.dumps(summary, indent=2, ensure_ascii=False), flush=True)
         if finite_eval_loss is False or not finite_train_loss or (args.stage == "train" and update_count < 1) or (args.stage == "train" and config.distributed_backend == "ddp" and not any(value > 0.0 for value in update_deltas.values())):

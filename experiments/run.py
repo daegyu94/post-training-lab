@@ -30,7 +30,8 @@ TRL_ENV = {
     "FINETUNING_MODE", "OPTIMIZER", "LEARNING_RATE", "MAX_STEPS", "NUM_TRAIN_EPOCHS",
     "MAX_LENGTH", "GRADIENT_ACCUMULATION_STEPS", "DISTRIBUTED_BACKEND",
     "FSDP2", "DEEPSPEED_CONFIG", "STAGE", "TRAIN_SAMPLES", "EVAL_SAMPLES", "SEED",
-    "RESOURCE_SAMPLING", "PAD_TO_MAX_LENGTH",
+    "RESOURCE_SAMPLING", "PAD_TO_MAX_LENGTH", "LORA_R", "LORA_ALPHA",
+    "LOAD_DIR", "RESTORE_ONLY",
 }
 MEGATRON_ENV = {
     "MODEL_ID", "MODEL_REVISION", "DATASET_ID", "DATASET_REVISION",
@@ -196,6 +197,10 @@ def load_experiment(path: Path) -> dict[str, Any]:
             and value["env"].get("FINETUNING_MODE", "lora") == "lora"
         ):
             raise ConfigError("TRL LoRA with NVMe offload is unsupported; use DDP or full fine-tuning")
+        if "LOAD_DIR" in value["env"] and stage != "tuned":
+            raise ConfigError("TRL LOAD_DIR is valid only for STAGE=tuned")
+        if value["env"].get("RESTORE_ONLY", "false").lower() == "true" and stage != "tuned":
+            raise ConfigError("TRL RESTORE_ONLY=true requires STAGE=tuned")
     else:
         stage = value["env"].get("STAGE", "all")
         if stage not in {"all", "base", "train", "tuned"}:
