@@ -20,8 +20,8 @@ from experiments import checkpoint_memory_30b, run  # noqa: E402
 
 VARIANTS = {
     "lora-r8": {"FINETUNING_MODE": "lora", "DISTRIBUTED_BACKEND": "ddp", "LORA_R": 8, "LORA_ALPHA": 16},
+    "lora-r16": {"FINETUNING_MODE": "lora", "DISTRIBUTED_BACKEND": "ddp", "LORA_R": 16, "LORA_ALPHA": 32},
     "lora-r32": {"FINETUNING_MODE": "lora", "DISTRIBUTED_BACKEND": "ddp", "LORA_R": 32, "LORA_ALPHA": 64},
-    "lora-r64": {"FINETUNING_MODE": "lora", "DISTRIBUTED_BACKEND": "ddp", "LORA_R": 64, "LORA_ALPHA": 128},
     "zero3-full": {
         "FINETUNING_MODE": "full",
         "DISTRIBUTED_BACKEND": "deepspeed",

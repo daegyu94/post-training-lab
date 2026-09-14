@@ -32,14 +32,14 @@ def test_restore_summary_uses_three_run_means() -> None:
 
 
 def test_single_node_restore_uses_explicit_trl_checkpoint() -> None:
-    value = model_restore_30b.experiment("qwen", "lora-r64", "tuned", "/mnt/checkpoint")
+    value = model_restore_30b.experiment("qwen", "lora-r16", "tuned", "/mnt/checkpoint")
 
     assert value["backend"] == "trl"
     assert value["nnodes"] == 1
     assert value["env"]["STAGE"] == "tuned"
     assert value["env"]["LOAD_DIR"] == "/mnt/checkpoint"
     assert value["env"]["RESTORE_ONLY"] is True
-    assert value["env"]["LORA_R"] == 64
+    assert value["env"]["LORA_R"] == 16
     assert value["env"]["RESOURCE_SAMPLING"] is True
 
 
