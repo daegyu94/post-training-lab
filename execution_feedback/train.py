@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 import time
 
@@ -13,15 +14,6 @@ def dpo_needs_precomputed_ref_logps(is_adapter: bool, lora_r: int) -> bool:
     second full copy of a non-PEFT model resident for the whole run; PEFT models
     already avoid that cheaply via adapter-disable, so they don't need this."""
     return not (is_adapter or bool(lora_r))
-
-
-def single_process_device_map(world_size: int) -> str | None:
-    """"auto" outside a distributed launch so a large model loads shard-by-shard
-    straight into the one visible GPU instead of fully materializing on host RAM
-    first. Under torchrun/accelerate launch (world_size > 1) each rank already
-    has its own assigned device, and "auto" would wrongly try to shard across
-    every GPU visible to that rank, so this only applies to a single process."""
-    return "auto" if world_size == 1 else None
 
 
 def main() -> None:
@@ -45,8 +37,10 @@ def main() -> None:
     args = parser.parse_args()
     if args.max_steps < 1 or args.per_device_batch_size < 1 or args.gradient_accumulation_steps < 1:
         parser.error("step and batch values must be positive")
+    world_size = int(os.environ.get("WORLD_SIZE", "1"))
+    if world_size != 1:
+        parser.error("execution feedback training supports one process on spark1 only")
 
-    import os
     import torch
     from datasets import load_dataset
     from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -55,7 +49,7 @@ def main() -> None:
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     is_adapter = (args.model_dir / "adapter_config.json").is_file()
-    device_map = single_process_device_map(int(os.environ.get("WORLD_SIZE", "1")))
+    device_map = "auto"
     if is_adapter:
         if args.lora_r:
             parser.error("--lora-r cannot create a second adapter on an adapter checkpoint")
@@ -143,7 +137,9 @@ def main() -> None:
         "gradient_accumulation_steps": args.gradient_accumulation_steps, "beta": args.beta if args.mode == "dpo" else None,
         "lora_r": args.lora_r, "continued_adapter": is_adapter, "seed": args.seed, "duration_seconds": time.perf_counter() - started,
         "num_input_tokens_seen": getattr(trainer.state, "num_input_tokens_seen", None),
-        "metrics": dict(result.metrics), "world_size": int(os.environ.get("WORLD_SIZE", "1")),
+        "metrics": dict(result.metrics),
+        "loss_history": [entry for entry in trainer.state.log_history if "loss" in entry],
+        "world_size": world_size,
     }
     if trainer.is_world_process_zero():
         args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -153,4 +149,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

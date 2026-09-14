@@ -9,15 +9,24 @@ from execution_feedback.common import index_tasks, read_jsonl, write_jsonl
 from execution_feedback.compare import compare
 from execution_feedback.evaluate import _kill_container, docker_command, evaluate_candidate, extract_code
 from execution_feedback.feedback import build_feedback
-from execution_feedback.prepare import SYNTHETIC_TASKS, adapt_mbpp, prepare
-from execution_feedback.train import dpo_needs_precomputed_ref_logps, single_process_device_map
+from execution_feedback.generate import candidate_budgets
+from execution_feedback.prepare import adapt_mbpp, prepare
+from execution_feedback.train import dpo_needs_precomputed_ref_logps
 
 
 def test_prepare_writes_disjoint_splits_and_sft_files(tmp_path: Path) -> None:
-    manifest = prepare(SYNTHETIC_TASKS, tmp_path, "synthetic-python-functions", "synthetic-v1")
-    assert manifest["counts"] == {"train": 4, "validation": 2, "test": 2}
+    tasks = tuple(
+        {
+            "task_id": f"mbpp-{index}", "prompt": "Write a function.",
+            "reference_solution": "def f(): return 1", "tests": ["assert f() == 1"],
+            "split": split, "template_group": f"mbpp-{index}",
+        }
+        for index, split in enumerate(("train", "validation", "test"), 1)
+    )
+    manifest = prepare(tasks, tmp_path, "google-research-datasets/mbpp", "a" * 40, "cc-by-4.0")
+    assert manifest["counts"] == {"train": 1, "validation": 1, "test": 1}
     tasks = index_tasks(tmp_path / "tasks.jsonl")
-    assert len(tasks) == 8
+    assert len(tasks) == 3
     train_ids = {row["task_id"] for row in read_jsonl(tmp_path / "train.jsonl")}
     test_ids = {row["task_id"] for row in read_jsonl(tmp_path / "test.jsonl")}
     assert train_ids.isdisjoint(test_ids)
@@ -44,6 +53,10 @@ def test_adapt_mbpp_reads_the_sanitized_configs_actual_field_names() -> None:
 def test_extract_code_prefers_largest_python_fence() -> None:
     response = "Explanation\n```python\ndef answer():\n    return 42\n```\n```py\nx = 1\n```"
     assert extract_code(response) == "def answer():\n    return 42\n"
+
+
+def test_candidate_budgets_add_real_truncated_samples_without_id_collisions() -> None:
+    assert candidate_budgets(2, 200, 1, 32) == [("0", 200), ("1", 200), ("truncated-0", 32)]
 
 
 def test_docker_command_applies_isolation(tmp_path: Path) -> None:
@@ -111,15 +124,6 @@ def test_dpo_precomputes_ref_logps_only_for_full_fine_tuning() -> None:
     assert dpo_needs_precomputed_ref_logps(is_adapter=False, lora_r=8) is False
 
 
-def test_device_map_is_auto_only_outside_distributed_launch() -> None:
-    # "auto" loads a large model shard-by-shard straight into the one visible
-    # GPU; under torchrun/accelerate (world_size > 1) each rank already owns its
-    # device, and "auto" would wrongly try to shard across every GPU it sees.
-    assert single_process_device_map(1) == "auto"
-    assert single_process_device_map(2) is None
-    assert single_process_device_map(8) is None
-
-
 def test_feedback_rejects_non_train_rows(tmp_path: Path) -> None:
     tasks = tmp_path / "tasks.jsonl"
     evaluations = tmp_path / "evaluations.jsonl"
@@ -140,7 +144,11 @@ def test_compare_requires_identical_test_tasks(tmp_path: Path) -> None:
 
 
 def test_manifest_is_valid_json(tmp_path: Path) -> None:
-    prepare(SYNTHETIC_TASKS, tmp_path, "synthetic-python-functions", "synthetic-v1")
+    prepare([{
+        "task_id": "mbpp-1", "prompt": "Write a function.",
+        "reference_solution": "def f(): return 1", "tests": ["assert f() == 1"],
+        "split": "train", "template_group": "mbpp-1",
+    }], tmp_path, "google-research-datasets/mbpp", "a" * 40, "cc-by-4.0")
     json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))
 
 

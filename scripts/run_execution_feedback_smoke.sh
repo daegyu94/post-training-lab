@@ -9,7 +9,7 @@ PYTHON="${PYTHON:-python}"
 mkdir -p "$OUTPUT_DIR"
 cd "$ROOT_DIR"
 
-"$PYTHON" -m execution_feedback.prepare --source synthetic --output-dir "$OUTPUT_DIR/data"
+"$PYTHON" -m execution_feedback.prepare --limit-per-split 4 --output-dir "$OUTPUT_DIR/data"
 
 "$PYTHON" - "$OUTPUT_DIR/data/train.jsonl" "$OUTPUT_DIR/train-candidates.jsonl" <<'PY'
 import json

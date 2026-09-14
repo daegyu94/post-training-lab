@@ -50,6 +50,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--variant", action="append", required=True, metavar="NAME=EVALUATIONS_JSONL")
     parser.add_argument("--training-summary", action="append", default=[], metavar="NAME=SUMMARY_JSON")
+    parser.add_argument("--evaluation-summary", action="append", default=[], metavar="NAME=SUMMARY_JSON")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     variants: dict[str, Path] = {}
@@ -75,10 +76,20 @@ def main() -> None:
             "max_steps": summary.get("max_steps"),
             "mode": summary.get("mode"),
             "metrics": summary.get("metrics", {}),
+            "loss_history": summary.get("loss_history", []),
         }
         training["stages"].append(stage)
         training["total_duration_seconds"] += float(stage["duration_seconds"] or 0.0)
         training["total_input_tokens_seen"] += int(stage["num_input_tokens_seen"] or 0)
+    for value in args.evaluation_summary:
+        if "=" not in value:
+            parser.error("--evaluation-summary must use NAME=PATH")
+        name, path = value.split("=", 1)
+        if name not in result["variants"]:
+            parser.error(f"evaluation summary has no matching variant: {name}")
+        summary = json.loads(Path(path).read_text(encoding="utf-8"))
+        result["variants"][name]["validation_nll"] = summary["eval_loss"]
+        result["variants"][name]["validation_summary"] = path
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({name: summary["pass_at_1"] for name, summary in result["variants"].items()}, sort_keys=True))

@@ -1,6 +1,6 @@
 # Execution Feedback
 
-이 실험은 사내 framework 없이 공개·합성 Python 함수 문제에서 `generation → Docker evaluation → feedback dataset → additional training → comparison`을 한 번 재현합니다.
+이 실험은 사내 framework 없이 공개 MBPP Python 함수 문제에서 `generation → Docker evaluation → feedback dataset → additional training → comparison`을 한 번 재현합니다.
 Megatron SFT 경로는 변경하지 않으며 execution feedback은 TRL 경로에서만 실험합니다.
 
 성능 향상 자체가 완료 조건은 아닙니다.
@@ -32,45 +32,34 @@ D는 DPO pair가 하나 이상일 때만 실행합니다.
 | `test_setup` | test 전에 한 번 실행할 선택적 setup 코드 |
 | `tests` | 독립적으로 채점하는 Python assertion 목록 |
 | `split` | `train`, `validation`, `test` |
-| `source` | 합성 workload 또는 공개 dataset ID |
+| `source` | 공개 dataset ID |
 | `template_group` | 같은 template 변형의 split 누수 검사 단위 |
 
-합성 workload는 pipeline smoke와 correctness 확인용입니다.
-모델 성능 결론에는 공개 dataset 평가를 사용하고 합성 결과와 구분합니다.
+UltraChat과 No Robots는 실행 test가 없는 대화 SFT 데이터이므로 execution feedback의 채점 입력으로 쓸 수 없습니다.
+이 branch의 execution feedback 준비·학습·평가는 test가 포함된 MBPP와 spark1의 단일 GPU만 사용합니다.
 
-합성 데이터를 준비합니다.
-
-```bash
-python -m execution_feedback.prepare \
-  --source synthetic \
-  --output-dir /path/to/shared/execution-feedback/data
-```
-
-MBPP를 사용하려면 이용 조건을 먼저 확인하고 Hugging Face dataset의 불변 commit SHA를 지정합니다.
+MBPP 이용 조건을 확인한 뒤 데이터를 준비합니다.
+기본 revision은 실제 검증한 불변 commit SHA로 고정되어 있으며 필요할 때만 다른 40자리 SHA를 지정합니다.
 원본의 `train`, `validation`, `test` split을 유지합니다.
 
 ```bash
 python -m execution_feedback.prepare \
-  --source mbpp \
-  --revision '<40-character-dataset-commit>' \
   --output-dir /path/to/shared/execution-feedback/data
 ```
 
-synthetic과 MBPP(`google-research-datasets/mbpp`, `sanitized` config, cc-by-4.0) 둘 다 실제로 `prepare` → 실제 Docker 평가까지 검증했습니다.
+MBPP(`google-research-datasets/mbpp`, `sanitized` config, cc-by-4.0)는 실제로 `prepare` → Docker 평가까지 검증했습니다.
 MBPP `sanitized` config의 문제 설명 필드는 `prompt`입니다(`text`가 아님) — 다른 config나 향후 dataset 개정에서 필드명이 다시 바뀔 수 있으니, 새 revision으로 바꿀 때는 `datasets.load_dataset(...).column_names`로 실제 스키마를 먼저 확인합니다.
 
 `initial_sft_train.jsonl`과 `initial_sft_validation.jsonl`은 최초 SFT 입력입니다.
-다음처럼 최초 SFT checkpoint를 만든 뒤 아래 cycle의 공통 시작점으로 전달할 수 있습니다.
+다음처럼 spark1에서 최초 SFT checkpoint를 만든 뒤 아래 cycle의 공통 시작점으로 전달합니다.
 
 ```bash
 python -m execution_feedback.train \
   --mode sft --model-dir /path/to/base-model \
-  --train-file /path/to/data/initial_sft_train.jsonl \
-  --eval-file /path/to/data/initial_sft_validation.jsonl \
-  --output-dir /path/to/checkpoints/initial-sft
+  --train-file /mnt/post-training/execution-feedback/data/initial_sft_train.jsonl \
+  --eval-file /mnt/post-training/execution-feedback/data/initial_sft_validation.jsonl \
+  --output-dir /mnt/post-training/execution-feedback/initial-sft
 ```
-
-기존 TRL SFT workflow로 동일 입력을 학습해도 됩니다.
 
 ## Execution Evaluation
 
@@ -114,6 +103,8 @@ python -m execution_feedback.evaluate \
 ## Feedback Dataset
 
 후보는 최초 SFT checkpoint로 train 문제에서 한 번만 생성합니다.
+기본 실행은 같은 sampling stream에서 정상 token budget 후보 8개와 32-token 후보 1개를 생성합니다.
+짧은 후보도 실제 모델 출력이며, 정상 후보가 pass한 문제에서 truncation fail을 만들어 DPO pair가 비는 일을 줄입니다.
 
 Reasoning 모델(Qwen3 계열 등)은 코드보다 먼저 `<think>...</think>` 블록을 출력하므로 `enable_thinking=False`로 미리 닫아 생성을 요청합니다.
 이걸 하지 않으면 짧은 `--max-new-tokens`에서 사고 과정만으로 예산이 소진되어 코드가 전혀 나오지 않을 수 있습니다(Qwen3-30B-A3B, `--max-new-tokens 64`에서 12/12 후보가 잘린 `<think>` 텍스트만 반환한 사례로 확인).
@@ -140,9 +131,8 @@ Validation과 test 평가가 입력되면 feedback 생성은 실패합니다.
 ## Additional Training
 
 `execution_feedback.train`은 TRL의 `SFTTrainer`와 `DPOTrainer`를 사용합니다.
-단일 GPU에서는 `python`, 분산 실행에서는 준비된 환경의 `torchrun` 또는 `accelerate launch` 뒤에 `-m execution_feedback.train ...`을 붙입니다.
-단일 process 실행(`WORLD_SIZE=1`)에서는 모델을 `device_map="auto"`로 불러 GPU에 shard 단위로 직접 올립니다.
-분산 실행에서는 각 rank가 이미 자기 device를 알고 있으므로 이 옵션을 켜지 않습니다(켜면 보이는 GPU 전체에 잘못 분산됩니다).
+이 branch에서는 spark1의 단일 process만 지원하며 분산 환경으로 실행하면 즉시 실패합니다.
+모델은 `device_map="auto"`로 불러 GPU에 shard 단위로 직접 올립니다.
 `--mode sft`는 `loss_type="nll"`을 명시적으로 지정합니다 — 기본값 `chunked_nll`은 model forward를 patch하는데, `device_map="auto"`가 메모리 부족으로 일부 layer를 CPU offload하면 그 layer의 forward가 `functools.partial`로 감싸져 patch가 `'functools.partial' object has no attribute '__func__'`로 깨집니다.
 
 `--lora-r`는 attention projection(GQA의 `q/k/v/o_proj`, GLM MLA의 `q_a/q_b/kv_a_with_mqa/kv_b_proj`)과 MoE router(`gate`)를 명시적 `target_modules` 목록으로 적용합니다.
@@ -183,25 +173,15 @@ LoRA checkpoint(새로 만든 adapter거나 이미 있는 adapter)는 TRL이 ada
 
 ## End-to-End Cycle
 
-순차 실행 wrapper는 generation, Docker evaluation, B/C/D 추가 학습, 고정 test 평가와 비교를 연결합니다.
-GPU 연산은 Spark 노드에서 실행하고 Docker 임시는 local NVMe에 둡니다.
-`WORK_DIR`(dataset·checkpoint·결과)은 30B 규모에서는 각 노드의 local NVMe(`/mnt/post-training/execution-feedback/...`, 다른 backend와 같은 관례)를 권장합니다.
-NFS(`/home/spark/shared/...`)는 controller에서 바로 확인하기 편하지만 30B checkpoint(adapter만 써도 수 GB)가 매 단계 네트워크를 타므로, 여러 checkpoint를 오가는 A/B/C/D 전체 cycle에서는 local이 더 안전합니다.
-비교·공유가 필요한 최종 산출물(`comparison.json`, 작은 manifest)만 다 끝난 뒤 NFS로 복사합니다.
+순차 실행 wrapper는 MBPP 준비, generation, Docker evaluation, B/C/D 추가 학습, 고정 test 평가와 비교를 연결합니다.
+GPU 연산은 spark1에서 실행하며 dataset·checkpoint·결과는 NFS를 거치지 않도록 local NVMe의 `WORK_DIR`에 둡니다.
 
 ```bash
 cd /home/spark/shared/post-training-lab
-SFT_CHECKPOINT=/path/to/common-sft-checkpoint \
+PYTHON=/home/spark/.local/ptl/venvs/trl/bin/python \
+SFT_CHECKPOINT=/mnt/post-training/execution-feedback/initial-sft/model \
 WORK_DIR=/mnt/post-training/execution-feedback/run-001 \
 DOCKER_WORKERS=4 \
-bash scripts/run_execution_feedback_cycle.sh
-```
-
-분산 trainer launcher는 환경에 맞게 바꿉니다.
-
-```bash
-TRAIN_LAUNCH='torchrun --nproc-per-node=1' \
-SFT_CHECKPOINT=/path/to/common-sft-checkpoint \
 bash scripts/run_execution_feedback_cycle.sh
 ```
 
@@ -213,6 +193,9 @@ DPO pair가 없으면 C와 D를 건너뛰고 A/B만 비교합니다.
 | 변수 | 기본값 | 의미 |
 | --- | --- | --- |
 | `NUM_TRAIN_CANDIDATES` | 8 | train task당 생성할 candidate 수 |
+| `NUM_TRUNCATED_CANDIDATES` | 1 | train task당 짧은 token budget 후보 수 |
+| `TRUNCATED_MAX_NEW_TOKENS` | 32 | 짧은 후보의 생성 token 상한 |
+| `LIMIT_PER_SPLIT` | 미지정 | 검증용으로 각 MBPP split의 앞 N개만 사용 |
 | `MAX_NEW_TOKENS` | 512 | candidate 생성 최대 token 수(train·test 공통) |
 | `TRAIN_TEMPERATURE` / `TRAIN_TOP_P` | 0.8 / 0.95 | train candidate 생성 sampling 설정 |
 | `MAX_STEPS` | 64 | B/C/D 공통 학습 step 수 |
@@ -225,13 +208,15 @@ DPO pair가 없으면 C와 D를 건너뛰고 A/B만 비교합니다.
 실측으로 LoRA adapter 4GB에 optimizer state만 8GB가 추가로 붙어 checkpoint당 2배 이상 커졌습니다 — 재개 계획이 없다면 기본값(off)을 유지합니다.
 
 쉬운 task와 충분히 학습된 checkpoint를 쓰면 sampling만으로는 fail이 전혀 안 나올 수 있습니다.
-실제로 Qwen3-30B-A3B(LoRA)로 4개 synthetic train task를 시도했을 때 `temperature=1.4, top_p=1.0`, candidate 6개까지도 24/24 전부 pass했습니다.
 이 경우 DPO pair를 얻으려면 같은 task에 대해 `--max-new-tokens`를 의도적으로 줄인 별도 생성을 추가해 진짜 truncation fail을 섞는 방법이 있습니다 — 조작된 label이 아니라 짧은 예산에서 나온 실제 모델 출력입니다.
 
 ## Final Comparison
 
 각 variant는 같은 test task, seed, decoding 설정으로 후보 하나만 생성합니다.
 주요 지표는 모든 test를 통과한 문제의 비율인 strict pass@1입니다.
+각 variant를 생성할 때 같은 MBPP validation reference에 대한 NLL도 한 번 측정해 `validation_nll`로 기록합니다.
+이 값은 A–D에 공통인 보조 지표지만 execution pass@1을 대신하지 않습니다.
+SFT와 DPO의 training loss는 목적함수가 달라 서로 비교하지 않고, 각 stage 내부의 `loss_history`가 내려가는지만 확인합니다.
 
 ```bash
 python -m execution_feedback.compare \
@@ -290,3 +275,35 @@ MBPP(`sanitized` config)도 `prepare`와 실제 Docker 평가로 검증했습니
 
 Trainer는 입력 token 계측을 명시적으로 활성화합니다.
 이 변경 이전 summary의 0 또는 누락된 token 수를 실제 처리량 0으로 해석하지 않습니다.
+
+### Full-scale MBPP run (single process, validation NLL, loss history)
+
+이전 두 번의 실행은 `--limit-per-split`로 줄인 소규모 test set(4~6개)에서 A/B/C/D를 비교했습니다.
+이후 synthetic 경로를 제거하고 MBPP `sanitized` 원본 split을 그대로(`train=120`, `validation=43`, `test=257`) 사용해 spark1에서 세 번째 전체 cycle을 실행했습니다 — `LORA_R=16`, `GRADIENT_CHECKPOINTING=1`, `WORLD_SIZE=1` 강제(`train.py`가 `world_size != 1`이면 즉시 실패), `WORK_DIR`는 local NVMe.
+
+`generate.py`에 `--eval-file`/`--eval-output`을 추가해 각 variant test 생성 직후 같은 checkpoint로 `initial_sft_validation.jsonl`에 대한 NLL을 한 번 더 측정하고(`validation_nll`), `train.py`는 `trainer.state.log_history`를 `loss_history`로 저장합니다. `compare.py`는 `--evaluation-summary`로 이 값을 받아 `comparison.json`에 병합합니다.
+
+257개 전체 test task 기준 결과:
+
+| Variant | pass@1 | validation NLL |
+| --- | --- | --- |
+| A | 0.066 (17/257) | 2.746 |
+| B | 0.062 (16/257) | 1.800 |
+| C | 0.090 (23/257) | 2.903 |
+| D | 0.070 (18/257) | 2.266 |
+
+A 초기 SFT loss는 3.5→2.1로 하락했고 NaN/Inf는 없었습니다.
+B(filtered SFT)는 첫 5-step 평균 약 1.6에서 마지막 5-step 평균 약 1.0으로 하락했습니다.
+C·D DPO는 loss가 0.70→0.06~0.11로, `rewards/accuracies`가 0→1.0으로, `rewards/margins`가 0 근처에서 2.2~3.6까지 계속 증가하는 곡선을 보였습니다 — 이번 스케일에서도 정상적인 DPO 수렴입니다.
+Swap 사용은 관측되지 않았습니다(119GiB 중 최대 사용 약 65GiB, free 41GiB 유지).
+
+이 실행 도중 한 번 실패했습니다: 최초 SFT checkpoint(A)가 이미 LoRA adapter인데 cycle의 B/C 학습에도 `LORA_R=16`을 그대로 넘겨 `--lora-r cannot create a second adapter on an adapter checkpoint`로 죽었습니다.
+`run_execution_feedback_cycle.sh`의 `LORA_R`는 "새 adapter를 만들지(>0), 기존 adapter를 이어 학습할지(0)"를 뜻하므로, `SFT_CHECKPOINT` 자체가 이미 adapter면 cycle 실행 시 `LORA_R=0`이어야 합니다.
+이미 끝난 generation(1080 candidates)·Docker 평가·feedback 데이터(파일로 저장됨)는 재사용하고 B 학습부터 올바른 값으로 재시작해 완료했습니다 — 코드 버그가 아니라 잘못된 실행 인자였습니다.
+
+### Candidate generation batching
+
+`generate.py`는 원래 task당 candidate마다 별도로 `model.generate()`를 호출했습니다(정상 8개 + truncated 1개 = 9번).
+같은 task의 candidate는 같은 prompt를 공유하므로, 같은 `max_new_tokens` budget끼리 `num_return_sequences`로 묶어 한 번에 생성하도록 바꿨습니다(greedy/`do_sample=False` 경로는 `num_return_sequences`가 실질적으로 batch되지 않아 입력을 직접 `repeat_interleave`).
+30B checkpoint 하나를 한 번만 로드한 상태에서 3개 task × 8 candidate × 128 token으로 직접 측정한 결과, 순차 76.8초 → batched 44.9초로 **1.71배** 단축을 확인했습니다.
+Autoregressive decode가 메모리 대역폭 bound라는 이론상 기대(거의 free한 batch 확장)보다는 낮은 배수인데, MoE routing 오버헤드·KV cache 증가·sequence별 조기 EOS 종료 편차가 원인으로 보입니다.
