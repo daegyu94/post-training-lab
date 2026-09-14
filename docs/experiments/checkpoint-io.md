@@ -210,47 +210,7 @@ Raw manifest·measurement record는 커밋하지 않으므로(`results/`는 giti
 
 ### Historical Distributed Write Results (2026-09-14)
 
-> **핵심**: n=1 탐색 측정입니다. 여기서 async 완료 시간이 sync에 가깝다는 신호를 얻었고, 그 신호를 3회 반복으로 확정한 것이 [2026-09-15 통제 결과](30b-results.md#distributed-checkpoint-write)입니다.
-
-분산 결과는 실행 시간이 길어 조건당 1회만 수행한 exploratory 측정입니다.
-모든 checkpoint는 각 노드의 local NVMe에 기록하고 inventory 수집 뒤 삭제했으며, 공유 remote filesystem을 사용하지 않으므로 restore는 실행하지 않았습니다.
-
-| Model / backend | Format / layout | Size | Enqueue 또는 save | Finalize | 완료 latency |
-| --- | --- | ---: | ---: | ---: | ---: |
-| Qwen Megatron sync | EP=2 `torch_dist` | 10.6 MB | 1.301 s | 0.000 s | 1.301 s |
-| Qwen Megatron async | EP=2 `torch_dist` | 10.6 MB | 0.429 s | 0.760 s | 1.188 s |
-| Qwen Megatron Phase 2 | EP=2 `torch_dist` | 10.6 MB | 1.319 s | 0.000 s | 1.319 s |
-| Qwen Megatron Phase 2 | DP=2 `fsdp_dtensor` | 20.9 MB | 0.425 s | 0.000 s | 0.425 s |
-| Qwen TRL FSDP2 DCP | trainable model state | 28.2 MB | 0.245 s | 포함 | 0.245 s ⚠ |
-| GLM Megatron sync | EP=2 `torch_dist` | 22.0 MB | 1.222 s | 0.001 s | 1.223 s |
-| GLM Megatron async | EP=2 `torch_dist` | 22.0 MB | 0.170 s | 0.790 s | 0.960 s |
-| GLM Megatron Phase 2 | EP=2 `torch_dist` | 22.0 MB | 1.041 s | 0.000 s | 1.042 s |
-| GLM Megatron Phase 2 | DP=2 `fsdp_dtensor` | 43.1 MB | 0.401 s | 0.000 s | 0.402 s |
-
-![Distributed checkpoint completion latency](../figures/distributed-checkpoint-write.svg)
-
-처리 크기가 10–43 MB로 작아 고정 latency가 지배할 수 있으므로 completion latency를 주 지표로 사용합니다.
-Throughput은 rank별 logical bytes 합을 이 시간으로 나눠 raw manifest에서 계산할 수 있지만 storage device의 절대 bandwidth나 framework 우열을 나타내지 않습니다.
-특히 async는 enqueue만 보면 빠르지만 finalization을 포함한 Qwen 완료 시간은 1.188 s로 sync 1.301 s와 가깝습니다.
-
-Qwen TRL DCP는 성공했지만 `MemAvailable`이 최소 18.0%까지 내려가고 swap 사용량이 최대 10.2 GB 증가했습니다.
-10% validity guard에는 걸리지 않았으나 다른 성공 셀보다 memory pressure가 크므로 표와 그림에 주의가 필요한 탐색값으로 남깁니다.
-GLM TRL FSDP2는 Accelerate 1.14의 CPU-efficient load가 plain `Tensor`에서 `.device_mesh`를 요구해 학습 전에 실패했습니다.
-해당 최적화를 끄면 타입 오류는 사라졌지만 full replica를 FSDP sharding 전에 GPU로 올리면서 CUDA OOM이 발생해, 현재 환경에서는 유효한 GLM TRL DCP 값이 없습니다.
-`zarr`는 object-store 지향 경로이고 이번 실험은 node-local filesystem write 완료가 질문이므로 Phase 2 비교에서 제외했습니다.
-
-Raw manifest는 Qwen Phase 1 `results/distributed-io-qwen-n1-v4-20260914`, Qwen Phase 2 `results/distributed-io-qwen-phase2-n1-v5-20260914`, Qwen TRL `results/distributed-io-trl-dcp-qwen-n1-v3-20260914`, GLM Megatron `results/distributed-io-glm-n1-v2-20260914`에 있습니다.
-GLM TRL 실패 증거는 `results/distributed-io-trl-dcp-glm-n1-v3-20260914`과 호환성 우회 run인 `results/distributed-io-trl-dcp-glm-n1-v4-20260914`에 있습니다.
-그림은 `scripts/plot_io_experiment_results.py`가 이 raw record를 직접 읽어 생성하며, 실패한 GLM TRL 값은 그리지 않습니다.
-
-기존 실험과 이번 개정의 차이는 다음과 같습니다.
-
-| 기존 측정 | 2026-09-14 개정 | 당시 후속 판단 |
-| --- | --- | --- |
-| 순차 shard read probe | 실제 새 process TRL model restore를 cold/warm로 측정 | probe는 cache 진단용으로만 유지 |
-| Qwen 중심 checkpoint 결과 | Qwen·GLM 모두 같은 512-token, 1-step 조건 | n=1이므로 결론이 필요하면 성공 셀만 3회 반복 |
-| sync/async `save()` 반환시간 | async blocking finalization까지 포함한 완료시간 | 장기 학습 overlap은 별도 실험 필요 |
-| 한 가지 Megatron layout | EP=2 `torch_dist`와 DP=2 `fsdp_dtensor` | payload 범위 통제 후에만 형식 우열 비교 |
+이 n=1 exploratory 측정(조건당 1회, GLM TRL FSDP2는 Accelerate 호환성 문제로 실패)에서 얻은 신호 — async 완료 시간이 sync에 근접한다 — 는 3회 반복으로 확정한 [2026-09-15 통제 결과](30b-results.md#distributed-checkpoint-write)로 완전히 대체됐습니다. 개별 수치는 보존하지 않습니다.
 
 <a id="megatron-local-checkpoint-sync-vs-async"></a>
 

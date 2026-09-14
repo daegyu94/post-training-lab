@@ -145,8 +145,6 @@ Controller 로그: `results/refresh-full-sft-sgd-qwen-ed40ca7-cohort1/rank-0.log
 
 0.5B smoke, NFS checkpoint와 backend-mixed exploratory 결과는 이 통제 비교에 포함하지 않습니다.
 
-<a id="실제로-확인한-조합"></a>
-
 ## Historical Results (through 2026-09-14)
 
 아래는 이전 조건에서 `build.py --execute`로 확인한 기록입니다.
@@ -154,16 +152,10 @@ Dataset·attention backend·반복 수가 위 통제 실험과 다르므로 최�
 
 ### Verified Runs
 
-| Case | Backend | Model | Dataset | knob | 결과 |
-| --- | --- | --- | --- | --- | --- |
-| 1 | TRL DDP | Qwen2.5-0.5B-Instruct | ultrachat (256/32) | `--epochs 1` | base/train/tuned 통과 |
-| 2 | TRL DeepSpeed | Qwen3-30B-A3B | no_robots | `--offload nvme --max-steps 1` | train 통과, 별도 `tuned` 평가 통과 |
-| 3 | Megatron | Qwen3-30B-A3B | self_oss (40,000/8,000) | `--max-steps 1 --stage all` | base `1.402232` → tuned `1.342737` |
-| 4 | Megatron | GLM-4.7-Flash | ultrachat (160,000/30,000) | `--max-steps 1 --max-length 4096 --stage all` | base `2.269922` → tuned `2.012836` |
-
-- **Case 1**: 256샘플·16 step에서 `base` 1.4340 → `train` 1.4308 → `tuned` 1.4308. 저장 전후 eval loss 일치는 **이 실행의 adapter 재로딩 증거**이며 모델 품질 지표가 아닙니다.
-- **Case 3·4**: node-local에 흩어진 `torch_dist` metadata·shard를 NFS checkpoint 경로로 모은 뒤 base→train→tuned와 iteration 1 재로딩을 통과했습니다. NaN·skipped iteration 0, `checkpoint_reload_verified=true`.
-- **Case 4 제약**: UltraChat 길이 초과로 `--max-length 2048`에서 실패한 뒤 4096에서 통과했습니다.
+TRL DDP(Qwen2.5-0.5B), TRL DeepSpeed ZeRO-3 NVMe offload(Qwen3-30B-A3B), Megatron(Qwen3-30B-A3B·GLM-4.7-Flash 각 1-step)에서 base/train/tuned 또는 train/tuned 평가가 모두 통과했습니다.
+Megatron 두 모델은 node-local에 흩어진 `torch_dist` shard를 NFS 경로로 모아 iteration 1을 새 process로 재로딩하는 것까지 확인했습니다(NaN·skipped iteration 없음).
+GLM은 UltraChat 일부 대화가 길어 `--max-length 2048`에서 실패한 뒤 4096으로 통과했습니다 — 길이 상한을 cohort 실제 분포보다 낮게 잡으면 이 실패가 재현됩니다.
+개별 run의 loss 값 자체는 재사용 근거가 아니므로 보존하지 않습니다.
 
 <a id="30b-gpu-results"></a>
 
@@ -196,7 +188,7 @@ DDP와 FSDP2의 loss는 소수점 네 자리까지 사실상 같지만 peak allo
 
 두 노드의 `/mnt/post-training`은 로컬 NVMe root filesystem에 있고 backend별 디렉터리에 `spark` 쓰기 권한이 있습니다.
 
-- Megatron Qwen3-30B-A3B와 GLM-4.7-Flash LoRA는 로컬 NVMe에 데이터 cache와 로그를 쓰고, NFS의 공통 `torch_dist` checkpoint에서 iteration 1을 새 process로 재로딩해 `STAGE=all`을 완료했습니다(수치는 위 [Verified Runs](#verified-runs) Case 3·4와 동일).
+- Megatron Qwen3-30B-A3B와 GLM-4.7-Flash LoRA는 로컬 NVMe에 데이터 cache와 로그를 쓰고, NFS의 공통 `torch_dist` checkpoint에서 iteration 1을 새 process로 재로딩해 `STAGE=all`을 완료했습니다(위 [Verified Runs](#verified-runs)와 동일 실행).
 - Megatron은 NVMe를 native training state offload 대상으로 지원하지 않습니다. 따라서 이 결과는 **dataset cache와 checkpoint I/O 검증**입니다.
 
 30B full SFT에서 각 경로가 막힌 이유:
@@ -243,20 +235,7 @@ GLM은 첫 2-node 시도가 stale `zero_stage_3` 파일 누락으로 실패해, 
 
 2026-09-14까지의 반복 측정은 조건이 혼재했습니다.
 Checkpoint와 TE memory는 위 [2026-09-15 matrix](#controlled-results-2026-09-15)에서 같은 조건으로 다시 측정했습니다.
-아래 adapter reload와 TRL 결과는 별도 historical run이고, LoRA 비율 sweep과 recompute는 Qwen 결과입니다.
-
-### Adapter Reload
-
-`experiments/trl/glm-4.7-flash-30b-lora.json`(no_robots, MAX_STEPS=1)으로 처음 실행했습니다.
-
-| Stage | eval_loss | Peak allocated |
-| --- | --- | --- |
-| base | 1.926144 | 57.699 GiB |
-| train | 1.928212 | 57.843 GiB |
-| tuned | 1.928212 | 57.699 GiB |
-
-`train`과 `tuned`의 eval_loss가 소수점까지 일치 — Qwen Case 1과 같은 adapter 재로딩 신뢰성 증거입니다.
-Qwen의 별도 1-step 실행 수치와는 run·입력 조건이 다르므로 이 표로 모델별 메모리 우열을 판단하지 않습니다.
+아래 TRL 결과는 별도 historical run이고, LoRA 비율 sweep과 recompute는 Qwen 결과입니다.
 
 ### Memory Comparison
 
@@ -313,17 +292,9 @@ CPU-efficient loading을 끄는 우회는 sharding 전 full replica 이동에서
 
 ### Checkpoint Comparison
 
-| Variant | Qwen(3회 재계산) | GLM(3회) | 비율 |
-| --- | ---: | ---: | ---: |
-| Sync run당 save 호출 합 | 2.3697s | 3.1121s | ×1.31 |
-| Async run당 save 호출 합 | 1.2824s | 1.5805s | ×1.23 |
-| Checkpoint 크기 | 72.8 MB | 150.2 MB | ×2.06 |
+위 [Distributed checkpoint write](#distributed-checkpoint-write)의 controlled 결과에서도 같은 패턴이 그대로 보입니다: GLM checkpoint 크기(22.04 MB)는 Qwen(10.64 MB)의 약 2.07배입니다.
 
-두 모델 모두 **async의 run당 save 호출 누적 시간이 더 짧습니다**(sync/async 비율: Qwen 1.85배, GLM 1.97배).
-Background 저장 완료나 학습 throughput이 같은 배수로 개선됐다는 뜻은 아닙니다.
-rMAD는 GLM sync 0.31%, async 0.90%로 10% 기준을 크게 밑돌아 사전에 정한 규칙상 추가 반복을 요구하지 않았습니다.
-
-**Checkpoint 크기 2.06배는 우연이 아니라 LoRA target module 구성 차이입니다.**
+**이 비율은 우연이 아니라 LoRA target module 구성 차이입니다.**
 `backends/megatron/megatron_lab/config.py`는 family별로 다른 target module을 씁니다.
 
 ```python
@@ -335,7 +306,7 @@ target_modules = (
 ```
 
 Qwen은 fused QKV 1개 + proj 1개(2종류), GLM은 MLA의 Q/KV down·up projection 4개 + proj 1개(5종류)입니다.
-같은 `lora_dim=8`에서 로그도 이를 뒷받침합니다: Qwen `Trainable parameters: 5,111,808`(0.0319%), GLM `Trainable parameters: 10,515,968`(0.07%) — 비율 **2.057배**로 checkpoint 크기 비율(2.063배)과 거의 일치합니다.
+같은 `lora_dim=8`에서 로그도 이를 뒷받침합니다: Qwen `Trainable parameters: 5,111,808`(0.0319%), GLM `Trainable parameters: 10,515,968`(0.07%) — 비율 **2.057배**로 checkpoint 크기 비율(2.07배)과 거의 일치합니다.
 
 이는 [LoRA trainable-ratio 실험](checkpoint-io.md#lora-ratio-and-checkpoint-io)의 "checkpoint 크기는 trainable parameter 수에 거의 비례한다"와 부합합니다.
 다만 GLM의 여러 LoRA dimension을 sweep한 결과는 아니므로, 새 target module·저장 형식에서의 선형성은 별도 확인이 필요합니다.
