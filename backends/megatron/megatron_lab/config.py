@@ -473,7 +473,8 @@ def build_cluster_config(args: Namespace):
     cfg.checkpoint.save_interval = (
         getattr(args, "save_interval", None) or args.max_steps
     )
-    cfg.checkpoint.ckpt_format = "torch_dist"
+    cfg.checkpoint.ckpt_format = getattr(args, "checkpoint_format", "torch_dist")
+    cfg.ddp.use_megatron_fsdp = getattr(args, "megatron_fsdp", False)
     cfg.checkpoint.fully_parallel_save = args.fully_parallel_save
     cfg.checkpoint.fully_parallel_load = args.fully_parallel_load
     cfg.checkpoint.dist_ckpt_optim_fully_reshardable = getattr(

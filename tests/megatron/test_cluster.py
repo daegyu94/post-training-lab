@@ -534,7 +534,12 @@ def test_glm_config_uses_local_provider_and_known_options_only(
     args.save_interval = 3
     custom_cfg, _ = build_cluster_config(args)
     assert custom_cfg.checkpoint.save_interval == 3
-    assert dataset_builds == 4
+    args.checkpoint_format = "fsdp_dtensor"
+    args.megatron_fsdp = True
+    fsdp_cfg, _ = build_cluster_config(args)
+    assert fsdp_cfg.checkpoint.ckpt_format == "fsdp_dtensor"
+    assert fsdp_cfg.ddp.use_megatron_fsdp is True
+    assert dataset_builds == 5
 
 
 def test_cluster_launcher_passes_explicit_ranks_and_resume_horizon(tmp_path: Path) -> None:

@@ -61,9 +61,11 @@ def load_benchmark_plan(path: Path) -> dict[str, Any]:
     defaults = plan.get("defaults", {})
     if not isinstance(defaults, dict):
         raise ValueError("benchmark defaults must be an object")
-    for key in ("steps", "repeats", "within_run_warmup"):
+    for key in ("steps", "repeats"):
         if not isinstance(defaults.get(key), int) or defaults[key] < 1:
             raise ValueError(f"defaults.{key} must be a positive integer")
+    if not isinstance(defaults.get("within_run_warmup"), int) or defaults["within_run_warmup"] < 0:
+        raise ValueError("defaults.within_run_warmup must be a non-negative integer")
     intervals = defaults.get("checkpoint_intervals")
     if not isinstance(intervals, list) or not intervals or any(not isinstance(x, int) or x < 1 for x in intervals):
         raise ValueError("defaults.checkpoint_intervals must contain positive integers")
@@ -85,16 +87,17 @@ def load_benchmark_plan(path: Path) -> dict[str, Any]:
 
 def schedule_runs(plan: dict[str, Any], repeats: int, within_run_warmup: int) -> list[dict[str, Any]]:
     """Return warmups first, followed by AB/BA measured ordering per cell."""
-    if repeats < 1 or within_run_warmup < 1:
-        raise ValueError("repeats and within_run_warmup must be positive")
+    if repeats < 1 or within_run_warmup < 0:
+        raise ValueError("repeats must be positive and within_run_warmup non-negative")
     result: list[dict[str, Any]] = []
     run_index = 0
     for cell in plan["cells"]:
         variants = cell["variants"]
-        for variant in variants:
-            result.append({"cell": cell["name"], "variant": variant["name"], "warmup": True,
-                           "run_index": run_index, "warmup_steps": 0, "steps": within_run_warmup})
-            run_index += 1
+        if within_run_warmup:
+            for variant in variants:
+                result.append({"cell": cell["name"], "variant": variant["name"], "warmup": True,
+                               "run_index": run_index, "warmup_steps": 0, "steps": within_run_warmup})
+                run_index += 1
         for repeat in range(repeats):
             order = variants if repeat % 2 == 0 else list(reversed(variants))
             for variant in order:
@@ -269,8 +272,8 @@ def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execu
     repeats = repeats if repeats is not None else defaults["repeats"]
     within_run_warmup = within_run_warmup if within_run_warmup is not None else defaults["within_run_warmup"]
     intervals = checkpoint_intervals if checkpoint_intervals is not None else defaults["checkpoint_intervals"]
-    if steps < 1 or repeats < 1 or within_run_warmup < 1 or timeout < 1:
-        raise ValueError("steps, repeats, within-run warmup, and timeout must be positive")
+    if steps < 1 or repeats < 1 or within_run_warmup < 0 or timeout < 1:
+        raise ValueError("steps, repeats, and timeout must be positive; warmup must be non-negative")
     if len(intervals) != 2 or any(value < 1 for value in intervals):
         raise ValueError("checkpoint intervals must contain two positive integers")
     if steps <= within_run_warmup:

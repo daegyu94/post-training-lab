@@ -110,6 +110,22 @@ def evict_checkpoint(checkpoint_dir: Path) -> dict[str, object]:
     }
 
 
+def tree_inventory(checkpoint_dir: Path) -> dict[str, object]:
+    files = sorted(path for path in checkpoint_dir.rglob("*") if path.is_file())
+    if not files:
+        raise FileNotFoundError(f"no checkpoint files under {checkpoint_dir}")
+    return {
+        "directory": str(checkpoint_dir),
+        "file_count": len(files),
+        "logical_bytes": sum(path.stat().st_size for path in files),
+        "allocated_bytes": sum(path.stat().st_blocks * 512 for path in files),
+        "files": [
+            {"name": str(path.relative_to(checkpoint_dir)), "bytes": path.stat().st_size}
+            for path in files
+        ],
+    }
+
+
 def direct_read(
     files: list[Path],
     read_device: Callable[[], dict[str, int]],
@@ -188,7 +204,11 @@ def main() -> None:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--skip-direct", action="store_true")
     parser.add_argument("--evict-only", action="store_true")
+    parser.add_argument("--inventory-only", action="store_true")
     args = parser.parse_args()
+    if args.inventory_only:
+        print(json.dumps(tree_inventory(args.checkpoint_dir), sort_keys=True))
+        return
     if args.evict_only:
         print(json.dumps(evict_checkpoint(args.checkpoint_dir), sort_keys=True))
         return

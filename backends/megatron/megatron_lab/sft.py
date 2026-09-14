@@ -85,6 +85,14 @@ def parse_args() -> argparse.Namespace:
         help="use the optimizer checkpoint format that supports TP/PP resharding",
     )
     parser.add_argument("--checkpoint-mode", choices=("sync", "async"), default="sync")
+    parser.add_argument(
+        "--checkpoint-format",
+        choices=("torch_dist", "fsdp_dtensor"),
+        default="torch_dist",
+    )
+    parser.add_argument(
+        "--megatron-fsdp", action=argparse.BooleanOptionalAction, default=False
+    )
     parser.add_argument("--save-optimizer", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--load-optimizer", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--sequence-parallel", action=argparse.BooleanOptionalAction, default=False)
@@ -173,6 +181,8 @@ def write_run_metadata(args: argparse.Namespace, spec: object, topology: object)
             "micro_batch_size": topology.micro_batch_size,
             "global_batch_size": topology.global_batch_size,
             "checkpoint_mode": args.checkpoint_mode,
+            "checkpoint_format": getattr(args, "checkpoint_format", "torch_dist"),
+            "megatron_fsdp": getattr(args, "megatron_fsdp", False),
             "fully_parallel_save": args.fully_parallel_save,
             "fully_parallel_load": args.fully_parallel_load,
             "dist_ckpt_optim_fully_reshardable": getattr(

@@ -275,7 +275,20 @@ def _uses_deepspeed_nvme(config: SparkConfig) -> bool:
 
 def _save_trained_model(trainer: Any, config: SparkConfig) -> Path:
     destination = config.output_dir / ("adapter" if config.finetuning_mode == "lora" else "model")
-    trainer.save_model(str(destination))
+    if config.distributed_backend == "fsdp2":
+        from torch.distributed.checkpoint import FileSystemWriter, save
+        from torch.distributed.checkpoint.state_dict import StateDictOptions, get_model_state_dict
+
+        state = get_model_state_dict(
+            trainer.model_wrapped,
+            options=StateDictOptions(ignore_frozen_params=config.finetuning_mode == "lora"),
+        )
+        save(
+            {"model": state},
+            storage_writer=FileSystemWriter(str(destination), sync_files=True),
+        )
+    else:
+        trainer.save_model(str(destination))
     if config.distributed_backend == "ddp" and config.finetuning_mode == "lora" and _rank() != 0:
         trainer.accelerator.unwrap_model(trainer.model).save_pretrained(str(destination))
     return destination

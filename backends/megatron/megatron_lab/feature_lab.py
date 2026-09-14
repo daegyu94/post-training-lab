@@ -19,7 +19,7 @@ from pathlib import Path
 
 
 FEATURE_VARIANTS = {
-    "checkpoint": ("sync", "async"),
+    "checkpoint": ("sync", "async", "ep2-torch-dist", "dp2-fsdp-dtensor"),
     "overlap-grad-reduce": ("off", "on"),
     "recompute": ("full", "selective"),
     "sequence-parallel": ("off", "on"),

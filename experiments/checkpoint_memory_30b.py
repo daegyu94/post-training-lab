@@ -92,13 +92,16 @@ def _output_root(node: dict[str, Any], backend: str) -> str:
     return value[backend] if isinstance(value, dict) else value
 
 
-def cohort_path(node: dict[str, Any], model: str = DEFAULT_MODEL) -> str:
+def cohort_path(node: dict[str, Any], model: str = DEFAULT_MODEL, max_length: int = 2048) -> str:
     """Cohort directory for one model. Row selection depends on the tokenizer, so
     each model gets its own cohort rather than sharing Qwen's selection."""
-    return str(Path(_output_root(node, "megatron")) / "cohorts" / MODELS[model]["cohort"])
+    name = MODELS[model]["cohort"].replace("-2048-v1", f"-{max_length}-v1")
+    return str(Path(_output_root(node, "megatron")) / "cohorts" / name)
 
 
-def _cohort_command(node: dict[str, Any], output: str, model: str = DEFAULT_MODEL) -> str:
+def _cohort_command(
+    node: dict[str, Any], output: str, model: str = DEFAULT_MODEL, max_length: int = 2048
+) -> str:
     q = shlex.quote
     manifest = str(Path(output) / "manifest.json")
     script = str(Path(node["checkout"]) / "experiments" / "prepare_checkpoint_cohort.py")
@@ -107,7 +110,7 @@ def _cohort_command(node: dict[str, Any], output: str, model: str = DEFAULT_MODE
         q(node["python"]["megatron"]), q(script), "--source-dir", q(node["data_dir"]),
         "--output-dir", q(output), "--model-dir", q(model_dir), "--model-revision", MODELS[model]["revision"],
         "--dataset-id", DATASET_ID, "--dataset-revision", DATASET_REVISION,
-        "--max-length", "2048", "--train-count", "32", "--eval-count", "8",
+        "--max-length", str(max_length), "--train-count", "32", "--eval-count", "8",
     ])
     return f"if test -f {q(manifest)}; then cat {q(manifest)}; else {create}; fi"
 
@@ -117,6 +120,7 @@ def prepare_cohorts(
     *,
     execute: bool,
     model: str = DEFAULT_MODEL,
+    max_length: int = 2048,
     remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
 ) -> tuple[dict[str, Any], list[dict[str, str]]]:
     updated = json.loads(json.dumps(setup))
@@ -125,8 +129,8 @@ def prepare_cohorts(
     for node in updated["nodes"]:
         if MODELS[model]["id"] not in node["model_dirs"]:
             raise run.ConfigError(f"node {node['host']} has no {MODELS[model]['id']} model path")
-        destination = cohort_path(node, model)
-        command = _cohort_command(node, destination, model)
+        destination = cohort_path(node, model, max_length)
+        command = _cohort_command(node, destination, model, max_length)
         planned.append({"host": node["host"], "path": destination, "command": command})
         node["data_dir"] = destination
         if not execute:
@@ -145,7 +149,7 @@ def prepare_cohorts(
             manifest.get("dataset") != DATASET_ID
             or manifest.get("dataset_revision") != DATASET_REVISION
             or manifest.get("model_revision") != MODELS[model]["revision"]
-            or manifest.get("max_length") != 2048
+            or manifest.get("max_length") != max_length
             or manifest.get("train_count") != 32
             or manifest.get("eval_count") != 8
         ):
@@ -258,6 +262,40 @@ def cleanup_checkpoints(
             raise RuntimeError(f"checkpoint cleanup failed on rank {rank['rank']}: {result.stderr.strip()}")
 
 
+def collect_write_only_post_run(
+    plan: dict[str, Any], output: Path, _item: dict[str, Any],
+    *, remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> dict[str, Any]:
+    resources = collect_run_resources(plan, output, remote_run=remote_run)
+    by_rank: dict[str, Any] = {}
+    for rank in plan["ranks"]:
+        script = str(Path(rank["checkout"]) / "experiments" / "checkpoint_io_probe.py")
+        command = " ".join(shlex.quote(value) for value in [
+            rank["env"]["PYTHON"], script, "--checkpoint-dir",
+            rank["env"]["CHECKPOINT_DIR"], "--inventory-only",
+        ])
+        result = remote_run(
+            ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", rank["host"], command],
+            check=False, capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode:
+            raise RuntimeError(f"checkpoint inventory failed on rank {rank['rank']}: {result.stderr.strip()}")
+        by_rank[str(rank["rank"])] = {
+            "inventory": json.loads(result.stdout), "resources": resources[str(rank["rank"])],
+        }
+    return {
+        "scope": "node-local checkpoint write only; no read or restore",
+        "by_rank": by_rank,
+        "aggregate": {
+            "logical_checkpoint_bytes": sum(item["inventory"]["logical_bytes"] for item in by_rank.values()),
+            "allocated_checkpoint_bytes": sum(item["inventory"]["allocated_bytes"] for item in by_rank.values()),
+            "checkpoint_file_count": sum(item["inventory"]["file_count"] for item in by_rank.values()),
+            "host_mem_available_min_bytes": min(item["resources"]["mem_available_min_bytes"] for item in by_rank.values()),
+            "stage_device_write_bytes": sum(item["resources"]["device_write_bytes_delta"] for item in by_rank.values()),
+        },
+    }
+
+
 def reclaim_remote(
     plan: dict[str, Any], *, remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
 ) -> None:
@@ -321,11 +359,20 @@ def checkpoint_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
             if item.get("status") == "passed" and not item.get("warmup")
             and item.get("variant") == variant and item.get("post_run")
         ]
-        throughputs = [item["post_run"]["aggregate"]["reads"]["cold_buffered"]["logical_bytes_per_second"] for item in selected]
+        throughputs = [
+            item["post_run"]["aggregate"].get("reads", {}).get("cold_buffered", {}).get("logical_bytes_per_second")
+            for item in selected
+        ]
         throughputs = [float(value) for value in throughputs if value is not None]
         sizes = [float(item["post_run"]["aggregate"]["logical_checkpoint_bytes"]) for item in selected]
         save = [item["metrics"]["save_call_host_seconds_max_across_ranks"] for item in selected]
         save = [float(value) for value in save if value is not None]
+        durable = []
+        for item in selected:
+            enqueue = item["metrics"].get("save_call_host_seconds_max_across_ranks")
+            finalize = item["metrics"].get("blocking_finalization_host_seconds_max_across_ranks") or 0
+            if enqueue is not None:
+                durable.append(float(enqueue) + float(finalize))
         dispersion = relative_mad(save)
         summary[variant] = {
             "run_count": len(selected),
@@ -333,6 +380,11 @@ def checkpoint_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
             "cold_buffered_read_bytes_per_second_median": statistics.median(throughputs) if throughputs else None,
             "save_call_seconds_median": statistics.median(save) if save else None,
             "save_call_relative_mad": dispersion,
+            "write_completion_seconds_median": statistics.median(durable) if durable else None,
+            "logical_write_bytes_per_second_median": (
+                statistics.median(sizes) / statistics.median(durable)
+                if sizes and durable and statistics.median(durable) > 0 else None
+            ),
             "extend_to_eight_runs": dispersion is not None and dispersion > 0.1,
         }
     return summary
@@ -382,6 +434,13 @@ def memory_experiments(model: str = DEFAULT_MODEL) -> list[dict[str, Any]]:
         {"name": "trl-fsdp2", "repeats": 3, "pilot": False, "experiment": {
             "backend": "trl", "setup": "spark", "nnodes": 2, "nproc_per_node": 1,
             "env": {**trl, "DISTRIBUTED_BACKEND": "fsdp2"},
+        }},
+        {"name": "trl-fsdp2-dcp", "repeats": 3, "pilot": False, "experiment": {
+            "backend": "trl", "setup": "spark", "nnodes": 2, "nproc_per_node": 1,
+            "env": {
+                **trl, "DISTRIBUTED_BACKEND": "fsdp2", "MAX_STEPS": 1,
+                "MAX_LENGTH": 512, "TRAIN_SAMPLES": 4, "EVAL_SAMPLES": 1,
+            },
         }},
         {"name": "trl-zero3-nvme", "repeats": 3, "pilot": False, "experiment": {
             "backend": "trl", "setup": "spark", "nnodes": 2, "nproc_per_node": 1,
@@ -479,6 +538,60 @@ def collect_trl_summary(
     return summary
 
 
+def collect_trl_dcp(
+    plan: dict[str, Any], output: Path,
+    *, remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> dict[str, Any]:
+    by_rank = {}
+    destination = output / "measurements"
+    destination.mkdir(parents=True, exist_ok=True)
+    for rank in plan["ranks"]:
+        checkpoint = str(Path(rank["output"]) / "adapter")
+        script = str(Path(rank["checkout"]) / "experiments" / "checkpoint_io_probe.py")
+        command = " ".join(shlex.quote(value) for value in [
+            rank["env"]["PYTHON"], script, "--checkpoint-dir", checkpoint, "--inventory-only",
+        ])
+        fetched = remote_run(
+            ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", rank["host"], command],
+            check=False, capture_output=True, text=True, timeout=60,
+        )
+        if fetched.returncode:
+            raise RuntimeError(f"cannot inventory TRL DCP on rank {rank['rank']}: {fetched.stderr.strip()}")
+        inventory = json.loads(fetched.stdout)
+        names = {item["name"] for item in inventory["files"]}
+        if not any(name.endswith(".distcp") for name in names):
+            raise RuntimeError(f"TRL FSDP2 output on rank {rank['rank']} has no PyTorch DCP shard")
+        path = destination / f"trl-dcp-inventory-rank-{rank['rank']}.json"
+        path.write_text(json.dumps(inventory, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        by_rank[str(rank["rank"])] = inventory
+    if not any(
+        item["name"].endswith(".metadata")
+        for inventory in by_rank.values() for item in inventory["files"]
+    ):
+        raise RuntimeError("TRL FSDP2 output has no PyTorch DCP metadata")
+    return {
+        "scope": "TRL FSDP2 model-only PyTorch DCP; FileSystemWriter sync_files=True default",
+        "by_rank": by_rank,
+        "logical_checkpoint_bytes": sum(item["logical_bytes"] for item in by_rank.values()),
+        "allocated_checkpoint_bytes": sum(item["allocated_bytes"] for item in by_rank.values()),
+    }
+
+
+def cleanup_trl_checkpoint(
+    plan: dict[str, Any],
+    *, remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> None:
+    for rank in plan["ranks"]:
+        checkpoint = str(Path(rank["output"]) / "adapter")
+        result = remote_run(
+            ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", rank["host"],
+             f"rm -rf -- {shlex.quote(checkpoint)}"],
+            check=False, capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode:
+            raise RuntimeError(f"TRL checkpoint cleanup failed on rank {rank['rank']}: {result.stderr.strip()}")
+
+
 def _prior_terminal_status(resume: bool, local_manifest: Path) -> str | None:
     """The prior invocation's status for this run, if it reached a terminal state
     (passed/failed). None means either no prior attempt or one interrupted mid-run
@@ -515,7 +628,7 @@ def _local_file_run(paths: list[Path], fallback: Callable[..., Any] = subprocess
 
 def run_memory_matrix(
     setup: dict[str, Any], setup_path: Path, output: Path, *, execute: bool, timeout: int, resume: bool = False,
-    conditions: list[str] | None = None, model: str = DEFAULT_MODEL,
+    conditions: list[str] | None = None, model: str = DEFAULT_MODEL, repeats: int | None = None,
 ) -> dict[str, Any]:
     estimates = collect_memory_estimates(setup, execute=execute, model=model)
     if execute:
@@ -531,7 +644,7 @@ def run_memory_matrix(
     for condition in selected_conditions:
         config_path = _write_experiment(condition["experiment"], f"{output.name}-{condition['name']}")
         experiment = run.load_experiment(config_path)
-        count = condition["repeats"] + int(condition["pilot"])
+        count = (repeats if repeats is not None else condition["repeats"]) + int(condition["pilot"])
         for index in range(count):
             pilot = bool(condition["pilot"] and index == 0)
             run_name = f"{output.name}--{condition['name']}--run-{index:02d}"
@@ -583,6 +696,9 @@ def run_memory_matrix(
                             plan, run_output,
                             remote_run=_local_file_run([run_output / "summary-train.json"]) if resumed else subprocess.run,
                         )
+                        if condition["name"] == "trl-fsdp2-dcp":
+                            record["trl_dcp"] = collect_trl_dcp(plan, run_output)
+                            cleanup_trl_checkpoint(plan)
                 if pilot and code != 0:
                     records.append(record)
                     break
@@ -618,6 +734,11 @@ def main(argv: list[str] | None = None) -> int:
     # +0.57% (sync) / -1.41% (async) with rMAD still ~1-2.5%, far under the 10%
     # rule that would call for more runs, so the extra two runs bought nothing.
     parser.add_argument("--repeats", type=int, default=3)
+    parser.add_argument("--steps", type=int, default=8)
+    parser.add_argument("--within-run-warmup", type=int, default=2)
+    parser.add_argument("--checkpoint-interval", type=int, default=2)
+    parser.add_argument("--write-only", action="store_true",
+                        help="checkpoint phase only: inventory local writes without reading them")
     parser.add_argument("--timeout", type=int, default=3600)
     parser.add_argument("--resume", action="store_true",
                          help="memory phase only: continue into an existing --output, reusing "
@@ -635,31 +756,39 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.output.exists() and not args.resume:
             raise run.ConfigError(f"refusing to reuse output directory: {args.output}")
-        if args.repeats < 1 or args.timeout < 1:
-            raise run.ConfigError("--repeats and --timeout must be positive")
+        if min(args.repeats, args.steps, args.checkpoint_interval, args.timeout) < 1 or args.within_run_warmup < 0:
+            raise run.ConfigError("counts must be positive and --within-run-warmup non-negative")
         if args.resume:
             validate_resume_model(args.output, args.model)
         if args.phase == "checkpoint":
             args.plan = resolve_checkpoint_plan(args.model, args.plan)
         setup = run.load_setup(args.setup)
-        setup, cohort_plan = prepare_cohorts(setup, execute=args.execute, model=args.model)
+        if args.phase == "checkpoint":
+            cohort_max_length = int(
+                benchmarks.load_benchmark_plan(args.plan).get("common_env", {}).get("MAX_LENGTH", 2048)
+            )
+        else:
+            cohort_max_length = 512 if args.condition == ["trl-fsdp2-dcp"] else 2048
+        setup, cohort_plan = prepare_cohorts(
+            setup, execute=args.execute, model=args.model, max_length=cohort_max_length
+        )
         setup_path = generated_setup(setup, args.output)
         if args.phase == "memory":
             result = run_memory_matrix(setup, setup_path, args.output, execute=args.execute,
                                         timeout=args.timeout, resume=args.resume, conditions=args.condition,
-                                        model=args.model)
+                                        model=args.model, repeats=args.repeats)
         else:
             result = benchmarks.run_benchmark(
                 setup_path=setup_path,
                 benchmark_path=args.plan,
                 output=args.output,
                 execute=args.execute,
-                steps=8,
+                steps=args.steps,
                 repeats=args.repeats,
-                within_run_warmup=2,
-                checkpoint_intervals=[2, 2],
+                within_run_warmup=args.within_run_warmup,
+                checkpoint_intervals=[args.checkpoint_interval, args.checkpoint_interval],
                 timeout=args.timeout,
-                post_run_fn=collect_post_run if args.execute else None,
+                post_run_fn=(collect_write_only_post_run if args.write_only else collect_post_run) if args.execute else None,
                 cleanup_fn=cleanup_checkpoints if args.execute else None,
             )
         result["cohorts"] = cohort_plan

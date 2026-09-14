@@ -1,0 +1,55 @@
+{
+  "backend": "megatron",
+  "setup": "spark",
+  "base_experiment": "experiments/megatron/qwen3-30b-lora.json",
+  "defaults": {
+    "steps": 1,
+    "repeats": 1,
+    "within_run_warmup": 0,
+    "checkpoint_intervals": [1, 1]
+  },
+  "common_env": {
+    "MODEL_ID": "Qwen/Qwen3-30B-A3B",
+    "MODEL_REVISION": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+    "DATASET_ID": "HuggingFaceH4/ultrachat_200k",
+    "DATASET_REVISION": "8049631c405ae6576f93f445c6b8166f76f5505a",
+    "FINETUNING_MODE": "lora",
+    "GLOBAL_BATCH_SIZE": 2,
+    "MICRO_BATCH_SIZE": 1,
+    "TP": 1,
+    "PP": 1,
+    "EP": 2,
+    "MAX_LENGTH": 512,
+    "SAVE_INTERVAL": 1,
+    "SAVE_OPTIMIZER": false,
+    "CHECKPOINT_PLACEMENT": "local",
+    "RESOURCE_SAMPLING": true,
+    "MEASURE_TIMING": true,
+    "SEED": 42,
+    "STAGE": "train"
+  },
+  "cells": [
+    {
+      "name": "checkpoint-phase1-torch-dist",
+      "varying": ["CHECKPOINT_MODE"],
+      "variants": [
+        {"name": "sync", "env": {"CHECKPOINT_MODE": "sync"}},
+        {"name": "async", "env": {"CHECKPOINT_MODE": "async"}}
+      ]
+    },
+    {
+      "name": "checkpoint-phase2-layout-format",
+      "varying": ["EP", "CHECKPOINT_FORMAT", "MEGATRON_FSDP"],
+      "variants": [
+        {
+          "name": "ep2-torch-dist",
+          "env": {"EP": 2, "CHECKPOINT_MODE": "sync", "CHECKPOINT_FORMAT": "torch_dist", "MEGATRON_FSDP": false}
+        },
+        {
+          "name": "dp2-fsdp-dtensor",
+          "env": {"EP": 1, "CHECKPOINT_MODE": "sync", "CHECKPOINT_FORMAT": "fsdp_dtensor", "MEGATRON_FSDP": true}
+        }
+      ]
+    }
+  ]
+}

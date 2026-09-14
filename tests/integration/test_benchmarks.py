@@ -48,6 +48,12 @@ def test_schedule_warmups_then_alternating_measured_order() -> None:
     assert all(r["warmup_steps"] == 2 for r in runs[2:])
 
 
+def test_schedule_can_skip_warmup_launches_for_long_exploratory_runs() -> None:
+    runs = benchmarks.schedule_runs(_plan(), 1, 0)
+    assert [(r["variant"], r["warmup"]) for r in runs] == [("a", False), ("b", False)]
+    assert all(r["warmup_steps"] == 0 for r in runs)
+
+
 def test_invariants_reject_unrequested_difference() -> None:
     cell = _plan()["cells"][0]
     cell["variants"][1]["env"]["SEED"] = 7

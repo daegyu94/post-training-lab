@@ -21,6 +21,53 @@ def test_aggregate_probe_sums_ranks_and_uses_slowest_time() -> None:
     assert result["reads"]["cold_buffered"]["logical_bytes_per_second"] == 75
 
 
+def test_write_only_collection_inventories_without_read_probe(tmp_path: Path, monkeypatch) -> None:
+    resources = {
+        "0": {"mem_available_min_bytes": 90, "device_write_bytes_delta": 30},
+        "1": {"mem_available_min_bytes": 80, "device_write_bytes_delta": 40},
+    }
+    monkeypatch.setattr(checkpoint_memory_30b, "collect_run_resources", lambda *a, **k: resources)
+    plan = {"ranks": [
+        {"rank": 0, "host": "spark@spark1", "checkout": "/repo", "env": {"PYTHON": "python", "CHECKPOINT_DIR": "/c0"}},
+        {"rank": 1, "host": "spark@spark2", "checkout": "/repo", "env": {"PYTHON": "python", "CHECKPOINT_DIR": "/c1"}},
+    ]}
+
+    def remote_run(command, **_kwargs):
+        assert "--inventory-only" in command[-1]
+        size = 100 if "/c0" in command[-1] else 200
+        return SimpleNamespace(returncode=0, stdout=json.dumps({
+            "logical_bytes": size, "allocated_bytes": size, "file_count": 1,
+        }), stderr="")
+
+    result = checkpoint_memory_30b.collect_write_only_post_run(plan, tmp_path, {}, remote_run=remote_run)
+
+    assert result["aggregate"]["logical_checkpoint_bytes"] == 300
+    assert result["aggregate"]["stage_device_write_bytes"] == 70
+    assert result["scope"].endswith("no read or restore")
+
+
+def test_collect_trl_dcp_requires_native_dcp_files(tmp_path: Path) -> None:
+    plan = {"ranks": [{
+        "rank": 0, "host": "spark@spark1", "checkout": "/repo",
+        "output": "/run", "env": {"PYTHON": "python"},
+    }]}
+    inventory = {
+        "logical_bytes": 12, "allocated_bytes": 4096,
+        "files": [{"name": "pytorch_model_fsdp_0/__0_0.distcp", "bytes": 10},
+                  {"name": "pytorch_model_fsdp_0/.metadata", "bytes": 2}],
+    }
+
+    result = checkpoint_memory_30b.collect_trl_dcp(
+        plan, tmp_path,
+        remote_run=lambda *a, **k: SimpleNamespace(
+            returncode=0, stdout=json.dumps(inventory), stderr=""
+        ),
+    )
+
+    assert result["logical_checkpoint_bytes"] == 12
+    assert (tmp_path / "measurements" / "trl-dcp-inventory-rank-0.json").is_file()
+
+
 def test_resource_summary_reports_peak_pressure() -> None:
     lines = [
         json.dumps({"monotonic_seconds": 1, "device_major_minor": "1:2", "memavailable_bytes": 100, "memtotal_bytes": 200,
@@ -71,14 +118,17 @@ def test_checkpoint_summary_derives_variant_names_from_records() -> None:
     assert set(summary) == {"ratio-0.1pct", "ratio-0.5pct", "ratio-1pct"}
     assert summary["ratio-1pct"]["logical_checkpoint_bytes_median"] == 10_000_000
     assert summary["ratio-1pct"]["run_count"] == 1
+    assert summary["ratio-1pct"]["logical_write_bytes_per_second_median"] == 10_000_000 / 1.5
 
 
 def test_memory_matrix_matches_fixed_length_and_backend_contract() -> None:
     conditions = {item["name"]: item for item in checkpoint_memory_30b.memory_experiments()}
 
-    assert set(conditions) == {"len-4096", "len-8192", "trl-ddp", "trl-fsdp2", "trl-zero3-nvme"}
+    assert set(conditions) == {"len-4096", "len-8192", "trl-ddp", "trl-fsdp2", "trl-fsdp2-dcp", "trl-zero3-nvme"}
     assert conditions["len-4096"]["experiment"]["env"]["PAD_TO_MAX_LENGTH"] is True
     assert conditions["trl-ddp"]["experiment"]["env"]["PAD_TO_MAX_LENGTH"] is True
+    dcp = conditions["trl-fsdp2-dcp"]["experiment"]["env"]
+    assert dcp["MAX_STEPS"] == 1 and dcp["MAX_LENGTH"] == 512
     zero = conditions["trl-zero3-nvme"]["experiment"]["env"]
     assert zero["FINETUNING_MODE"] == "full"
     # DeepSpeed substitutes DeepSpeedCPUAdam whenever optimizer state is offloaded,
@@ -274,6 +324,7 @@ def test_model_registry_gives_each_model_its_own_cohort_and_megatron_env() -> No
     glm = checkpoint_memory_30b.cohort_path(node, "glm")
 
     assert qwen != glm
+    assert "-512-v1" in checkpoint_memory_30b.cohort_path(node, "qwen", 512)
     assert checkpoint_memory_30b.MODELS["qwen"]["megatron_env"] == {}
     assert checkpoint_memory_30b.MODELS["glm"]["megatron_env"] == {"TRANSFORMER_IMPL": "auto"}
 
@@ -309,6 +360,23 @@ def test_checkpoint_cli_selects_glm_plan_with_glm_cohort(tmp_path, monkeypatch, 
     assert result['effective_common_env']['MODEL_REVISION'] == checkpoint_memory_30b.MODELS['glm']['revision']
     assert all('ultrachat-glm-' in item['path'] for item in result['cohorts'])
     assert result['repeats'] == 3
+
+
+def test_trl_dcp_cli_uses_the_512_token_cohort(tmp_path, monkeypatch, capsys) -> None:
+    setup = _two_node_setup()
+    setup["setup"] = "spark"
+    path = tmp_path / "setup.json"
+    path.write_text(json.dumps(setup), encoding="utf-8")
+    monkeypatch.setattr(checkpoint_memory_30b, "GENERATED", tmp_path / "generated")
+
+    code = checkpoint_memory_30b.main([
+        "--setup", str(path), "--output", str(tmp_path / "out"),
+        "--phase", "memory", "--condition", "trl-fsdp2-dcp", "--repeats", "1",
+    ])
+
+    assert code == 0
+    result = json.loads(capsys.readouterr().out)
+    assert all("-512-v1" in item["path"] for item in result["cohorts"])
 
 
 def test_checkpoint_model_mismatch_fails_before_cohort_ssh(tmp_path, monkeypatch, capsys):

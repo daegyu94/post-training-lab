@@ -203,6 +203,29 @@ def test_nonzero_ddp_rank_saves_lora_to_its_node_local_output(monkeypatch, tmp_p
     assert calls == [("trainer", str(tmp_path / "adapter")), ("local", str(tmp_path / "adapter"))]
 
 
+def test_fsdp2_saves_trainable_model_state_with_sync_dcp(monkeypatch, tmp_path: Path) -> None:
+    calls = []
+    checkpoint = types.ModuleType("torch.distributed.checkpoint")
+    checkpoint.FileSystemWriter = lambda path, sync_files: (path, sync_files)
+    checkpoint.save = lambda state, storage_writer: calls.append((state, storage_writer))
+    state_dict = types.ModuleType("torch.distributed.checkpoint.state_dict")
+    state_dict.StateDictOptions = lambda **kwargs: kwargs
+    state_dict.get_model_state_dict = lambda model, options: {"weight": (model, options)}
+    monkeypatch.setitem(sys.modules, checkpoint.__name__, checkpoint)
+    monkeypatch.setitem(sys.modules, state_dict.__name__, state_dict)
+    model = object()
+    trainer = types.SimpleNamespace(model_wrapped=model)
+    config = types.SimpleNamespace(
+        output_dir=tmp_path, finetuning_mode="lora", distributed_backend="fsdp2"
+    )
+
+    result = spark_train._save_trained_model(trainer, config)
+
+    assert result == tmp_path / "adapter"
+    assert calls == [({"model": {"weight": (model, {"ignore_frozen_params": True})}},
+                      (str(tmp_path / "adapter"), True))]
+
+
 def test_parameter_sampling_keeps_representative_update_evidence() -> None:
     parameter = FakeTensor()
     selected = spark_train._sample_trainable_parameters([

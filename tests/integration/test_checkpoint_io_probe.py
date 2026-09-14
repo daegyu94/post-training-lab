@@ -61,3 +61,13 @@ def test_evict_checkpoint_covers_metadata_and_shards(tmp_path: Path, monkeypatch
 
     assert result["file_count"] == 2
     assert set(seen) == {tmp_path / "metadata.json", iteration / "shard.distcp"}
+
+
+def test_tree_inventory_is_generic_and_non_reading(tmp_path: Path) -> None:
+    (tmp_path / "nested").mkdir()
+    (tmp_path / "nested" / "shard.distcp").write_bytes(b"abc")
+
+    result = checkpoint_io_probe.tree_inventory(tmp_path)
+
+    assert result["logical_bytes"] == 3
+    assert result["files"] == [{"name": "nested/shard.distcp", "bytes": 3}]

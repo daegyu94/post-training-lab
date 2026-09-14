@@ -81,6 +81,19 @@ case "$pad_to_max_length" in true|false) ;; *) echo "PAD_TO_MAX_LENGTH must be t
 seed="${SEED:-42}"
 transformer_impl="${TRANSFORMER_IMPL:-auto}"
 dist_ckpt_optim_fully_reshardable="${DIST_CKPT_OPTIM_FULLY_RESHARDABLE:-false}"
+checkpoint_format="${CHECKPOINT_FORMAT:-torch_dist}"
+megatron_fsdp="${MEGATRON_FSDP:-false}"
+
+case "$checkpoint_format" in torch_dist|fsdp_dtensor) ;; *) echo "CHECKPOINT_FORMAT must be torch_dist or fsdp_dtensor" >&2; exit 2 ;; esac
+case "$megatron_fsdp" in true|false) ;; *) echo "MEGATRON_FSDP must be true or false" >&2; exit 2 ;; esac
+if [[ "$megatron_fsdp" == true && "$checkpoint_format" != fsdp_dtensor ]]; then
+  echo "MEGATRON_FSDP=true requires CHECKPOINT_FORMAT=fsdp_dtensor" >&2
+  exit 2
+fi
+if [[ "$checkpoint_format" == fsdp_dtensor && "$megatron_fsdp" != true ]]; then
+  echo "CHECKPOINT_FORMAT=fsdp_dtensor requires MEGATRON_FSDP=true" >&2
+  exit 2
+fi
 
 case "$dist_ckpt_optim_fully_reshardable" in
   true|false) ;;
@@ -144,9 +157,13 @@ common_args=(
   --transformer-impl "$transformer_impl"
   --finetuning-mode "${FINETUNING_MODE:-lora}"
   --checkpoint-mode "${CHECKPOINT_MODE:-sync}"
+  --checkpoint-format "$checkpoint_format"
   --recompute "${RECOMPUTE:-full}"
   --lora-dim "${LORA_DIM:-8}"
 )
+if [[ "$megatron_fsdp" == true ]]; then
+  common_args+=(--megatron-fsdp)
+fi
 if [[ "$dist_ckpt_optim_fully_reshardable" == "true" ]]; then
   common_args+=(--dist-ckpt-optim-fully-reshardable)
 fi

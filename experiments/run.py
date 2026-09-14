@@ -43,7 +43,8 @@ MEGATRON_ENV = {
     "OVERLAP_GRAD_REDUCE", "DIST_CKPT_OPTIM_FULLY_RESHARDABLE",
     "RESUME_AFTER_TRAIN", "RESUME_MAX_STEPS", "RESUME_TP", "RESUME_PP", "RESUME_EP",
     "TRANSFORMER_IMPL", "MEASURE_TIMING", "RESOURCE_SAMPLING",
-    "CHECKPOINT_PLACEMENT", "LOAD_CHECKPOINT", "STAGE",
+    "CHECKPOINT_PLACEMENT", "CHECKPOINT_FORMAT", "MEGATRON_FSDP",
+    "LOAD_CHECKPOINT", "STAGE",
 }
 
 
@@ -210,6 +211,12 @@ def load_experiment(path: Path) -> dict[str, Any]:
             raise ConfigError("Megatron CHECKPOINT_PLACEMENT must be shared or local")
         if placement == "local" and stage != "train":
             raise ConfigError("Megatron local checkpoint placement supports STAGE=train only")
+        checkpoint_format = value["env"].get("CHECKPOINT_FORMAT", "torch_dist")
+        megatron_fsdp = value["env"].get("MEGATRON_FSDP", "false").lower() == "true"
+        if checkpoint_format not in {"torch_dist", "fsdp_dtensor"}:
+            raise ConfigError("Megatron CHECKPOINT_FORMAT must be torch_dist or fsdp_dtensor")
+        if megatron_fsdp != (checkpoint_format == "fsdp_dtensor"):
+            raise ConfigError("Megatron fsdp_dtensor requires MEGATRON_FSDP=true and vice versa")
         if "LOAD_CHECKPOINT" in value["env"] and stage not in {"tuned"}:
             raise ConfigError("Megatron LOAD_CHECKPOINT is valid only for STAGE=tuned")
         tp = _positive(value["env"], "TP", 1)

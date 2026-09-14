@@ -13,6 +13,11 @@ def test_lora_ratio_is_a_registered_feature_with_three_variants() -> None:
         validate_feature_variant("lora-ratio", "sync")
 
 
+def test_distributed_checkpoint_variants_are_registered() -> None:
+    validate_feature_variant("checkpoint", "ep2-torch-dist")
+    validate_feature_variant("checkpoint", "dp2-fsdp-dtensor")
+
+
 def _log(*iterations: int, checkpoint: bool = True) -> str:
     lines = []
     for iteration in iterations:
