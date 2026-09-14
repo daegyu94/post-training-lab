@@ -14,6 +14,7 @@ Controller에는 Python 3.10 이상과 Git이, 학습에는 준비된 Spark 노�
 | 환경을 준비하고 첫 SFT를 돌리려면? | [Getting Started](docs/getting-started.md) |
 | 어떤 구성 요소가 무엇을 책임지는가? | [Architecture](docs/architecture.md) |
 | 학습 입력을 어떻게 만드는가? | [Datasets](docs/datasets.md) |
+| 공개 코드 문제로 execution feedback cycle을 돌리려면? | [Execution Feedback](docs/execution-feedback.md) |
 | TRL로 어떻게 학습하는가? | [TRL Backend](docs/backends/trl.md) |
 | Megatron으로 어떻게 학습·재개하는가? | [Megatron Backend](docs/backends/megatron.md) |
 | 실험 결과가 무엇을 의미하고 어디까지 비교 가능한가? | [Experiments](docs/experiments.md) |
@@ -27,9 +28,9 @@ Controller에는 Python 3.10 이상과 Git이, 학습에는 준비된 Spark 노�
 
 ## Scope
 
-이 저장소는 SFT workflow와 그 관측·baseline까지만 다룹니다.
-DPO, RL trainer, artifact registry와 serving 배포는 구현되어 있지 않으며 이 저장소의 범위가 아닙니다.
+기본 범위는 SFT workflow와 그 관측·baseline입니다.
+추가로 공개 Python 코드 문제에서 한 번의 execution-filtered SFT/DPO cycle을 검증하는 독립 실험 경로를 제공합니다.
+사내 framework 성능 검증, 반복적인 feedback cycle, repository-level build, 여러 언어, RL trainer, artifact registry와 serving 배포는 구현하지 않습니다.
 
 정적 검사, CPU 테스트, dry-run, 실제 GPU 실행은 서로 다른 증거이며 한 단계의 성공이 다른 단계를 보장하지 않습니다.
 검증 명령은 [AGENTS.md](AGENTS.md), 판정 기준은 [Getting Started](docs/getting-started.md#6-verify-the-result)를 따릅니다.
-
