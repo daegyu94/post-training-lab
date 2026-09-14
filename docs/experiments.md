@@ -238,7 +238,7 @@ TRL DeepSpeed ZeRO-3는 finetuning mode·optimizer·checkpoint format·runtime o
 기존 `checkpoint_io_probe.py`의 순차 shard read는 저장장치와 page cache 상태를 설명하는 보조 microbenchmark로 유지하되, model loading 성능의 대표값으로 사용하지 않습니다.
 실제 restore는 `experiments/model_restore_30b.py`가 `spark1`에서 별도 TRL `tuned` process를 실행하고 model과 checkpoint가 적용된 시점까지 직접 측정합니다.
 
-| 구분 | LoRA r=8/64/128 | DeepSpeed ZeRO-3 full SFT |
+| 구분 | LoRA r=8/32/64 | DeepSpeed ZeRO-3 full SFT |
 | --- | --- | --- |
 | 학습 목적 | Adapter 크기 변화 생성 | 실제 full-state checkpoint 생성 |
 | 학습량 | 1 optimizer step | 1 optimizer step |
@@ -249,7 +249,7 @@ TRL DeepSpeed ZeRO-3는 finetuning mode·optimizer·checkpoint format·runtime o
 실험은 다음 순서로 진행합니다.
 
 1. 두 30B 모델에 모델별 tokenizer로 앞에서부터 선택한 동일 UltraChat revision의 512-token 이하 4 train/1 eval cohort를 사용합니다. 필요한 행을 찾으면 scan을 끝내므로 전체 데이터 길이 분포를 다시 계산하지 않습니다.
-2. LoRA r=8/64/128 또는 ZeRO-3 full SFT를 1 optimizer step 실행하고 실제 checkpoint save 완료 시간과 크기를 기록합니다.
+2. LoRA r=8/32/64 또는 ZeRO-3 full SFT를 1 optimizer step 실행하고 실제 checkpoint save 완료 시간과 크기를 기록합니다.
 3. Base snapshot과 생성 checkpoint에 `POSIX_FADV_DONTNEED`를 요청하고 새 process에서 cold restore를 실행합니다.
 4. Eviction 없이 새 process를 다시 실행해 warm restore를 측정합니다.
 5. 위 lifecycle을 독립적으로 3회 반복하고 arithmetic mean과 표준편차를 기록합니다.
@@ -264,9 +264,11 @@ python experiments/model_restore_30b.py \
   --output results/single-node-io-qwen-lora-r8
 ```
 
-`--model`은 `qwen|glm`, `--variant`는 `lora-r8|lora-r64|lora-r128|zero3-full`입니다.
+`--model`은 `qwen|glm`, `--variant`는 `lora-r8|lora-r32|lora-r64|zero3-full`입니다.
 Fine-tuning 품질은 목적이 아니므로 장기 학습과 restore 후 evaluation은 실행하지 않습니다.
 `POSIX_FADV_DONTNEED`는 advisory이므로 cold라는 이름만으로 cache miss를 단정하지 않으며 `/proc/self/io`의 storage read bytes를 함께 기록합니다.
+Host memory는 각 lifecycle 경계의 `MemAvailable`, swap counter, memory PSI를 raw manifest에 남깁니다.
+작은 swap counter 변화만으로 run을 버리지 않고, `MemAvailable`이 총 RAM의 10% 미만이면서 1 GiB 이상의 swap-out 또는 1초 이상의 full PSI stall이 함께 관찰될 때만 memory pressure run으로 분류합니다.
 
 ### Run the Measurements
 
