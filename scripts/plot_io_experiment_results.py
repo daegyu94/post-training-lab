@@ -73,6 +73,21 @@ def distributed(root: Path) -> list[tuple[str, str, float]]:
     return result
 
 
+def full_sft(root: Path) -> list[tuple[str, float, float]]:
+    runs = {
+        "Qwen": "trl-ultrachat-fullsft-2node-20260914",
+        "GLM": "trl-ultrachat-glm-fullsft-2node-retry1-20260914",
+    }
+    result = []
+    for model, directory in runs.items():
+        path = root / directory
+        assert load(path / "manifest.json")["status"] == "passed"
+        train = load(path / "summary-train.json")
+        tuned = load(path / "summary-tuned.json")
+        result.append((model, train["checkpoint_save_seconds"], tuned["model_restore_seconds"]))
+    return result
+
+
 def save(fig, output: Path, name: str, title: str, note: str) -> None:
     fig.suptitle(title, fontsize=14, fontweight="bold")
     fig.text(0.5, 0.02, note, ha="center", fontsize=9, color="#444444")
@@ -117,6 +132,22 @@ def main() -> None:
     ax.grid(axis="x", alpha=0.2); ax.set_axisbelow(True); ax.spines[["top", "right"]].set_visible(False)
     save(fig, args.output_dir, "distributed-checkpoint-write.svg", "Distributed checkpoint completion latency",
          "Exploratory n=1; save/enqueue plus blocking finalization. No restore or error bars.")
+
+    rows = full_sft(args.results_root)
+    labels = [row[0] for row in rows]
+    save_seconds = [row[1] for row in rows]
+    restore_seconds = [row[2] for row in rows]
+    x = list(range(len(rows)))
+    fig, ax = plt.subplots(figsize=(7.5, 4.8))
+    save_bars = ax.bar([value - 0.19 for value in x], save_seconds, 0.38, label="Checkpoint save", color=BLUE)
+    restore_bars = ax.bar([value + 0.19 for value in x], restore_seconds, 0.38, label="New-process restore", color=ORANGE)
+    ax.bar_label(save_bars, labels=[f"{value:.1f}" for value in save_seconds], padding=3)
+    ax.bar_label(restore_bars, labels=[f"{value:.1f}" for value in restore_seconds], padding=3)
+    ax.set(xticks=x, xticklabels=labels, ylabel="Elapsed time (seconds)", ylim=(0, max(restore_seconds) * 1.18))
+    ax.legend(); ax.grid(axis="y", alpha=0.2); ax.set_axisbelow(True)
+    ax.spines[["top", "right"]].set_visible(False)
+    save(fig, args.output_dir, "full-sft-checkpoint-restore.svg", "UltraChat full-SFT checkpoint lifecycle",
+         "Two nodes, ZeRO-3 NVMe, one optimizer step, exploratory n=1. Both one-node runs OOM before checkpoint.")
 
 
 if __name__ == "__main__":

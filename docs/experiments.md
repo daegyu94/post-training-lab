@@ -51,6 +51,8 @@ Spark는 unified memory를 사용하므로 CUDA peak와 host pressure를 더해�
 | `experiments/megatron/smoke.json` | 2노드 full SFT, 2 step | base/train/tuned |
 | `experiments/megatron/resume-smoke.json` | 2노드 full SFT, 2→3 step | base/train/resume/tuned |
 | `experiments/trl/nvme-offload-30b.json` | 2노드 Qwen3 30B full SFT, ZeRO-3 NVMe offload | base/train/tuned |
+| `experiments/trl/nvme-offload-ultrachat-30b.json` | 2노드 Qwen3 30B full SFT, UltraChat·ZeRO-3 NVMe offload | base/train/tuned |
+| `experiments/trl/nvme-offload-ultrachat-glm-30b.json` | 2노드 GLM 30B full SFT, UltraChat·ZeRO-3 NVMe offload | base/train/tuned |
 | `experiments/megatron/qwen3-30b-lora.json` | 2노드 Qwen3 30B MoE LoRA, 평가와 node-local async checkpoint | train |
 | `experiments/megatron/glm-4.7-flash-30b-lora.json` | 2노드 GLM-4.7-Flash 30B MoE LoRA, 평가와 node-local async checkpoint | train |
 | `experiments/trl/glm-4.7-flash-30b-lora.json` | 2노드 GLM-4.7-Flash 30B DDP LoRA, no_robots | all |
@@ -164,8 +166,28 @@ Megatron은 NVMe를 native training state offload 대상으로 지원하지 않�
 
 30B full SFT의 DDP·FSDP2 실패는 dataset 전체 적재가 원인이 아닙니다.
 DDP는 parameter와 gradient가 unified memory 한도에 근접하고, 설치된 Accelerate의 FSDP2 준비 과정은 sharding 전에 trainable BF16 parameter를 FP32로 올립니다.
-남은 후보였던 TRL DeepSpeed ZeRO-3 NVMe offload는 2노드에서 1 optimizer step(train loss 약 13.21), 별도 `tuned` process 평가(eval loss 약 11.96)와 복구 가능한 native ZeRO checkpoint까지 확인했습니다.
-같은 실행에서 두 노드 모두 `/mnt/post-training/trl/zero_stage_3` swap footprint가 약 256GiB로 각 노드 물리 RAM 119GiB보다 컸습니다 — NVMe offload 없이는 이 구성이 노드 RAM만으로 성립하지 않는다는 근거이며, 자세한 수치와 한계는 [30B NVMe 실습](../labs/nvme-30b/README.md#why-nvme-offload-is-necessary)을 따릅니다.
+남은 후보였던 TRL DeepSpeed ZeRO-3 NVMe offload는 2노드에서 Qwen과 GLM 모두 1 optimizer step, 별도 `tuned` process 평가와 복구 가능한 native ZeRO checkpoint까지 확인했습니다.
+기존 Qwen 검증 실행에서 두 노드 모두 `/mnt/post-training/trl/zero_stage_3` swap footprint가 약 256GiB로 각 노드 물리 RAM 119GiB보다 컸습니다 — NVMe offload 없이는 이 구성이 노드 RAM만으로 성립하지 않는다는 근거이며, 자세한 수치와 한계는 [30B NVMe 실습](../labs/nvme-30b/README.md#why-nvme-offload-is-necessary)을 따릅니다.
+
+#### UltraChat Full-SFT Topology Comparison (2026-09-14)
+
+두 모델 모두 UltraChat revision `8049631c405ae6576f93f445c6b8166f76f5505a`, length 512, train/eval 4/1, BF16, AdamW, ZeRO-3 NVMe와 1 optimizer step을 사용했습니다.
+2-node의 restore는 학습 process가 종료된 뒤 새 `tuned` process가 model skeleton과 DeepSpeed engine을 준비하고 native checkpoint를 적용할 때까지의 end-to-end elapsed time입니다.
+
+| Model | 1-node | 2-node | Checkpoint / save | New-process restore | 2-node min `MemAvailable` / peak swap |
+| --- | --- | --- | ---: | ---: | ---: |
+| Qwen3-30B-A3B | OOM before checkpoint | Passed | 451.7 GiB / 720.2 s | 994.1 s | 24.6 GiB / 3.15 GiB |
+| GLM-4.7-Flash | OOM before checkpoint | Passed | 167.3 GiB / 300.6 s | 420.3 s | 25.5 GiB / 0.57 GiB |
+
+![UltraChat full-SFT checkpoint lifecycle](figures/full-sft-checkpoint-restore.svg)
+
+Qwen 2-node는 restore 중 peak swap이 시작값 0.56 GiB보다 높아졌지만 최소 `MemAvailable`이 24.6 GiB였고 restore와 finite eval을 완료했으므로 유효 결과로 유지합니다.
+GLM 2-node의 peak swap은 시작값과 같아 측정 중 swap 증가가 없었습니다.
+반면 1-node는 Qwen이 `MemAvailable` 0과 swap 16.0 GiB, GLM이 각각 0.13 GiB와 16.0 GiB에 도달한 뒤 kernel OOM으로 종료되어 checkpoint와 restore 값이 없습니다.
+
+Qwen 2-node raw 결과는 `results/trl-ultrachat-fullsft-2node-20260914`, GLM 2-node 실패·성공 raw 결과는 각각 `results/trl-ultrachat-glm-fullsft-2node-20260914`와 `results/trl-ultrachat-glm-fullsft-2node-retry1-20260914`에 있습니다.
+1-node 실패 근거는 `results/single-node-io-{qwen,glm}-zero3-full-*-20260914`에 있으며 GLM은 첫 2-node 시도의 stale `zero_stage_3` 파일 누락 실패 후 해당 임시 경로를 비우고 재실행한 결과입니다.
+고정 NVMe root를 쓰는 `deepspeed-zero3-nvme.json`은 이전 process의 `zero_stage_3`가 남아 있으면 다음 실행과 충돌할 수 있으므로 동시 실행하지 않고, 비활성 상태를 확인한 뒤 임시 offload 경로를 정리해야 합니다.
 
 <a id="checkpoint-and-memory-experiment"></a>
 
@@ -291,9 +313,9 @@ Cold restore는 base snapshot 약 58–63 GB를 다시 읽으므로 adapter rank
 Warm 결과는 모든 경우 cold보다 짧지만 Qwen의 분산이 커서 rank별 작은 차이를 성능 추세로 해석하지 않습니다.
 Raw manifest는 `results/single-node-io-{qwen|glm}-lora-r{8|16|32}*-20260914/manifest.json`이며 GLM r=32는 중단 없이 수집한 part 1·2의 세 record를 합쳤습니다.
 
-DeepSpeed ZeRO-3 full SFT는 Qwen pilot에서 optimizer 초기화 중 host `MemAvailable`이 0에 도달하고 swap을 모두 사용한 뒤 kernel OOM으로 종료됐습니다.
-따라서 checkpoint와 restore가 생성되지 않았고 GLM은 더 실행하지 않았습니다.
-이는 1회 탐색을 3회로 줄인 결과가 아니라 현재 single-node memory capacity에서 해당 full-SFT 조건이 성립하지 않는다는 결과입니다(`results/single-node-io-qwen-zero3-full-pilot3-20260914`).
+DeepSpeed ZeRO-3 full SFT는 Qwen과 GLM을 각각 1회 실행했으나 optimizer 초기화 중 host memory와 swap을 소진한 뒤 kernel OOM으로 종료됐습니다.
+따라서 두 모델 모두 checkpoint와 cold/warm restore가 생성되지 않았으며, 현재 single-node memory capacity에서는 해당 full-SFT 조건이 성립하지 않습니다.
+Qwen raw 결과는 `results/single-node-io-qwen-zero3-full-pilot3-20260914`, GLM raw 결과는 `results/single-node-io-glm-zero3-full-pilot-20260914`에 있습니다.
 
 ### Run the Measurements
 
