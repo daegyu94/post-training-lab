@@ -13,7 +13,7 @@ import sys
 import time
 from typing import Any
 
-from trl_lab.spark_config import SparkConfig, validate_config, model_snapshot_evidence
+from trl_lab.spark_config import GLM_ID, SparkConfig, validate_config, model_snapshot_evidence
 
 
 def parse_args() -> argparse.Namespace:
@@ -249,7 +249,9 @@ def _sft_config_kwargs(config: SparkConfig, args: argparse.Namespace) -> dict[st
                 "reshard_after_forward": True,
                 "auto_wrap_policy": "TRANSFORMER_BASED_WRAP",
                 "activation_checkpointing": True,
-                "cpu_ram_efficient_loading": True,
+                # Accelerate 1.14 assumes every GLM state entry is a DTensor in
+                # this path, but GLM keeps some entries as plain tensors.
+                "cpu_ram_efficient_loading": config.model_id != GLM_ID,
                 "state_dict_type": "SHARDED_STATE_DICT",
             },
         )
