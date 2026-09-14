@@ -258,11 +258,11 @@ Spark 실행 기록은 commit 메시지에서 확인할 수 있습니다.
 
 spark1에서 Qwen3-30B-A3B(실제 base checkpoint, LoRA r=16)로 전체 cycle(초기 SFT → train candidate 생성 → 실제 Docker 평가 → feedback → B/C/D 학습 → test candidate 생성·평가 → compare)을 세 번 실행했습니다.
 
-| Run | `WORK_DIR` | 규모 | 결과 |
-| ---: | --- | --- | --- |
-| 1 | NFS (`/home/spark/shared/execution-feedback/run-30b-poc`) | synthetic 축소 test set | 완료. 아래 버그 5건 발견 |
-| 2 | local NVMe (`/mnt/post-training/execution-feedback/run-local-verify`) | synthetic 축소 test set | 5건 수정 후 완료 |
-| 3 | local NVMe | MBPP 원본 split 전체 | 완료. [아래 결과](#full-scale-mbpp-run-single-process-validation-nll-loss-history) |
+| Run | 규모 | 결과 |
+| ---: | --- | --- |
+| 1 | synthetic 축소 test set | 완료. 아래 버그 5건 발견 |
+| 2 | synthetic 축소 test set | 5건 수정 후 완료 |
+| 3 | MBPP 원본 split 전체 | 완료. [아래 결과](#full-scale-mbpp-run-single-process-validation-nll-loss-history) |
 
 **Run 1에서 발견한 실제 버그**
 
@@ -273,8 +273,6 @@ spark1에서 Qwen3-30B-A3B(실제 base checkpoint, LoRA r=16)로 전체 cycle(�
 | 3 | `'functools.partial' object has no attribute '__func__'` | 기본 `chunked_nll`이 CPU-offload된 layer의 forward patch에 실패 | `loss_type="nll"` 명시 |
 | 4 | 짧은 `--max-new-tokens`에서 코드가 전혀 안 나옴 | reasoning 모델이 `<think>` 블록으로 예산 소진 | `enable_thinking=False` |
 | 5 | `GroupedMmBackward0 returned an invalid gradient ... expected device meta but got cuda:0` | `target_modules="all-linear"`가 MoE expert의 fused parameter까지 포함 | attention+router 명시 목록으로 축소 |
-
-Run 1은 checkpoint I/O가 네트워크를 타는 문제도 드러냈습니다 — 그래서 위 "End-to-End Cycle"이 local NVMe `WORK_DIR`를 권장합니다.
 
 **Run 2 관측**
 

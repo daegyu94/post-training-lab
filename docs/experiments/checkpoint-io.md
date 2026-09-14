@@ -247,7 +247,6 @@ GLM TRL 실패 증거는 `results/distributed-io-trl-dcp-glm-n1-v3-20260914`과 
 | Qwen 중심 checkpoint 결과 | Qwen·GLM 모두 같은 512-token, 1-step 조건 | n=1이므로 결론이 필요하면 성공 셀만 3회 반복 |
 | sync/async `save()` 반환시간 | async blocking finalization까지 포함한 완료시간 | 장기 학습 overlap은 별도 실험 필요 |
 | 한 가지 Megatron layout | EP=2 `torch_dist`와 DP=2 `fsdp_dtensor` | payload 범위 통제 후에만 형식 우열 비교 |
-| 분산 restore에 NFS 사용 | local NVMe write-only | 실제 shared storage를 도입할 때 restore 추가 |
 
 <a id="megatron-local-checkpoint-sync-vs-async"></a>
 
