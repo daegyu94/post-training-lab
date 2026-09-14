@@ -69,6 +69,8 @@ Metadata와 shard가 독립 filesystem에 나뉘면 새 process가 완전한 che
 
 **한 줄 요약**: Megatron sync·async, TRL FSDP2 DCP, DeepSpeed ZeRO checkpoint artifact는 모두 page cache를 쓰는 **buffered I/O**입니다. **Direct I/O(`O_DIRECT`, page cache 우회)는 DeepSpeed의 parameter/optimizer offload 한 경로뿐**입니다 — 같은 DeepSpeed 안에서도 offload와 checkpoint 저장은 다른 I/O 경로를 씁니다.
 
+Buffered인 넷은 모두 PyTorch 직렬화(`torch.distributed.checkpoint`, `torch.save`)를 그대로 쓰고, DeepSpeed offload만 이를 거치지 않고 자체 AIO extension으로 `O_DIRECT`를 명시적으로 엽니다.
+
 | 경로 | File I/O | Page cache | 완료 기준 |
 | --- | --- | --- | --- |
 | Megatron sync checkpoint write | buffered | 사용 | data-file `fsync()` 포함 |
