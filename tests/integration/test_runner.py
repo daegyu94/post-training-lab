@@ -72,6 +72,15 @@ def test_megatron_padding_env_is_accepted_and_normalized(tmp_path: Path) -> None
     assert loaded["env"]["PAD_TO_MAX_LENGTH"] == "true"
 
 
+def test_megatron_optimizer_env_is_accepted(tmp_path: Path) -> None:
+    _, experiment_path = config_files(tmp_path, backend="megatron", nnodes=1)
+    experiment = json.loads(experiment_path.read_text())
+    experiment["env"]["OPTIMIZER"] = "sgd"
+    experiment_path.write_text(json.dumps(experiment))
+
+    assert run.load_experiment(experiment_path)["env"]["OPTIMIZER"] == "sgd"
+
+
 def test_trl_padding_env_is_accepted_and_normalized(tmp_path: Path) -> None:
     _, experiment_path = config_files(tmp_path)
     experiment = json.loads(experiment_path.read_text())
@@ -96,6 +105,16 @@ def test_megatron_30b_presets_are_runnable(name: str, model_id: str) -> None:
     assert experiment["env"]["MAX_STEPS"] == "1"
     assert experiment["env"]["CHECKPOINT_MODE"] == "sync"
     assert experiment["env"]["STAGE"] == "all"
+
+
+def test_megatron_full_sgd_pilot_is_train_only() -> None:
+    experiment = run.load_experiment(
+        REPOSITORY_ROOT / "experiments" / "megatron" / "qwen3-30b-full-sgd-pilot.json"
+    )
+
+    assert experiment["env"]["FINETUNING_MODE"] == "full"
+    assert experiment["env"]["OPTIMIZER"] == "sgd"
+    assert experiment["env"]["STAGE"] == "train"
 
 
 def test_dataset_id_is_required(tmp_path: Path) -> None:

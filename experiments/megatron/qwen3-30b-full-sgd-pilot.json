@@ -1,0 +1,33 @@
+{
+  "backend": "megatron",
+  "setup": "spark",
+  "nnodes": 2,
+  "nproc_per_node": 1,
+  "env": {
+    "MODEL_ID": "Qwen/Qwen3-30B-A3B",
+    "MODEL_REVISION": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+    "DATASET_ID": "HuggingFaceH4/ultrachat_200k",
+    "DATASET_REVISION": "8049631c405ae6576f93f445c6b8166f76f5505a",
+    "FINETUNING_MODE": "full",
+    "OPTIMIZER": "sgd",
+    "MAX_STEPS": 1,
+    "SCHEDULE_STEPS": 1,
+    "MAX_LENGTH": 2048,
+    "PAD_TO_MAX_LENGTH": true,
+    "GLOBAL_BATCH_SIZE": 2,
+    "MICRO_BATCH_SIZE": 1,
+    "TP": 1,
+    "PP": 1,
+    "EP": 2,
+    "TRANSFORMER_IMPL": "transformer_engine",
+    "RECOMPUTE": "full",
+    "EVAL_ITERS": 1,
+    "SAVE_INTERVAL": 2,
+    "SAVE_OPTIMIZER": false,
+    "CHECKPOINT_MODE": "sync",
+    "MEASURE_TIMING": true,
+    "RESOURCE_SAMPLING": true,
+    "SEED": 42,
+    "STAGE": "train"
+  }
+}
