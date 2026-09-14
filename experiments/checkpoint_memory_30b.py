@@ -23,15 +23,13 @@ MODELS = {
         "id": "Qwen/Qwen3-30B-A3B",
         "revision": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
         "cohort": "ultrachat-qwen3-30b-2048-v1",
-        # Megatron picks the local attention path for Qwen; GLM needs the
-        # Transformer Engine one, matching the two verified 30B presets.
-        "megatron_env": {},
+        "megatron_env": {"TRANSFORMER_IMPL": "transformer_engine"},
     },
     "glm": {
         "id": "zai-org/GLM-4.7-Flash",
         "revision": "7dd20894a642a0aa287e9827cb1a1f7f91386b67",
         "cohort": "ultrachat-glm-4.7-flash-2048-v1",
-        "megatron_env": {"TRANSFORMER_IMPL": "auto"},
+        "megatron_env": {"TRANSFORMER_IMPL": "transformer_engine"},
     },
 }
 DEFAULT_MODEL = "qwen"
@@ -367,12 +365,12 @@ def checkpoint_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
         sizes = [float(item["post_run"]["aggregate"]["logical_checkpoint_bytes"]) for item in selected]
         save = [item["metrics"]["save_call_host_seconds_max_across_ranks"] for item in selected]
         save = [float(value) for value in save if value is not None]
-        durable = []
+        host_blocking = []
         for item in selected:
             enqueue = item["metrics"].get("save_call_host_seconds_max_across_ranks")
             finalize = item["metrics"].get("blocking_finalization_host_seconds_max_across_ranks") or 0
             if enqueue is not None:
-                durable.append(float(enqueue) + float(finalize))
+                host_blocking.append(float(enqueue) + float(finalize))
         dispersion = relative_mad(save)
         summary[variant] = {
             "run_count": len(selected),
@@ -380,10 +378,8 @@ def checkpoint_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
             "cold_buffered_read_bytes_per_second_median": statistics.median(throughputs) if throughputs else None,
             "save_call_seconds_median": statistics.median(save) if save else None,
             "save_call_relative_mad": dispersion,
-            "write_completion_seconds_median": statistics.median(durable) if durable else None,
-            "logical_write_bytes_per_second_median": (
-                statistics.median(sizes) / statistics.median(durable)
-                if sizes and durable and statistics.median(durable) > 0 else None
+            "save_plus_finalization_host_seconds_median": (
+                statistics.median(host_blocking) if host_blocking else None
             ),
             "extend_to_eight_runs": dispersion is not None and dispersion > 0.1,
         }

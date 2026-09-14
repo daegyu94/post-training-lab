@@ -43,14 +43,14 @@
     "SEED": 42,
     "STAGE": "train",
     "TP": 1,
-    "TRANSFORMER_IMPL": "auto"
+    "TRANSFORMER_IMPL": "transformer_engine"
   },
   "defaults": {
     "checkpoint_intervals": [
       2,
       2
     ],
-    "repeats": 5,
+    "repeats": 3,
     "steps": 8,
     "within_run_warmup": 2
   },

@@ -4,7 +4,7 @@
   "base_experiment": "experiments/megatron/qwen3-30b-lora.json",
   "defaults": {
     "steps": 8,
-    "repeats": 5,
+    "repeats": 3,
     "within_run_warmup": 2,
     "checkpoint_intervals": [2, 2]
   },
@@ -19,6 +19,7 @@
     "TP": 1,
     "PP": 1,
     "EP": 2,
+    "TRANSFORMER_IMPL": "transformer_engine",
     "MAX_LENGTH": 2048,
     "PAD_TO_MAX_LENGTH": true,
     "SAVE_INTERVAL": 2,

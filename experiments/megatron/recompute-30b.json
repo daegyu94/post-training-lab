@@ -3,10 +3,10 @@
   "setup": "spark",
   "base_experiment": "experiments/megatron/qwen3-30b-lora.json",
   "defaults": {
-    "steps": 1,
-    "repeats": 1,
-    "within_run_warmup": 0,
-    "checkpoint_intervals": [1, 1]
+    "steps": 4,
+    "repeats": 3,
+    "within_run_warmup": 1,
+    "checkpoint_intervals": [4, 4]
   },
   "common_env": {
     "MODEL_ID": "Qwen/Qwen3-30B-A3B",
@@ -19,9 +19,10 @@
     "TP": 1,
     "PP": 1,
     "EP": 2,
+    "MAX_LENGTH": 2048,
+    "PAD_TO_MAX_LENGTH": true,
     "TRANSFORMER_IMPL": "transformer_engine",
-    "MAX_LENGTH": 512,
-    "SAVE_INTERVAL": 1,
+    "SAVE_INTERVAL": 4,
     "SAVE_OPTIMIZER": false,
     "CHECKPOINT_PLACEMENT": "local",
     "RESOURCE_SAMPLING": true,
@@ -31,25 +32,19 @@
   },
   "cells": [
     {
-      "name": "checkpoint-phase1-torch-dist",
-      "varying": ["CHECKPOINT_MODE"],
+      "name": "recompute-length-2048",
+      "varying": ["RECOMPUTE"],
       "variants": [
-        {"name": "sync", "env": {"CHECKPOINT_MODE": "sync"}},
-        {"name": "async", "env": {"CHECKPOINT_MODE": "async"}}
+        {"name": "full", "env": {"MAX_LENGTH": 2048, "RECOMPUTE": "full"}},
+        {"name": "selective", "env": {"MAX_LENGTH": 2048, "RECOMPUTE": "selective"}}
       ]
     },
     {
-      "name": "checkpoint-phase2-layout-format",
-      "varying": ["EP", "CHECKPOINT_FORMAT", "MEGATRON_FSDP"],
+      "name": "recompute-length-4096",
+      "varying": ["RECOMPUTE"],
       "variants": [
-        {
-          "name": "ep2-torch-dist",
-          "env": {"EP": 2, "CHECKPOINT_MODE": "sync", "CHECKPOINT_FORMAT": "torch_dist", "MEGATRON_FSDP": false}
-        },
-        {
-          "name": "dp2-fsdp-dtensor",
-          "env": {"EP": 1, "CHECKPOINT_MODE": "sync", "CHECKPOINT_FORMAT": "fsdp_dtensor", "MEGATRON_FSDP": true}
-        }
+        {"name": "full", "env": {"MAX_LENGTH": 4096, "RECOMPUTE": "full"}},
+        {"name": "selective", "env": {"MAX_LENGTH": 4096, "RECOMPUTE": "selective"}}
       ]
     }
   ]

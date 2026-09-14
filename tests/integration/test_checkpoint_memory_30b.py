@@ -97,10 +97,13 @@ def test_relative_mad_drives_extension_rule() -> None:
 
 
 def test_checkpoint_summary_derives_variant_names_from_records() -> None:
-    def record(variant: str, size: int, save_seconds: float) -> dict:
+    def record(variant: str, size: int, save_seconds: float, finalize_seconds: float = 0) -> dict:
         return {
             "status": "passed", "warmup": False, "variant": variant,
-            "metrics": {"save_call_host_seconds_max_across_ranks": save_seconds},
+            "metrics": {
+                "save_call_host_seconds_max_across_ranks": save_seconds,
+                "blocking_finalization_host_seconds_max_across_ranks": finalize_seconds,
+            },
             "post_run": {"aggregate": {
                 "logical_checkpoint_bytes": size,
                 "reads": {"cold_buffered": {"logical_bytes_per_second": 1e9}},
@@ -110,7 +113,7 @@ def test_checkpoint_summary_derives_variant_names_from_records() -> None:
     records = [
         record("ratio-0.1pct", 1_000_000, 1.0),
         record("ratio-0.5pct", 5_000_000, 1.2),
-        record("ratio-1pct", 10_000_000, 1.5),
+        record("ratio-1pct", 10_000_000, 1.5, 0.5),
     ]
 
     summary = checkpoint_memory_30b.checkpoint_summary(records)
@@ -118,7 +121,8 @@ def test_checkpoint_summary_derives_variant_names_from_records() -> None:
     assert set(summary) == {"ratio-0.1pct", "ratio-0.5pct", "ratio-1pct"}
     assert summary["ratio-1pct"]["logical_checkpoint_bytes_median"] == 10_000_000
     assert summary["ratio-1pct"]["run_count"] == 1
-    assert summary["ratio-1pct"]["logical_write_bytes_per_second_median"] == 10_000_000 / 1.5
+    assert summary["ratio-1pct"]["save_plus_finalization_host_seconds_median"] == 2.0
+    assert "write_completion_seconds_median" not in summary["ratio-1pct"]
 
 
 def test_memory_matrix_matches_fixed_length_and_backend_contract() -> None:
@@ -325,8 +329,9 @@ def test_model_registry_gives_each_model_its_own_cohort_and_megatron_env() -> No
 
     assert qwen != glm
     assert "-512-v1" in checkpoint_memory_30b.cohort_path(node, "qwen", 512)
-    assert checkpoint_memory_30b.MODELS["qwen"]["megatron_env"] == {}
-    assert checkpoint_memory_30b.MODELS["glm"]["megatron_env"] == {"TRANSFORMER_IMPL": "auto"}
+    expected = {"TRANSFORMER_IMPL": "transformer_engine"}
+    assert checkpoint_memory_30b.MODELS["qwen"]["megatron_env"] == expected
+    assert checkpoint_memory_30b.MODELS["glm"]["megatron_env"] == expected
 
 
 def test_memory_experiments_carry_the_selected_model_and_its_megatron_env() -> None:
@@ -334,7 +339,7 @@ def test_memory_experiments_carry_the_selected_model_and_its_megatron_env() -> N
 
     megatron_env = glm["len-4096"]["experiment"]["env"]
     assert megatron_env["MODEL_ID"] == "zai-org/GLM-4.7-Flash"
-    assert megatron_env["TRANSFORMER_IMPL"] == "auto"
+    assert megatron_env["TRANSFORMER_IMPL"] == "transformer_engine"
     # TRL conditions take the same model but never the Megatron-only switch.
     trl_env = glm["trl-ddp"]["experiment"]["env"]
     assert trl_env["MODEL_ID"] == "zai-org/GLM-4.7-Flash"
@@ -401,6 +406,26 @@ def test_checkpoint_plan_validates_variant_identity_and_preserves_ratio_sweep(tm
     changed.write_text(json.dumps(plan))
     with pytest.raises(checkpoint_memory_30b.run.ConfigError, match='MODEL_REVISION'):
         checkpoint_memory_30b.resolve_checkpoint_plan('qwen', changed)
+
+
+def test_recompute_plan_uses_the_controlled_30b_cohort_and_attention_backend():
+    path = checkpoint_memory_30b.ROOT / "experiments/megatron/recompute-30b.json"
+
+    assert checkpoint_memory_30b.resolve_checkpoint_plan("qwen", path) == path
+    plan = checkpoint_memory_30b.benchmarks.load_benchmark_plan(path)
+    assert plan["common_env"]["MODEL_ID"] == checkpoint_memory_30b.MODELS["qwen"]["id"]
+    assert plan["common_env"]["TRANSFORMER_IMPL"] == "transformer_engine"
+    assert {cell["name"] for cell in plan["cells"]} == {
+        "recompute-length-2048", "recompute-length-4096",
+    }
+    for name in (
+        "checkpoint-memory-30b.json", "checkpoint-memory-30b-glm.json",
+        "distributed-write-30b.json", "distributed-write-30b-glm.json",
+    ):
+        controlled = checkpoint_memory_30b.benchmarks.load_benchmark_plan(
+            path.with_name(name)
+        )
+        assert controlled["common_env"]["TRANSFORMER_IMPL"] == "transformer_engine"
 
 
 def test_resume_rejects_other_model_even_without_root_manifest(tmp_path):

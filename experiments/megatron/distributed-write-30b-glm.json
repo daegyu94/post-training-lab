@@ -20,7 +20,7 @@
     "PP": 1,
     "EP": 2,
     "MAX_LENGTH": 512,
-    "TRANSFORMER_IMPL": "auto",
+    "TRANSFORMER_IMPL": "transformer_engine",
     "SAVE_INTERVAL": 1,
     "SAVE_OPTIMIZER": false,
     "CHECKPOINT_PLACEMENT": "local",
