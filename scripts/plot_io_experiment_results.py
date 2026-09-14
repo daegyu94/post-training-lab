@@ -1,0 +1,121 @@
+"""Plot the 2026-09-14 I/O experiment directly from raw manifests."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from statistics import mean, stdev
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+
+ROOT = Path(__file__).resolve().parents[1]
+BLUE, ORANGE = "#31688e", "#d87828"
+
+
+def load(path: Path) -> dict:
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def single_node(root: Path) -> list[tuple[str, list[float], list[float]]]:
+    runs = {
+        "Qwen r=8": ["single-node-io-qwen-lora-r8-20260914"],
+        "Qwen r=16": ["single-node-io-qwen-lora-r16-20260914"],
+        "Qwen r=32": ["single-node-io-qwen-lora-r32-20260914"],
+        "GLM r=8": ["single-node-io-glm-lora-r8-20260914"],
+        "GLM r=16": ["single-node-io-glm-lora-r16-20260914"],
+        "GLM r=32": [
+            "single-node-io-glm-lora-r32-part1-20260914",
+            "single-node-io-glm-lora-r32-part2-20260914",
+        ],
+    }
+    result = []
+    for label, directories in runs.items():
+        records = [record for directory in directories
+                   for record in load(root / directory / "manifest.json")["records"]]
+        assert len(records) == 3, (label, len(records))
+        result.append((label,
+                       [record["cold"]["model_restore_seconds"] for record in records],
+                       [record["warm"]["model_restore_seconds"] for record in records]))
+    return result
+
+
+def distributed(root: Path) -> list[tuple[str, str, float]]:
+    manifests = {
+        "Qwen": [
+            "distributed-io-qwen-n1-v4-20260914",
+            "distributed-io-qwen-phase2-n1-v5-20260914",
+        ],
+        "GLM": ["distributed-io-glm-n1-20260914"],
+    }
+    result = []
+    for model, directories in manifests.items():
+        records = [record for directory in directories
+                   for record in load(root / directory / "manifest.json")["records"]
+                   if record.get("status") == "passed"]
+        for record in records:
+            seconds = (record["metrics"]["save_call_host_seconds_max_across_ranks"]
+                       + record["metrics"]["blocking_finalization_host_seconds_max_across_ranks"])
+            size = record["post_run"]["aggregate"]["logical_checkpoint_bytes"]
+            result.append((model, record["variant"], size / seconds / 2**20))
+
+        dcp = load(root / f"distributed-io-trl-dcp-{model.lower()}-n1-v3-20260914" / "manifest.json")
+        record = dcp["records"][0]
+        assert record["status"] == "passed"
+        result.append((model, "trl-fsdp2-dcp",
+                       record["trl_dcp"]["logical_checkpoint_bytes"]
+                       / record["trl_summary"]["checkpoint_save_seconds"] / 2**20))
+    return result
+
+
+def save(fig, output: Path, name: str, title: str, note: str) -> None:
+    fig.suptitle(title, fontsize=14, fontweight="bold")
+    fig.text(0.5, 0.02, note, ha="center", fontsize=9, color="#444444")
+    fig.tight_layout(rect=(0.02, 0.10, 0.98, 0.93))
+    fig.savefig(output / name, metadata={"Date": None})
+    plt.close(fig)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--results-root", type=Path, default=ROOT / "results")
+    parser.add_argument("--output-dir", type=Path, default=ROOT / "docs/figures")
+    args = parser.parse_args()
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 9,
+                         "svg.hashsalt": "io-experiment-results", "figure.facecolor": "white"})
+
+    rows = single_node(args.results_root)
+    labels = [row[0] for row in rows]
+    cold, warm = [[mean(row[index]) for row in rows] for index in (1, 2)]
+    cold_err, warm_err = [[stdev(row[index]) for row in rows] for index in (1, 2)]
+    x = list(range(len(rows)))
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.bar([value - 0.19 for value in x], cold, 0.38, yerr=cold_err, label="Cold", color=BLUE, capsize=3)
+    ax.bar([value + 0.19 for value in x], warm, 0.38, yerr=warm_err, label="Warm", color=ORANGE, capsize=3)
+    ax.set(xticks=x, xticklabels=labels, ylabel="Restore time (seconds)")
+    ax.legend(); ax.grid(axis="y", alpha=0.2); ax.set_axisbelow(True)
+    ax.spines[["top", "right"]].set_visible(False)
+    save(fig, args.output_dir, "single-node-model-restore.svg", "Single-node 30B model restore",
+         "Mean +/- sample standard deviation, n=3; every restore starts a new process.")
+
+    rows = distributed(args.results_root)
+    labels = [f"{model}\n{variant}" for model, variant, _ in rows]
+    values = [value for _, _, value in rows]
+    fig, ax = plt.subplots(figsize=(11, 5.5))
+    bars = ax.barh(labels, values, color=[BLUE if model == "Qwen" else ORANGE for model, _, _ in rows])
+    ax.bar_label(bars, labels=[f"{value:.1f}" for value in values], padding=3)
+    ax.invert_yaxis(); ax.set(xlabel="Logical checkpoint throughput (MiB/s)", xlim=(0, max(values) * 1.18))
+    ax.grid(axis="x", alpha=0.2); ax.set_axisbelow(True); ax.spines[["top", "right"]].set_visible(False)
+    save(fig, args.output_dir, "distributed-checkpoint-write.svg", "Distributed local-NVMe checkpoint write",
+         "Exploratory n=1; logical bytes / collective completion time. No restore or error bars.")
+
+
+if __name__ == "__main__":
+    main()
