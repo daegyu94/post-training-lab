@@ -29,11 +29,6 @@ VARIANTS = {
     },
 }
 
-MEMORY_AVAILABLE_FRACTION_LIMIT = 0.10
-MEANINGFUL_SWAP_OUT_BYTES = 1 << 30
-MEANINGFUL_PSI_FULL_SECONDS = 1.0
-
-
 def experiment(model: str, variant: str, stage: str, load_dir: str | None = None) -> dict[str, Any]:
     spec = checkpoint_memory_30b.MODELS[model]
     env: dict[str, Any] = {
@@ -50,6 +45,7 @@ def experiment(model: str, variant: str, stage: str, load_dir: str | None = None
         "LEARNING_RATE": "2e-5",
         "SEED": 42,
         "STAGE": stage,
+        "RESOURCE_SAMPLING": True,
         **VARIANTS[variant],
     }
     if load_dir is not None:
@@ -103,46 +99,16 @@ def _remote(
     )
 
 
-def _memory_snapshot(plan: dict[str, Any], timeout: int) -> dict[str, Any]:
+def _fetch_resources(plan: dict[str, Any], output: Path, timeout: int) -> dict[str, Any]:
     rank = plan["ranks"][0]
-    code = """import json, os
-mem = {line.split(':', 1)[0]: int(line.split()[1]) * 1024 for line in open('/proc/meminfo')}
-vm = {key: int(value) for key, value in (line.split() for line in open('/proc/vmstat'))}
-psi = {}
-for line in open('/proc/pressure/memory'):
-    kind, *fields = line.split()
-    psi[kind] = {key: float(value) for key, value in (field.split('=') for field in fields)}
-print(json.dumps({'mem_total_bytes': mem['MemTotal'], 'mem_available_bytes': mem['MemAvailable'],
-                  'swap_used_bytes': mem['SwapTotal'] - mem['SwapFree'],
-                  'swap_in_bytes': vm['pswpin'] * os.sysconf('SC_PAGE_SIZE'),
-                  'swap_out_bytes': vm['pswpout'] * os.sysconf('SC_PAGE_SIZE'),
-                  'psi_some_total_seconds': psi['some']['total'] / 1e6,
-                  'psi_full_total_seconds': psi['full']['total'] / 1e6}))
-"""
-    command = " ".join([shlex.quote(rank["env"]["PYTHON"]), "-c", shlex.quote(code)])
-    result = _remote(rank["host"], command, timeout=timeout)
+    remote_path = str(Path(rank["output"]) / "measurements" / f"resources-node-{rank['rank']}.jsonl")
+    result = _remote(rank["host"], f"cat -- {shlex.quote(remote_path)}", timeout=timeout)
     if result.returncode:
-        raise RuntimeError(f"cannot sample host memory: {result.stderr.strip()}")
-    return json.loads(result.stdout)
-
-
-def summarize_memory_pressure(snapshots: list[dict[str, Any]]) -> dict[str, Any]:
-    first, last = snapshots[0], snapshots[-1]
-    minimum_available = min(item["mem_available_bytes"] for item in snapshots)
-    minimum_available_fraction = minimum_available / first["mem_total_bytes"]
-    swap_out_bytes = max(0, last["swap_out_bytes"] - first["swap_out_bytes"])
-    psi_full_seconds = max(0.0, last["psi_full_total_seconds"] - first["psi_full_total_seconds"])
-    low_memory = minimum_available_fraction < MEMORY_AVAILABLE_FRACTION_LIMIT
-    active_pressure = swap_out_bytes >= MEANINGFUL_SWAP_OUT_BYTES or psi_full_seconds >= MEANINGFUL_PSI_FULL_SECONDS
-    return {
-        "memory_pressure_observed": low_memory and active_pressure,
-        "minimum_mem_available_bytes": minimum_available,
-        "minimum_mem_available_fraction": minimum_available_fraction,
-        "swap_out_bytes_delta": swap_out_bytes,
-        "psi_full_seconds_delta": psi_full_seconds,
-        "decision": "low memory and meaningful swap-out or full PSI stall",
-        "snapshots": snapshots,
-    }
+        raise RuntimeError(f"cannot fetch resource samples: {result.stderr.strip()}")
+    destination = output / "measurements" / Path(remote_path).name
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(result.stdout, encoding="utf-8")
+    return checkpoint_memory_30b.summarize_resources(result.stdout.splitlines())
 
 
 def prepare_cohort(
@@ -241,22 +207,22 @@ def run_experiment(
         if not execute:
             records.append({"repeat": repeat + 1, "train_plan": train_plan, "restore_plans": restore_plans})
             continue
-        memory_snapshots = [_memory_snapshot(train_plan, timeout)]
         _run(train_plan, timeout, train_output)
-        memory_snapshots.append(_memory_snapshot(train_plan, timeout))
+        resources = {"train": _fetch_resources(train_plan, train_output, timeout)}
         train_summary = _fetch_summary(train_plan, "train", timeout)
         artifact = str(Path(source) / ("adapter" if variant.startswith("lora-") else "model"))
         eviction = _evict(train_plan, [train_plan["ranks"][0]["env"]["MODEL_DIR"], artifact], timeout)
         restore_summaries = {}
         for cache_state, plan in zip(("cold", "warm"), restore_plans, strict=True):
-            _run(plan, timeout, Path(plan["output"]))
-            memory_snapshots.append(_memory_snapshot(plan, timeout))
+            local_output = Path(plan["output"])
+            _run(plan, timeout, local_output)
+            resources[cache_state] = _fetch_resources(plan, local_output, timeout)
             summary = _fetch_summary(plan, "tuned", timeout)
             summary["restore_input_logical_bytes"] = eviction["logical_bytes"]
             restore_summaries[cache_state] = summary
         records.append({
             "repeat": repeat + 1, "train": train_summary, "eviction": eviction,
-            "host_memory": summarize_memory_pressure(memory_snapshots), **restore_summaries,
+            "resources": resources, **restore_summaries,
         })
         (output / "manifest.json").write_text(json.dumps({
             "status": "running", "model": checkpoint_memory_30b.MODELS[model]["id"],

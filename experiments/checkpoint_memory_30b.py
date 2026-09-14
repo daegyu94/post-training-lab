@@ -173,14 +173,19 @@ def summarize_resources(lines: list[str]) -> dict[str, Any]:
     elapsed = float(last["monotonic_seconds"]) - float(first["monotonic_seconds"])
     read_bytes = last["read_bytes"] - first["read_bytes"]
     write_bytes = last["write_bytes"] - first["write_bytes"]
+    swap_used = [item["swaptotal_bytes"] - item["swapfree_bytes"] for item in samples]
     return {
         "sample_count": len(samples),
         "elapsed_seconds": elapsed,
         "device_major_minor": first["device_major_minor"],
+        "mem_total_bytes": first["memtotal_bytes"],
         "mem_available_min_bytes": min(item["memavailable_bytes"] for item in samples),
+        "mem_available_min_fraction": min(item["memavailable_bytes"] for item in samples) / first["memtotal_bytes"],
         "mem_available_first_bytes": first["memavailable_bytes"],
         "host_memory_pressure_bytes": first["memavailable_bytes"] - min(item["memavailable_bytes"] for item in samples),
-        "swap_used_max_bytes": max(item["swaptotal_bytes"] - item["swapfree_bytes"] for item in samples),
+        "swap_used_first_bytes": swap_used[0],
+        "swap_used_max_bytes": max(swap_used),
+        "swap_used_peak_increase_bytes": max(0, max(swap_used) - swap_used[0]),
         "device_read_bytes_delta": read_bytes,
         "device_write_bytes_delta": write_bytes,
         "device_read_operations_delta": last["read_operations"] - first["read_operations"],

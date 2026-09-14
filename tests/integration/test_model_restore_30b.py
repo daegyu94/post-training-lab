@@ -40,21 +40,7 @@ def test_single_node_restore_uses_explicit_trl_checkpoint() -> None:
     assert value["env"]["LOAD_DIR"] == "/mnt/checkpoint"
     assert value["env"]["RESTORE_ONLY"] is True
     assert value["env"]["LORA_R"] == 64
-
-
-def test_memory_pressure_needs_low_memory_and_meaningful_activity() -> None:
-    base = {
-        "mem_total_bytes": 100,
-        "mem_available_bytes": 50,
-        "swap_out_bytes": 0,
-        "psi_full_total_seconds": 0.0,
-    }
-    low = {**base, "mem_available_bytes": 9, "swap_out_bytes": 1 << 30}
-
-    assert model_restore_30b.summarize_memory_pressure([base, low])["memory_pressure_observed"] is True
-    assert model_restore_30b.summarize_memory_pressure([base, {**low, "mem_available_bytes": 11}])[
-        "memory_pressure_observed"
-    ] is False
+    assert value["env"]["RESOURCE_SAMPLING"] is True
 
 
 def test_full_variant_uses_single_node_zero3_nvme() -> None:

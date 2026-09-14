@@ -36,10 +36,12 @@ def test_resource_summary_reports_peak_pressure() -> None:
     result = checkpoint_memory_30b.summarize_resources(lines)
 
     assert result["host_memory_pressure_bytes"] == 40
+    assert result["mem_available_min_fraction"] == 0.3
     assert result["device_write_bytes_delta"] == 20
     assert result["device_write_bytes_per_second"] == 10
     assert result["device_in_flight_max"] == 2
     assert result["swap_used_max_bytes"] == 10
+    assert result["swap_used_peak_increase_bytes"] == 10
 
 
 def test_relative_mad_drives_extension_rule() -> None:

@@ -267,8 +267,8 @@ python experiments/model_restore_30b.py \
 `--model`은 `qwen|glm`, `--variant`는 `lora-r8|lora-r32|lora-r64|zero3-full`입니다.
 Fine-tuning 품질은 목적이 아니므로 장기 학습과 restore 후 evaluation은 실행하지 않습니다.
 `POSIX_FADV_DONTNEED`는 advisory이므로 cold라는 이름만으로 cache miss를 단정하지 않으며 `/proc/self/io`의 storage read bytes를 함께 기록합니다.
-Host memory는 각 lifecycle 경계의 `MemAvailable`, swap counter, memory PSI를 raw manifest에 남깁니다.
-작은 swap counter 변화만으로 run을 버리지 않고, `MemAvailable`이 총 RAM의 10% 미만이면서 1 GiB 이상의 swap-out 또는 1초 이상의 full PSI stall이 함께 관찰될 때만 memory pressure run으로 분류합니다.
+TRL launcher의 기존 resource sampler가 실행 중 `MemAvailable`과 swap 사용량을 0.2초 간격 raw JSONL로 기록합니다.
+Memory pressure는 중심 결과가 아니라 모델별 최대 rank인 r=64의 validity guard로만 확인하며, 가용 메모리가 총 RAM의 10% 아래로 내려가면서 swap 사용량도 의미 있게 증가할 때 해당 모델의 rank sweep을 재검토합니다.
 
 ### Run the Measurements
 
