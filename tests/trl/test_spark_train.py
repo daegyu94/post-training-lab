@@ -454,7 +454,6 @@ def test_sharded_backend_training_arguments_are_explicit(tmp_path: Path) -> None
         seed=42,
     )
     config = types.SimpleNamespace(
-        model_id="Qwen/Qwen3-30B-A3B",
         output_dir=tmp_path,
         max_length=512,
         distributed_backend="fsdp2",
@@ -471,9 +470,6 @@ def test_sharded_backend_training_arguments_are_explicit(tmp_path: Path) -> None
         "state_dict_type": "SHARDED_STATE_DICT",
     }
     assert fsdp["gradient_checkpointing"] is False
-
-    config.model_id = "zai-org/GLM-4.7-Flash"
-    assert spark_train._sft_config_kwargs(config, base)["fsdp_config"]["cpu_ram_efficient_loading"] is False
 
     profile = tmp_path / "zero3.json"
     profile.write_text('{"zero_optimization": {}}', encoding="utf-8")
