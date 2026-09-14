@@ -15,8 +15,8 @@ Experiment 파일은 모델·데이터 revision과 학습 조건을, setup은 �
 | 알고 싶은 것 | 먼저 볼 결과 | 현재 확인된 범위 |
 | --- | --- | --- |
 | 30B SFT와 checkpoint 재로딩이 되는가? | [30B GPU Results](#30b-gpu-results) | 짧은 실행·재로딩 확인. 장기 수렴·모델 품질 검증은 아님 |
-| 실제 checkpoint restore가 얼마나 걸리는가? | [Single-node TRL I/O Experiment](#single-node-trl-io-experiment) | 측정 스크립트와 cold/warm 계획 추가. 30B GPU 결과는 아직 없음 |
-| Async가 학습을 덜 막는가? | [Local Checkpoint Results](#local-checkpoint-results) | Qwen의 run당 save 호출 누적 시간이 2.356 → 1.301 s. 전체 저장 완료·학습 throughput 개선은 이 값만으로 판단 불가 |
+| 실제 checkpoint restore가 얼마나 걸리는가? | [Single-node TRL I/O Experiment](#single-node-trl-io-experiment) | 두 30B 모델의 LoRA r=8/16/32를 새 process에서 cold/warm 각 3회 측정 |
+| Async가 학습을 덜 막는가? | [Revised Distributed Write Results](#revised-distributed-write-results-2026-09-14) | n=1에서 완료시간은 Qwen 1.301 → 1.188 s, GLM 1.223 → 0.960 s. 반복·장기 overlap 검증 전에는 speedup으로 단정하지 않음 |
 | 분산 방식에 따라 CUDA 메모리가 얼마나 필요한가? | [Memory Footprint](#memory-footprint) | Qwen TRL LoRA에서 DDP 59.8 → FSDP2 34.1 GB. Full FT + NVMe 6.4 GB는 다른 workload |
 | LoRA를 더 많이 학습하면 checkpoint도 커지는가? | [LoRA Ratio and Checkpoint I/O](#lora-ratio-and-checkpoint-io) | 고정된 Qwen target module에서 trainable 비율 약 10배 → 최신 checkpoint shard 크기 약 10배 |
 | Qwen 결과를 GLM에도 적용할 수 있는가? | [Qwen and GLM Comparison](#qwen-and-glm-comparison) | Attention backend를 맞추면 관측 증가율이 유사함. GLM host memory가 더 크다는 기존 결론은 철회 |
@@ -190,15 +190,15 @@ NFS는 조건에 포함하지 않고 Megatron checkpoint는 rank별 local shard 
 
 이 결과는 local checkpoint의 장애 복구, topology 변경 restore, power-loss durability 또는 framework 간 절대적 우열을 증명하지 않습니다.
 
-### Fixed Conditions
+### Revised I/O Conditions (2026-09-14)
 
 | 항목 | 값 |
 | --- | --- |
-| Model | `Qwen/Qwen3-30B-A3B` revision `ad44e777bcd18fa416d9da3bd8f70d33ebb85d39` |
+| Model | `Qwen/Qwen3-30B-A3B` revision `ad44e777bcd18fa416d9da3bd8f70d33ebb85d39`, `zai-org/GLM-4.7-Flash` revision `7dd20894a642a0aa287e9827cb1a1f7f91386b67` |
 | Dataset | `HuggingFaceH4/ultrachat_200k` revision `8049631c405ae6576f93f445c6b8166f76f5505a` |
-| Topology | `spark1`·`spark2`, 노드당 process 하나, world size 2, TP=1·PP=1·EP=2·DP=2 |
+| Topology | 분산: `spark1`·`spark2`, 노드당 process 하나, world size 2, Megatron EP=2 또는 FSDP DP=2; single-node: `spark1`, world size 1 |
 | Precision | BF16 (그래프 축이 아니라 통제 변수) |
-| Sequence / batch | length 2048, micro 1, global 2, seed 42 |
+| Sequence / batch | length 512, micro 1, global 2, seed 42, 1 optimizer step |
 | Storage | 각 노드 `/mnt/post-training/<backend>` local NVMe |
 
 `spark1`과 `spark2`에서 같은 경로 문자열은 서로 다른 물리 disk를 가리킵니다.
@@ -213,6 +213,7 @@ Metadata와 shard가 독립 filesystem에 나뉘면 새 process가 완전한 che
 | Megatron sync checkpoint write | buffered | 사용 | data-file `fsync()` 포함 |
 | Megatron async checkpoint write | buffered worker thread | 사용 | enqueue와 blocking finalization 분리, data-file `fsync()` 포함 |
 | Megatron checkpoint read | buffered | 사용 | 일반 file read |
+| TRL FSDP2 PyTorch DCP | buffered | 사용 | collective `save()` 반환, `FileSystemWriter(sync_files=True)` |
 | DeepSpeed parameter/optimizer offload | Linux AIO with `O_DIRECT` | 우회 | AIO 완료, 별도 `fsync()`는 관찰되지 않음 |
 | DeepSpeed ZeRO checkpoint artifact | `torch.save()` / `torch.load()` | 사용 | offload AIO 경로와 별개 |
 
@@ -223,10 +224,10 @@ TRL DeepSpeed ZeRO-3는 finetuning mode·optimizer·checkpoint format·runtime o
 
 ### Measurement Design
 
-- **Async 완료 시간**: 비교하려면 첫 enqueue부터 blocking finalization 완료까지의 wall time이 필요합니다. 현재 `checkpoint_summary`는 save 호출 누적 시간만 요약하므로 async 저장 완료 throughput을 계산하지 않습니다.
+- **Async 완료 시간**: 첫 enqueue 반환 시간과 마지막 blocking finalization을 분리하고, 둘의 합을 checkpoint 완료 시간으로 사용합니다.
 - **Cache 분류**: 공유 cluster의 전역 `drop_caches` 대신 파일별 `POSIX_FADV_DONTNEED`를 요청하고 device-read delta를 관찰합니다. Eviction은 advisory이고 read-ahead도 있으므로 임계값은 정확한 cache-hit ratio가 아닙니다.
 - **Direct I/O baseline**: storage microbenchmark이며 Megatron throughput이 아닙니다.
-- **Cohort**: 길이 초과 시 중단하는 전처리에 맞춰 2048 token 이하 UltraChat 32행(`ultrachat-qwen3-30b-2048-v1`)을 같은 순서·seed로 재사용합니다. Checkpoint·peak memory 측정용이며 수렴·데이터 품질의 근거가 아닙니다.
+- **Cohort**: 모델별 tokenizer로 고른 512-token 이하 UltraChat을 사용합니다. 분산은 32 train/8 eval에서 실제 4/1행만 읽고 single-node는 4/1행을 사용하며, 수렴·데이터 품질의 근거가 아닙니다.
 - **Sequence length**: Megatron LoRA fixed-padding sweep으로 분리합니다. 긴 step은 async I/O를 숨길 시간도 늘리므로 sync/async 우열로 해석하지 않습니다.
 - **누락값**: `null`로 기록하고 invalid로 분류합니다.
 - **용량 관리**: probe·metric 수집 직후 `cleanup_checkpoints()`로 checkpoint를 삭제하고 manifest·measurement record는 보존합니다.
@@ -270,6 +271,30 @@ Fine-tuning 품질은 목적이 아니므로 장기 학습과 restore 후 evalua
 TRL launcher의 기존 resource sampler가 실행 중 `MemAvailable`과 swap 사용량을 0.2초 간격 raw JSONL로 기록합니다.
 Memory pressure는 중심 결과가 아니라 모델별 최대 rank인 r=32의 validity guard로만 확인하며, 가용 메모리가 총 RAM의 10% 아래로 내려가면서 swap 사용량도 의미 있게 증가할 때 해당 모델의 rank sweep을 재검토합니다.
 
+#### Single-node Results (2026-09-14)
+
+LoRA 여섯 조건은 각 3회 모두 학습, checkpoint 생성, 별도 cold restore process와 별도 warm restore process를 완료했습니다.
+표의 `±`는 sample standard deviation이며, checkpoint 시간과 크기는 3회 arithmetic mean입니다.
+
+| Model / LoRA | Trainable 비율 | Checkpoint | Save | Cold restore | Warm restore |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Qwen r=8 | 0.0219% | 38.2 MB | 0.936 s | 53.34 ± 2.36 s | 23.89 ± 9.39 s |
+| Qwen r=16 | 0.0438% | 65.0 MB | 0.853 s | 50.94 ± 1.86 s | 9.74 ± 6.99 s |
+| Qwen r=32 | 0.0875% | 118.4 MB | 2.488 s | 48.76 ± 4.61 s | 12.56 ± 9.57 s |
+| GLM r=8 | 0.0351% | 62.4 MB | 0.551 s | 39.84 ± 1.64 s | 5.76 ± 2.00 s |
+| GLM r=16 | 0.0702% | 104.4 MB | 1.727 s | 38.47 ± 0.97 s | 5.27 ± 0.34 s |
+| GLM r=32 | 0.1403% | 188.6 MB | 2.622 s | 39.84 ± 4.55 s | 6.48 ± 1.38 s |
+
+![Single-node 30B model restore](figures/single-node-model-restore.svg)
+
+Cold restore는 base snapshot 약 58–63 GB를 다시 읽으므로 adapter rank보다 base model I/O가 지배적입니다.
+Warm 결과는 모든 경우 cold보다 짧지만 Qwen의 분산이 커서 rank별 작은 차이를 성능 추세로 해석하지 않습니다.
+Raw manifest는 `results/single-node-io-{qwen|glm}-lora-r{8|16|32}*-20260914/manifest.json`이며 GLM r=32는 중단 없이 수집한 part 1·2의 세 record를 합쳤습니다.
+
+DeepSpeed ZeRO-3 full SFT는 Qwen pilot에서 optimizer 초기화 중 host `MemAvailable`이 0에 도달하고 swap을 모두 사용한 뒤 kernel OOM으로 종료됐습니다.
+따라서 checkpoint와 restore가 생성되지 않았고 GLM은 더 실행하지 않았습니다.
+이는 1회 탐색을 3회로 줄인 결과가 아니라 현재 single-node memory capacity에서 해당 full-SFT 조건이 성립하지 않는다는 결과입니다(`results/single-node-io-qwen-zero3-full-pilot3-20260914`).
+
 ### Run the Measurements
 
 기본값은 실제 GPU 작업을 시작하지 않는 dry-run입니다.
@@ -296,6 +321,9 @@ python experiments/checkpoint_memory_30b.py \
   --output results/checkpoint-30b-glm
 ```
 
+2026-09-14의 local-NVMe write-only matrix는 모델에 맞는 `experiments/megatron/distributed-write-30b{,-glm}.json`을 `--plan`으로 주고 `--repeats 1 --steps 1 --within-run-warmup 0 --checkpoint-interval 1 --write-only --execute`로 실행했습니다.
+TRL 비교 셀은 같은 driver에 `--phase memory --condition trl-fsdp2-dcp --repeats 1 --execute`를 사용합니다.
+
 `--plan`을 직접 지정하면 모든 variant의 model·dataset ID/revision이 선택한 cohort와 맞아야 합니다. 예를 들어 Qwen plan에 `--model glm`을 함께 주면 SSH 전에 실패합니다.
 Memory phase에서도 `--model glm`을 사용합니다. `--condition trl-ddp`처럼 조건을 선택할 수 있고, 전체 matrix의 GLM FSDP2는 현재 실패가 기록된 조건입니다.
 `--resume`은 memory phase의 기존 run 수집·실행 재개 옵션이며 모델 checkpoint에서 학습을 이어가는 `STAGE=resume`과 다릅니다. 다른 모델의 출력 경로는 재사용할 수 없습니다.
@@ -310,6 +338,49 @@ Memory phase는 4096/8192 Megatron pilot과 반복, TRL DDP/FSDP2 LoRA, TRL ZeRO
 ### Measured Results
 
 Raw manifest·measurement record는 커밋하지 않으므로(`results/`는 gitignore 대상) 아래는 요약값입니다.
+
+#### Revised Distributed Write Results (2026-09-14)
+
+분산 결과는 실행 시간이 길어 조건당 1회만 수행한 exploratory 측정입니다.
+모든 checkpoint는 각 노드의 local NVMe에 기록하고 inventory 수집 뒤 삭제했으며, 공유 remote filesystem을 사용하지 않으므로 restore는 실행하지 않았습니다.
+
+| Model / backend | Format / layout | Size | Enqueue 또는 save | Finalize | 완료 latency |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Qwen Megatron sync | EP=2 `torch_dist` | 10.6 MB | 1.301 s | 0.000 s | 1.301 s |
+| Qwen Megatron async | EP=2 `torch_dist` | 10.6 MB | 0.429 s | 0.760 s | 1.188 s |
+| Qwen Megatron Phase 2 | EP=2 `torch_dist` | 10.6 MB | 1.319 s | 0.000 s | 1.319 s |
+| Qwen Megatron Phase 2 | DP=2 `fsdp_dtensor` | 20.9 MB | 0.425 s | 0.000 s | 0.425 s |
+| Qwen TRL FSDP2 DCP | trainable model state | 28.2 MB | 0.245 s | 포함 | 0.245 s ⚠ |
+| GLM Megatron sync | EP=2 `torch_dist` | 22.0 MB | 1.222 s | 0.001 s | 1.223 s |
+| GLM Megatron async | EP=2 `torch_dist` | 22.0 MB | 0.170 s | 0.790 s | 0.960 s |
+| GLM Megatron Phase 2 | EP=2 `torch_dist` | 22.0 MB | 1.041 s | 0.000 s | 1.042 s |
+| GLM Megatron Phase 2 | DP=2 `fsdp_dtensor` | 43.1 MB | 0.401 s | 0.000 s | 0.402 s |
+
+![Distributed checkpoint completion latency](figures/distributed-checkpoint-write.svg)
+
+처리 크기가 10–43 MB로 작아 고정 latency가 지배할 수 있으므로 completion latency를 주 지표로 사용합니다.
+Throughput은 rank별 logical bytes 합을 이 시간으로 나눠 raw manifest에서 계산할 수 있지만 storage device의 절대 bandwidth나 framework 우열을 나타내지 않습니다.
+특히 async는 enqueue만 보면 빠르지만 finalization을 포함한 Qwen 완료 시간은 1.188 s로 sync 1.301 s와 가깝습니다.
+
+Qwen TRL DCP는 성공했지만 `MemAvailable`이 최소 18.0%까지 내려가고 swap 사용량이 최대 10.2 GB 증가했습니다.
+10% validity guard에는 걸리지 않았으나 다른 성공 셀보다 memory pressure가 크므로 표와 그림에 주의가 필요한 탐색값으로 남깁니다.
+GLM TRL FSDP2는 Accelerate 1.14의 CPU-efficient load가 plain `Tensor`에서 `.device_mesh`를 요구해 학습 전에 실패했습니다.
+해당 최적화를 끄면 타입 오류는 사라졌지만 full replica를 FSDP sharding 전에 GPU로 올리면서 CUDA OOM이 발생해, 현재 환경에서는 유효한 GLM TRL DCP 값이 없습니다.
+`zarr`는 object-store 지향 경로이고 이번 실험은 node-local filesystem write 완료가 질문이므로 Phase 2 비교에서 제외했습니다.
+
+Raw manifest는 Qwen Phase 1 `results/distributed-io-qwen-n1-v4-20260914`, Qwen Phase 2 `results/distributed-io-qwen-phase2-n1-v5-20260914`, Qwen TRL `results/distributed-io-trl-dcp-qwen-n1-v3-20260914`, GLM Megatron `results/distributed-io-glm-n1-v2-20260914`에 있습니다.
+GLM TRL 실패 증거는 `results/distributed-io-trl-dcp-glm-n1-v3-20260914`과 호환성 우회 run인 `results/distributed-io-trl-dcp-glm-n1-v4-20260914`에 있습니다.
+그림은 `scripts/plot_io_experiment_results.py`가 이 raw record를 직접 읽어 생성하며, 실패한 GLM TRL 값은 그리지 않습니다.
+
+기존 실험과 이번 개정의 차이는 다음과 같습니다.
+
+| 기존 측정 | 이번 개정 | 다시 측정할 필요 |
+| --- | --- | --- |
+| 순차 shard read probe | 실제 새 process TRL model restore를 cold/warm로 측정 | probe는 cache 진단용으로만 유지 |
+| Qwen 중심 checkpoint 결과 | Qwen·GLM 모두 같은 512-token, 1-step 조건 | n=1이므로 결론이 필요하면 성공 셀만 3회 반복 |
+| sync/async `save()` 반환시간 | async blocking finalization까지 포함한 완료시간 | 장기 학습 overlap은 별도 실험 필요 |
+| 한 가지 Megatron layout | EP=2 `torch_dist`와 DP=2 `fsdp_dtensor` | payload 범위 통제 후에만 형식 우열 비교 |
+| 분산 restore에 NFS 사용 | local NVMe write-only | 실제 shared storage를 도입할 때 restore 추가 |
 
 <a id="megatron-local-checkpoint-sync-vs-async"></a>
 

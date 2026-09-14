@@ -52,7 +52,7 @@ def distributed(root: Path) -> list[tuple[str, str, float]]:
             "distributed-io-qwen-n1-v4-20260914",
             "distributed-io-qwen-phase2-n1-v5-20260914",
         ],
-        "GLM": ["distributed-io-glm-n1-20260914"],
+        "GLM": ["distributed-io-glm-n1-v2-20260914"],
     }
     result = []
     for model, directories in manifests.items():
@@ -62,15 +62,14 @@ def distributed(root: Path) -> list[tuple[str, str, float]]:
         for record in records:
             seconds = (record["metrics"]["save_call_host_seconds_max_across_ranks"]
                        + record["metrics"]["blocking_finalization_host_seconds_max_across_ranks"])
-            size = record["post_run"]["aggregate"]["logical_checkpoint_bytes"]
-            result.append((model, record["variant"], size / seconds / 2**20))
+            result.append((model, record["variant"], seconds))
 
-        dcp = load(root / f"distributed-io-trl-dcp-{model.lower()}-n1-v3-20260914" / "manifest.json")
-        record = dcp["records"][0]
-        assert record["status"] == "passed"
-        result.append((model, "trl-fsdp2-dcp",
-                       record["trl_dcp"]["logical_checkpoint_bytes"]
-                       / record["trl_summary"]["checkpoint_save_seconds"] / 2**20))
+        if model == "Qwen":
+            dcp = load(root / "distributed-io-trl-dcp-qwen-n1-v3-20260914" / "manifest.json")
+            record = dcp["records"][0]
+            assert record["status"] == "passed"
+            result.append((model, "trl-fsdp2-dcp",
+                           record["trl_summary"]["checkpoint_save_seconds"]))
     return result
 
 
@@ -78,8 +77,10 @@ def save(fig, output: Path, name: str, title: str, note: str) -> None:
     fig.suptitle(title, fontsize=14, fontweight="bold")
     fig.text(0.5, 0.02, note, ha="center", fontsize=9, color="#444444")
     fig.tight_layout(rect=(0.02, 0.10, 0.98, 0.93))
-    fig.savefig(output / name, metadata={"Date": None})
+    path = output / name
+    fig.savefig(path, metadata={"Date": None})
     plt.close(fig)
+    path.write_text("\n".join(line.rstrip() for line in path.read_text().splitlines()) + "\n")
 
 
 def main() -> None:
@@ -89,7 +90,8 @@ def main() -> None:
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 9,
-                         "svg.hashsalt": "io-experiment-results", "figure.facecolor": "white"})
+                         "svg.fonttype": "none", "svg.hashsalt": "io-experiment-results",
+                         "figure.facecolor": "white"})
 
     rows = single_node(args.results_root)
     labels = [row[0] for row in rows]
@@ -110,11 +112,11 @@ def main() -> None:
     values = [value for _, _, value in rows]
     fig, ax = plt.subplots(figsize=(11, 5.5))
     bars = ax.barh(labels, values, color=[BLUE if model == "Qwen" else ORANGE for model, _, _ in rows])
-    ax.bar_label(bars, labels=[f"{value:.1f}" for value in values], padding=3)
-    ax.invert_yaxis(); ax.set(xlabel="Logical checkpoint throughput (MiB/s)", xlim=(0, max(values) * 1.18))
+    ax.bar_label(bars, labels=[f"{value:.3f}" for value in values], padding=3)
+    ax.invert_yaxis(); ax.set(xlabel="Checkpoint completion latency (seconds)", xlim=(0, max(values) * 1.18))
     ax.grid(axis="x", alpha=0.2); ax.set_axisbelow(True); ax.spines[["top", "right"]].set_visible(False)
-    save(fig, args.output_dir, "distributed-checkpoint-write.svg", "Distributed local-NVMe checkpoint write",
-         "Exploratory n=1; logical bytes / collective completion time. No restore or error bars.")
+    save(fig, args.output_dir, "distributed-checkpoint-write.svg", "Distributed checkpoint completion latency",
+         "Exploratory n=1; save/enqueue plus blocking finalization. No restore or error bars.")
 
 
 if __name__ == "__main__":
