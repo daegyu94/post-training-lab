@@ -86,7 +86,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     trl_group = parser.add_argument_group("TRL-only")
     trl_group.add_argument("--distributed-backend", choices=("ddp", "fsdp2", "deepspeed"), default="ddp")
     trl_group.add_argument("--offload", choices=("none", "cpu", "nvme"), default="none", help="TRL only; forces --distributed-backend deepspeed when cpu/nvme")
-    trl_group.add_argument("--optimizer", default="adamw", help="TRL: adamw|sgd. Megatron: passed through as-is (default adam)")
+    trl_group.add_argument("--optimizer", help="TRL: adamw|sgd (default adamw). Megatron: passed through as-is (default adam)")
     trl_group.add_argument("--gradient-accumulation-steps", type=int, default=8)
     trl_group.add_argument("--train-samples", type=int)
     trl_group.add_argument("--eval-samples", type=int)
@@ -142,7 +142,7 @@ def build_experiment(args: argparse.Namespace, setup: dict[str, Any]) -> dict[st
             env["DEEPSPEED_CONFIG"] = DEEPSPEED_CONFIGS[args.offload]
         env.update({
             "DISTRIBUTED_BACKEND": distributed_backend,
-            "OPTIMIZER": args.optimizer,
+            "OPTIMIZER": args.optimizer or "adamw",
             "LEARNING_RATE": args.learning_rate,
             "GRADIENT_ACCUMULATION_STEPS": args.gradient_accumulation_steps,
         })
@@ -158,6 +158,7 @@ def build_experiment(args: argparse.Namespace, setup: dict[str, Any]) -> dict[st
         env.update({
             "GLOBAL_BATCH_SIZE": args.global_batch_size, "MICRO_BATCH_SIZE": args.micro_batch_size,
             "TP": args.tp, "PP": args.pp, "EP": args.ep,
+            "OPTIMIZER": args.optimizer or "adam",
         })
         if args.epochs is not None:
             train_count = manifest.get("train_count") if manifest is not None else None

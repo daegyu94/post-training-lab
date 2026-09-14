@@ -217,3 +217,20 @@ def test_megatron_defaults_match_verified_30b_presets(tmp_path: Path) -> None:
     experiment = build.build_experiment(args, setup)
 
     assert (experiment["env"]["TP"], experiment["env"]["PP"], experiment["env"]["EP"]) == (1, 1, 2)
+    assert experiment["env"]["OPTIMIZER"] == "adam"
+
+
+def test_megatron_optimizer_is_passed_through(tmp_path: Path) -> None:
+    data_dir = tmp_path / "data"
+    write_manifest(data_dir, dataset="HuggingFaceH4/ultrachat_200k", dataset_revision=ULTRACHAT_REVISION)
+    setup_path = setup_file(tmp_path, data_dir=data_dir, backend="megatron")
+    args = build.parse_args([
+        "--backend", "megatron", "--dataset", "ultrachat",
+        "--model-id", "m", "--model-revision", MODEL_REVISION,
+        "--setup", str(setup_path), "--output", str(tmp_path / "out"),
+        "--optimizer", "sgd",
+    ])
+
+    experiment = build.build_experiment(args, run.load_setup(setup_path))
+
+    assert experiment["env"]["OPTIMIZER"] == "sgd"

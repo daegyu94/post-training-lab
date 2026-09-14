@@ -590,6 +590,10 @@ def test_cluster_launcher_passes_explicit_ranks_and_resume_horizon(tmp_path: Pat
         for call in launch_calls
     )
     assert all(
+        call["argv"][call["argv"].index("--optimizer") + 1] == "adam"
+        for call in launch_calls
+    )
+    assert all(
         "--dist-ckpt-optim-fully-reshardable" not in call["argv"]
         for call in launch_calls
     )
@@ -613,6 +617,7 @@ def test_cluster_launcher_passes_explicit_ranks_and_resume_horizon(tmp_path: Pat
         **env,
         "OUTPUT_DIR": str(tmp_path / "custom-output"),
         "SAVE_INTERVAL": "4",
+        "OPTIMIZER": "sgd",
         "DIST_CKPT_OPTIM_FULLY_RESHARDABLE": "true",
     }
     source_checkpoint = tmp_path / "source-checkpoint" / "iter_0000004"
@@ -639,6 +644,10 @@ def test_cluster_launcher_passes_explicit_ranks_and_resume_horizon(tmp_path: Pat
     )
     assert all(
         "--dist-ckpt-optim-fully-reshardable" in call["argv"]
+        for call in custom_launch_calls
+    )
+    assert all(
+        call["argv"][call["argv"].index("--optimizer") + 1] == "sgd"
         for call in custom_launch_calls
     )
     custom_resume = next(

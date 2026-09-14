@@ -156,6 +156,7 @@ common_args=(
   --seed "$seed"
   --transformer-impl "$transformer_impl"
   --finetuning-mode "${FINETUNING_MODE:-lora}"
+  --optimizer "${OPTIMIZER:-adam}"
   --checkpoint-mode "${CHECKPOINT_MODE:-sync}"
   --checkpoint-format "$checkpoint_format"
   --recompute "${RECOMPUTE:-full}"
