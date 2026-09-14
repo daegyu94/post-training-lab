@@ -195,6 +195,12 @@ def test_deepspeed_backend_allows_tuned_reload(tmp_path: Path) -> None:
     }))
 
 
+def test_deepspeed_nvme_buffer_fits_largest_30b_embedding() -> None:
+    profile = Path(__file__).parents[2] / "backends" / "trl" / "configs" / "deepspeed-zero3-nvme.json"
+
+    assert json.loads(profile.read_text())["zero_optimization"]["offload_param"]["buffer_size"] >= 317_194_240
+
+
 def test_deepspeed_nvme_rejects_lora(tmp_path: Path) -> None:
     config = make_inputs(tmp_path)
     profile = Path(__file__).parents[2] / "backends" / "trl" / "configs" / "deepspeed-zero3-nvme.json"
