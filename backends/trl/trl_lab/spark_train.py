@@ -386,6 +386,29 @@ def main() -> None:
         model_load_started = time.perf_counter()
         model = _load_model(config, torch, transformers, __import__("peft"), load_tuned=args.stage == "tuned")
         model_load_seconds = time.perf_counter() - model_load_started
+        if config.restore_only and config.finetuning_mode == "lora":
+            restore_process_io = _io_delta(restore_io_before, _process_io())
+            parameters = list(model.parameters())
+            summary = {
+                "stage": "tuned", "rank": _rank(), "world_size": int(os.environ.get("WORLD_SIZE", "1")),
+                "distributed_backend": config.distributed_backend, "model_id": args.model_id,
+                "model_revision": args.model_revision, "dataset_id": args.dataset_id,
+                "dataset_revision": args.dataset_revision, "finetuning_mode": "lora",
+                "lora_r": args.lora_r, "model_load_seconds": model_load_seconds,
+                "model_restore_seconds": time.perf_counter() - restore_started,
+                "restore_process_io": restore_process_io,
+                "total_parameter_count": sum(parameter.numel() for parameter in parameters),
+                "trainable_parameter_count": sum(parameter.numel() for parameter in parameters if parameter.requires_grad),
+                "peak_cuda_memory_allocated_gib": torch.cuda.max_memory_allocated() / 1024**3,
+                "validation": {"checkpoint_loaded": True, "evaluation_skipped": True},
+            }
+            if _rank() == 0:
+                config.output_dir.mkdir(parents=True, exist_ok=True)
+                (config.output_dir / "summary-tuned.json").write_text(
+                    json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+                )
+                print(json.dumps(summary, indent=2, ensure_ascii=False), flush=True)
+            return
         if training_args.gradient_checkpointing:
             if not hasattr(model, "gradient_checkpointing_enable"):
                 raise RuntimeError("model does not expose gradient_checkpointing_enable")

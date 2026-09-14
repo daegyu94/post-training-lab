@@ -34,7 +34,7 @@ Experiment 파일은 모델·데이터 revision과 학습 조건을, setup은 �
 | CUDA peak allocated | PyTorch allocator가 기록한 peak allocation | 전체 device 사용량이 아님. 측정 구간·rank 집계가 같은 값끼리 비교 |
 | Host memory pressure | 노드의 첫 `MemAvailable` − 측정 중 최소 `MemAvailable` | process RSS가 아닌 노드 전체 변화량. 다른 process·page cache·초기 노드 상태의 영향 포함 |
 | Buffered read 처리율 | rank별 logical read bytes 합 ÷ rank별 read 시간 최대값 | probe는 rank 순서로 실행되므로 동시 실행한 cluster throughput이 아닌 집계 지표. Cache 분류도 함께 확인 |
-| TRL model restore 시간 | 별도 `tuned` process의 model load 시작부터 Trainer 준비와 checkpoint 적용 완료까지 | LoRA는 base+adapter, ZeRO-3 full은 skeleton 준비+native checkpoint load를 포함 |
+| TRL model restore 시간 | 별도 `tuned` process의 model load 시작부터 checkpoint 적용 완료까지 | LoRA는 base+adapter model 생성, ZeRO-3 full은 skeleton·engine 준비+native checkpoint load를 포함 |
 | TRL restore 유효 처리율 | base snapshot과 checkpoint logical bytes ÷ model restore 시간 | 파일 순차 read가 아니라 실제 model reconstruction의 end-to-end 지표 |
 | rMAD | `median(abs(x - median(x))) / median(x)` | 반복 간 산포. 10% 이하는 추가 반복 판단 규칙이며 통계적 유의성·정확성 보장은 아님 |
 
