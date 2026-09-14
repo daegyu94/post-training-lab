@@ -25,6 +25,7 @@ flowchart TD
 | `scripts/` | 데이터 준비 진입점 (`PYTHON`으로 backend venv 선택) | 학습 실행 |
 | `backends/trl/` | TRL·Trainer·Accelerate의 SFT와 저장 | Megatron recipe, 데이터 변환 |
 | `backends/megatron/` | Bridge 설정·Core 분산 모델과 checkpoint | Serving 배포, 데이터 변환 |
+| `backends/verl/` | Agentic-RL smoke의 정적 plan 검증과 calculator tool/reward | Spark GPU 실행 전의 verl·vLLM·Ray 설치와 실제 RL 검증 |
 | `observability/` | 계측·baseline·trace helper | 모든 학습 loop에 자동 hook 설치 |
 | `tests/` | CPU 회귀와 mock 기반 실행 계약 검사 | 실제 GPU 실행 보장 |
 

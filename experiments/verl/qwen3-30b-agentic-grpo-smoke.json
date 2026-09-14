@@ -1,0 +1,38 @@
+{
+  "backend": "verl",
+  "model": {
+    "id": "Qwen/Qwen3-30B-A3B",
+    "revision": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39"
+  },
+  "roles": {
+    "rollout": {
+      "host": "spark@spark1",
+      "python": "/home/spark/.local/ptl/venvs/verl/bin/python",
+      "model_dir": "/home/spark/.local/ptl/cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+      "output_dir": "/mnt/post-training/verl/rollout"
+    },
+    "trainer": {
+      "host": "spark@spark2",
+      "python": "/home/spark/.local/ptl/venvs/verl/bin/python",
+      "model_dir": "/home/spark/.local/ptl/cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+      "output_dir": "/mnt/post-training/verl/trainer"
+    }
+  },
+  "rollout": {
+    "backend": "vllm",
+    "mode": "async",
+    "max_prompt_length": 512,
+    "max_response_length": 512,
+    "samples_per_prompt": 2
+  },
+  "training": {
+    "algorithm": "grpo",
+    "finetuning": "lora",
+    "lora_rank": 8,
+    "max_steps": 1
+  },
+  "agent": {
+    "tool": "calculator",
+    "max_turns": 2
+  }
+}
