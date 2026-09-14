@@ -19,12 +19,19 @@
 | `experiments/megatron/qwen3-30b-full.json` | 2노드 Qwen3 30B MoE full-parameter — 아래 참고, 메모리 적합성 미검증 | all |
 | `experiments/megatron/qwen3-30b-full-sgd-pilot.json` | 2노드 Qwen3 30B full-SFT SGD 용량 pilot | train |
 
-앞의 smoke 네 개는 Qwen2.5-0.5B와 고정 No Robots 입력을 쓰며 모델 품질·장기 수렴·성능 비교용이 아닙니다.
-Megatron의 두 30B LoRA preset은 검증 당시와 같은 TP=1·PP=1·EP=2로 1 step, 평가 1회와 async checkpoint를 실행합니다.
-TRL NVMe preset은 `train` 후 별도 `tuned` process에서 native ZeRO checkpoint를 복원해 평가합니다([30B NVMe 실습](../../labs/nvme-30b/README.md)).
+Preset을 고를 때 알아야 할 것:
 
-`qwen3-30b-full.json`의 Adam 구성은 per-rank 추정부터 장치 예산을 넘으므로 실행 대상이 아닙니다.
-`qwen3-30b-full-sgd-pilot.json`은 UltraChat 2048 고정 코호트와 SGD로 범위를 줄였지만 FP32 main gradient 구성 중 global OOM으로 첫 optimizer step을 완료하지 못했습니다.
+- **smoke 네 개**는 Qwen2.5-0.5B와 고정 No Robots 입력을 씁니다. 모델 품질·장기 수렴·성능 비교용이 아닙니다.
+- **Megatron 30B LoRA 두 개**는 검증 당시와 같은 TP=1·PP=1·EP=2로 1 step, 평가 1회와 async checkpoint를 실행합니다.
+- **TRL NVMe preset**은 `train` 후 별도 `tuned` process에서 native ZeRO checkpoint를 복원해 평가합니다([30B NVMe 실습](../../labs/nvme-30b/README.md)).
+
+실행하면 안 되는 두 preset:
+
+| Preset | 막힌 지점 |
+| --- | --- |
+| `qwen3-30b-full.json` | Adam 구성이 **per-rank 추정부터** 장치 예산 초과 — 실행 대상 아님 |
+| `qwen3-30b-full-sgd-pilot.json` | UltraChat 2048 고정 코호트와 SGD로 범위를 줄였지만, FP32 main gradient 구성 중 global OOM으로 첫 optimizer step 미완료 |
+
 같은 2노드 구성을 반복하지 말고 [현재 결과와 후속 조건](30b-results.md#full-sft-capacity)을 먼저 확인합니다.
 
 `experiments/run.py`는 `--backend`, `--setup`, `--experiment`, `--output`을 요구합니다.
@@ -46,14 +53,14 @@ python experiments/estimate_memory.py \
 
 `--budget-gib`는 per-rank 예산과 비교해 `FITS`/`DOES NOT FIT`을 판정하고, `--offload cpu|nvme`는 optimizer·gradient를 on-device에서 빼되 해당 계층이 감당할 용량을 따로 알려줍니다.
 
-| 검증 대상 | 실측 ([30B GPU Results](30b-results.md#30b-gpu-results)) | 예측 |
-| --- | --- | --- |
-| TRL DDP LoRA | 58.825 GiB | 59.2 GiB |
-| TRL FSDP2 LoRA | 32.147 GiB | 29.3 GiB |
-| Megatron LoRA EP=2 | 34.759 GiB | 30.8 GiB |
+| 검증 대상 | 실측 ([30B GPU Results](30b-results.md#30b-gpu-results)) | 예측 | 오차 |
+| --- | ---: | ---: | ---: |
+| TRL DDP LoRA | 58.825 GiB | 59.2 GiB | +0.6% |
+| TRL FSDP2 LoRA | 32.147 GiB | 29.3 GiB | −8.9% |
+| Megatron LoRA EP=2 | 34.759 GiB | 30.8 GiB | −11.4% |
 
-CUDA context·allocator 단편화·workspace를 제외한 **추정값**이므로 실측보다 낮을 수 있습니다(표에서 최대 -11%).
-예산에 근접한 `FITS`는 실제 적합성을 보장하지 않습니다.
+추정값은 CUDA context·allocator 단편화·workspace를 제외하므로 **실측보다 낮게 나오는 쪽으로 치우칩니다**(표에서 최대 −11%).
+따라서 예산에 근접한 `FITS`는 실제 적합성을 보장하지 않습니다 — 추정 96.6 GiB/rank가 119 GiB 예산 안이었는데도 실제로는 global OOM이 난 [Full-SFT capacity](30b-results.md#full-sft-capacity)가 그 사례입니다.
 
 ## Build an Experiment from Knobs
 

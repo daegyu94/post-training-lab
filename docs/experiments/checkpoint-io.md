@@ -6,8 +6,17 @@
 NFS는 repository checkout에만 사용하고 Megatron checkpoint는 rank별 local shard 저장 성능만 평가합니다.
 
 실행·집계는 `experiments/checkpoint_memory_30b.py`, read/cache 분류는 `experiments/checkpoint_io_probe.py`, cohort 생성은 `experiments/prepare_checkpoint_cohort.py`를 기준으로 합니다.
-최신 authoritative 수치는 [30B Controlled Results](30b-results.md#controlled-results-2026-09-15)에 한 번만 기록합니다.
-이 문서는 실행 방법과 2026-09-14 이전 historical 결과를 보존합니다.
+
+**이 문서에서 찾을 것과 찾지 못할 것**
+
+| 찾는 것 | 위치 |
+| --- | --- |
+| 분산 checkpoint write의 최신 authoritative 수치 | [30B Controlled Results](30b-results.md#controlled-results-2026-09-15) — 여기에만 한 번 기록 |
+| 실험 설계, I/O 경로 정의, 측정 규칙 | 아래 [I/O Paths](#io-paths), [Measurement Design](#measurement-design) |
+| 실행 방법 | 아래 [Run the Measurements](#run-the-measurements) |
+| 실제 model restore 시간 | 아래 [Single-node TRL I/O Experiment](#single-node-trl-io-experiment) |
+| LoRA 비율과 checkpoint 크기의 관계 | 아래 [LoRA Ratio and Checkpoint I/O](#lora-ratio-and-checkpoint-io) |
+| 2026-09-14 이전 탐색 측정 | 아래 [Historical Measured Results](#historical-measured-results-2026-09-14) — 최신 표와 합치지 않음 |
 
 ## Current Matrix
 
@@ -27,14 +36,16 @@ Recompute를 모델 간 결론으로 쓸 때만 GLM matrix를 추가하고, asyn
 
 ## Research Questions
 
-1. Megatron distributed checkpoint의 논리 크기와 실제 local NVMe write traffic은 얼마인가?
-2. Sync와 async checkpoint가 save latency, finalization과 학습 step time에 어떤 차이를 만드는가?
-3. Megatron의 buffered read에서 page cache가 cold·warm 성능에 미치는 영향은 얼마인가?
-4. DeepSpeed NVMe offload의 Direct I/O와 framework checkpoint의 buffered I/O는 어떻게 다른가?
-5. 같은 30B 모델에서 framework와 분산 전략에 따라 CUDA·unified host memory·NVMe footprint가 어떻게 달라지는가?
-6. Sequence length 2048/4096/8192에서 Megatron LoRA의 memory footprint가 어떻게 달라지는가?
-7. LoRA trainable parameter 비율이 커지면 checkpoint 크기와 I/O가 어떻게 달라지는가?
-8. 실제 Megatron restore의 cold/warm latency와 유효 처리율은 얼마인가?
+| # | 질문 | 현재 상태 |
+| ---: | --- | --- |
+| 1 | Megatron distributed checkpoint의 논리 크기와 실제 local NVMe write traffic은 얼마인가? | 논리 크기는 측정 완료. device write traffic은 별도 계측 필요 |
+| 2 | Sync와 async가 save latency, finalization, 학습 step time에 어떤 차이를 만드는가? | 8-step 범위까지 측정 완료. 장기 overlap 미검증 |
+| 3 | buffered read에서 page cache가 cold·warm 성능에 미치는 영향은? | cold/warm 분류로 측정. eviction은 advisory라 cache-hit ratio는 아님 |
+| 4 | DeepSpeed NVMe offload의 Direct I/O와 framework checkpoint의 buffered I/O는 어떻게 다른가? | 경로 구분만 문서화. Direct·buffered traffic 분리 측정은 미실행 |
+| 5 | framework·분산 전략별 CUDA·host·NVMe footprint 차이는? | 측정 완료. 조건이 서로 달라 backend 우열로 읽지 않음 |
+| 6 | Sequence length 2048/4096/8192에서 Megatron LoRA footprint는? | 측정 완료. backend 통제 후 결론은 [30B Results](30b-results.md#sequence-length-기울기) |
+| 7 | LoRA trainable 비율이 커지면 checkpoint 크기와 I/O는? | Qwen에서 측정 완료. 다른 target module은 미확인 |
+| 8 | 실제 Megatron restore의 cold/warm latency와 유효 처리율은? | shared checkpoint store가 없어 distributed restore는 미측정 |
 
 이 결과는 local checkpoint의 장애 복구, topology 변경 restore, power-loss durability 또는 framework 간 절대적 우열을 증명하지 않습니다.
 
@@ -121,6 +132,8 @@ Memory pressure는 중심 결과가 아니라 모델별 최대 rank인 r=32의 v
 
 ### Single-node Results (2026-09-14)
 
+> **핵심**: cold restore는 LoRA rank와 거의 무관하게 Qwen 약 49~53초, GLM 약 38~40초입니다. 지배 요인은 adapter가 아니라 **base snapshot 58–63 GB의 재로딩**입니다.
+
 LoRA 여섯 조건은 각 3회 모두 학습, checkpoint 생성, 별도 cold restore process와 별도 warm restore process를 완료했습니다.
 표의 `±`는 sample standard deviation이며, checkpoint 시간과 크기는 3회 arithmetic mean입니다.
 
@@ -135,12 +148,15 @@ LoRA 여섯 조건은 각 3회 모두 학습, checkpoint 생성, 별도 cold res
 
 ![Single-node 30B model restore](../figures/single-node-model-restore.svg)
 
-Cold restore는 base snapshot 약 58–63 GB를 다시 읽으므로 adapter rank보다 base model I/O가 지배적입니다.
-Warm 결과는 모든 경우 cold보다 짧지만 Qwen의 분산이 커서 rank별 작은 차이를 성능 추세로 해석하지 않습니다.
+값을 읽는 방법:
+
+- **Checkpoint 크기는 rank에 비례**합니다(Qwen 38.2 → 65.0 → 118.4 MB, r 2배마다 약 1.7~1.8배). 반면 **cold restore 시간은 거의 평평**합니다(53.34 → 50.94 → 48.76 s). 두 값의 자릿수 차이(MB 대 수십 GB)가 이유입니다.
+- Warm은 모든 경우 cold보다 짧지만 Qwen의 표준편차가 최대 ±9.57 s로 커서, rank별 작은 차이를 성능 추세로 해석하지 않습니다.
+- GLM이 Qwen보다 cold·warm 모두 짧지만, 두 모델은 base snapshot과 loading 경로가 달라 이 표만으로 모델별 loading 효율을 판정하지 않습니다.
 Raw manifest는 `results/single-node-io-{qwen|glm}-lora-r{8|16|32}*-20260914/manifest.json`이며 GLM r=32는 중단 없이 수집한 part 1·2의 세 record를 합쳤습니다.
 
-DeepSpeed ZeRO-3 full SFT는 Qwen과 GLM을 각각 1회 실행했으나 optimizer 초기화 중 host memory와 swap을 소진한 뒤 kernel OOM으로 종료됐습니다.
-따라서 두 모델 모두 checkpoint와 cold/warm restore가 생성되지 않았으며, 현재 single-node memory capacity에서는 해당 full-SFT 조건이 성립하지 않습니다.
+**ZeRO-3 full SFT는 이 표에 값이 없습니다.** Qwen과 GLM을 각각 1회 실행했으나 optimizer 초기화 중 host memory와 swap을 소진한 뒤 kernel OOM으로 종료됐습니다.
+checkpoint 자체가 만들어지지 않았으므로 cold/warm restore 값도 없습니다 — 현재 single-node memory capacity에서는 해당 full-SFT 조건이 성립하지 않습니다(2노드에서는 통과하며, [Topology Comparison](30b-results.md#ultrachat-full-sft-topology-comparison-2026-09-14) 참고).
 Qwen raw 결과는 `results/single-node-io-qwen-zero3-full-pilot3-20260914`, GLM raw 결과는 `results/single-node-io-glm-zero3-full-pilot-20260914`에 있습니다.
 
 ## Run the Measurements
@@ -189,6 +205,8 @@ Raw manifest·measurement record는 커밋하지 않으므로(`results/`는 giti
 아래의 n=1 후속 권고와 혼합-backend memory 표는 위 current matrix로 대체됐습니다.
 
 ### Historical Distributed Write Results (2026-09-14)
+
+> **핵심**: n=1 탐색 측정입니다. 여기서 async 완료 시간이 sync에 가깝다는 신호를 얻었고, 그 신호를 3회 반복으로 확정한 것이 [2026-09-15 통제 결과](30b-results.md#distributed-checkpoint-write)입니다.
 
 분산 결과는 실행 시간이 길어 조건당 1회만 수행한 exploratory 측정입니다.
 모든 checkpoint는 각 노드의 local NVMe에 기록하고 inventory 수집 뒤 삭제했으며, 공유 remote filesystem을 사용하지 않으므로 restore는 실행하지 않았습니다.
@@ -249,6 +267,8 @@ LoRA rank 8에서 최신 checkpoint 크기는 같고 async의 run당 save 호출
 
 ### Memory Footprint
 
+> **핵심**: 같은 TRL LoRA에서 FSDP2는 DDP 대비 CUDA peak를 43% 낮춥니다(59.8 → 34.1 GB). ZeRO-3 NVMe의 6.4 GB는 full fine-tuning + runtime offload라 같은 줄에서 비교할 조건이 아닙니다.
+
 | 조건 | Run 수 | CUDA peak allocated(median) | Host memory pressure(median) |
 | --- | ---: | ---: | ---: |
 | `LEN-4096` (Megatron LoRA) | 3 | 39.5 GB | 53.7 GB |
@@ -264,8 +284,15 @@ Megatron LoRA에서 sequence length를 4096에서 8192로 늘리면 CUDA peak al
 ZeRO-3 NVMe의 6.4 GB는 full fine-tuning에 runtime offload를 건 결과이므로 LoRA 조건과 직접적인 backend 우열로 비교하지 않습니다.
 
 Unified-memory hardware이므로 CUDA와 host 측정값을 더하지 않고 별도 panel로 봅니다.
-`EST-MEG-ADAM`(Megatron full + Adam) 추정값은 rank당 160.8 GiB로 119 GiB 예산을 초과해 실행하지 않았습니다.
-`EST-MEG-SGD`(full + SGD)는 96.6 GiB로 예산 안에 들었지만 이후 2노드 pilot이 global OOM으로 종료되어 fit 판정이 기각됐습니다.
+
+Full-parameter 조건의 사전 추정과 실제 결과:
+
+| 조건 | 추정 rank당 | 119 GiB 예산 판정 | 실제 |
+| --- | ---: | --- | --- |
+| `EST-MEG-ADAM`(Megatron full + Adam) | 160.8 GiB | 초과 | 실행하지 않음 |
+| `EST-MEG-SGD`(full + SGD) | 96.6 GiB | 예산 내 | 2노드 pilot이 global OOM으로 종료 — **fit 판정 기각** |
+
+추정은 allocator 여유분과 sharding되지 않은 임시 상태를 포함하지 않으므로 **하한 점검**입니다. 자세한 실패 지점은 [Full-SFT capacity](30b-results.md#full-sft-capacity)를 따릅니다.
 
 > **`MEM-TRL-Z3-NVME`의 optimizer 표기 정정(2026-09-12).**
 > 이 조건은 `OPTIMIZER=sgd`로 실행됐지만, DeepSpeed는 optimizer state를 offload하면 client optimizer를 `DeepSpeedCPUAdam`으로 교체합니다(`deepspeed/runtime/engine.py`는 다른 client optimizer를 `zero_force_ds_cpu_optimizer` 기본값에서 거부).
@@ -279,6 +306,8 @@ DeepSpeed의 Direct offload traffic과 buffered ZeRO-checkpoint traffic을 분�
 <a id="lora-trainable-ratio가-checkpoint-io에-미치는-영향"></a>
 
 ## LoRA Ratio and Checkpoint I/O
+
+> **핵심**: trainable 비율을 10배 늘리면 checkpoint 크기는 9.99배로 **거의 정비례**하지만, save 시간은 1.81배만 늘어납니다 — 크기에 비례하지 않는 고정 비용이 존재합니다.
 
 위 LoRA rank 8(약 0.03%) 측정에 이어, sync 파이프라인에서 `LORA_DIM`만 바꿔 비율의 영향을 확인했습니다.
 
@@ -295,14 +324,22 @@ Megatron은 학습 시작 시 rank-local model-parallel shard 기준 trainable p
 
 ![LoRA parameter ratio and checkpoint I/O](../figures/lora-ratio-checkpoint.svg)
 
-목표 비율 0.1%에서 1.0%로 약 10배 늘리면 checkpoint 크기도 224.9 MB에서 2,246.6 MB로 9.99배 증가했습니다.
-반면 같은 구간에서 save 시간은 1.44초에서 2.61초로 1.81배만 늘었습니다 — 동일한 저장 횟수에서 크기에 비례하지 않는 비용이 있음을 시사합니다. 메타데이터·동기화·직렬화 중 어떤 비용이 지배적인지는 별도 계측이 필요합니다.
-이 시간은 `CHECKPOINT_MODE=sync`에서 데이터 파일 `fsync()`까지 포함한 blocking `save()` 호출들을 rank별로 합한 뒤 최대값을 취한 것입니다. 크기는 최신 iteration 하나의 shard 합이므로 이 두 값으로 단일 checkpoint의 write bandwidth를 계산하지 않습니다(async의 enqueue 반환 시간과 달리 실제 쓰기를 포함하지만, 부모 디렉터리 `fsync()`는 빠져 있어 장애 durability를 뜻하지는 않습니다).
+두 값이 다르게 움직입니다.
+
+| 구간 | `LORA_DIM` 비 | Checkpoint 크기 비 | Save 시간 비 |
+| --- | ---: | ---: | ---: |
+| 0.1% → 0.5% | 5.04배 | 5.02배 | 1.41배 |
+| 0.1% → 1.0% | 10.04배 | 9.99배 | 1.81배 |
+
+- **크기는 `LORA_DIM`에 정비례**합니다. 역산이 맞았다는 것은 pilot 로그로도 확인됩니다: `Trainable parameters: 15,974,400`, `Trainable percentage: 0.10%`.
+- **시간은 정비례하지 않습니다.** 동일한 저장 횟수에서 크기와 무관한 비용이 존재한다는 뜻입니다. 메타데이터·동기화·직렬화 중 무엇이 지배적인지는 별도 계측이 필요합니다.
+
+시간·크기 값의 범위:
+
+- 시간은 `CHECKPOINT_MODE=sync`에서 데이터 파일 `fsync()`까지 포함한 blocking `save()` 호출들을 rank별로 합한 뒤 최대값을 취한 것입니다(async의 enqueue 반환 시간과 달리 실제 쓰기를 포함하지만, 부모 디렉터리 `fsync()`가 빠져 있어 장애 durability를 뜻하지는 않습니다).
+- 크기는 최신 iteration 하나의 shard 합입니다. 이 두 값으로 단일 checkpoint의 write bandwidth를 계산하지 않습니다.
 
 12/12 run 통과(pilot 3 + 측정 9), 세 조건 모두 rMAD가 10% 기준을 크게 밑돌아 8회로 확장하지 않았습니다.
-
-Checkpoint 크기 비는 5.02배·9.99배로 `LORA_DIM` 비 5.04배·10.04배에 근접했습니다.
-`ratio-0.1pct` pilot 로그도 역산과 일치했습니다: `Trainable parameters: 15,974,400`, `Trainable percentage: 0.10%`.
 
 이 조건들은 plan만 바꿔 실행합니다.
 
@@ -314,5 +351,3 @@ python experiments/checkpoint_memory_30b.py \
   --output results/lora-ratio-checkpoint-io \
   --repeats 3 --execute
 ```
-
-<a id="qwen-vs-glm-방법론이-일반화되는가"></a>

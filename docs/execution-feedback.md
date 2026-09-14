@@ -254,18 +254,38 @@ Spark 실행 기록은 commit 메시지에서 확인할 수 있습니다.
 - `f7b9f0b`: spark1의 실제 Docker에서 단일 timeout과 workers=4 평가 후 container 잔존 여부를 확인했고, network·filesystem·PID 제한을 검사했습니다.
 - `8efc8e0b`: 설치된 TRL 1.12.0 source에서 full DPO의 reference precompute 경로를 확인했습니다. GPU 학습 완료나 메모리 실측 결과를 의미하지 않습니다.
 
-이후 spark1에서 Qwen3-30B-A3B(실제 base checkpoint, LoRA r=16)로 A/B/C/D 전체 cycle을 처음부터 끝까지(초기 SFT → train candidate 생성 → 실제 Docker 평가 → feedback → B/C/D 학습 → test candidate 생성·평가 → compare)를 두 번 실제로 실행해 완료했습니다.
+### GPU Cycle Runs
 
-첫 실행은 `WORK_DIR`를 NFS(`/home/spark/shared/execution-feedback/run-30b-poc`)로 두고 진행했고, 이 과정에서 이 문서에 기록된 네 가지 실제 버그(`target_modules` 누락, 단일 process `device_map`, `chunked_nll`/CPU-offload 충돌, reasoning 모델의 `<think>` 예산 소진)와 checkpoint I/O가 네트워크를 타는 문제를 발견했습니다.
-그 결과 위 "End-to-End Cycle"에 local NVMe 권장 사항을 추가했고, `target_modules="all-linear"`가 MoE expert의 fused parameter까지 건드리면서 `device_map="auto"`의 CPU/meta offload와 만나 `GroupedMmBackward0 returned an invalid gradient ... expected device meta but got cuda:0`로 깨지는 다섯 번째 버그를 추가로 발견해 attention+router 명시적 target_modules로 고쳤습니다.
+spark1에서 Qwen3-30B-A3B(실제 base checkpoint, LoRA r=16)로 전체 cycle(초기 SFT → train candidate 생성 → 실제 Docker 평가 → feedback → B/C/D 학습 → test candidate 생성·평가 → compare)을 세 번 실행했습니다.
 
-두 번째 실행은 이 다섯 가지 수정을 모두 반영한 뒤 `WORK_DIR`를 local NVMe(`/mnt/post-training/execution-feedback/run-local-verify`)로 두고 처음부터 다시 실행해 완료했습니다.
-DPO(C, D)는 loss가 0.70→0.15~0.25로, `rewards/accuracies`가 1.0으로, `rewards/margins`가 계속 증가하는 정상적인 학습 곡선을 보였고, LoRA target이 attention+router로 줄어 adapter 크기도 4GB에서 60MB로 작아졌습니다(trainable parameter가 크게 줄었으므로 step당 속도도 훨씬 빨라짐).
-A/B/C/D 모두 이번에도 test pass@1=1.0으로 나왔습니다 — synthetic test task가 2개뿐이고 이 모델에 쉬워서 성공률 차이가 안 보이는 것이며, pipeline 결함이 아닙니다.
-실험 비교(성공률 차이 관측 포함)에는 더 크거나 어려운 test set과 각 variant의 generation manifest, training summary, test evaluation이 필요합니다.
+| Run | `WORK_DIR` | 규모 | 결과 |
+| ---: | --- | --- | --- |
+| 1 | NFS (`/home/spark/shared/execution-feedback/run-30b-poc`) | synthetic 축소 test set | 완료. 아래 버그 5건 발견 |
+| 2 | local NVMe (`/mnt/post-training/execution-feedback/run-local-verify`) | synthetic 축소 test set | 5건 수정 후 완료 |
+| 3 | local NVMe | MBPP 원본 split 전체 | 완료. [아래 결과](#full-scale-mbpp-run-single-process-validation-nll-loss-history) |
 
-MBPP(`sanitized` config)도 `prepare`와 실제 Docker 평가로 검증했습니다.
-`adapt_mbpp`가 존재하지 않는 `text` 필드를 읽어 모든 MBPP row에서 `KeyError`로 즉시 실패하는 버그가 있었습니다(실제 필드명은 `prompt`) — 이 경로는 네트워크와 실제 dataset이 필요해 CPU tier 테스트가 전혀 커버하지 못했습니다.
+**Run 1에서 발견한 실제 버그**
+
+| # | 증상 | 원인 | 수정 |
+| ---: | --- | --- | --- |
+| 1 | `No target_modules passed but also no target_parameters found` | PEFT 자동 매핑이 이 repo의 MoE 구조를 모름 | 명시적 `target_modules` 지정 |
+| 2 | 분산 실행 시 깨짐 | `device_map="auto"`는 단일 process 전제 | `world_size != 1`이면 즉시 실패 |
+| 3 | `'functools.partial' object has no attribute '__func__'` | 기본 `chunked_nll`이 CPU-offload된 layer의 forward patch에 실패 | `loss_type="nll"` 명시 |
+| 4 | 짧은 `--max-new-tokens`에서 코드가 전혀 안 나옴 | reasoning 모델이 `<think>` 블록으로 예산 소진 | `enable_thinking=False` |
+| 5 | `GroupedMmBackward0 returned an invalid gradient ... expected device meta but got cuda:0` | `target_modules="all-linear"`가 MoE expert의 fused parameter까지 포함 | attention+router 명시 목록으로 축소 |
+
+Run 1은 checkpoint I/O가 네트워크를 타는 문제도 드러냈습니다 — 그래서 위 "End-to-End Cycle"이 local NVMe `WORK_DIR`를 권장합니다.
+
+**Run 2 관측**
+
+- DPO(C, D): loss 0.70 → 0.15~0.25, `rewards/accuracies` 1.0, `rewards/margins` 지속 증가 — 정상 학습 곡선.
+- 버그 5 수정의 부수 효과: LoRA target이 줄어 adapter 크기 4GB → 60MB. trainable parameter가 줄어 step당 속도도 크게 향상.
+- A/B/C/D 모두 test pass@1=1.0. **synthetic test task가 2개뿐이고 이 모델에 쉬워서 차이가 안 보이는 것이며 pipeline 결함이 아닙니다.** 성공률 차이를 관측하려면 더 크거나 어려운 test set이 필요합니다.
+
+**MBPP 경로 검증**
+
+`adapt_mbpp`가 존재하지 않는 `text` 필드를 읽어 모든 MBPP row에서 `KeyError`로 즉시 실패했습니다(실제 필드명은 `prompt`).
+이 경로는 네트워크와 실제 dataset이 필요해 CPU tier 테스트가 전혀 커버하지 못했습니다.
 고친 뒤 실제 MBPP revision(`4bb6404fdc6cacfda99d4ac4205087b89d32030c`)으로 4개 task를 준비하고 참조 정답을 실제 Docker에서 평가해 4/4 pass를 확인했습니다.
 
 평가 timeout의 stdout/stderr는 UTF-8 문자열로 변환하고 마지막 4,000자만 저장합니다.
@@ -285,12 +305,18 @@ Trainer는 입력 token 계측을 명시적으로 활성화합니다.
 
 257개 전체 test task 기준 결과:
 
-| Variant | pass@1 | validation NLL |
-| --- | --- | --- |
-| A | 0.066 (17/257) | 2.746 |
-| B | 0.062 (16/257) | 1.800 |
-| C | 0.090 (23/257) | 2.903 |
-| D | 0.070 (18/257) | 2.266 |
+| Variant | Training sequence | pass@1 | validation NLL |
+| --- | --- | --- | --- |
+| A | SFT only | 0.066 (17/257) | 2.746 |
+| B | SFT → filtered SFT | 0.062 (16/257) | 1.800 |
+| C | SFT → DPO | **0.090 (23/257)** | 2.903 |
+| D | SFT → filtered SFT → DPO | 0.070 (18/257) | 2.266 |
+
+**두 지표가 서로 반대 방향입니다.** B는 validation NLL을 가장 크게 낮췄지만(2.746 → 1.800) pass@1은 A보다 낮고, C는 NLL이 가장 높은데 pass@1이 가장 높습니다.
+NLL은 reference 코드와의 token 일치도이고 pass@1은 실행 성공 여부이므로, 두 값이 같은 방향으로 움직일 이유가 없습니다 — **NLL을 execution 성능의 대리 지표로 쓰지 않습니다.**
+
+차이 크기의 제약: variant 간 pass@1 격차는 최대 7개 task(16 → 23/257)입니다.
+반복 실행과 신뢰구간이 없으므로 이 순위를 방법 간 우열로 확정하지 않습니다.
 
 A 초기 SFT loss는 3.5→2.1로 하락했고 NaN/Inf는 없었습니다.
 B(filtered SFT)는 첫 5-step 평균 약 1.6에서 마지막 5-step 평균 약 1.0으로 하락했습니다.

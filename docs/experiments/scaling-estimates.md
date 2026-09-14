@@ -2,6 +2,8 @@
 
 아래는 **용량 계산**입니다. 실제 GPU 검증은 30B급까지이며, 100B~1T 실행 결과나 GPU 구매·배치 수량을 뜻하지 않습니다.
 
+> **핵심**: full FT는 parameter당 16 bytes, LoRA는 base 2 bytes + adapter 몫만 듭니다. 1T에서 full-state checkpoint 12.73 TiB 대 LoRA+Adam checkpoint 13.04 GiB — 약 1,000배 차이가 나며, 대신 LoRA checkpoint는 base를 포함하지 않으므로 base revision을 따로 보존해야 합니다.
+
 ## Assumptions
 
 `P`는 full FT의 전체 parameter 수, LoRA에서는 frozen base parameter 수입니다. `f=0.001`은 base 대비 추가 adapter parameter 비율(0.1%)입니다. 앞선 LoRA sweep의 **rank-local shard 기준 비율과 분모가 다릅니다.**
