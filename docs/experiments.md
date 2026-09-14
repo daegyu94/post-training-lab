@@ -248,7 +248,7 @@ TRL DeepSpeed ZeRO-3는 finetuning mode·optimizer·checkpoint format·runtime o
 
 실험은 다음 순서로 진행합니다.
 
-1. 두 30B 모델에 모델별 tokenizer로 선택한 동일 UltraChat revision의 512-token 이하 4 train/1 eval cohort를 사용합니다.
+1. 두 30B 모델에 모델별 tokenizer로 앞에서부터 선택한 동일 UltraChat revision의 512-token 이하 4 train/1 eval cohort를 사용합니다. 필요한 행을 찾으면 scan을 끝내므로 전체 데이터 길이 분포를 다시 계산하지 않습니다.
 2. LoRA r=8/64/128 또는 ZeRO-3 full SFT를 1 optimizer step 실행하고 실제 checkpoint save 완료 시간과 크기를 기록합니다.
 3. Base snapshot과 생성 checkpoint에 `POSIX_FADV_DONTNEED`를 요청하고 새 process에서 cold restore를 실행합니다.
 4. Eviction 없이 새 process를 다시 실행해 warm restore를 측정합니다.

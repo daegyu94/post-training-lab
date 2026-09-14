@@ -35,6 +35,7 @@ def _scan(
     limit: int,
     max_length: int,
     renderer: Callable[[dict[str, Any]], dict[str, Any]],
+    scan_all: bool = True,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     selected = []
     lengths = []
@@ -58,6 +59,8 @@ def _scan(
                 over[threshold] += length > threshold
             if length <= max_length and len(selected) < limit:
                 selected.append(row)
+                if not scan_all and len(selected) == limit:
+                    break
     if len(selected) != limit:
         raise ValueError(f"{path} has only {len(selected)} valid rows at max_length={max_length}; need {limit}")
     lengths.sort()
@@ -87,6 +90,7 @@ def build_cohort(
     train_count: int,
     eval_count: int,
     renderer: Callable[[dict[str, Any]], dict[str, Any]],
+    scan_all: bool = True,
 ) -> dict[str, Any]:
     if output_dir.exists():
         raise FileExistsError(f"refusing to reuse cohort output: {output_dir}")
@@ -94,10 +98,12 @@ def build_cohort(
     if source_manifest.get("dataset") != dataset_id or source_manifest.get("dataset_revision") != dataset_revision:
         raise ValueError("source dataset manifest does not match requested dataset and revision")
     train, train_stats = _scan(
-        source_dir / "training.jsonl", limit=train_count, max_length=max_length, renderer=renderer
+        source_dir / "training.jsonl", limit=train_count, max_length=max_length,
+        renderer=renderer, scan_all=scan_all,
     )
     validation, validation_stats = _scan(
-        source_dir / "validation.jsonl", limit=eval_count, max_length=max_length, renderer=renderer
+        source_dir / "validation.jsonl", limit=eval_count, max_length=max_length,
+        renderer=renderer, scan_all=scan_all,
     )
     train_ids = {str(row["prompt_id"]) for row in train}
     eval_ids = {str(row["prompt_id"]) for row in validation}
@@ -130,6 +136,7 @@ def build_cohort(
         "train_prompt_ids": [str(row["prompt_id"]) for row in train],
         "eval_prompt_ids": [str(row["prompt_id"]) for row in validation],
         "length_distribution": {"training": train_stats, "validation": validation_stats},
+        "length_distribution_scope": "full-source" if scan_all else "scanned-prefix",
         "source_manifest_sha256": _sha256(source_dir / "manifest.json"),
         "source_selection_sha256": hashlib.sha256(
             json.dumps(
@@ -158,6 +165,7 @@ def main() -> None:
     parser.add_argument("--max-length", type=int, default=2048)
     parser.add_argument("--train-count", type=int, default=32)
     parser.add_argument("--eval-count", type=int, default=8)
+    parser.add_argument("--stop-after-selection", action="store_true")
     args = parser.parse_args()
     if min(args.max_length, args.train_count, args.eval_count) < 1:
         raise SystemExit("length and cohort counts must be positive")
@@ -175,6 +183,7 @@ def main() -> None:
         train_count=args.train_count,
         eval_count=args.eval_count,
         renderer=lambda row: render_prompt_completion(row, tokenizer),
+        scan_all=not args.stop_after_selection,
     )
     print(json.dumps(manifest, sort_keys=True))
 

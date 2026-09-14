@@ -114,7 +114,7 @@ def prepare_cohort(
         "--source-dir", shlex.quote(source), "--output-dir", shlex.quote(destination),
         "--model-dir", shlex.quote(node["model_dirs"][spec["id"]]),
         "--model-revision", spec["revision"], "--max-length", "512",
-        "--train-count", "4", "--eval-count", "1",
+        "--train-count", "4", "--eval-count", "1", "--stop-after-selection",
     ])
     command = f"if test -f {shlex.quote(manifest)}; then cat {shlex.quote(manifest)}; else {create}; fi"
     updated["nodes"] = [node]

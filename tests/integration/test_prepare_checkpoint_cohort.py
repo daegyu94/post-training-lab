@@ -44,3 +44,17 @@ def test_build_cohort_refuses_existing_output(tmp_path: Path) -> None:
             max_length=4, train_count=1, eval_count=1,
             renderer=lambda row: {"prompt_tokens": 1, "supervised_tokens": 1},
         )
+
+
+def test_build_cohort_can_stop_after_minimal_selection(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    _source(source)
+
+    result = build_cohort(
+        source, tmp_path / "cohort", dataset_id="d", dataset_revision="r", model_revision="m",
+        max_length=4, train_count=2, eval_count=1, scan_all=False,
+        renderer=lambda row: {"prompt_tokens": row["tokens"], "supervised_tokens": 1},
+    )
+
+    assert result["length_distribution_scope"] == "scanned-prefix"
+    assert result["length_distribution"]["training"]["source_rows"] == 2
