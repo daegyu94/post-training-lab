@@ -29,11 +29,8 @@ def _escape_label(value: str) -> str:
     return value.replace("\\", "\\\\").replace("\n", "\\n").replace('"', '\\"')
 
 
-def write_gauges(directory: Path, filename: str, samples: Iterable[GaugeSample]) -> Path:
-    """Atomically replace one rank-owned ``.prom`` file."""
-    if Path(filename).name != filename or not filename.endswith(".prom"):
-        raise ValueError("filename must be a basename ending in .prom")
-
+def format_gauges(samples: Iterable[GaugeSample]) -> str:
+    """Return Prometheus text exposition for gauge samples."""
     grouped_help: dict[str, str] = {}
     materialized = list(samples)
     for sample in materialized:
@@ -59,9 +56,16 @@ def write_gauges(directory: Path, filename: str, samples: Iterable[GaugeSample])
             label_text = "{" + ",".join(pairs) + "}"
         lines.append(f"{sample.name}{label_text} {sample.value}")
 
+    return "\n".join(lines) + "\n"
+
+
+def write_gauges(directory: Path, filename: str, samples: Iterable[GaugeSample]) -> Path:
+    """Atomically replace one rank-owned ``.prom`` file."""
+    if Path(filename).name != filename or not filename.endswith(".prom"):
+        raise ValueError("filename must be a basename ending in .prom")
     directory.mkdir(parents=True, exist_ok=True)
     destination = directory / filename
     temporary = directory / f".{filename}.{os.getpid()}.tmp"
-    temporary.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    temporary.write_text(format_gauges(samples), encoding="utf-8")
     os.replace(temporary, destination)
     return destination

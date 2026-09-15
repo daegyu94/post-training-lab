@@ -106,7 +106,9 @@ elif [[ "$role" == server ]]; then
     echo "CLUSTER_NAME must contain only letters, digits, dots, underscores, or hyphens" >&2
     exit 2
   fi
-  if [[ -n "${SPARK_TARGETS:-}" ]]; then
+  if [[ "${DEMO_LIVE:-0}" == 1 ]]; then
+    spark_targets=()
+  elif [[ -n "${SPARK_TARGETS:-}" ]]; then
     IFS=',' read -r -a spark_targets <<< "$SPARK_TARGETS"
   else
     : "${SPARK1_ADDR:?Set SPARK_TARGETS or SPARK1_ADDR and SPARK2_ADDR}"
@@ -114,6 +116,19 @@ elif [[ "$role" == server ]]; then
     spark_targets=("spark1=$SPARK1_ADDR" "spark2=$SPARK2_ADDR")
   fi
   mkdir -p "$output_dir/provisioning/datasources" "$output_dir/provisioning/dashboards" "$output_dir/dashboards"
+  if [[ "${DEMO_LIVE:-0}" == 1 ]]; then
+    demo_addr="${DEMO_ADDR:-127.0.0.1}"
+    demo_port="${DEMO_PORT:-19110}"
+    demo_topology_dir="${DEMO_TOPOLOGY_DIR:-$PWD/examples/live-demo}"
+    "${PYTHON:-python3}" -m profiling_lab.live_demo \
+      --listen "$demo_addr:$demo_port" --topology-dir "$demo_topology_dir" \
+      --write-prometheus-config "$output_dir/prometheus.yml"
+    if [[ "${SERVER_CONFIG_ONLY:-0}" != 1 ]]; then
+      "${PYTHON:-python3}" -m profiling_lab.live_demo \
+        --listen "$demo_addr:$demo_port" --topology-dir "$demo_topology_dir" &
+      pids+=("$!")
+    fi
+  else
   cat > "$output_dir/prometheus.yml" <<EOF
 global:
   scrape_interval: 2s
@@ -184,6 +199,7 @@ EOF
       - source_labels: [nodename]
         target_label: instance
 EOF
+  fi
   fi
   cat > "$output_dir/provisioning/datasources/default.yaml" <<EOF
 apiVersion: 1

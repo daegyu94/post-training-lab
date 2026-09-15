@@ -1,0 +1,7 @@
+{
+  "gpu_model": "B300",
+  "gpu_nodes": ["gpu-node-0", "gpu-node-1", "gpu-node-2", "gpu-node-3"],
+  "gpus_per_node": 8,
+  "intra_node_interconnect": "NVLINK",
+  "network": {"transport": "RoCE", "bandwidth_gbps": 800}
+}

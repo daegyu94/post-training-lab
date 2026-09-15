@@ -1,0 +1,5 @@
+{
+  "storage_nodes": ["storage-node-0", "storage-node-1", "storage-node-2", "storage-node-3", "storage-node-4", "storage-node-5", "storage-node-6", "storage-node-7"],
+  "ssds_per_node": 4,
+  "network": {"transport": "RoCE", "bandwidth_gbps": 800}
+}

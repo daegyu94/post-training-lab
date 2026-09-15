@@ -61,6 +61,22 @@ ssh -NT -L 13000:127.0.0.1:13000 -J <user>@<controller-ssh-alias> spark@spark1
 화면 링크는 시간·cluster·node·run 선택을 유지합니다.
 같은 경로의 `grafana/`와 `compose.yaml`은 별도 Docker Compose 예시이며 이 ARM64 경로에서는 쓰지 않습니다.
 
+### Synthetic Live Demo
+
+실제 GPU와 스토리지를 사용하지 않고 기존 Grafana dashboard에서 발표용 변화를 재생하려면 server role에 `DEMO_LIVE=1`을 지정합니다.
+`demo-b300` cluster를 선택하면 GPU node 4개와 각 B300 GPU 8개, storage node 8개와 각 SSD 4개가 보입니다.
+각 node는 800Gbps RoCE를 넘지 않는 synthetic traffic을 내보내며, GPU 내부 NVLINK와 node-to-fabric RoCE 연결은 기존 topology matrix에서 확인합니다.
+
+```bash
+cd observability
+DEMO_LIVE=1 bash scripts/run_spark_observability.sh server
+```
+
+Simulator는 100초마다 정상 학습, data wait, collective 통신, checkpoint, recovery를 반복합니다.
+기존 dashboard JSON은 변경하지 않으며, Prometheus가 `spark`와 `storage-smart` job으로 scrape하는 metric만 합성합니다.
+`examples/live-demo/gpu_topology.yaml`과 `storage_topology.yaml`은 JSON-compatible YAML이라 추가 Python package 없이 읽습니다.
+`DEMO_TOPOLOGY_DIR`, `DEMO_ADDR`, `DEMO_PORT`로 fixture와 listen address를 바꿀 수 있습니다.
+
 해석할 때 주의할 것:
 
 - 일부 GB10 NVML 값은 unavailable/null이며 이를 사용량 0으로 읽지 않습니다.
