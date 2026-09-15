@@ -19,7 +19,7 @@ def dpo_needs_precomputed_ref_logps(is_adapter: bool, lora_r: int) -> bool:
 def _metrics_callbacks() -> dict[str, list[object]]:
     if not (os.environ.get("OBSERVATORY_METRICS_DIR") or os.environ.get("OBSERVATORY_RUN_ID")):
         return {}
-    from profiling_lab.trainer_metrics import make_trainer_callback
+    from profiling_lab.adapters.hf_trainer import make_trainer_callback
 
     callback = make_trainer_callback(producer="execution-feedback")
     return {"callbacks": [callback]} if callback is not None else {}

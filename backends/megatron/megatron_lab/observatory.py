@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from typing import Any, Callable
 
-from profiling_lab.app_metrics import Metric, MetricEmitter
+from observatory_metrics import Metric, MetricEmitter
 
 
 TIMER_NAMES = (

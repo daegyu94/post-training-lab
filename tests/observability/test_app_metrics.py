@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from profiling_lab.app_metrics import Metric, MetricEmitter
+from observatory_metrics import Metric, MetricEmitter
 
 
 def test_emitter_replaces_worker_snapshot_atomically(tmp_path: Path) -> None:

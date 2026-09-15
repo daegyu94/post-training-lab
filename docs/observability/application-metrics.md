@@ -3,6 +3,12 @@
 `MetricEmitter`는 TRL, Megatron, agentic RL application이 같은 형식으로 metric을 기록하도록 돕습니다.
 Application은 로컬 JSON snapshot만 갱신하고, 별도 collector가 이를 Node Exporter와 Prometheus에 전달하므로 metric server 장애가 workload를 중단시키지 않습니다.
 
+## Package Boundaries
+
+`observatory_metrics`는 framework를 import하지 않는 공용 SDK이며 `Metric`, `MetricEmitter`, Prometheus textfile 변환을 소유합니다.
+`profiling_lab.adapters`는 이 저장소의 framework adapter를 소유하고, backend launcher와 dashboard도 이 저장소에서 관리합니다.
+vLLM과 Ray가 제공하는 native exporter는 SDK에 포함하지 않습니다.
+
 ## Use the Built-in Training Adapters
 
 공통 experiment runner로 TRL이나 Megatron을 실행하면 별도 Python 코드 없이 metric 수집이 활성화됩니다.
@@ -19,7 +25,7 @@ TRL과 Megatron은 다음 metric을 기본 기록합니다.
 Hugging Face `Trainer`를 직접 만드는 application은 공용 adapter를 callback으로 전달합니다.
 
 ```python
-from profiling_lab.trainer_metrics import make_trainer_callback
+from profiling_lab.adapters.hf_trainer import make_trainer_callback
 
 callback = make_trainer_callback(producer="my-agent-app")
 trainer_kwargs = {
@@ -49,7 +55,7 @@ export OBSERVATORY_METRICS_DIR="/path/to/output/observatory-metrics"
 Application 시작 시 emitter를 한 번 만들고 step이나 episode가 끝날 때 최신 snapshot을 기록합니다.
 
 ```python
-from profiling_lab.app_metrics import Metric, MetricEmitter
+from observatory_metrics import Metric, MetricEmitter
 
 emitter = MetricEmitter.from_env(
     producer="verl",

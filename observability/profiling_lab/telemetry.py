@@ -9,7 +9,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from profiling_lab.prometheus_textfile import GaugeSample, write_gauges
+from observatory_metrics.prometheus import GaugeSample, write_gauges
 
 
 def optional_number(value: str) -> float | None:

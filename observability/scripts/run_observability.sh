@@ -94,7 +94,7 @@ if [[ "$role" == node ]]; then
     --textfile-dir "$output_dir/textfile" --duration "${DURATION:-900}" &
   pids+=("$!")
   if [[ -n "${OBSERVATORY_METRICS_DIR:-}" ]]; then
-    "${PYTHON:-python3}" -m profiling_lab.app_metrics_textfile \
+    "${PYTHON:-python3}" -m observatory_metrics.textfile \
       --metrics-dir "$OBSERVATORY_METRICS_DIR" \
       --textfile-dir "$output_dir/textfile" --interval "${OBSERVATORY_METRICS_INTERVAL:-2}" &
     pids+=("$!")

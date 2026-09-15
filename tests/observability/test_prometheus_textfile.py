@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from profiling_lab.prometheus_textfile import GaugeSample, write_gauges
+from observatory_metrics.prometheus import GaugeSample, write_gauges
 
 
 def test_write_gauges_emits_labels_and_replaces_atomically(tmp_path: Path) -> None:

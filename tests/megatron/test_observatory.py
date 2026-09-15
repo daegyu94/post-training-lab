@@ -3,7 +3,7 @@ from pathlib import Path
 import types
 
 from megatron_lab.observatory import _MetricsCallback
-from profiling_lab.app_metrics import MetricEmitter
+from observatory_metrics import MetricEmitter
 
 
 class Timer:

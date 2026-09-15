@@ -7,7 +7,7 @@ import json
 import time
 from pathlib import Path
 
-from profiling_lab.prometheus_textfile import GaugeSample, write_gauges
+from observatory_metrics.prometheus import GaugeSample, write_gauges
 
 
 def _iter_snapshots(metrics_dir: Path) -> list[dict]:

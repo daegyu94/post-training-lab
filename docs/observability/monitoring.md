@@ -59,7 +59,7 @@ DURATION=3600 \
   bash scripts/run_observability.sh node
 ```
 
-[`app_metrics_textfile`](../../observability/profiling_lab/app_metrics_textfile.py)은 worker JSON을 읽어 다음 metric을 node exporter의 textfile collector로 전달합니다.
+[`observatory_metrics.textfile`](../../observability/observatory_metrics/textfile.py)은 worker JSON을 읽어 다음 metric을 node exporter의 textfile collector로 전달합니다.
 
 - 공통: `training_loss`, `training_tokens_per_second`, `training_step_time_seconds`, `training_step`
 - Megatron: `training_timer_seconds{timer="..."}`

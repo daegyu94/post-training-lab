@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from profiling_lab import app_metrics_textfile
-from profiling_lab.app_metrics_textfile import _iter_snapshots, build_metrics
+from observatory_metrics import textfile
+from observatory_metrics.textfile import _iter_snapshots, build_metrics
 
 
 SNAPSHOT = {
@@ -76,9 +76,9 @@ def test_collector_runs_multiple_refreshes(tmp_path: Path, monkeypatch) -> None:
             raise KeyboardInterrupt
         snapshot_path.write_text(json.dumps(SNAPSHOT | {"step": 8}), encoding="utf-8")
 
-    monkeypatch.setattr(app_metrics_textfile.time, "sleep", tick)
+    monkeypatch.setattr(textfile.time, "sleep", tick)
     with pytest.raises(KeyboardInterrupt):
-        app_metrics_textfile.main()
+        textfile.main()
     assert "# TYPE agent_tool_call_errors_total counter" in observed[0]
     assert any(line.endswith(" 7") for line in observed[0].splitlines() if line.startswith("training_step{"))
     assert any(line.endswith(" 8") for line in observed[1].splitlines() if line.startswith("training_step{"))

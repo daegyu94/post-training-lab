@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 import types
 
-from profiling_lab.app_metrics import MetricEmitter
-from profiling_lab.trainer_metrics import _MetricsCallback
+from observatory_metrics import MetricEmitter
+from profiling_lab.adapters.hf_trainer import _MetricsCallback
 
 
 def test_callback_writes_loss_step_time_and_token_rate(tmp_path: Path) -> None:

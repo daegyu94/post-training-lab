@@ -12,7 +12,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
-from profiling_lab.prometheus_textfile import GaugeSample, format_gauges
+from observatory_metrics.prometheus import GaugeSample, format_gauges
 
 
 _NAME = re.compile(r"^[A-Za-z0-9_.-]+$")
