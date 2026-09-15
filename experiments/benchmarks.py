@@ -280,6 +280,8 @@ def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execu
         raise ValueError("steps must exceed within-run warmup")
     base_env = dict(base["env"])
     base_env.update(benchmark.get("common_env", {}))
+    if "SAVE_INTERVAL" in base_env and len(set(intervals)) == 1:
+        base_env["SAVE_INTERVAL"] = intervals[0]
     for key, value in {
         "STAGE": "train", "MEASURE_TIMING": "true", "SEED": 42,
         "GLOBAL_BATCH_SIZE": 4, "EP": 1, "PP": 1,

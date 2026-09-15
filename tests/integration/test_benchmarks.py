@@ -231,7 +231,7 @@ def test_missing_measurement_metrics_are_rejected() -> None:
 def test_common_env_preserves_30b_topology(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     plan = _plan()
     plan["base_experiment"] = "base.json"
-    plan["common_env"] = {"GLOBAL_BATCH_SIZE": 2, "EP": 2, "PP": 1}
+    plan["common_env"] = {"GLOBAL_BATCH_SIZE": 2, "EP": 2, "PP": 1, "SAVE_INTERVAL": 2}
     plan_path = tmp_path / "plan.json"
     plan_path.write_text(json.dumps(plan))
     (tmp_path / "base.json").write_text("{}")
@@ -246,12 +246,13 @@ def test_common_env_preserves_30b_topology(tmp_path: Path, monkeypatch: pytest.M
     result = benchmarks.run_benchmark(
         setup_path=tmp_path / "setup.json", benchmark_path=plan_path,
         output=tmp_path / "result", steps=8, repeats=1, within_run_warmup=2,
-        checkpoint_intervals=[2, 2],
+        checkpoint_intervals=[10, 10],
     )
 
     assert result["status"] == "dry-run"
     assert result["effective_common_env"]["GLOBAL_BATCH_SIZE"] == 2
     assert result["effective_common_env"]["EP"] == 2
+    assert result["effective_common_env"]["SAVE_INTERVAL"] == 10
 
 
 def test_execute_130_interrupts_without_launching_next_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
