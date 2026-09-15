@@ -344,7 +344,7 @@ spark1에서 Qwen3-30B-A3B(실제 base checkpoint, LoRA r=16)로 전체 cycle을
 
 **Run 2 관측**
 
-- DPO(C, D): loss 0.70 → 0.15~0.25, `rewards/accuracies` 1.0, `rewards/margins` 지속 증가 — 정상 학습 곡선.
+- DPO(C, D): loss 0.70 → 0.15\~0.25, `rewards/accuracies` 1.0, `rewards/margins` 지속 증가 — 정상 학습 곡선.
 - 버그 5 수정의 부수 효과: LoRA target이 줄어 adapter 크기 4GB → 60MB, trainable parameter 감소로 step당 속도도 크게 향상.
 - A/B/C/D 모두 test pass@1=1.0. **synthetic test task가 2개뿐이고 이 모델에 쉬워서 차이가 안 보이는 것이며 pipeline 결함이 아닙니다.** 차이를 관측하려면 더 크거나 어려운 test set이 필요합니다.
 
@@ -361,7 +361,7 @@ spark1에서 Qwen3-30B-A3B(실제 base checkpoint, LoRA r=16)로 전체 cycle을
 
 ### Full-scale MBPP run (single process, validation NLL, loss history)
 
-앞의 두 실행은 `--limit-per-split`로 줄인 test set(4~6개)이었습니다. 세 번째는 synthetic 경로를 제거하고 MBPP `sanitized` 원본 split을 그대로 사용했습니다.
+앞의 두 실행은 `--limit-per-split`로 줄인 test set(4\~6개)이었습니다. 세 번째는 synthetic 경로를 제거하고 MBPP `sanitized` 원본 split을 그대로 사용했습니다.
 
 | 항목 | 값 |
 | --- | --- |
@@ -395,7 +395,7 @@ NLL은 reference 코드와의 token 일치도, pass@1은 실행 성공 여부이
 | --- | --- |
 | A 초기 SFT | loss 3.5 → 2.1, NaN/Inf 없음 |
 | B filtered SFT | 첫 5-step 평균 약 1.6 → 마지막 5-step 평균 약 1.0 |
-| C·D DPO | loss 0.70 → 0.06~0.11, `rewards/accuracies` 0 → 1.0, `rewards/margins` 0 근처 → 2.2~3.6 |
+| C·D DPO | loss 0.70 → 0.06\~0.11, `rewards/accuracies` 0 → 1.0, `rewards/margins` 0 근처 → 2.2\~3.6 |
 | 메모리 | swap 미사용(119GiB 중 최대 약 65GiB, free 41GiB 유지) |
 
 **실행 중 실패 1회** — 코드 버그가 아니라 잘못된 인자였습니다.

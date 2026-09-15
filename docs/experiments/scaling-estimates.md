@@ -1,7 +1,7 @@
 # Scaling Estimates: 100B to 1T
 
-이 문서는 동일한 dtype과 optimizer 가정을 100B~1T 모델에 적용해 학습 state와 checkpoint에 필요한 **용량의 규모**를 계산합니다.
-실제 GPU 검증 범위는 30B급까지이므로, 100B~1T 수치는 실행 결과나 GPU 구매·배치 수량이 아니라 초기 계획을 위한 추정값입니다.
+이 문서는 동일한 dtype과 optimizer 가정을 100B\~1T 모델에 적용해 학습 state와 checkpoint에 필요한 **용량의 규모**를 계산합니다.
+실제 GPU 검증 범위는 30B급까지이므로, 100B\~1T 수치는 실행 결과나 GPU 구매·배치 수량이 아니라 초기 계획을 위한 추정값입니다.
 
 > **핵심**: full FT는 parameter당 16 bytes, LoRA는 base 2 bytes + adapter 몫만 듭니다. 1T에서 full-state checkpoint 12.73 TiB 대 LoRA+Adam checkpoint 13.04 GiB — 약 1,000배 차이가 나며, 대신 LoRA checkpoint는 base를 포함하지 않으므로 base revision을 따로 보존해야 합니다.
 

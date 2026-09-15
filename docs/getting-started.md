@@ -22,7 +22,7 @@ Exit 0과 JSON의 `backend: trl`, 두 rank의 환경변수·출력 경로를 확
 
 ## 2. Prepare the Nodes
 
-공통 runner는 1~2개 노드와 노드당 process 하나를 지원합니다.
+공통 runner는 1\~2개 노드와 노드당 process 하나를 지원합니다.
 각 참여 노드에 다음이 필요합니다.
 
 - Controller와 같은 commit의 깨끗한 Git checkout (NFS 공유 checkout을 그대로 사용)

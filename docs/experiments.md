@@ -11,7 +11,7 @@ Experiment 파일은 모델·데이터 revision과 학습 조건을, setup은 �
 | 대상 모델 | `Qwen/Qwen3-30B-A3B`, `zai-org/GLM-4.7-Flash` |
 | 대상 경로 | TRL LoRA(DDP·FSDP2·DeepSpeed ZeRO-3)와 Megatron MoE |
 | 하드웨어 | `spark1`·`spark2` 2노드, 노드당 1 rank, unified memory 119 GiB/노드 |
-| 핵심 질문 | ① 30B SFT가 이 장치에서 실행되는가 ② checkpoint I/O와 memory가 얼마나 드는가 ③ 그 값이 100B~1T에서 어떻게 커지는가 |
+| 핵심 질문 | ① 30B SFT가 이 장치에서 실행되는가 ② checkpoint I/O와 memory가 얼마나 드는가 ③ 그 값이 100B\~1T에서 어떻게 커지는가 |
 | 범위 밖 | 모델 품질, 장기 수렴, framework 간 절대 우열 |
 
 모든 결과는 짧은 step 수의 **실행 가능성과 비용 측정**입니다. 학습 품질 지표가 아닙니다.
@@ -29,7 +29,7 @@ Experiment 파일은 모델·데이터 revision과 학습 조건을, setup은 �
 | 30B SFT와 checkpoint 재로딩이 되는가? | [30B GPU Results](experiments/30b-results.md#30b-gpu-results) | 1-step 실행과 재로딩까지 확인. 장기 수렴·품질 검증은 아님 |
 | DeepSpeed runtime offload로 30B full SFT가 가능한가? | [ZeRO-3 NVMe topology comparison](experiments/30b-results.md#ultrachat-full-sft-topology-comparison-2026-09-14) | 1노드는 OOM, 2노드는 Qwen·GLM 모두 학습·평가·native checkpoint 복구 통과 |
 | 30B full SFT는 이 장치에 들어가는가? | [Full-SFT capacity](experiments/30b-results.md#full-sft-capacity) | 2노드 Qwen Megatron pilot은 추정 90.0 GiB/rank였지만 첫 step 전 OOM. 별도 single-node TRL 실험은 두 모델 모두 OOM |
-| 100B~1T에 필요한 용량은? | [Scaling Estimates](experiments/scaling-estimates.md#scaling-estimates-100b-to-1t) | 가정한 dtype·optimizer·sharding에 따른 계산. 해당 규모 GPU 실행 결과가 아님 |
+| 100B\~1T에 필요한 용량은? | [Scaling Estimates](experiments/scaling-estimates.md#scaling-estimates-100b-to-1t) | 가정한 dtype·optimizer·sharding에 따른 계산. 해당 규모 GPU 실행 결과가 아님 |
 
 ### Checkpoint I/O
 
@@ -45,7 +45,7 @@ Experiment 파일은 모델·데이터 revision과 학습 조건을, setup은 �
 | 알고 싶은 것 | 먼저 볼 결과 | 현재까지 말할 수 있는 것 |
 | --- | --- | --- |
 | Sequence length를 늘리면 메모리가 얼마나 늘어나는가? | [Transformer Engine memory](experiments/30b-results.md#transformer-engine-memory) | 같은 backend에서 4096→8192 allocated 증가는 Qwen 12.65%, GLM 12.75% |
-| Recompute 범위를 줄이면 무엇을 내주는가? | [Qwen recompute](experiments/30b-results.md#qwen-recompute) | Megatron selective는 step time 약 27% 단축, peak allocated 35.0~62.9% 증가. Qwen 한정 |
+| Recompute 범위를 줄이면 무엇을 내주는가? | [Qwen recompute](experiments/30b-results.md#qwen-recompute) | Megatron selective는 step time 약 27% 단축, peak allocated 35.0\~62.9% 증가. Qwen 한정 |
 | Qwen 결과를 GLM에도 적용할 수 있는가? | [Qwen and GLM Comparison](experiments/30b-results.md#qwen-and-glm-comparison) | Attention backend를 맞추면 길이 증가율이 유사. GLM host memory가 더 크다는 기존 결론은 철회 |
 
 ### Metric Definitions

@@ -33,7 +33,7 @@ Save-call rMAD가 10%를 넘으면 8회로 늘리기로 했지만 모든 checkpo
 
 ### Distributed checkpoint write
 
-> **핵심**: async는 save API가 blocking하는 시간을 1/5~1/6로 줄이지만, finalization까지 더한 **완료 시간** 이득은 Qwen 7.0%, GLM 19.0%에 그칩니다.
+> **핵심**: async는 save API가 blocking하는 시간을 1/5\~1/6로 줄이지만, finalization까지 더한 **완료 시간** 이득은 Qwen 7.0%, GLM 19.0%에 그칩니다.
 
 두 rank는 각자 node-local NVMe에 checkpoint shard를 씁니다.
 sync는 `save()` 호출이 write를 기다리는 반면 async는 save를 queue에 넣고 반환한 뒤, 종료 전 blocking finalization이 남은 write를 기다립니다.
@@ -76,7 +76,7 @@ sync/async `torch_dist`는 EP=2에서 save mode만 바꾼 비교입니다.
 
 - **Async 이득이 작은 이유**: async가 줄인 것은 enqueue 반환까지의 시간(Qwen 1.045 → 0.204 s)이고, 나머지는 `finalize`로 옮겨갔습니다(0.769 s). 합인 완료 시간은 1.046 → 0.972 s, 즉 7.0%입니다(GLM은 1.064 → 0.862 s로 19.0%).
 - **`fsdp_dtensor` 행을 format 우열로 읽지 않는 이유**: 논리 크기가 `torch_dist`의 약 2배(Qwen 10.64 → 20.92 MB)이고 parallel layout도 달라 payload와 memory placement 자체가 다릅니다.
-- **크기가 10~43 MB인 이유와 한계**: 이 matrix는 optimizer를 제외한 LoRA checkpoint입니다. 이 정도 크기에서는 host scheduling·metadata·고정 I/O latency가 시간을 지배할 수 있으므로, async의 비율을 full-SFT나 더 큰 adapter checkpoint에 일반화할 수 없습니다.
+- **크기가 10\~43 MB인 이유와 한계**: 이 matrix는 optimizer를 제외한 LoRA checkpoint입니다. 이 정도 크기에서는 host scheduling·metadata·고정 I/O latency가 시간을 지배할 수 있으므로, async의 비율을 full-SFT나 더 큰 adapter checkpoint에 일반화할 수 없습니다.
 
 Raw manifests: `results/refresh-distributed-{qwen|glm}-bee4520/manifest.json`
 
@@ -128,7 +128,7 @@ Raw manifests: `results/refresh-memory-te-{qwen|glm}-bee4520/manifest.json`
 
 ### Qwen recompute
 
-> **핵심**: Megatron Qwen LoRA에서 selective recompute는 full recompute보다 step time을 26.8~27.9% 줄이는 대신 peak allocated를 35.0~62.9% 늘렸습니다.
+> **핵심**: Megatron Qwen LoRA에서 selective recompute는 full recompute보다 step time을 26.8\~27.9% 줄이는 대신 peak allocated를 35.0\~62.9% 늘렸습니다.
 
 Activation recomputation은 forward activation을 모두 저장하는 대신 backward에서 다시 계산해 CUDA memory를 아끼는 방법입니다.
 Megatron Core의 full mode는 더 넓은 범위를 재계산해 느리지만 memory 사용량이 작고, selective mode는 재계산 범위를 줄여 빠르지만 더 많은 activation을 보관합니다.
