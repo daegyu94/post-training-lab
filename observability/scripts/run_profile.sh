@@ -3,15 +3,15 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 : "${PYTHON:?Set PYTHON to the node-local CUDA Python executable}"
-: "${NODE_RANK:?Set NODE_RANK to 0 on spark1 or 1 on spark2}"
-: "${MASTER_ADDR:?Set MASTER_ADDR to the spark1 data-interface address}"
+: "${NODE_RANK:?Set NODE_RANK to this node's distributed rank}"
+: "${MASTER_ADDR:?Set MASTER_ADDR to rank 0's data-interface address}"
 : "${PROFILE_RUN_ID:?Set the same unique PROFILE_RUN_ID on both nodes}"
 mode="${1:-baseline}"
 case "$mode" in baseline|capture|collective) ;; *) echo 'Use baseline, capture, or collective' >&2; exit 2;; esac
 export PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}"
 export NCCL_DEBUG="${NCCL_DEBUG:-INFO}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-4}"
-output_dir="${OUTPUT_DIR:-artifacts/spark/$PROFILE_RUN_ID/$mode}"
+output_dir="${OUTPUT_DIR:-artifacts/observability/$PROFILE_RUN_ID/$mode}"
 mkdir -p "$output_dir"
 "$PYTHON" - <<'PY'
 import os

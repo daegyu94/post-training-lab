@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-[[ "$(uname -m)" == aarch64 ]] || { echo 'Run this on a Spark ARM64 node.' >&2; exit 1; }
-tools_dir="${TOOLS_DIR:-$HOME/.local/share/profiling-lab-tools}"
+[[ "$(uname -m)" == aarch64 ]] || { echo 'Run this on an ARM64 host.' >&2; exit 1; }
+tools_dir="${TOOLS_DIR:-$HOME/.local/share/observability-tools}"
 mkdir -p "$tools_dir"
 cd "$tools_dir"
 download() {

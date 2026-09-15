@@ -185,7 +185,7 @@ def prometheus_config(demo: Demo, address: str, cluster: str = "demo-b300") -> s
                 lines.append(extra)
         return lines
     lines = ["global:", "  scrape_interval: 2s", "scrape_configs:"]
-    lines += targets("spark", [*demo.gpu["gpu_nodes"], "topology"])
+    lines += targets("observability", [*demo.gpu["gpu_nodes"], "topology"])
     lines += targets("storage-smart", demo.storage["storage_nodes"], "          storage_system: demo")
     return "\n".join(lines) + "\n"
 

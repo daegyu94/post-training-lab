@@ -8,7 +8,7 @@ import pytest
 
 
 SAMPLE = {
-    "schema_version": 1, "run_id": "run-1", "framework": "megatron", "node": "spark1",
+    "schema_version": 1, "run_id": "run-1", "framework": "megatron", "node": "node-a",
     "rank": 0, "local_rank": 0, "cuda_visible_devices": "GPU-abc", "step": 7, "observed_at": 100.0,
     "metrics": {"training_loss": 1.25, "training_tokens_per_second": 42.0},
     "timers": {"forward-backward": 0.5},
@@ -19,7 +19,7 @@ def test_build_gauges_emits_metrics_timers_and_step_with_shared_labels() -> None
     gauges = build_gauges([SAMPLE])
     by_name = {(g.name, g.labels.get("timer")): g for g in gauges}
 
-    labels = {"run_id": "run-1", "framework": "megatron", "node": "spark1", "rank": "0", "local_rank": "0"}
+    labels = {"run_id": "run-1", "framework": "megatron", "node": "node-a", "rank": "0", "local_rank": "0"}
     assert by_name[("training_loss", None)].value == 1.25
     assert by_name[("training_loss", None)].labels == labels
     assert by_name[("training_tokens_per_second", None)].value == 42.0

@@ -2,21 +2,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 role="${1:?Use node, storage, or server}"
-if [[ -n "${DEMO_SERVER_HOST:-}" ]]; then
-  if [[ "$role" != server || "${DEMO_LIVE:-0}" != 1 ]]; then
-    echo "DEMO_SERVER_HOST requires DEMO_LIVE=1 and the server role" >&2
-    exit 2
-  fi
-  if [[ ! "$DEMO_SERVER_HOST" =~ ^[A-Za-z0-9_.-]+$ ]]; then
-    echo "DEMO_SERVER_HOST must contain only letters, digits, dots, underscores, or hyphens" >&2
-    exit 2
-  fi
-  exec ssh "spark@$DEMO_SERVER_HOST" \
-    'cd /home/spark/shared/post-training-lab/observability && exec env DEMO_LIVE=1 bash scripts/run_spark_observability.sh server'
-fi
 export PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}"
-tools_dir="${TOOLS_DIR:-$HOME/.local/share/profiling-lab-tools}"
-output_dir="${OUTPUT_DIR:-$PWD/artifacts/spark/monitoring-$(hostname)}"
+tools_dir="${TOOLS_DIR:-$HOME/.local/share/observability-tools}"
+output_dir="${OUTPUT_DIR:-$PWD/artifacts/observability/monitoring-$(hostname)}"
 mkdir -p "$output_dir"
 output_dir="$(cd "$output_dir" && pwd)"
 pids=()
@@ -54,8 +42,7 @@ start_smartctl_exporter() {
     # NVMe SMART needs an admin-passthrough ioctl on the controller char
     # device (/dev/nvmeN), which stays root:root mode 0600 regardless of the
     # sibling block device's group (/dev/nvmeXn1, disk-group readable).
-    # Observed directly on a Spark node: smartctl_exporter reports
-    # "Permission denied" and exports zero SMART fields as a plain user.
+    # A plain user can receive "Permission denied" and no SMART fields.
     if ! scan_output="$("$smartctl_path" --scan 2>/dev/null)"; then
       needs_sudo=1
     fi
@@ -94,7 +81,7 @@ if [[ "$role" == node ]]; then
   if [[ "${ENABLE_SSD_HEALTH:-0}" == 1 ]]; then
     start_smartctl_exporter
   fi
-  "${PYTHON:-python3}" -m profiling_lab.spark_telemetry \
+  "${PYTHON:-python3}" -m profiling_lab.telemetry \
     --output "$output_dir/gpu-$(date -u +%Y%m%dT%H%M%S).jsonl" \
     --textfile-dir "$output_dir/textfile" --duration "${DURATION:-900}" &
   pids+=("$!")
@@ -113,19 +100,16 @@ if [[ "$role" == node ]]; then
 elif [[ "$role" == storage ]]; then
   start_smartctl_exporter
 elif [[ "$role" == server ]]; then
-  cluster_name="${CLUSTER_NAME:-spark-cluster}"
+  cluster_name="${CLUSTER_NAME:-observability-cluster}"
   if [[ ! "$cluster_name" =~ ^[A-Za-z0-9_.-]+$ ]]; then
     echo "CLUSTER_NAME must contain only letters, digits, dots, underscores, or hyphens" >&2
     exit 2
   fi
   if [[ "${DEMO_LIVE:-0}" == 1 ]]; then
-    spark_targets=()
-  elif [[ -n "${SPARK_TARGETS:-}" ]]; then
-    IFS=',' read -r -a spark_targets <<< "$SPARK_TARGETS"
+    targets=()
   else
-    : "${SPARK1_ADDR:?Set SPARK_TARGETS or SPARK1_ADDR and SPARK2_ADDR}"
-    : "${SPARK2_ADDR:?Set SPARK_TARGETS or SPARK1_ADDR and SPARK2_ADDR}"
-    spark_targets=("spark1=$SPARK1_ADDR" "spark2=$SPARK2_ADDR")
+    : "${OBSERVABILITY_TARGETS:?Set OBSERVABILITY_TARGETS to comma-separated node=address targets}"
+    IFS=',' read -r -a targets <<< "$OBSERVABILITY_TARGETS"
   fi
   mkdir -p "$output_dir/provisioning/datasources" "$output_dir/provisioning/dashboards" "$output_dir/dashboards"
   if [[ "${DEMO_LIVE:-0}" == 1 ]]; then
@@ -145,19 +129,19 @@ elif [[ "$role" == server ]]; then
 global:
   scrape_interval: 2s
 scrape_configs:
-  - job_name: spark
+  - job_name: observability
     static_configs:
 EOF
   seen_nodes=""
-  for target in "${spark_targets[@]}"; do
+  for target in "${targets[@]}"; do
     node="${target%%=*}"
     address="${target#*=}"
     if [[ "$node" == "$target" || ! "$node" =~ ^[A-Za-z0-9_.-]+$ || ! "$address" =~ ^[A-Za-z0-9_.-]+$ ]]; then
-      echo "SPARK_TARGETS entries must be node=address with letters, digits, dots, underscores, or hyphens" >&2
+      echo "OBSERVABILITY_TARGETS entries must be node=address with letters, digits, dots, underscores, or hyphens" >&2
       exit 2
     fi
     if [[ " $seen_nodes " == *" $node "* ]]; then
-      echo "SPARK_TARGETS node names must be unique: $node" >&2
+      echo "OBSERVABILITY_TARGETS node names must be unique: $node" >&2
       exit 2
     fi
     seen_nodes+=" $node"
@@ -217,7 +201,7 @@ EOF
 apiVersion: 1
 datasources:
   - name: Prometheus
-    uid: spark-prometheus
+    uid: observability-prometheus
     type: prometheus
     access: proxy
     url: http://127.0.0.1:19090
@@ -226,12 +210,12 @@ EOF
   cat > "$output_dir/provisioning/dashboards/default.yaml" <<EOF
 apiVersion: 1
 providers:
-  - name: Spark Lab
+  - name: Observability
     type: file
     options:
       path: $output_dir/dashboards
 EOF
-  cp examples/observability/{spark-resources,compute-communication,data-storage}.json "$output_dir/dashboards/"
+  cp examples/observability/{run-overview,compute-communication,data-storage}.json "$output_dir/dashboards/"
   if [[ "${SERVER_CONFIG_ONLY:-0}" == 1 ]]; then exit 0; fi
   "$tools_dir/prometheus-3.5.0.linux-arm64/prometheus" \
     --config.file="$output_dir/prometheus.yml" --storage.tsdb.path="$output_dir/prometheus-data" \

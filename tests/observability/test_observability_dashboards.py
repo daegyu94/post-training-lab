@@ -6,27 +6,27 @@ from pathlib import Path
 
 ROOT = Path(__file__).parents[2]
 DASHBOARDS = (
-    "spark-resources.json",
+    "run-overview.json",
     "compute-communication.json",
     "data-storage.json",
 )
 
 
-def test_spark_dashboards_have_unique_uids_and_shared_cluster_filter() -> None:
+def test_observability_dashboards_have_unique_uids_and_shared_cluster_filter() -> None:
     payloads = [
         json.loads((ROOT / "observability" / "examples" / "observability" / name).read_text())
         for name in DASHBOARDS
     ]
 
     assert [payload["uid"] for payload in payloads] == [
-        "spark-profiling",
+        "observability-overview",
         "post-training-compute-communication",
         "post-training-data-storage",
     ]
     for payload in payloads:
         assert {item["name"] for item in payload["templating"]["list"]} >= {"cluster", "node"}
         assert all(
-            panel.get("datasource", {}).get("uid") == "spark-prometheus"
+            panel.get("datasource", {}).get("uid") == "observability-prometheus"
             for panel in payload["panels"]
             if panel["type"] != "text"
         )
@@ -50,10 +50,10 @@ def test_spark_dashboards_have_unique_uids_and_shared_cluster_filter() -> None:
 
 
 def test_server_config_accepts_an_arbitrary_named_target_list(tmp_path: Path) -> None:
-    script = ROOT / "observability" / "scripts" / "run_spark_observability.sh"
+    script = ROOT / "observability" / "scripts" / "run_observability.sh"
     environment = os.environ | {
         "CLUSTER_NAME": "next-cluster",
-        "SPARK_TARGETS": "trainer-0=10.0.0.10,rollout-0=rollout.example",
+        "OBSERVABILITY_TARGETS": "trainer-0=10.0.0.10,rollout-0=rollout.example",
         "STORAGE_TARGETS": "storage-0=10.0.1.10,storage-1=storage.example",
         "STORAGE_SYSTEM": "3fs",
         "SERVER_CONFIG_ONLY": "1",
@@ -87,9 +87,9 @@ def test_server_config_accepts_an_arbitrary_named_target_list(tmp_path: Path) ->
 
 
 def test_server_config_rejects_duplicate_target_names(tmp_path: Path) -> None:
-    script = ROOT / "observability" / "scripts" / "run_spark_observability.sh"
+    script = ROOT / "observability" / "scripts" / "run_observability.sh"
     environment = os.environ | {
-        "SPARK_TARGETS": "worker=10.0.0.10,worker=10.0.0.11",
+        "OBSERVABILITY_TARGETS": "worker=10.0.0.10,worker=10.0.0.11",
         "SERVER_CONFIG_ONLY": "1",
         "OUTPUT_DIR": str(tmp_path / "monitoring"),
     }
@@ -107,37 +107,8 @@ def test_server_config_rejects_duplicate_target_names(tmp_path: Path) -> None:
     assert "node names must be unique" in result.stderr
 
 
-def test_demo_server_host_delegates_to_the_spark_node(tmp_path: Path) -> None:
-    script = ROOT / "observability" / "scripts" / "run_spark_observability.sh"
-    ssh = tmp_path / "ssh"
-    arguments = tmp_path / "ssh-arguments.txt"
-    ssh.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$SSH_ARGUMENTS"\n')
-    ssh.chmod(0o755)
-    environment = os.environ | {
-        "DEMO_LIVE": "1",
-        "DEMO_SERVER_HOST": "spark1",
-        "SSH_ARGUMENTS": str(arguments),
-        "PATH": str(tmp_path) + os.pathsep + os.environ["PATH"],
-    }
-
-    result = subprocess.run(
-        ["bash", str(script), "server"],
-        cwd=ROOT,
-        env=environment,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-
-    assert result.returncode == 0, result.stderr
-    assert arguments.read_text().splitlines() == [
-        "spark@spark1",
-        "cd /home/spark/shared/post-training-lab/observability && exec env DEMO_LIVE=1 bash scripts/run_spark_observability.sh server",
-    ]
-
-
 def test_storage_role_starts_smartctl_exporter_with_slow_polling(tmp_path: Path) -> None:
-    script = ROOT / "observability" / "scripts" / "run_spark_observability.sh"
+    script = ROOT / "observability" / "scripts" / "run_observability.sh"
     smartctl = tmp_path / "smartctl"
     exporter = tmp_path / "smartctl_exporter"
     arguments = tmp_path / "arguments.txt"
@@ -174,10 +145,10 @@ def test_storage_role_wraps_smartctl_with_sudo_when_forced(tmp_path: Path) -> No
     # /dev/nvmeN (the admin-passthrough device SMART needs) stays root:root
     # 0600 even when the sibling block device is disk-group readable, so
     # smartctl_exporter gets "Permission denied" and reports no SMART fields
-    # as a plain user (confirmed on real Spark hardware). SMARTCTL_SUDO=1
+    # as a plain user. SMARTCTL_SUDO=1
     # forces the sudo wrapper without depending on the test host's own sudo
     # configuration.
-    script = ROOT / "observability" / "scripts" / "run_spark_observability.sh"
+    script = ROOT / "observability" / "scripts" / "run_observability.sh"
     smartctl = tmp_path / "smartctl"
     exporter = tmp_path / "smartctl_exporter"
     arguments = tmp_path / "arguments.txt"
@@ -218,7 +189,7 @@ def test_storage_role_wraps_smartctl_with_sudo_when_forced(tmp_path: Path) -> No
 
 
 def test_storage_role_skips_sudo_when_smartctl_already_has_permission(tmp_path: Path) -> None:
-    script = ROOT / "observability" / "scripts" / "run_spark_observability.sh"
+    script = ROOT / "observability" / "scripts" / "run_observability.sh"
     smartctl = tmp_path / "smartctl"
     exporter = tmp_path / "smartctl_exporter"
     arguments = tmp_path / "arguments.txt"
@@ -308,7 +279,7 @@ def test_storage_role_fails_before_exporter_when_sudo_denied(tmp_path: Path) -> 
         "MARKER": str(marker),
     }
     result = subprocess.run(
-        ["bash", str(ROOT / "observability/scripts/run_spark_observability.sh"), "storage"],
+        ["bash", str(ROOT / "observability/scripts/run_observability.sh"), "storage"],
         env=env,
         capture_output=True,
         text=True,

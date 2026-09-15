@@ -9,7 +9,7 @@
       "keepTime": true,
       "title": "Run Overview",
       "type": "link",
-      "url": "/d/spark-profiling?${cluster:queryparam}&${node:queryparam}&${run_id:queryparam}"
+      "url": "/d/observability-overview?${cluster:queryparam}&${node:queryparam}&${run_id:queryparam}"
     }
   ],
   "panels": [
@@ -26,12 +26,12 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "spark-prometheus"
+        "uid": "observability-prometheus"
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "label_join((profiling_gpu_utilization_percent{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\"} and on(cluster, instance) (time() - profiling_gpu_sample_timestamp_seconds{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\"} < 30)), \"node\", \"/\", \"cluster\", \"instance\")",
+          "expr": "label_join((profiling_gpu_utilization_percent{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"} and on(cluster, instance) (time() - profiling_gpu_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"} < 30)), \"node\", \"/\", \"cluster\", \"instance\")",
           "format": "table",
           "instant": true
         }
@@ -83,12 +83,12 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "spark-prometheus"
+        "uid": "observability-prometheus"
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "(profiling_gpu_utilization_percent{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\"}) and on(cluster, instance) (time() - profiling_gpu_sample_timestamp_seconds{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\"} < 30)",
+          "expr": "(profiling_gpu_utilization_percent{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"}) and on(cluster, instance) (time() - profiling_gpu_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"} < 30)",
           "legendFormat": "{{cluster}}/{{instance}} GPU {{gpu}}"
         }
       ],
@@ -120,12 +120,12 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "spark-prometheus"
+        "uid": "observability-prometheus"
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "(profiling_gpu_power_watts{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\"}) and on(cluster, instance) (time() - profiling_gpu_sample_timestamp_seconds{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\"} < 30)",
+          "expr": "(profiling_gpu_power_watts{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"}) and on(cluster, instance) (time() - profiling_gpu_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"} < 30)",
           "legendFormat": "{{cluster}}/{{instance}} GPU {{gpu}}"
         }
       ],
@@ -155,12 +155,12 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "spark-prometheus"
+        "uid": "observability-prometheus"
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "(profiling_gpu_temperature_celsius{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\"}) and on(cluster, instance) (time() - profiling_gpu_sample_timestamp_seconds{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\"} < 30)",
+          "expr": "(profiling_gpu_temperature_celsius{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"}) and on(cluster, instance) (time() - profiling_gpu_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"} < 30)",
           "legendFormat": "{{cluster}}/{{instance}} GPU {{gpu}}"
         }
       ],
@@ -190,12 +190,12 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "spark-prometheus"
+        "uid": "observability-prometheus"
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "(profiling_gpu_sm_clock_mhz{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\"}) and on(cluster, instance) (time() - profiling_gpu_sample_timestamp_seconds{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\"} < 30)",
+          "expr": "(profiling_gpu_sm_clock_mhz{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"}) and on(cluster, instance) (time() - profiling_gpu_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"} < 30)",
           "legendFormat": "{{cluster}}/{{instance}} GPU {{gpu}}"
         }
       ],
@@ -226,12 +226,12 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "spark-prometheus"
+        "uid": "observability-prometheus"
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "(profiling_gpu_process_memory_bytes{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\"}) and on(cluster, instance) (time() - profiling_gpu_sample_timestamp_seconds{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\"} < 30)",
+          "expr": "(profiling_gpu_process_memory_bytes{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"}) and on(cluster, instance) (time() - profiling_gpu_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"} < 30)",
           "legendFormat": "{{cluster}}/{{instance}} PID {{pid}}"
         }
       ],
@@ -261,12 +261,12 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "spark-prometheus"
+        "uid": "observability-prometheus"
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "(training_timer_seconds{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"}) and on(cluster, instance, run_id, framework, node, rank, local_rank) (time() - training_sample_timestamp_seconds{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} < $training_max_age)",
+          "expr": "(training_timer_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"}) and on(cluster, instance, run_id, framework, node, rank, local_rank) (time() - training_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} < $training_max_age)",
           "legendFormat": "{{cluster}}/{{instance}} {{run_id}} {{framework}} rank {{rank}} {{timer}}"
         }
       ],
@@ -297,17 +297,17 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "spark-prometheus"
+        "uid": "observability-prometheus"
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (instance, device) (rate(node_network_receive_bytes_total{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",device!~\"lo|docker.*|veth.*\"}[$__rate_interval]))",
+          "expr": "sum by (instance, device) (rate(node_network_receive_bytes_total{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",device!~\"lo|docker.*|veth.*\"}[$__rate_interval]))",
           "legendFormat": "{{cluster}}/{{instance}} {{device}} RX"
         },
         {
           "refId": "B",
-          "expr": "sum by (instance, device) (rate(node_network_transmit_bytes_total{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",device!~\"lo|docker.*|veth.*\"}[$__rate_interval]))",
+          "expr": "sum by (instance, device) (rate(node_network_transmit_bytes_total{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",device!~\"lo|docker.*|veth.*\"}[$__rate_interval]))",
           "legendFormat": "{{cluster}}/{{instance}} {{device}} TX"
         }
       ],
@@ -337,17 +337,17 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "spark-prometheus"
+        "uid": "observability-prometheus"
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (instance, device, port) (rate(node_infiniband_port_data_received_bytes_total{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\"}[$__rate_interval]))",
+          "expr": "sum by (instance, device, port) (rate(node_infiniband_port_data_received_bytes_total{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"}[$__rate_interval]))",
           "legendFormat": "{{cluster}}/{{instance}} {{device}}/{{port}} RX"
         },
         {
           "refId": "B",
-          "expr": "sum by (instance, device, port) (rate(node_infiniband_port_data_transmitted_bytes_total{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\"}[$__rate_interval]))",
+          "expr": "sum by (instance, device, port) (rate(node_infiniband_port_data_transmitted_bytes_total{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"}[$__rate_interval]))",
           "legendFormat": "{{cluster}}/{{instance}} {{device}}/{{port}} TX"
         }
       ],
@@ -393,12 +393,12 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "spark-prometheus"
+        "uid": "observability-prometheus"
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "label_join((training_gpu_allocation{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} and on(cluster, instance, run_id, framework, node, rank, local_rank) (time() - training_sample_timestamp_seconds{job=\"spark\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} < $training_max_age)), \"worker\", \"/\", \"cluster\", \"instance\", \"run_id\", \"framework\", \"rank\")",
+          "expr": "label_join((training_gpu_allocation{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} and on(cluster, instance, run_id, framework, node, rank, local_rank) (time() - training_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} < $training_max_age)), \"worker\", \"/\", \"cluster\", \"instance\", \"run_id\", \"framework\", \"rank\")",
           "format": "table",
           "instant": true
         }
@@ -452,12 +452,12 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "spark-prometheus"
+        "uid": "observability-prometheus"
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "label_join(label_join(max by (cluster, source, destination) (profiling_topology_edge_info{job=\"spark\",cluster=~\"$cluster\",kind=\"compute\"}), \"source_key\", \"/\", \"cluster\", \"source\"), \"destination_key\", \"/\", \"cluster\", \"destination\")",
+          "expr": "label_join(label_join(max by (cluster, source, destination) (profiling_topology_edge_info{job=\"observability\",cluster=~\"$cluster\",kind=\"compute\"}), \"source_key\", \"/\", \"cluster\", \"source\"), \"destination_key\", \"/\", \"cluster\", \"destination\")",
           "format": "table",
           "instant": true
         }
@@ -489,7 +489,7 @@
     "post-training",
     "compute",
     "communication",
-    "spark"
+    "observability"
   ],
   "templating": {
     "list": [
@@ -499,10 +499,10 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "spark-prometheus"
+          "uid": "observability-prometheus"
         },
-        "definition": "label_values(up{job=\"spark\"}, cluster)",
-        "query": "label_values(up{job=\"spark\"}, cluster)",
+        "definition": "label_values(up{job=\"observability\"}, cluster)",
+        "query": "label_values(up{job=\"observability\"}, cluster)",
         "includeAll": true,
         "allValue": ".*",
         "multi": true,
@@ -520,10 +520,10 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "spark-prometheus"
+          "uid": "observability-prometheus"
         },
-        "definition": "label_values(up{job=\"spark\", cluster=~\"$cluster\"}, instance)",
-        "query": "label_values(up{job=\"spark\", cluster=~\"$cluster\"}, instance)",
+        "definition": "label_values(up{job=\"observability\", cluster=~\"$cluster\"}, instance)",
+        "query": "label_values(up{job=\"observability\", cluster=~\"$cluster\"}, instance)",
         "includeAll": true,
         "allValue": ".*",
         "multi": true,
@@ -541,10 +541,10 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "spark-prometheus"
+          "uid": "observability-prometheus"
         },
-        "definition": "label_values(training_step{job=\"spark\", cluster=~\"$cluster\", instance=~\"$node\"}, run_id)",
-        "query": "label_values(training_step{job=\"spark\", cluster=~\"$cluster\", instance=~\"$node\"}, run_id)",
+        "definition": "label_values(training_step{job=\"observability\", cluster=~\"$cluster\", instance=~\"$node\"}, run_id)",
+        "query": "label_values(training_step{job=\"observability\", cluster=~\"$cluster\", instance=~\"$node\"}, run_id)",
         "includeAll": true,
         "allValue": ".*",
         "multi": true,

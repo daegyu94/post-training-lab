@@ -19,5 +19,5 @@ def test_demo_matches_the_b300_and_storage_topology() -> None:
     assert len([sample for sample in topology if sample.labels.get("role") == "B300"]) == 32
     assert len([sample for sample in topology if sample.labels.get("role") == "ssd"]) == 32
     assert config.count("__metrics_path__:") == 13
-    assert "job_name: spark" in config
+    assert "job_name: observability" in config
     assert "job_name: storage-smart" in config
