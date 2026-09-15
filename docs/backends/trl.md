@@ -1,6 +1,6 @@
 # TRL Backend
 
-TRL backend의 검증된 기본 경로는 `spark1`·`spark2`에서 노드당 process 하나를 쓰는 DDP LoRA SFT입니다.
+TRL backend의 기본 경로는 `spark1`·`spark2`에서 노드당 process 하나를 쓰는 DDP LoRA SFT입니다.
 
 모델의 native chat template으로 prompt와 마지막 assistant completion을 분리해 SFT loss를 계산합니다.
 분산 실험은 `train` 단계에서 학습과 node-local 저장까지만 수행합니다.
@@ -60,11 +60,11 @@ Runner는 노드당 process 하나만 지원하므로 노드 내 multi-GPU는 �
 
 ## Choose a Distributed Backend
 
-| backend | 분산 `train` | 설정 파일 | 비고 |
-| --- | :---: | --- | --- |
-| `ddp` | ✅ | 불필요 | 기본 선택 |
-| `fsdp2` | ✅ | 불필요 | sharded 저장까지만 검증 |
-| `deepspeed` | ✅ | **필수** | [ZeRO-2](../../backends/trl/configs/deepspeed-zero2.json) 또는 [ZeRO-3](../../backends/trl/configs/deepspeed-zero3.json) |
+| backend | 설정 파일 | 용도 |
+| --- | --- | --- |
+| `ddp` | 불필요 | 기본 선택 |
+| `fsdp2` | 불필요 | Sharded 학습·저장 |
+| `deepspeed` | **필수** | [ZeRO-2](../../backends/trl/configs/deepspeed-zero2.json) 또는 [ZeRO-3](../../backends/trl/configs/deepspeed-zero3.json) |
 
 분산 restore·resume은 shared checkpoint storage가 준비될 때까지 TODO입니다.
 

@@ -128,7 +128,6 @@ TRL의 `summary-train.json`과 저장물을 아래 기준으로 확인합니다.
 
 모든 rank 로그와 모델·데이터 revision, 실제 선택한 입력, topology, seed, 환경 버전을 함께 확인합니다.
 Sharded backend의 optimizer-step 증거를 전체 parameter checksum 검증으로 읽지 않습니다.
-ZeRO-3 과거 summary의 parameter count 0은 placeholder 계측 문제이며 모델 크기 0이 아닙니다.
 현재 지원 상태와 30B 검증 범위는 [Experiments](experiments.md)를 따릅니다.
 
 ## Troubleshooting

@@ -23,7 +23,8 @@ Controller는 Git·설정·실행 기록을 관리하고, NVIDIA DGX Spark `spar
 `experiments/run.py --execute`가 SSH로 launcher를 시작하면 rank들은 `MASTER_ADDR`·`MASTER_PORT`로 rendezvous하고 지정 interface에서 NCCL로 통신합니다.
 `local.json`의 host·주소·`NCCL_*`는 실제 NIC·RoCE·InfiniBand 구성에 맞춥니다.
 
-별도 storage cluster가 없는 이 PoC에서는 **모델·데이터를 node-local에 둡니다**([배치 이유](../../labs/nvme-30b/README.md#training-data-storage)).
+별도 storage cluster가 없는 이 PoC에서는 **모델·데이터와 checkpoint를 node-local에 둡니다**.
+공유 NFS checkout은 코드 실행에만 사용합니다.
 
 공유 mount 경로는 host마다 다를 수 있으므로 `checkout`·`model_dirs`·`data_dir`·`output_root`에는 **실행 노드 기준** 절대 경로를 씁니다.
 `output_root`는 공통 경로 문자열 또는 backend별 객체로 지정합니다.

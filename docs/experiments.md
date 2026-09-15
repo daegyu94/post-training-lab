@@ -9,6 +9,7 @@
 | --- | --- | --- |
 | TRL DDP LoRA | 지원 | 분산 학습과 node-local 저장 |
 | TRL DeepSpeed ZeRO-3 NVMe full SFT | 지원 | 2노드 분산 학습, runtime offload와 node-local 저장 |
+| QLoRA | 추정만 제공 | 구현·GPU 검증 없이 [규모별 용량](experiments/scaling-estimates.md)만 비교 |
 | Megatron Qwen·GLM LoRA | 지원 | 2노드 EP=2 학습, sync/async node-local 저장 |
 | Megatron recompute 비교 | 지원 | Qwen LoRA의 full/selective 비교 |
 | Verl agentic GRPO | 정적 검증만 완료 | GPU runtime 검증 전에는 지원으로 간주하지 않음 |

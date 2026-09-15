@@ -1,7 +1,7 @@
 # Post-Training Lab
 
-이미 학습된 LLM에 SFT를 적용하면서 데이터 준비, 분산 실행, checkpoint 저장·재로딩과 자원 계측을 실습하는 저장소입니다.
-백엔드는 TRL과 Megatron Bridge이며, Verl agentic-RL smoke는 Spark1 복구 뒤 GPU 검증을 앞둔 정적 preflight 단계입니다.
+이미 학습된 LLM에 SFT를 적용하면서 데이터 준비, 분산 실행, checkpoint 저장과 자원 계측을 실습하는 저장소입니다.
+백엔드는 TRL과 Megatron Bridge이며, Verl agentic-RL smoke는 정적 preflight를 제공합니다.
 실행 환경은 NVIDIA DGX Spark 2노드(`spark1`, `spark2`)입니다.
 Controller가 실행을 조율하고 GPU 연산은 Spark 노드에서만 수행합니다.
 
@@ -17,14 +17,11 @@ Controller에는 Python 3.10 이상과 Git이, 학습에는 준비된 Spark 노�
 | 학습 입력을 어떻게 만드는가? | [Datasets](docs/datasets.md) |
 | 공개 코드 문제로 execution feedback cycle을 돌리려면? | [Execution Feedback](docs/execution-feedback.md) |
 | TRL로 어떻게 학습하는가? | [TRL Backend](docs/backends/trl.md) |
-| Megatron으로 어떻게 학습·재개하는가? | [Megatron Backend](docs/backends/megatron.md) |
+| Megatron으로 어떻게 학습·저장하는가? | [Megatron Backend](docs/backends/megatron.md) |
 | Verl agentic-RL smoke를 준비하려면? | [Verl Backend](docs/backends/verl.md) |
 | 실험 결과가 무엇을 의미하고 어디까지 비교 가능한가? | [Experiments](docs/experiments.md) |
 | 자원·통신·저장소를 어떻게 관측하는가? | [Observability](docs/observability.md) |
 | 클러스터 토폴로지와 노드 준비는? | [Spark Cluster Setup](setups/spark/README.md) |
-
-실습:
-[30B NVMe data movement](labs/nvme-30b/README.md) — ZeRO-3 NVMe offload와 Megatron checkpoint I/O.
 
 디렉터리별 책임과 각 경로가 포함하지 않는 책임은 [Architecture](docs/architecture.md#responsibilities)에 있습니다.
 

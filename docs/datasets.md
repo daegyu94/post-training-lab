@@ -59,7 +59,7 @@ PYTHON='<backend-python>' bash scripts/prepare_public_data.sh \
 **한 노드에서만 실행한 뒤 JSONL 두 개와 manifest를 나머지 노드에 복사합니다.**
 노드별 재생성은 라이브러리 버전에 따른 내용 차이를 만들 수 있으며, `validate_dataset_manifest()`의 ID·revision 비교로는 이를 잡지 못합니다.
 다운로드 중 `client has been closed`가 발생하면 직전의 CA 오류를 확인합니다([문제 해결](getting-started.md#troubleshooting)).
-대규모 배포 원칙은 [30B NVMe 실습](../labs/nvme-30b/README.md#training-data-storage)을 따릅니다.
+대규모 배포의 node-local 경로 원칙은 [Spark cluster setup](../setups/spark/README.md)을 따릅니다.
 
 ### 옵션과 주의점
 
