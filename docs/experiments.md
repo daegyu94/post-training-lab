@@ -19,6 +19,8 @@
 `지원`은 짧은 실행의 성공과 저장 경로를 뜻하며 장기 수렴이나 모델 품질을 보장하지 않습니다.
 분산 restore·resume과 NFS checkpoint는 현재 실행·검증 범위에 포함하지 않습니다.
 
+30B LoRA의 memory, recompute와 checkpoint 비교 수치는 [30B 실측 결과](experiments/measured-results.md)에만 기록합니다.
+
 ## 유지하는 preset
 
 | 파일 | 용도 |
