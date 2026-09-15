@@ -34,8 +34,8 @@ Experiment 파일은 모델·데이터 revision과 학습 조건을, setup은 �
 
 | 알고 싶은 것 | 먼저 볼 결과 | 현재까지 말할 수 있는 것 |
 | --- | --- | --- |
-| Async checkpoint가 학습을 덜 막는가? | [Distributed checkpoint write](experiments/30b-results.md#distributed-checkpoint-write) | save API blocking은 크게 줄지만, finalization 포함 완료 시간 이득은 Qwen 7.0%·GLM 19.0%. 장기 overlap은 미검증 |
-| Async가 step time을 늘리지는 않는가? | [Multi-step checkpoint impact](experiments/30b-results.md#multi-step-checkpoint-impact) | checkpoint 직접 대기 23.0%·15.3% 감소, steady-step median 2.0%·0.9% 증가. End-to-end throughput은 미검증 |
+| Async checkpoint가 학습을 덜 막는가? | [Distributed checkpoint write](experiments/30b-results.md#distributed-checkpoint-write) | save API blocking은 크게 줄지만, finalization 포함 완료 시간 이득은 Qwen 7.0%·GLM 19.0%. 반복 overlap은 아래 100-step 결과 참고 |
+| Async가 step time을 늘리지는 않는가? | [100-step checkpoint impact](experiments/30b-results.md#100-step-checkpoint-impact) | Qwen에서 model-ready 이후 +0.06%, steady median +0.06%, p95 −0.82%. 조건별 1회이며 run 간 재현성과 GLM은 미검증 |
 | 실제 checkpoint restore가 얼마나 걸리는가? | [Single-node TRL I/O Experiment](experiments/checkpoint-io.md#single-node-trl-io-experiment) | 두 30B 모델의 LoRA r=8/16/32를 새 process에서 cold/warm 각 3회 측정 |
 | LoRA를 더 많이 학습하면 checkpoint도 커지는가? | [LoRA Ratio and Checkpoint I/O](experiments/checkpoint-io.md#lora-ratio-and-checkpoint-io) | 고정된 Qwen target module에서 trainable 비율 약 10배 → checkpoint 크기 9.99배, save 시간은 1.81배 |
 
@@ -57,6 +57,7 @@ Experiment 파일은 모델·데이터 revision과 학습 조건을, setup은 �
 | --- | --- | --- |
 | Save 호출 누적 시간 | rank별 성공한 `save()` 시간 합 → rank 최대값 → run median | 학습이 `save()` 안에서 직접 기다린 시간. 단일 checkpoint latency가 아니며 async background 완료 대기는 제외 |
 | Blocking finalization | rank별 blocking `finalize_async_saves` 시간 합 → rank 최대값 → run median | run 끝에서 남은 async write를 기다린 시간. Save 시간과 단순 합해도 전체 wall time은 아님 |
+| Model-ready 이후 시간 | rank별 stage 전체 시간 − model-ready 시간 → rank 최대값 | 모델 초기화를 제외하고 학습·checkpoint·마지막 finalization을 포함한 시간 |
 | Checkpoint 크기 | 최신 iteration의 `.distcp` shard bytes를 rank 간 합산 | 한 checkpoint의 논리 크기. 전체 iteration·실제 device write traffic·metadata 합계는 아님 |
 
 #### Memory

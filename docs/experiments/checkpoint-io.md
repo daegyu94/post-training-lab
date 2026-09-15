@@ -22,24 +22,25 @@ NFS는 repository checkout에만 사용하고 Megatron checkpoint는 rank별 loc
 
 2026-09-15 matrix는 두 30B 모델에 같은 UltraChat revision, TP=1·PP=1·EP=2, BF16, micro/global batch 1/2, seed 42와 `TRANSFORMER_IMPL=transformer_engine`을 고정했습니다.
 각 cell은 별도 warmup 또는 pilot 뒤 3회 측정했고 save-call rMAD가 10%를 넘으면 8회로 연장하도록 했지만 연장이 필요한 cell은 없었습니다.
+100-step checkpoint impact만 조건별 한 번 측정했습니다.
 
 | 구분 | Qwen | GLM | 결과 |
 | --- | --- | --- | --- |
 | Distributed write | sync/async, EP2 `torch_dist`, DP2 `fsdp_dtensor` | 동일 | 각각 12/12 통과 |
 | TE memory | length 4096/8192 | 동일 | 각각 8/8 통과 |
-| Multi-step checkpoint | 8 steps, interval 2, sync/async | 동일 | 각각 8/8 통과 |
+| 100-step checkpoint | 100 steps, interval 10, sync/async 각 1회 | 미실행 | Qwen pilot·측정 4/4 통과 |
 | Recompute | length 2048/4096, full/selective | 모델 간 비교 대상 아님 | Qwen 16/16 통과 |
 | Full-SFT capacity | SGD 1-step pilot | 미계획 | Qwen은 첫 step 전 global OOM |
 
 Distributed restore는 shared checkpoint store가 없으므로 계획하지 않습니다.
-Recompute를 모델 간 결론으로 쓸 때만 GLM matrix를 추가하고, async 장기 throughput이 필요할 때만 100-step 이상 실험을 추가합니다.
+Recompute나 100-step checkpoint impact를 모델 간 결론으로 쓸 때만 해당 GLM matrix를 추가합니다.
 
 ## Research Questions
 
 | # | 질문 | 현재 상태 |
 | ---: | --- | --- |
 | 1 | Megatron distributed checkpoint의 논리 크기와 실제 local NVMe write traffic은 얼마인가? | 논리 크기는 측정 완료. device write traffic은 별도 계측 필요 |
-| 2 | Sync와 async가 save latency, finalization, 학습 step time에 어떤 차이를 만드는가? | 8-step 범위까지 측정 완료. 장기 overlap 미검증 |
+| 2 | Sync와 async가 save latency, finalization, 학습 step time에 어떤 차이를 만드는가? | Qwen 100-step에서 실질적인 step-time 증가를 관찰하지 못함. 조건별 1회라 run 간 재현성 미검증 |
 | 3 | DeepSpeed NVMe offload의 Direct I/O와 framework checkpoint의 buffered I/O는 어떻게 다른가? | 경로 구분만 문서화. Direct·buffered traffic 분리 측정은 미실행 |
 | 4 | framework·분산 전략별 CUDA·host·NVMe footprint 차이는? | 측정 완료. 조건이 서로 달라 backend 우열로 읽지 않음 |
 | 5 | Sequence length 2048/4096/8192에서 Megatron LoRA footprint는? | 측정 완료. backend 통제 후 결론은 [30B Results](30b-results.md#sequence-length-기울기) |
@@ -174,7 +175,9 @@ Qwen raw 결과는 `results/single-node-io-qwen-zero3-full-pilot3-20260914`, GLM
 python experiments/checkpoint_memory_30b.py \
   --setup setups/spark/local.json \
   --phase checkpoint \
-  --output results/checkpoint-30b
+  --output results/checkpoint-30b \
+  --steps 100 --repeats 1 --within-run-warmup 10 \
+  --checkpoint-interval 10
 
 python experiments/checkpoint_memory_30b.py \
   --setup setups/spark/local.json \

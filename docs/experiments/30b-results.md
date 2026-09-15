@@ -12,6 +12,7 @@
 ## Controlled Results (2026-09-15)
 
 Checkpoint·memory·recompute matrix는 commit `bee4520e05a04aaf48f8fe971a6b2a1726f6250b`의 깨끗한 worktree에서 실행했습니다.
+100-step checkpoint impact는 interval override를 수정한 commit `de21a0f0b8e95e7d335acc92cd7768b33042c518`의 깨끗한 worktree에서 실행했습니다.
 
 **통제 변수** — 두 모델이 공유합니다.
 
@@ -28,6 +29,7 @@ Checkpoint·memory·recompute matrix는 commit `bee4520e05a04aaf48f8fe971a6b2a17
 
 **반복 규칙** — 비교 cell은 별도 warmup 또는 pilot 뒤 3회 측정했습니다.
 Save-call rMAD가 10%를 넘으면 8회로 늘리기로 했지만 모든 checkpoint cell이 기준 이하여서 연장하지 않았습니다.
+100-step checkpoint impact만 sync와 async를 각각 한 번 측정했으며 run 간 재현성은 확인하지 않았습니다.
 
 **측정하지 않은 것** — checkpoint가 node-local이므로 distributed restore는 이 matrix에 없습니다.
 
@@ -80,35 +82,33 @@ sync/async `torch_dist`는 EP=2에서 save mode만 바꾼 비교입니다.
 
 Raw manifests: `results/refresh-distributed-{qwen|glm}-bee4520/manifest.json`
 
-### Multi-step checkpoint impact
+### 100-step checkpoint impact
 
-> **핵심**: checkpoint를 네 번 저장할 때 async는 학습 process가 checkpoint API 안에서 직접 기다린 시간을 Qwen 23.0%·GLM 15.3% 줄였습니다.
-> 다만 이 결과만으로 전체 학습이 그만큼 빨라진다고 판단할 수는 없습니다.
+> **핵심**: Qwen 100-step run에서 async의 model-ready 이후 실행 시간과 steady-step median은 sync보다 각각 0.06% 길었습니다.
+> 조건별 한 번의 실행에서는 async가 step time을 유의미하게 늘리는 현상을 관찰하지 못했습니다.
 
 앞 절의 1-step 실험은 한 번의 save가 host를 얼마나 오래 막는지 보여줍니다.
 이 실험은 save를 반복하면 async write가 후속 학습 step과 겹치면서 대기 시간과 step 시간에 어떤 변화가 생기는지 확인합니다.
 
-각 run은 optimizer step 8회를 수행하고 2 step마다 LoRA와 optimizer state를 저장해 checkpoint 4개를 만들었습니다.
+각 run은 optimizer step 100회를 수행하고 10 step마다 LoRA와 optimizer state를 저장해 checkpoint 10개를 만들었습니다.
 sync는 각 save가 끝날 때까지 학습을 멈추고, async는 save를 queue에 넣은 뒤 학습을 계속하다가 blocking finalization에서 남은 write를 기다립니다.
-앞의 2 step은 warmup으로 보고 steady-step 집계에서 제외했습니다.
-각 모델은 별도 warmup run 2회와 측정 run 6회, 합계 8/8 run을 통과했습니다.
+별도 10-step pilot 뒤 sync와 async를 각각 한 번 실행했고, 측정 run의 앞 10 step은 steady-step 집계에서 제외했습니다.
+두 pilot과 두 측정 run은 모두 통과했으며 측정 run에는 NaN이나 skipped iteration이 없었습니다.
 
-| Model | Variant | Checkpoint 4개 논리 크기 합 median | Save/enqueue 합 median | Finalize 대기 median | 직접 대기 합 median | Steady step median |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| Qwen | sync | 291.86 MB | 2.441 s | 0.000 s | 2.441 s | 3239.25 ms |
-| Qwen | async | 291.86 MB | 1.119 s | 0.774 s | 1.881 s | 3304.50 ms |
-| GLM | sync | 602.56 MB | 2.822 s | 0.000 s | 2.822 s | 3410.05 ms |
-| GLM | async | 602.56 MB | 1.573 s | 0.818 s | 2.391 s | 3442.35 ms |
+| Variant | Checkpoint 10개 논리 크기 합 | Save/enqueue 합 | Finalize 대기 | 직접 대기 합 | Model-ready 이후 | Steady median | Steady p95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| sync | 729.64 MB | 4.336 s | 0.000 s | 4.336 s | 336.043 s | 3224.05 ms | 3471.18 ms |
+| async | 729.64 MB | 3.476 s | 0.679 s | 4.155 s | 336.251 s | 3226.00 ms | 3442.65 ms |
 
-`직접 대기 합`은 네 번의 save/enqueue와 blocking finalization에서 학습 process가 기다린 시간의 합이며 run 전체 시간은 아닙니다.
-같은 모델의 sync와 async가 저장한 논리 크기는 같으므로 동일한 payload를 비교했습니다.
-async에서 steady-step median은 Qwen 2.0%·GLM 0.9% 길어졌지만, 이 작은 차이만으로 background I/O가 학습을 느리게 했다고 단정하지 않습니다.
+`Model-ready 이후`는 stage 시작부터 model-ready까지 걸린 시간을 stage 전체 시간에서 뺀 뒤 두 rank 중 긴 값을 취합니다.
+100 step, checkpoint 대기와 마지막 finalization을 포함하고 모델 초기화는 제외합니다.
+Async는 이 값이 0.06%, steady-step median은 0.06% 길고 p95는 0.82% 짧아 한 번의 실행에서는 실질적인 step-time 증가가 보이지 않았습니다.
 
-이 실험으로는 **반복 저장 시 checkpoint 직접 대기가 줄었다**고 말할 수 있습니다.
-8-step run은 이 대기 시간이 save와 후속 step 사이에서 어떻게 이동하는지 보는 짧은 실험이며, 장시간 학습의 end-to-end throughput은 보여주지 않습니다.
-이를 판단하려면 같은 workload를 100 step 이상 실행해 전체 경과 시간과 step-time 분포를 sync/async로 비교해야 합니다.
+Checkpoint 직접 대기는 4.336 → 4.155초로 4.2% 줄었습니다.
+이는 100-step 실행 시간의 약 1.3%인 작은 구간이므로 async의 처리량 우위를 뜻하지 않습니다.
+Sync와 async를 각각 한 번 실행했으므로 run 간 재현성과 GLM에서의 동작은 확인하지 않았습니다.
 
-Raw manifests: `results/refresh-checkpoint-impact-{qwen|glm}-bee4520/manifest.json`
+Raw manifest: `results/qwen-async-impact-100step-de21a0f/manifest.json`
 
 ### Transformer Engine memory
 
@@ -184,8 +184,7 @@ Controller 로그: `results/refresh-full-sft-sgd-qwen-ed40ca7-cohort1/rank-0.log
 | ---: | --- | --- |
 | 1 | Full-SFT 재시도 | FP32 main gradient까지 shard하는 topology를 확인하고 다시 추정한 뒤 1-step pilot부터 |
 | 2 | GLM recompute matrix | recompute를 모델 간 결론으로 써야 할 때만, 같은 4-cell을 3회 반복 |
-| 3 | Async 장기 throughput | 운영 결정에 필요할 때만 100 step 이상 고정 workload 추가 |
-| 4 | Distributed restore | shared checkpoint store가 생긴 뒤에만 계획 |
+| 3 | Distributed restore | shared checkpoint store가 생긴 뒤에만 계획 |
 
 0.5B smoke, NFS checkpoint와 backend-mixed exploratory 결과는 이 통제 비교에 포함하지 않습니다.
 
