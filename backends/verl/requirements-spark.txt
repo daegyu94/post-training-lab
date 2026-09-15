@@ -2,3 +2,5 @@
 verl==0.9.0
 vllm==0.29.0
 TransferQueue==0.1.8
+cupy-cuda13x==14.2.0
+ninja==1.13.2

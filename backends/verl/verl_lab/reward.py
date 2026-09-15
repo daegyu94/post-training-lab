@@ -5,9 +5,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from verl_lab.calculator import score_answer
-
-
 FINAL_ANSWER_RE = re.compile(r"####\s*(-?\d+)")
 
 
@@ -24,4 +21,4 @@ def compute_score(
         expected = int(ground_truth)
     except (TypeError, ValueError):
         return 0.0
-    return score_answer(matches[-1] if matches else "", expected)
+    return float(bool(matches) and matches[-1].strip() == str(expected))
