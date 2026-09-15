@@ -1,7 +1,7 @@
 # Distributed Run Monitoring
 
 이 문서는 각 node에서 host·GPU 지표를 수집하고 Prometheus와 Grafana에서 확인하는 방법을 설명합니다.
-제공하는 helper script는 ARM64 환경을 대상으로 하지만 특정 workload launcher나 cluster setup을 가정하지 않습니다.
+제공하는 helper script는 ARM64와 x86_64 Linux를 지원하며 특정 workload launcher나 cluster setup을 가정하지 않습니다.
 관측 대상은 `이름=주소` 형식으로 지정하므로 node 구성에 맞게 확장할 수 있습니다.
 
 ## Monitoring Flow
@@ -15,7 +15,7 @@
 
 ### 1. Prepare Tools
 
-`scripts/install_observability_tools.sh`는 현재 ARM64 userspace 도구를 내려받는 helper이며 driver나 system package를 설치하지 않습니다.
+`scripts/install_observability_tools.sh`는 host architecture에 맞는 ARM64 또는 x86_64 userspace 도구를 내려받으며 driver나 system package를 설치하지 않습니다.
 관측할 node마다 실행하고, monitoring host에서는 `server` 인자를 추가합니다.
 
 ```bash

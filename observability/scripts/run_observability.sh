@@ -2,6 +2,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 role="${1:?Use node, storage, or server}"
+system="$(uname -s)"
+[[ "$system" == Linux ]] || { echo "Unsupported operating system: $system (expected Linux)" >&2; exit 2; }
+machine="$(uname -m)"
+case "$machine" in
+  aarch64|arm64) release_arch=arm64 ;;
+  x86_64|amd64) release_arch=amd64 ;;
+  *) echo "Unsupported architecture: $machine (expected ARM64 or x86_64)" >&2; exit 2 ;;
+esac
 export PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}"
 tools_dir="${TOOLS_DIR:-$HOME/.local/share/observability-tools}"
 output_dir="${OUTPUT_DIR:-$PWD/artifacts/observability/monitoring-$(hostname)}"
@@ -20,7 +28,7 @@ trap 'exit 143' TERM
 start_smartctl_exporter() {
   : "${NODE_ADDR:?Set NODE_ADDR to this storage node management address}"
   local exporter smartctl_path smartctl_cmd sudo_mode needs_sudo first_device scan_output
-  exporter="${SMARTCTL_EXPORTER:-$tools_dir/smartctl_exporter-0.14.0.linux-arm64/smartctl_exporter}"
+  exporter="${SMARTCTL_EXPORTER:-$tools_dir/smartctl_exporter-0.14.0.linux-$release_arch/smartctl_exporter}"
   if [[ ! -x "$exporter" ]]; then
     echo "smartctl_exporter not found or not executable: $exporter" >&2
     exit 1
@@ -74,7 +82,7 @@ start_smartctl_exporter() {
 if [[ "$role" == node ]]; then
   : "${NODE_ADDR:?Set NODE_ADDR to this node management address}"
   mkdir -p "$output_dir/textfile"
-  "$tools_dir/node_exporter-1.9.1.linux-arm64/node_exporter" \
+  "$tools_dir/node_exporter-1.9.1.linux-$release_arch/node_exporter" \
     --web.listen-address="$NODE_ADDR:19100" \
     --collector.textfile.directory="$output_dir/textfile" > "$output_dir/node-exporter.log" 2>&1 &
   pids+=("$!")
@@ -217,7 +225,7 @@ providers:
 EOF
   cp examples/observability/{run-overview,compute-communication,data-storage}.json "$output_dir/dashboards/"
   if [[ "${SERVER_CONFIG_ONLY:-0}" == 1 ]]; then exit 0; fi
-  "$tools_dir/prometheus-3.5.0.linux-arm64/prometheus" \
+  "$tools_dir/prometheus-3.5.0.linux-$release_arch/prometheus" \
     --config.file="$output_dir/prometheus.yml" --storage.tsdb.path="$output_dir/prometheus-data" \
     --storage.tsdb.retention.time=1d --web.listen-address=127.0.0.1:19090 > "$output_dir/prometheus.log" 2>&1 &
   pids+=("$!")
