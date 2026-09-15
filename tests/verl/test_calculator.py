@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from verl_lab.calculator import ToolError, calculate, score_answer
+from verl_lab.reward import compute_score
 
 
 def test_calculator_allows_only_small_integer_arithmetic() -> None:
@@ -20,3 +21,8 @@ def test_score_answer_requires_exact_final_value() -> None:
     assert score_answer("7", 7) == 1.0
     assert score_answer(" 7\n", 7) == 1.0
     assert score_answer("The answer is 7", 7) == 0.0
+
+
+def test_rule_reward_reads_the_last_marked_final_answer() -> None:
+    assert compute_score("calculator", "tool said 9; #### 9", "9") == 1.0
+    assert compute_score("calculator", "#### 8", "9") == 0.0
