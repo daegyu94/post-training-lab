@@ -19,37 +19,50 @@ from execution_feedback.common import index_tasks, read_jsonl, write_jsonl
 
 RESULT_PREFIX = "__EXECUTION_FEEDBACK_RESULT__="
 FENCE_RE = re.compile(r"```(?:python|py)?\s*\n(.*?)```", re.IGNORECASE | re.DOTALL)
-RUNNER = r'''import json
+RUNNER = r'''import builtins
+import json
 from pathlib import Path
+from types import MappingProxyType
 
 PREFIX = "__EXECUTION_FEEDBACK_RESULT__="
+trusted_compile = builtins.compile
+trusted_exec = builtins.exec
+trusted_loads = json.loads
+trusted_print = builtins.print
+# Candidate code runs in this process so its module-level changes can otherwise
+# replace builtins used by the evaluator.  Keep a read-only snapshot for both
+# the solution and every test execution.  This is not a hidden-test sandbox:
+# public MBPP tests remain visible to the candidate.
+safe_builtins = MappingProxyType(vars(builtins).copy())
 result = {"phase": "syntax", "total": 0, "passed": 0, "failures": []}
 try:
     source = Path("solution.py").read_text(encoding="utf-8")
-    compiled = compile(source, "solution.py", "exec")
+    compiled = trusted_compile(source, "solution.py", "exec")
 except BaseException as exc:
     result["failures"].append(f"{type(exc).__name__}: {exc}")
-    print(PREFIX + json.dumps(result))
+    trusted_print(PREFIX + json.dumps(result))
     raise SystemExit(2)
 
-namespace = {"__name__": "solution"}
+namespace = {"__name__": "solution", "__builtins__": safe_builtins}
 try:
-    exec(compiled, namespace)
-    payload = json.loads(Path("tests.json").read_text(encoding="utf-8"))
+    trusted_exec(compiled, namespace)
+    payload = trusted_loads(Path("tests.json").read_text(encoding="utf-8"))
     if payload.get("setup"):
-        exec(payload["setup"], namespace)
+        namespace["__builtins__"] = safe_builtins
+        trusted_exec(payload["setup"], namespace)
     result["phase"] = "tests"
     result["total"] = len(payload["tests"])
     for ordinal, test in enumerate(payload["tests"]):
         try:
-            exec(test, namespace)
+            namespace["__builtins__"] = safe_builtins
+            trusted_exec(test, namespace)
             result["passed"] += 1
         except BaseException as exc:
             result["failures"].append(f"test[{ordinal}] {type(exc).__name__}: {exc}")
 except BaseException as exc:
     result["phase"] = "runtime"
     result["failures"].append(f"{type(exc).__name__}: {exc}")
-print(PREFIX + json.dumps(result))
+trusted_print(PREFIX + json.dumps(result))
 raise SystemExit(0 if result["total"] > 0 and result["passed"] == result["total"] else 1)
 '''
 
@@ -212,4 +225,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

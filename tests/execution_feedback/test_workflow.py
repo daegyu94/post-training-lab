@@ -96,6 +96,16 @@ def test_local_evaluator_reports_pass_and_partial_failure() -> None:
     assert failed["status"] == "fail" and failed["score"] == 0.5
 
 
+def test_local_evaluator_ignores_candidate_builtin_exec_patch() -> None:
+    task = {
+        "task_id": "patch", "prompt": "implement", "reference_solution": "", "source": "test", "split": "train",
+        "tests": ["assert add(1, 2) == 3"], "test_setup": "",
+    }
+    response = "import builtins\nbuiltins.exec = lambda *args: None\ndef add(a, b):\n    return 0"
+    result = evaluate_candidate(task, {"candidate_id": "patch", "response": response}, engine="local")
+    assert result["status"] == "fail"
+
+
 def test_feedback_uses_same_train_pool_and_excludes_timeout(tmp_path: Path) -> None:
     tasks = tmp_path / "tasks.jsonl"
     evaluations = tmp_path / "evaluations.jsonl"
