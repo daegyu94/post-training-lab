@@ -183,11 +183,13 @@ def load_experiment(path: Path) -> dict[str, Any]:
             if "DISTRIBUTED_BACKEND" in value["env"] and distributed != "fsdp2":
                 raise ConfigError("TRL FSDP2=true conflicts with DISTRIBUTED_BACKEND")
             distributed = "fsdp2"
-        stage = value["env"].get("STAGE", "all")
+        stage = value["env"].get("STAGE", "train")
         if distributed not in {"ddp", "fsdp2", "deepspeed"}:
             raise ConfigError("TRL DISTRIBUTED_BACKEND must be ddp, fsdp2, or deepspeed")
         if stage not in {"all", "base", "train", "tuned"}:
             raise ConfigError("TRL STAGE must be all, base, train, or tuned")
+        if nnodes > 1 and stage in {"all", "tuned"}:
+            raise ConfigError("distributed TRL restore is unsupported without shared checkpoint storage; use STAGE=train")
         if distributed == "fsdp2" and stage in {"all", "tuned"}:
             raise ConfigError("TRL fsdp2 only supports STAGE=base or STAGE=train")
         if distributed == "deepspeed" and not value["env"].get("DEEPSPEED_CONFIG"):
@@ -203,13 +205,15 @@ def load_experiment(path: Path) -> dict[str, Any]:
         if value["env"].get("RESTORE_ONLY", "false").lower() == "true" and stage != "tuned":
             raise ConfigError("TRL RESTORE_ONLY=true requires STAGE=tuned")
     else:
-        stage = value["env"].get("STAGE", "all")
+        stage = value["env"].get("STAGE", "train")
         if stage not in {"all", "base", "train", "tuned"}:
             raise ConfigError("Megatron STAGE must be all, base, train, or tuned")
-        placement = value["env"].get("CHECKPOINT_PLACEMENT", "shared")
-        if placement not in {"shared", "local"}:
-            raise ConfigError("Megatron CHECKPOINT_PLACEMENT must be shared or local")
-        if placement == "local" and stage != "train":
+        if nnodes > 1 and stage in {"all", "tuned"}:
+            raise ConfigError("distributed Megatron restore is unsupported without shared checkpoint storage; use STAGE=train")
+        placement = value["env"].get("CHECKPOINT_PLACEMENT", "local")
+        if placement != "local":
+            raise ConfigError("Megatron CHECKPOINT_PLACEMENT must be local")
+        if nnodes > 1 and stage != "train":
             raise ConfigError("Megatron local checkpoint placement supports STAGE=train only")
         checkpoint_format = value["env"].get("CHECKPOINT_FORMAT", "torch_dist")
         megatron_fsdp = value["env"].get("MEGATRON_FSDP", "false").lower() == "true"
@@ -295,11 +299,7 @@ def build_plan(setup: dict[str, Any], experiment: dict[str, Any], setup_path: Pa
             "OBSERVATORY_RUN_ID": run_id,
         })
         if experiment["backend"] == "megatron":
-            env["CHECKPOINT_DIR"] = (
-                os.path.join(remote_output, "checkpoints")
-                if env.get("CHECKPOINT_PLACEMENT") == "local"
-                else os.path.join(node["checkout"], "artifacts", "checkpoints", run_id)
-            )
+            env["CHECKPOINT_DIR"] = os.path.join(remote_output, "checkpoints")
         ranks.append({"rank": rank, "host": node["host"], "checkout": node["checkout"], "output": remote_output, "env": env})
     return {
         "backend": experiment["backend"], "setup": "spark", "run_id": run_id,

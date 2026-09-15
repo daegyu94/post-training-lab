@@ -19,6 +19,8 @@
     "EP": 1,
     "EVAL_ITERS": 1,
     "SAVE_INTERVAL": 2,
+    "CHECKPOINT_PLACEMENT": "local",
+    "STAGE": "train",
     "SEED": 42
   }
 }

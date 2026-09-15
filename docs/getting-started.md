@@ -88,7 +88,8 @@ cp -n setups/spark/local.example.json setups/spark/local.json
 > 실제 실행에는 선택한 백엔드의 Python만 사용합니다.
 
 경로는 controller가 아니라 **명령을 실행하는 노드에서 보이는** 절대 경로를 적습니다.
-분산 checkpoint 재로딩에는 필요한 모든 rank shard가 한 경로에서 보여야 합니다.
+공유 checkout은 코드 배포에만 사용합니다.
+Checkpoint는 node-local output에 저장하며 분산 restore·resume은 shared checkpoint storage가 준비될 때까지 TODO입니다.
 
 ## 5. Run the Smoke
 
@@ -115,21 +116,19 @@ Controller 출력의 `manifest.json`에서 최종 `status`가 `passed`이고 모
 같은 디렉터리의 `rank-<n>.log`에 원격 실행 로그가 남습니다.
 백엔드 summary와 가중치는 controller로 자동 복사되지 않으므로 계획에 적힌 원격 출력 경로에서 확인합니다.
 
-TRL의 `summary-base.json`, `summary-train.json`, `summary-tuned.json`과 adapter를 아래 기준으로 확인합니다.
+TRL의 `summary-train.json`과 저장물을 아래 기준으로 확인합니다.
 
 | 확인 대상 | 성공 조건 | 증명하지 않는 것 |
 | --- | --- | --- |
 | Dry-run | 설정 검증·계획 생성·exit 0 | 원격 파일, GPU, SSH 준비 |
 | Controller 실행 | manifest의 `passed`, 모든 rank exit 0 | 학습 품질 |
 | 학습 | 예상 optimizer step, finite loss·gradient, 저장물 | 장기 수렴, 다른 모델의 메모리 적합성 |
-| Adapter reload | 별도 process에서 읽기·평가 완료 | optimizer·scheduler resume |
-| Checkpoint resume | 기대 iteration과 상태 load 후 추가 step | uninterrupted run과의 전체 수치 동등성 |
 | Async 저장 | 필요한 shard와 pending save finalization | fsync·장애 후 durability |
 
 모든 rank 로그와 모델·데이터 revision, 실제 선택한 입력, topology, seed, 환경 버전을 함께 확인합니다.
 Sharded backend의 optimizer-step 증거를 전체 parameter checksum 검증으로 읽지 않습니다.
 ZeRO-3 과거 summary의 parameter count 0은 placeholder 계측 문제이며 모델 크기 0이 아닙니다.
-30B에서 실제로 측정한 수치는 [Experiments](experiments/30b-results.md#30b-gpu-results)를 따릅니다.
+현재 지원 상태와 30B 검증 범위는 [Experiments](experiments.md)를 따릅니다.
 
 ## Troubleshooting
 

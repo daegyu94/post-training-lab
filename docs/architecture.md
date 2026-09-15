@@ -50,7 +50,7 @@ NPROC_PER_NODE  MASTER_ADDR  MASTER_PORT  MODEL_DIR  DATA_DIR
 TRL은 stage와 분산 backend 조합을, Megatron은 topology와 batch의 나눗셈 조건을 추가 검사합니다.
 Megatron의 `CHECKPOINT_PLACEMENT=local`은 각 노드의 `OUTPUT_DIR/checkpoints`를 사용하며, 완전한 shard 재로딩을 전제하지 않는 `STAGE=train` 측정에서만 허용합니다.
 
-이 allowlist를 바꾸면 [Run Experiments](experiments/running.md)의 설정 설명도 함께 갱신합니다.
+이 allowlist를 바꾸면 [Experiments](experiments.md)의 설정 설명도 함께 갱신합니다.
 필드별 입력값은 [Getting Started](getting-started.md#4-configure-the-setup)를 따릅니다.
 
 ## Run Lifecycle

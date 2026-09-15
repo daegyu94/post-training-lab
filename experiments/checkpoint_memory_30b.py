@@ -23,12 +23,14 @@ MODELS = {
         "id": "Qwen/Qwen3-30B-A3B",
         "revision": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
         "cohort": "ultrachat-qwen3-30b-2048-v1",
+        "base_experiment": "experiments/megatron/qwen3-30b-lora.json",
         "megatron_env": {"TRANSFORMER_IMPL": "transformer_engine"},
     },
     "glm": {
         "id": "zai-org/GLM-4.7-Flash",
         "revision": "7dd20894a642a0aa287e9827cb1a1f7f91386b67",
         "cohort": "ultrachat-glm-4.7-flash-2048-v1",
+        "base_experiment": "experiments/megatron/glm-4.7-flash-30b-lora.json",
         "megatron_env": {"TRANSFORMER_IMPL": "transformer_engine"},
     },
 }
@@ -44,9 +46,9 @@ GENERATED = ROOT / "experiments" / "generated"
 def resolve_checkpoint_plan(model: str, path: Path | None) -> Path:
     """Keep the plan's effective model/data identity aligned with its cohort."""
     if path is None:
-        path = DEFAULT_PLAN if model == "qwen" else DEFAULT_PLAN.with_name("checkpoint-memory-30b-glm.json")
+        path = DEFAULT_PLAN
     benchmark = benchmarks.load_benchmark_plan(path)
-    base = run.load_experiment(ROOT / benchmark.get("base_experiment", "experiments/megatron/smoke.json"))
+    base = run.load_experiment(ROOT / MODELS[model]["base_experiment"])
     common = {**base["env"], **benchmark.get("common_env", {})}
     expected = {
         "MODEL_ID": MODELS[model]["id"], "MODEL_REVISION": MODELS[model]["revision"],
@@ -699,6 +701,7 @@ def main(argv: list[str] | None = None) -> int:
             result = benchmarks.run_benchmark(
                 setup_path=setup_path,
                 benchmark_path=args.plan,
+                base_experiment_path=ROOT / MODELS[args.model]["base_experiment"],
                 output=args.output,
                 execute=args.execute,
                 steps=args.steps,

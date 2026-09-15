@@ -14,7 +14,7 @@
     "MODEL_REVISION": "7dd20894a642a0aa287e9827cb1a1f7f91386b67",
     "OPTIMIZER": "adamw",
     "SEED": 42,
-    "STAGE": "all",
+    "STAGE": "train",
     "TRAIN_SAMPLES": 4
   },
   "nnodes": 2,

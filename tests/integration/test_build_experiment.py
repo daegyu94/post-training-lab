@@ -59,6 +59,7 @@ def test_dry_run_maps_knobs_to_experiment_and_delegates_to_run(tmp_path: Path, c
     assert printed["backend"] == "trl"
     assert printed["ranks"][0]["env"]["DATASET_ID"] == "HuggingFaceH4/ultrachat_200k"
     assert printed["ranks"][0]["env"]["NNODES"] == "2"
+    assert printed["ranks"][0]["env"]["STAGE"] == "train"
 
 
 def test_epochs_and_max_steps_are_mutually_exclusive(tmp_path: Path) -> None:
@@ -218,6 +219,7 @@ def test_megatron_defaults_match_verified_30b_presets(tmp_path: Path) -> None:
 
     assert (experiment["env"]["TP"], experiment["env"]["PP"], experiment["env"]["EP"]) == (1, 1, 2)
     assert experiment["env"]["OPTIMIZER"] == "adam"
+    assert experiment["env"]["CHECKPOINT_PLACEMENT"] == "local"
 
 
 def test_megatron_optimizer_is_passed_through(tmp_path: Path) -> None:

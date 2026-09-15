@@ -3,7 +3,7 @@
 TRL backend의 검증된 기본 경로는 `spark1`·`spark2`에서 노드당 process 하나를 쓰는 DDP LoRA SFT입니다.
 
 모델의 native chat template으로 prompt와 마지막 assistant completion을 분리해 SFT loss를 계산합니다.
-학습 단계는 `base` 평가 → `train` 저장 → 별도 process의 `tuned` 재로딩 평가입니다.
+분산 실험은 `train` 단계에서 학습과 node-local 저장까지만 수행합니다.
 LoRA는 adapter를 `output_dir/adapter`에, full SFT는 모델을 `output_dir/model`에 저장합니다.
 DPO와 RL trainer는 구현되어 있지 않습니다.
 
@@ -49,7 +49,7 @@ Model·dataset revision은 40-hex SHA여야 하고 데이터 디렉터리에는 
 | --- | --- | --- |
 | `FINETUNING_MODE` | `lora`, `full` | LoRA adapter 또는 전체 parameter 학습 |
 | `DISTRIBUTED_BACKEND` | `ddp`, `fsdp2`, `deepspeed` | Trainer의 분산 backend 선택 |
-| `STAGE` | `base`, `train`, `tuned`, `all` | `all`은 base → train → tuned 순서 |
+| `STAGE` | `base`, `train`, `tuned`, `all` | 분산 preset은 `train`만 사용 |
 | `OPTIMIZER` | `adamw`, `sgd` | SFT optimizer |
 | `MAX_STEPS`, `MAX_LENGTH` | 양의 정수 | 학습 step과 입력 최대 token 길이 |
 | `TRAIN_SAMPLES`, `EVAL_SAMPLES` | 양의 정수 | 사용할 prepared row 수 제한 |
@@ -60,34 +60,30 @@ Runner는 노드당 process 하나만 지원하므로 노드 내 multi-GPU는 �
 
 ## Choose a Distributed Backend
 
-| backend | `base` | `train` | `tuned` | 설정 파일 | 비고 |
-| --- | :---: | :---: | :---: | --- | --- |
-| `ddp` | ✅ | ✅ | ✅ | 불필요 | 기본 선택 |
-| `fsdp2` | ✅ | ✅ | ❌ | 불필요 | sharded export·tuned reload·optimizer resume 미검증 |
-| `deepspeed` | ✅ | ✅ | ✅ | **필수** | [ZeRO-2](../../backends/trl/configs/deepspeed-zero2.json) 또는 [ZeRO-3](../../backends/trl/configs/deepspeed-zero3.json) |
+| backend | 분산 `train` | 설정 파일 | 비고 |
+| --- | :---: | --- | --- |
+| `ddp` | ✅ | 불필요 | 기본 선택 |
+| `fsdp2` | ✅ | 불필요 | sharded 저장까지만 검증 |
+| `deepspeed` | ✅ | **필수** | [ZeRO-2](../../backends/trl/configs/deepspeed-zero2.json) 또는 [ZeRO-3](../../backends/trl/configs/deepspeed-zero3.json) |
 
-`tuned`는 새 process에서 저장물을 재로딩합니다.
-
-- **DDP**: 각 rank가 로컬 adapter를 저장하므로 node-local `output_root`에서도 재로딩합니다.
-- **FSDP2**: `SHARDED_STATE_DICT`를 rank별로 저장합니다. Node-local 출력에서는 다른 rank의 shard를 볼 수 없어 `tuned`를 지원하지 않습니다.
-- **DeepSpeed**: LoRA는 adapter를, full SFT는 native ZeRO checkpoint를 새 엔진에 rank-local로 복원해 평가합니다.
+분산 restore·resume은 shared checkpoint storage가 준비될 때까지 TODO입니다.
 
 ### DeepSpeed NVMe offload profile
 
 `deepspeed-zero3-nvme.json`은 `/mnt/post-training/trl`로 parameter와 optimizer state를 offload하는 **30B 전용** 설정이며 일반 ZeRO-3와 제약이 다릅니다.
 
 - **full fine-tuning 전용** — LoRA와 함께 쓰면 검증에서 거부됩니다. LoRA에는 DDP나 parameter offload 없는 DeepSpeed profile을 씁니다.
-- `train` 단계 **안에서의 평가만** 건너뜁니다. 평가는 `tuned` 단계를 별도 process로 실행합니다 ([이유와 재로딩 방식](../../labs/nvme-30b/README.md#expected-results-and-verification)).
+- `train` 단계의 학습과 node-local 저장만 현재 완료 조건에 포함합니다.
 - 두 노드에 쓰기 가능한 로컬 디렉터리, DeepSpeed async I/O build, 32GiB 이상의 memlock 한도가 필요합니다.
 - offload 경로가 설정 파일에 고정되어 있어 다른 mount를 쓰려면 사본의 `nvme_path` 두 곳을 바꿔야 합니다.
 
 ## Verify a Run
 
-Controller `manifest.json`의 `status`가 `passed`이고 모든 rank가 정상 종료했는지 확인한 뒤, Spark output의 `summary-{base,train,tuned}.json`과 `logs/rank-<rank>-<stage>.log`를 봅니다.
+Controller `manifest.json`의 `status`가 `passed`이고 모든 rank가 정상 종료했는지 확인한 뒤, Spark output의 `summary-train.json`과 `logs/rank-<rank>-train.log`를 봅니다.
 
 `summary-train.json`에서 finite training/evaluation loss, 기대한 `actual_optimizer_steps`, 저장물을 확인합니다.
 DDP summary는 sample한 trainable parameter의 변화도 기록합니다.
 FSDP2·DeepSpeed summary의 `parameter_update_evidence`가 `optimizer steps only`이면 parameter 변화 자체를 검증한 결과로 읽을 수 없습니다.
 
 0.5B smoke 성공을 30B full SFT의 메모리 적합성이나 장기 수렴 증거로 해석하지 않습니다.
-판정 기준은 [Getting Started](../getting-started.md#6-verify-the-result), 30B 실측값은 [Experiments](../experiments/30b-results.md#30b-gpu-results)를 따릅니다.
+판정 기준과 현재 30B 지원 범위는 [Experiments](../experiments.md)를 따릅니다.

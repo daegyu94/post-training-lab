@@ -20,10 +20,11 @@
     "EVAL_ITERS": 1,
     "SAVE_INTERVAL": 1,
     "CHECKPOINT_MODE": "sync",
+    "CHECKPOINT_PLACEMENT": "local",
     "SAVE_OPTIMIZER": true,
     "MEASURE_TIMING": true,
     "TRANSFORMER_IMPL": "auto",
     "SEED": 42,
-    "STAGE": "all"
+    "STAGE": "train"
   }
 }

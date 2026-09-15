@@ -1,89 +1,84 @@
-# Experiments
+# 실험
 
-Experiment 파일은 모델·데이터 revision과 학습 조건을, setup은 실행할 노드와 경로를 선언합니다.
-공통 runner가 둘을 결합하며 `--execute`가 있을 때만 SSH 학습을 시작합니다.
-첫 실행은 [Getting Started](getting-started.md), 설정 책임은 [Architecture](architecture.md)를 따릅니다.
+이 문서는 저장소에서 유지하는 실험과 현재 지원 상태의 단일 기준입니다.
+모든 GPU 실험은 `spark1`·`spark2`에서 노드당 process 하나를 사용하며, checkpoint는 각 노드의 local NVMe에 저장합니다.
 
-## What These Experiments Ask
+## 지원 상태
 
-| 항목 | 내용 |
+| 대상 | 상태 | 검증 범위 |
+| --- | --- | --- |
+| TRL DDP LoRA | 지원 | 분산 학습과 node-local 저장 |
+| TRL DeepSpeed ZeRO-3 NVMe full SFT | 지원 | 2노드 분산 학습, runtime offload와 node-local 저장 |
+| Megatron Qwen·GLM LoRA | 지원 | 2노드 EP=2 학습, sync/async node-local 저장 |
+| Megatron recompute 비교 | 지원 | Qwen LoRA의 full/selective 비교 |
+| Verl agentic GRPO | 정적 검증만 완료 | GPU runtime 검증 전에는 지원으로 간주하지 않음 |
+| 분산 restore·resume | TODO | 모든 rank shard가 보이는 shared checkpoint storage가 필요함 |
+| Single-node 30B full SFT | 미지원 | NVMe runtime offload를 사용해도 host memory와 swap 소진으로 checkpoint 전에 OOM |
+
+`지원`은 짧은 실행의 성공과 저장 경로를 뜻하며 장기 수렴이나 모델 품질을 보장하지 않습니다.
+분산 restore·resume과 NFS checkpoint는 현재 실행·검증 범위에 포함하지 않습니다.
+
+## 유지하는 preset
+
+| 파일 | 용도 |
 | --- | --- |
-| 대상 모델 | `Qwen/Qwen3-30B-A3B`, `zai-org/GLM-4.7-Flash` |
-| 대상 경로 | TRL LoRA(DDP·FSDP2·DeepSpeed ZeRO-3)와 Megatron MoE |
-| 하드웨어 | `spark1`·`spark2` 2노드, 노드당 1 rank, unified memory 119 GiB/노드 |
-| 핵심 질문 | ① 30B SFT가 이 장치에서 실행되는가 ② checkpoint I/O와 memory가 얼마나 드는가 ③ 그 값이 100B\~1T에서 어떻게 커지는가 |
-| 범위 밖 | 모델 품질, 장기 수렴, framework 간 절대 우열 |
+| `experiments/trl/{single-node-,}smoke.json` | 작은 TRL LoRA 실행 경로 확인 |
+| `experiments/megatron/smoke.json` | 작은 Megatron full SFT 실행 경로 확인 |
+| `experiments/trl/nvme-offload-ultrachat{,-glm}-30b.json` | Qwen·GLM 30B full SFT와 NVMe runtime offload |
+| `experiments/megatron/{qwen3-30b-lora,glm-4.7-flash-30b-lora}.json` | Qwen·GLM 30B LoRA와 local checkpoint |
+| `experiments/megatron/checkpoint-memory-30b.json` | 모델을 `--model`로 선택하는 sync/async 반복 측정 |
+| `experiments/megatron/{recompute-30b,lora-ratio-checkpoint-io}.json` | 재계산과 LoRA checkpoint 크기 비교 |
 
-모든 결과는 짧은 step 수의 **실행 가능성과 비용 측정**입니다. 학습 품질 지표가 아닙니다.
-0.5B smoke는 runner·전처리·저장 경로를 저비용으로 점검하는 별도 tier이며 30B 결론에 섞지 않습니다.
-정적 검사·CPU 테스트·dry-run·GPU 실행은 별도 증거로 구분합니다([AGENTS.md](../AGENTS.md), [판정 기준](getting-started.md#6-verify-the-result)).
+분산 preset은 모두 `STAGE=train`을 사용합니다.
+Megatron preset의 `CHECKPOINT_PLACEMENT=local`은 rank마다 `<OUTPUT_DIR>/checkpoints`에 shard를 저장하며 cross-node 복원을 보장하지 않습니다.
 
-## Read the Results First
+## 실행
 
-질문을 먼저 고르고, 해당 결과의 조건과 한계를 함께 읽습니다.
+기본 runner는 dry-run으로 계획만 출력합니다.
+계획의 모델·데이터 revision, host, node-local 경로를 확인한 뒤 `--execute`를 추가합니다.
 
-### Feasibility and Scale
+```bash
+python experiments/run.py \
+  --backend megatron \
+  --setup setups/spark/local.json \
+  --experiment experiments/megatron/qwen3-30b-lora.json \
+  --output results/megatron-qwen-30b
+```
 
-| 알고 싶은 것 | 먼저 볼 결과 | 현재까지 말할 수 있는 것 |
-| --- | --- | --- |
-| 30B SFT와 checkpoint 재로딩이 되는가? | [30B GPU Results](experiments/30b-results.md#30b-gpu-results) | 1-step 실행과 재로딩까지 확인. 장기 수렴·품질 검증은 아님 |
-| 30B full SFT는 어떤 node·offload 구성에서 가능한가? | [ZeRO-3 NVMe topology comparison](experiments/30b-results.md#ultrachat-full-sft-topology-comparison-2026-09-14)·[Full-SFT capacity](experiments/30b-results.md#full-sft-capacity) | 검증한 구성 중 2-node TRL ZeRO-3 NVMe는 Qwen·GLM의 학습·평가·native checkpoint 복구 통과. 2-node Megatron Qwen은 첫 step 전, single-node TRL 두 모델은 checkpoint 전 OOM |
-| 100B\~1T에 필요한 용량은? | [Scaling Estimates](experiments/scaling-estimates.md#scaling-estimates-100b-to-1t) | 가정한 dtype·optimizer·sharding에 따른 계산. 해당 규모 GPU 실행 결과가 아님 |
+Checkpoint 반복 측정은 하나의 plan과 모델 선택 옵션을 사용합니다.
 
-### Checkpoint I/O
+```bash
+python experiments/checkpoint_memory_30b.py \
+  --setup setups/spark/local.json \
+  --model qwen \
+  --phase checkpoint \
+  --output results/checkpoint-qwen-30b
+```
 
-| 알고 싶은 것 | 먼저 볼 결과 | 현재까지 말할 수 있는 것 |
-| --- | --- | --- |
-| Async checkpoint가 학습을 덜 막는가? | [Distributed checkpoint write](experiments/30b-results.md#distributed-checkpoint-write) | save API blocking은 크게 줄지만, finalization 포함 완료 시간 이득은 Qwen 7.0%·GLM 19.0%. 반복 overlap은 아래 100-step 결과 참고 |
-| Async가 step time을 늘리지는 않는가? | [100-step checkpoint impact](experiments/30b-results.md#100-step-checkpoint-impact) | Qwen에서 model-ready 이후 +0.06%, steady median +0.06%, p95 −0.82%. 조건별 1회이며 run 간 재현성과 GLM은 미검증 |
-| 실제 checkpoint restore가 얼마나 걸리는가? | [Single-node TRL I/O Experiment](experiments/checkpoint-io.md#single-node-trl-io-experiment) | 두 30B 모델의 LoRA r=8/16/32를 새 process에서 cold/warm 각 3회 측정 |
-| LoRA를 더 많이 학습하면 checkpoint도 커지는가? | [LoRA Ratio and Checkpoint I/O](experiments/checkpoint-io.md#lora-ratio-and-checkpoint-io) | 고정된 Qwen target module에서 trainable 비율 약 10배 → checkpoint 크기 9.99배, save 시간은 1.81배 |
+`--model glm`은 GLM preset과 cohort를 선택합니다.
+`experiments/build.py`는 개별 knob로 일반 실험을 만들며 기본 stage와 Megatron checkpoint 배치는 각각 `train`, `local`입니다.
 
-### Memory and Comparison Scope
+## 판정 기준
 
-| 알고 싶은 것 | 먼저 볼 결과 | 현재까지 말할 수 있는 것 |
-| --- | --- | --- |
-| Sequence length를 늘리면 메모리가 얼마나 늘어나는가? | [Transformer Engine memory](experiments/30b-results.md#transformer-engine-memory) | 같은 backend에서 4096→8192 allocated 증가는 Qwen 12.65%, GLM 12.75% |
-| Recompute 범위를 줄이면 무엇을 내주는가? | [Qwen recompute](experiments/30b-results.md#qwen-recompute) | Megatron selective는 step time 약 27% 단축, peak allocated 35.0\~62.9% 증가. Qwen 한정 |
-| Qwen 결과를 GLM에도 적용할 수 있는가? | [Qwen and GLM Comparison](experiments/30b-results.md#qwen-and-glm-comparison) | Attention backend를 맞추면 길이 증가율이 유사. GLM host memory가 더 크다는 기존 결론은 철회 |
+다음 조건을 모두 만족해야 GPU 실행을 성공으로 판정합니다.
 
-### Metric Definitions
+1. Controller manifest의 `status`가 `passed`이고 모든 rank의 exit code가 0입니다.
+2. 실제 optimizer step 수가 계획과 같고 loss가 finite입니다.
+3. 각 rank의 local checkpoint directory에 shard가 생성됩니다.
+4. Async save는 종료 전에 blocking finalization을 완료합니다.
+5. Application metric과 resource measurement 파일이 비어 있지 않습니다.
 
-`rank`는 분산 학습 process 번호입니다. 이 실험은 노드당 1 rank이며, **rank별 합·최대값·반복 median은 서로 다른 집계**입니다.
+Checkpoint 크기는 rank별 최신 shard의 logical byte 합으로 집계합니다.
+Save 시간과 blocking finalization은 따로 기록하며, 둘을 restore 시간이나 storage throughput으로 해석하지 않습니다.
 
-#### Checkpoint write
+메모리 추정은 실행 전 하한 점검입니다.
+CUDA context, allocator 단편화와 framework 임시 buffer를 모두 포함하지 않으므로 `FITS`만으로 실행 가능성을 확정하지 않습니다.
 
-| 지표 | 집계 | 무엇을 의미하는가 |
-| --- | --- | --- |
-| Save 호출 누적 시간 | rank별 성공한 `save()` 시간 합 → rank 최대값 → run median | 학습이 `save()` 안에서 직접 기다린 시간. 단일 checkpoint latency가 아니며 async background 완료 대기는 제외 |
-| Blocking finalization | rank별 blocking `finalize_async_saves` 시간 합 → rank 최대값 → run median | run 끝에서 남은 async write를 기다린 시간. Save 시간과 단순 합해도 전체 wall time은 아님 |
-| Model-ready 이후 시간 | rank별 stage 전체 시간 − model-ready 시간 → rank 최대값 | 모델 초기화를 제외하고 학습·checkpoint·마지막 finalization을 포함한 시간 |
-| Checkpoint 크기 | 최신 iteration의 `.distcp` shard bytes를 rank 간 합산 | 한 checkpoint의 논리 크기. 전체 iteration·실제 device write traffic·metadata 합계는 아님 |
+```bash
+python experiments/estimate_memory.py \
+  --model-dir '<snapshot-dir>' \
+  --backend megatron --finetuning-mode full \
+  --ep 2 --world-size 2 --budget-gib 119
+```
 
-#### Memory
-
-| 지표 | 집계 | 무엇을 의미하는가 |
-| --- | --- | --- |
-| CUDA peak allocated | PyTorch allocator가 기록한 측정 구간의 최대 allocation | 전체 device 사용량이 아니므로 측정 구간과 rank 집계가 같은 값끼리 비교 |
-| Host memory pressure | 측정 시작 시 `MemAvailable` − 측정 중 최소 `MemAvailable` | 노드 전체 가용 memory 감소량. Process RSS가 아니며 다른 process·page cache의 영향 포함 |
-
-#### Restore and Repeatability
-
-| 지표 | 집계 | 무엇을 의미하는가 |
-| --- | --- | --- |
-| TRL model restore 시간 | 새 `tuned` process의 model load 시작 → checkpoint 적용 완료 | LoRA는 base+adapter 생성, ZeRO-3 full은 skeleton·engine 준비와 native checkpoint load를 포함 |
-| TRL restore 유효 처리율 | (base snapshot + checkpoint logical bytes) ÷ restore 시간 | 파일 read 속도가 아니라 model reconstruction 전체의 유효 처리율 |
-| rMAD | `median(abs(x - median(x))) / median(x)` | 반복 간 상대 산포. 낮을수록 결과가 모여 있으며, 10%는 추가 반복 여부를 정하는 기준일 뿐 정확성 보장은 아님 |
-
-수치를 읽을 때 다음을 구분합니다.
-
-- **단위**: MB/GB는 10진, MiB/GiB/TiB는 2진 단위입니다. 예를 들어 69.4 MiB는 약 72.8 MB입니다.
-- **메모리**: Spark는 unified memory를 사용하므로 CUDA peak와 host pressure를 합산하지 않습니다.
-- **집계**: 원본 manifest는 커밋하지 않고 표에 요약값만 남깁니다. 재집계나 오차 검증에는 해당 run의 원본이 필요합니다.
-
-## Detailed Documents
-
-- [Run Experiments](experiments/running.md): preset 선택, 메모리 추정, 실행 구성과 output 확인
-- [30B Results](experiments/30b-results.md): 통제 실험 결과, historical GPU·메모리 기록과 Qwen/GLM 비교
-- [Checkpoint and Memory I/O](experiments/checkpoint-io.md): single-node·분산 I/O 설계, 측정값과 한계
-- [Scaling Estimates](experiments/scaling-estimates.md): 100B–1T state·checkpoint 용량 추정
+100B 이상 state·checkpoint 계산은 [Scaling Estimates](experiments/scaling-estimates.md)를 따릅니다.

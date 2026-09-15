@@ -41,7 +41,7 @@ def config_files(tmp_path: Path, *, backend: str = "trl", nnodes: int = 2) -> tu
         "DATASET_ID": "HuggingFaceH4/ultrachat_200k",
     }
     if backend == "trl":
-        env.update({"DISTRIBUTED_BACKEND": "ddp", "STAGE": "all"})
+        env.update({"DISTRIBUTED_BACKEND": "ddp", "STAGE": "train"})
     else:
         env.update({"TP": 1, "PP": 1, "EP": 1, "MICRO_BATCH_SIZE": 1, "GLOBAL_BATCH_SIZE": 2})
     experiment = {"backend": backend, "setup": "spark", "nnodes": nnodes, "nproc_per_node": 1, "env": env}
@@ -104,17 +104,8 @@ def test_megatron_30b_presets_are_runnable(name: str, model_id: str) -> None:
     assert experiment["env"]["FINETUNING_MODE"] == "lora"
     assert experiment["env"]["MAX_STEPS"] == "1"
     assert experiment["env"]["CHECKPOINT_MODE"] == "sync"
-    assert experiment["env"]["STAGE"] == "all"
-
-
-def test_megatron_full_sgd_pilot_is_train_only() -> None:
-    experiment = run.load_experiment(
-        REPOSITORY_ROOT / "experiments" / "megatron" / "qwen3-30b-full-sgd-pilot.json"
-    )
-
-    assert experiment["env"]["FINETUNING_MODE"] == "full"
-    assert experiment["env"]["OPTIMIZER"] == "sgd"
     assert experiment["env"]["STAGE"] == "train"
+    assert experiment["env"]["CHECKPOINT_PLACEMENT"] == "local"
 
 
 def test_dataset_id_is_required(tmp_path: Path) -> None:
@@ -150,7 +141,7 @@ def test_backend_specific_output_roots(tmp_path: Path) -> None:
         "/mnt/post-training/megatron/nvme-run"
     }
     assert {rank["env"]["CHECKPOINT_DIR"] for rank in plan["ranks"]} == {
-        "/srv/post-training-unified/artifacts/checkpoints/nvme-run"
+        "/mnt/post-training/megatron/nvme-run/checkpoints"
     }
 
 
@@ -185,7 +176,7 @@ def test_lora_dim_is_an_accepted_megatron_env_var(tmp_path: Path) -> None:
 def test_local_checkpoint_placement_rejects_reload_stages(tmp_path: Path) -> None:
     _, experiment_path = config_files(tmp_path, backend="megatron")
     experiment = json.loads(experiment_path.read_text())
-    experiment["env"]["CHECKPOINT_PLACEMENT"] = "local"
+    experiment["env"].update({"CHECKPOINT_PLACEMENT": "local", "STAGE": "all"})
     experiment_path.write_text(json.dumps(experiment))
 
     with pytest.raises(run.ConfigError, match="STAGE=train"):
@@ -193,7 +184,7 @@ def test_local_checkpoint_placement_rejects_reload_stages(tmp_path: Path) -> Non
 
 
 def test_explicit_load_checkpoint_is_tuned_only(tmp_path: Path) -> None:
-    _, experiment_path = config_files(tmp_path, backend="megatron")
+    _, experiment_path = config_files(tmp_path, backend="megatron", nnodes=1)
     experiment = json.loads(experiment_path.read_text())
     experiment["env"].update({"STAGE": "tuned", "LOAD_CHECKPOINT": "/mnt/checkpoint"})
     experiment_path.write_text(json.dumps(experiment))
@@ -225,11 +216,11 @@ def test_rejects_sharded_trl_all_stage(tmp_path: Path) -> None:
     experiment = json.loads(experiment_path.read_text())
     experiment["env"].update({"DISTRIBUTED_BACKEND": "fsdp2", "STAGE": "all"})
     experiment_path.write_text(json.dumps(experiment))
-    with pytest.raises(run.ConfigError, match="only support"):
+    with pytest.raises(run.ConfigError, match="distributed TRL restore"):
         run.load_experiment(experiment_path)
 
 
-def test_allows_deepspeed_trl_all_stage(tmp_path: Path) -> None:
+def test_rejects_distributed_deepspeed_trl_all_stage(tmp_path: Path) -> None:
     _, experiment_path = config_files(tmp_path)
     experiment = json.loads(experiment_path.read_text())
     experiment["env"].update({
@@ -239,7 +230,18 @@ def test_allows_deepspeed_trl_all_stage(tmp_path: Path) -> None:
     })
     experiment_path.write_text(json.dumps(experiment))
 
-    run.load_experiment(experiment_path)
+    with pytest.raises(run.ConfigError, match="distributed TRL restore"):
+        run.load_experiment(experiment_path)
+
+
+def test_rejects_shared_megatron_checkpoint_placement(tmp_path: Path) -> None:
+    _, experiment_path = config_files(tmp_path, backend="megatron", nnodes=1)
+    experiment = json.loads(experiment_path.read_text())
+    experiment["env"]["CHECKPOINT_PLACEMENT"] = "shared"
+    experiment_path.write_text(json.dumps(experiment))
+
+    with pytest.raises(run.ConfigError, match="must be local"):
+        run.load_experiment(experiment_path)
 
 
 def test_rejects_lora_with_nvme_offload(tmp_path: Path) -> None:

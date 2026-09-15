@@ -16,7 +16,7 @@
     "OPTIMIZER": "adamw",
     "RESOURCE_SAMPLING": true,
     "SEED": 42,
-    "STAGE": "all",
+    "STAGE": "train",
     "TRAIN_SAMPLES": 4
   },
   "nnodes": 2,

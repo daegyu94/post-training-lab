@@ -75,7 +75,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--nnodes", type=int, default=2, help="Spark nodes to use (this project's cluster has 2)")
     parser.add_argument("--timeout", type=int, default=900)
     parser.add_argument("--execute", action="store_true", help="run remote jobs; default is dry-run")
-    parser.add_argument("--stage", choices=("all", "base", "train", "tuned"), default="all")
+    parser.add_argument("--stage", choices=("all", "base", "train", "tuned"), default="train")
     parser.add_argument("--finetuning-mode", choices=("lora", "full"), default="lora")
     parser.add_argument("--learning-rate", default="2e-5")
     parser.add_argument("--max-length", type=int, default=2048)
@@ -158,7 +158,7 @@ def build_experiment(args: argparse.Namespace, setup: dict[str, Any]) -> dict[st
         env.update({
             "GLOBAL_BATCH_SIZE": args.global_batch_size, "MICRO_BATCH_SIZE": args.micro_batch_size,
             "TP": args.tp, "PP": args.pp, "EP": args.ep,
-            "OPTIMIZER": args.optimizer or "adam",
+            "OPTIMIZER": args.optimizer or "adam", "CHECKPOINT_PLACEMENT": "local",
         })
         if args.epochs is not None:
             train_count = manifest.get("train_count") if manifest is not None else None

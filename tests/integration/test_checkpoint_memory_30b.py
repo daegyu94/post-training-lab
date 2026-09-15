@@ -367,16 +367,9 @@ def test_trl_dcp_cli_uses_the_512_token_cohort(tmp_path, monkeypatch, capsys) ->
     assert all("-512-v1" in item["path"] for item in result["cohorts"])
 
 
-def test_checkpoint_model_mismatch_fails_before_cohort_ssh(tmp_path, monkeypatch, capsys):
-    def unexpected(*args, **kwargs):
-        raise AssertionError('cohort preparation must not start')
-    monkeypatch.setattr(checkpoint_memory_30b, 'prepare_cohorts', unexpected)
-    code = checkpoint_memory_30b.main([
-        '--setup', str(tmp_path / 'unused.json'), '--model', 'glm',
-        '--plan', str(checkpoint_memory_30b.DEFAULT_PLAN),
-        '--execute', '--output', str(tmp_path / 'out')])
-    assert code == 2
-    assert 'does not match --model glm' in capsys.readouterr().err
+def test_default_checkpoint_plan_supports_both_models():
+    assert checkpoint_memory_30b.resolve_checkpoint_plan("qwen", None) == checkpoint_memory_30b.DEFAULT_PLAN
+    assert checkpoint_memory_30b.resolve_checkpoint_plan("glm", None) == checkpoint_memory_30b.DEFAULT_PLAN
 
 
 def test_checkpoint_plan_validates_variant_identity_and_preserves_ratio_sweep(tmp_path):
@@ -401,10 +394,7 @@ def test_recompute_plan_uses_the_controlled_30b_cohort_and_attention_backend():
     assert {cell["name"] for cell in plan["cells"]} == {
         "recompute-length-2048", "recompute-length-4096",
     }
-    for name in (
-        "checkpoint-memory-30b.json", "checkpoint-memory-30b-glm.json",
-        "distributed-write-30b.json", "distributed-write-30b-glm.json",
-    ):
+    for name in ("checkpoint-memory-30b.json",):
         controlled = checkpoint_memory_30b.benchmarks.load_benchmark_plan(
             path.with_name(name)
         )

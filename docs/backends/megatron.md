@@ -58,31 +58,25 @@ Import 성공은 CUDA kernel·NCCL·학습 성공과 구분합니다.
 모델·데이터·setup 준비는 [Getting Started](../getting-started.md)와 [Datasets](../datasets.md)를 따르고, 공통 runner에서 `--backend megatron`과 `experiments/megatron/smoke.json`을 사용합니다.
 이 smoke preset은 작은 dense 모델, TP=1·PP=1·EP=1, micro 1·global 2, full SFT 2 step이며 launcher 기본값인 30B MoE·EP=2·LoRA와 다릅니다.
 
-`STAGE=all`은 base 평가 → train 저장 → tuned 재로딩 평가 순서이고, `RESUME_AFTER_TRAIN=true`이면 train과 tuned 사이에 resume stage가 추가됩니다.
+분산 preset은 `STAGE=train`으로 학습과 node-local checkpoint 저장만 실행합니다.
+Backend의 restore 기능은 남아 있지만 shared checkpoint storage가 없는 현재 실험 범위에서는 사용하지 않습니다.
 직접 `run_spark_cluster.sh`를 쓰면 각 노드에서 따로 시작해야 하며 위 runtime helper도 source해야 합니다.
 
 `TRANSFORMER_IMPL=auto`는 Qwen에 local, GLM에 Transformer Engine 경로를 선택합니다.
 `SEQUENCE_PARALLEL=true`에는 TP>=2와 `TRANSFORMER_IMPL=transformer_engine`이 필요하며, 비교할 때는 off/on 두 variant가 같은 Transformer Engine 경로를 써야 합니다.
 
-## Checkpoint and Resume
+## Local Checkpoint
 
-| 목적 | 설정·진입점 | 검증할 것 |
-| --- | --- | --- |
-| 저장물 평가 | `tuned` stage | 같은 held-out 입력으로 재로딩 |
-| 같은 topology 학습 재개 | `experiments/megatron/resume-smoke.json` | iteration 2 load 후 3 실행, optimizer·scheduler load |
-| Sync/async 저장 비교 | `CHECKPOINT_MODE=sync` 또는 `async` | save와 blocking finalization 별도 계측 |
-| Topology 변경 | `RESUME_TP`, `RESUME_PP`, `RESUME_EP` | 저장 format과 state 복원 범위 |
-
-Async checkpoint는 train/resume에서 `torch_dist`와 persistent worker를 사용합니다.
+`CHECKPOINT_PLACEMENT=local`은 각 rank의 `<OUTPUT_DIR>/checkpoints`에 shard를 저장합니다.
+Sync/async 비교는 `CHECKPOINT_MODE`로 선택하고 save 호출과 blocking finalization을 따로 계측합니다.
+Async checkpoint는 train에서 `torch_dist`와 persistent worker를 사용합니다.
 종료 전 pending save finalization과 모든 shard를 확인하되, save 완료를 장애 후 durability 보장으로 해석하지 않습니다.
 
 30B preset의 output·전처리 JSONL·Arrow cache·로그는 `/mnt/post-training/megatron` 로컬 NVMe에 기록합니다.
-**공통 runner는 `torch_dist` checkpoint만** 두 노드가 함께 보는 `<checkout>/artifacts/checkpoints/<run-id>`에 기록해 다음 `tuned`·`resume` process가 모든 shard와 metadata를 읽게 합니다.
-직접 launcher를 실행할 때 `OUTPUT_DIR`가 node-local이면 `CHECKPOINT_DIR`을 두 노드에서 같은 NFS 경로로 지정해야 하며, 지정하지 않으면 `<output>/checkpoints`를 씁니다.
 이는 실행 중 NVMe state offload가 아니라 dataset cache와 checkpoint I/O의 배치입니다.
 
-TP/PP를 바꾸는 optimizer 재분할은 기본 `dp_reshardable` format으로 해결되지 않습니다.
-`DIST_CKPT_OPTIM_FULLY_RESHARDABLE=true`인 별도 source checkpoint와 optimizer 저장·로드 조건이 필요하며 `FULLY_PARALLEL_SAVE=true`만으로는 이 format이 켜지지 않습니다.
+분산 restore·resume은 모든 rank shard가 보이는 shared checkpoint storage가 준비된 뒤 검증할 TODO입니다.
+현재 local checkpoint 실험은 cross-node 복원, topology 변경과 장애 복구를 증명하지 않습니다.
 
 ## CPU Offload and Known Limits
 
@@ -90,6 +84,6 @@ Megatron Core의 native training offload는 **CPU memory만** 지원합니다(op
 NVMe state offload는 없고 이 저장소의 Bridge wrapper는 CPU offload도 노출하지 않습니다.
 `RECOMPUTE`는 activation 재계산입니다.
 
-Selective recompute는 현재 `recompute_num_layers=1` 설정 때문에 Bridge 검증에서 실패합니다 — 메모리 부족이나 하드웨어 미지원의 증거가 아닙니다.
+Qwen LoRA의 full/selective recompute는 `experiments/megatron/recompute-30b.json`으로 비교합니다.
 현재 launcher는 평가 loss를 출력하는 마지막 global rank의 로그를 읽고 마지막 노드에서 `summary.json`을 작성합니다.
-재로딩 성공, 전체 상태의 수치 동등성, 장애 복구는 서로 다른 검증이며 [Getting Started](../getting-started.md#6-verify-the-result)의 기준을 따릅니다.
+실험 판정은 [Experiments](../experiments.md#판정-기준)를 따릅니다.

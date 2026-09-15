@@ -20,7 +20,6 @@ from pathlib import Path
 from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_PLAN = Path(__file__).resolve().parent / "megatron" / "benchmark-plan.json"
 sys.path.insert(0, str(ROOT))
 from experiments import run as runner  # noqa: E402
 
@@ -251,6 +250,7 @@ def _record(path: Path, item: dict[str, Any]) -> None:
 
 
 def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execute: bool = False,
+                  base_experiment_path: Path | None = None,
                   steps: int | None = None, repeats: int | None = None,
                   within_run_warmup: int | None = None, checkpoint_intervals: list[int] | None = None,
                   timeout: int = 900,
@@ -263,7 +263,7 @@ def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execu
         raise ValueError(f"refusing to reuse existing benchmark output: {output}")
     benchmark = load_benchmark_plan(benchmark_path)
     setup = runner.load_setup(setup_path)
-    base_path = ROOT / benchmark.get("base_experiment", "experiments/megatron/smoke.json")
+    base_path = base_experiment_path or ROOT / benchmark.get("base_experiment", "experiments/megatron/smoke.json")
     base = runner.load_experiment(base_path)
     if base["backend"] != "megatron" or base["setup"] != "spark":
         raise ValueError("benchmark base experiment must target Megatron Spark")
@@ -403,7 +403,7 @@ def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execu
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--setup", type=Path, required=True)
-    parser.add_argument("--plan", type=Path, default=DEFAULT_PLAN)
+    parser.add_argument("--plan", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--steps", type=int)
