@@ -76,7 +76,8 @@
         {
           "refId": "A",
           "expr": "node_memory_MemAvailable_bytes{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"}",
-          "instant": true
+          "instant": true,
+          "legendFormat": "{{cluster}}/{{instance}}"
         }
       ],
       "fieldConfig": {
@@ -115,7 +116,7 @@
           "refId": "A",
           "expr": "time() - training_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"}",
           "instant": true,
-          "legendFormat": "{{cluster}}/{{instance}} {{run_id}} {{framework}} rank {{rank}}"
+          "legendFormat": "{{instance}} · rank {{rank}}"
         }
       ],
       "fieldConfig": {
@@ -154,7 +155,8 @@
         {
           "refId": "A",
           "expr": "max by (instance) (time() - profiling_gpu_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\"})",
-          "instant": true
+          "instant": true,
+          "legendFormat": "{{instance}}"
         }
       ],
       "fieldConfig": {
