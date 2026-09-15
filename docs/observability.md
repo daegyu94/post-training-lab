@@ -72,6 +72,9 @@ cd observability
 DEMO_LIVE=1 bash scripts/run_spark_observability.sh server
 ```
 
+Grafana는 이 명령을 실행한 host의 loopback에 열리므로, SSH forwarding의 최종 host도 그 host여야 합니다.
+예를 들어 controller에서 실행했다면 위의 `spark1` forwarding 예시 대신 controller로 연결합니다.
+
 Simulator는 100초마다 정상 학습, data wait, collective 통신, checkpoint, recovery를 반복합니다.
 기존 dashboard JSON은 변경하지 않으며, Prometheus가 `spark`와 `storage-smart` job으로 scrape하는 metric만 합성합니다.
 `examples/live-demo/gpu_topology.yaml`과 `storage_topology.yaml`은 JSON-compatible YAML이라 추가 Python package 없이 읽습니다.
