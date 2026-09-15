@@ -116,6 +116,15 @@ async I/O                   | write ------------> |
 
 `Q`는 checkpoint enqueue입니다.
 Async는 write를 뒤따르는 compute와 겹치지만 마지막 checkpoint 뒤에는 겹칠 step이 없어 남은 write를 finalization에서 기다립니다.
+Checkpoint가 커져 sync save가 실행 시간에서 차지하는 비율이 높아지면 async가 숨길 수 있는 시간도 커집니다.
+다만 background write가 다음 checkpoint 전에 끝나지 않거나 host memory·PCIe·storage를 compute와 경쟁하면 크기에 비례해 이득이 자동으로 커지는 것은 아닙니다.
+
+참고할 외부 환경은 다음과 같습니다.
+
+| Reference | 환경 | 관찰과 적용 범위 |
+| --- | --- | --- |
+| [NVIDIA Megatron Bridge Resiliency](https://docs.nvidia.com/nemo/megatron-bridge/latest/training/resiliency.html#async-checkpoint-save) | `torch_dist`, persistent background worker | Async는 checkpoint I/O를 training compute와 겹치며 save 시간이 step time의 유의미한 비율일 때 가치가 있다고 설명합니다. 현재 실험과 같은 메커니즘 설명이며 성능 수치는 제공하지 않습니다. |
+| [DataStates-LLM, HPDC 2024](https://arxiv.org/abs/2406.10707) | 3B\~70B, sequence 2048, A100 40GB 4개/노드, GPU당 checkpoint 10\~15GB, Lustre 650GB/s | Lazy multi-level async 방식으로 비교 대상 대비 checkpointing 최대 48배, end-to-end training 최대 2.2배를 보고했습니다. 현재의 Megatron async와 구현·규모·storage가 달라 효과 크기를 직접 적용할 수는 없습니다. |
 
 `Model-ready 이후`는 stage 시작부터 model-ready까지 걸린 시간을 stage 전체 시간에서 뺀 뒤 두 rank 중 긴 값을 취합니다.
 100 step, checkpoint 대기와 마지막 finalization을 포함하고 모델 초기화는 제외합니다.
