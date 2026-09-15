@@ -130,7 +130,7 @@ TRL·Megatron callback은 `<output>/framework-metrics/`의 rank JSON을 atomic r
 | 사용 경로 | Reader |
 | --- | --- |
 | 실시간 dashboard | [textfile collector](monitoring.md#live-framework-metrics) |
-| 종료된 run 요약 | [`show_run`](analysis.md#run-history) |
+| 종료된 run 요약 | [`show_run`](analysis.md#inspect-run-state) |
 
 처리량의 의미는 framework마다 다릅니다.
 
