@@ -6,7 +6,7 @@
 `metrics.json`의 `schema_version`은 소비자가 이해하는 계약 version입니다.
 기존 metric의 의미나 단위를 바꾸는 호환성 파괴 변경에만 version을 올리고, 새 metric 추가는 같은 version에서 합니다.
 
-## Metric entry
+## Metric Entry
 
 각 metric은 여섯 field를 가집니다.
 
@@ -35,7 +35,7 @@ Dashboard는 exporter 원본 이름을 조회하고 학습 지표는 rank JSON�
 Canonical name 변환·phase 집계는 workload adapter에 구현해야 합니다.
 Derived metric은 원본을 보존하고 계산 window·source metric을 summary에 기록합니다.
 
-## Labels and manifest fields
+## Labels and Manifest Fields
 
 `recommended_labels`는 filter·비교 기준이며 시계열 증가를 제한하도록 값의 종류를 제한합니다.
 공통 후보는 `run_id`, `cluster`, `job`, `node`, `gpu`, `framework`, `role`, `phase`, `device`, `interface`, `operation`, `parallel_group`입니다.
@@ -44,7 +44,7 @@ Megatron hook의 `rank`·`local_rank`·`tp_rank`·`pp_rank`·`dp_rank`·`timer`�
 Commit, image digest, model/dataset/checkpoint URI, rank map, profiler option, precision, batch/sequence 설정, storage path type, filesystem, cache state, node topology는 `manifest_only_fields`에 기록합니다.
 Prompt, request ID, timestamp, trace ID처럼 계속 늘어나는 값은 Prometheus label로 쓰지 않습니다.
 
-## Workflow phases
+## Workflow Phases
 
 `phase_vocabulary`는 framework가 달라도 같은 lifecycle 구간을 비교하기 위한 이름입니다.
 
@@ -62,7 +62,7 @@ Prompt, request ID, timestamp, trace ID처럼 계속 늘어나는 값은 Prometh
 Phase marker에는 최소한 `run_id`, `phase`, 시작·종료 시각, 성공 여부를 기록합니다.
 Bytes와 duration을 모두 얻으면 유효 대역폭을 계산하고 같은 path의 NCCL Tests baseline과 비교해 utilization ratio를 만듭니다.
 
-## Data movement paths
+## Data Movement Paths
 
 | Path | Always-on 증거 | Diagnostic 증거 |
 | --- | --- | --- |
@@ -80,7 +80,7 @@ RoCE는 TCP/IP와 RDMA counter를 함께 봅니다.
 기본 활성화된 Node Exporter `infiniband` collector는 `node_infiniband_port_data_{received,transmitted}_bytes_total`을 노출합니다.
 계약의 `rdma_receive_bytes_per_second`·`rdma_transmit_bytes_per_second`·`rdma_errors_total`과 dashboard의 RDMA panel을 확인하며 `network_*`만으로 판단하지 않습니다.
 
-## Validate the contract
+## Validate the Contract
 
 ```bash
 python -m pytest -q tests/observability/test_schema.py
@@ -90,7 +90,7 @@ JSON 문법, 허용된 이름·분류, 필수 field, 중복 이름을 확인합�
 새 metric을 추가할 때는 exporter나 framework에서 실제로 얻을 수 있는 source를 먼저 확인합니다.
 그 다음 canonical unit과 scope를 정하고 `metrics.json`·adapter·summary·dashboard를 같은 변경에서 갱신합니다.
 
-## Framework integration
+## Framework Integration
 
 Runner는 output 이름을 `OBSERVATORY_RUN_ID`로 설정하고 TRL·Megatron callback은 `<output>/framework-metrics/`의 rank JSON을 atomic replace합니다.
 실시간 조회는 [textfile collector](monitoring.md#live-framework-metrics), 과거 조회는 [`show_run`](analysis.md#run-history)이 읽습니다.

@@ -1,10 +1,10 @@
-# 실행 분석
+# Run Analysis
 
 상시 지표에서 시간 범위·node·rank를 먼저 좁힙니다.
 그 다음 과거 run 요약, 짧은 selected-rank trace, hardware baseline을 차례로 사용해 원인을 확인합니다.
 trace는 원인을 확인하는 진단 도구이므로, 수정 효과는 profiler를 끈 실행에서 다시 검증합니다.
 
-## Run history
+## Run History
 
 [`show_run`](../../observability/profiling_lab/show_run.py)은 monitoring server 없이 output directory의 Megatron `run-metadata-<stage>.json`과 TRL `summary-<stage>.json`을 읽습니다.
 `OBSERVATORY_RUN_ID`와 `FRAMEWORK_METRICS_DIR`가 설정됐다면 `framework-metrics/<framework>-rank-<rank>.json`의 마지막 step도 표시합니다.
@@ -17,7 +17,7 @@ output directory가 실행 node의 local path라 controller에서 보이지 않�
 `framework-metrics`는 학습 중 최신 step 값이며 끝나면 마지막 값에 고정됩니다.
 전체 loss 추이가 필요하면 `logs/`의 학습 log를 확인합니다.
 
-## Distributed trace
+## Distributed Trace
 
 각 참여 node에서 같은 `PROFILE_RUN_ID`를 지정하고 첫 node는 `NODE_RANK=0`, 다음 node는 `1`로 실행합니다.
 이 명령은 GPU 작업을 시작하며 preflight가 기존 GPU 작업과 최소 가용 메모리를 검사합니다.
@@ -39,7 +39,7 @@ baseline과 capture를 동시에 실행하지 말고 profiler overhead를 비교
 
 기존 PyTorch loop에 직접 삽입하는 selected-rank profiler는 [Framework integration](metrics.md#framework-integration)을 따릅니다.
 
-## Hardware baselines
+## Hardware Baselines
 
 NCCL baseline은 MPI 지원 `all_reduce_perf`, `mpirun`, 할당받은 GPU node를 요구하며 지정한 모든 node에 GPU 부하를 발생시킵니다.
 

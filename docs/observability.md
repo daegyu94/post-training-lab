@@ -4,7 +4,7 @@
 먼저 host·GPU·통신·저장소와 학습 지표에서 이상이 발생한 시간·node·rank를 찾고, 원인 분석이 필요할 때만 해당 구간의 짧은 trace를 수집합니다.
 Synthetic demo는 dashboard 동작을 보여 주기 위한 예시이며 실제 LLM 학습 결과와 구분합니다.
 
-## 시작점
+## Start Here
 
 분산 실행을 관측하려면 먼저 [분산 실행 모니터링](observability/monitoring.md)에서 collector와 dashboard 설정 방법을 확인합니다.
 이상이 발견되면 [실행 분석](observability/analysis.md)에 따라 run history를 확인하고, 필요한 구간의 selected-rank trace를 수집하거나 hardware baseline과 비교합니다.
@@ -16,7 +16,7 @@ Synthetic demo는 dashboard 동작을 보여 주기 위한 예시이며 실제 L
 | 과거 실행 요약, selected-rank PyTorch trace, NCCL baseline | [실행 분석](observability/analysis.md) |
 | metric 이름·단위·scope, label, workflow phase, framework integration | [Metrics Contract](observability/metrics.md) |
 
-## 로컬 검증
+## Local Validation
 
 GPU workload를 실행하기 전에 기본 도구 상태와 observability 테스트를 로컬 환경에서 확인합니다.
 다음 명령은 저장소 루트에서 실행합니다.

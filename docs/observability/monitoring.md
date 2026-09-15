@@ -1,18 +1,19 @@
-# 분산 실행 모니터링
+# Distributed Run Monitoring
 
-이 문서는 workload launcher나 cluster setup과 무관하게 node 수준의 host·GPU 지표를 모으고 Grafana에서 보는 방법을 설명합니다.
-ARM64 helper script와 target 목록은 임의의 node 이름·주소를 받으며 특정 launcher나 cluster setup에 의존하지 않습니다.
+이 문서는 각 node에서 host·GPU 지표를 수집하고 Prometheus와 Grafana에서 확인하는 방법을 설명합니다.
+제공하는 helper script는 ARM64 환경을 대상으로 하지만 특정 workload launcher나 cluster setup을 가정하지 않습니다.
+관측 대상은 `이름=주소` 형식으로 지정하므로 node 구성에 맞게 확장할 수 있습니다.
 
-## 실행 흐름
+## Monitoring Flow
 
 1. 관측할 각 node에서 `node` role을 실행해 host·GPU 지표를 노출합니다.
 2. monitoring host에서 `server` role을 실행해 Prometheus와 Grafana를 시작합니다.
 3. browser에서 dashboard를 열고 시간 범위, cluster, node, run을 선택합니다.
 4. storage node가 분리되어 있으면 `storage` role을 추가하고, framework 지표가 있으면 node role에 경로를 전달합니다.
 
-## Collector와 dashboard 시작
+## Start Collectors and Dashboards
 
-### 1. 도구 준비
+### 1. Prepare Tools
 
 `scripts/install_observability_tools.sh`는 현재 ARM64 userspace 도구를 내려받는 helper이며 driver나 system package를 설치하지 않습니다.
 관측할 node마다 실행하고, monitoring host에서는 `server` 인자를 추가합니다.
@@ -23,7 +24,7 @@ bash scripts/install_observability_tools.sh
 bash scripts/install_observability_tools.sh server
 ```
 
-### 2. 관측 node에서 collector 실행
+### 2. Start Collectors on Each Node
 
 각 node의 management address를 지정합니다.
 `node` role은 node exporter를 19100 포트에 열고 GPU sampler를 기본 900초 동안 실행합니다.
@@ -33,7 +34,7 @@ NODE_ADDR='<node-management-address>' \
   bash scripts/run_observability.sh node
 ```
 
-### 3. Monitoring server 실행
+### 3. Start the Monitoring Server
 
 `OBSERVABILITY_TARGETS`는 `이름=주소` 항목을 쉼표로 연결한 일반 target 목록입니다.
 node 수는 고정하지 않습니다.
@@ -49,7 +50,7 @@ Prometheus는 monitoring host의 loopback 19090, Grafana는 loopback 13000에서
 Grafana는 anonymous Viewer이며, 관리자 계정이 필요할 때만 `GRAFANA_ADMIN_PASSWORD`를 지정합니다.
 `SERVER_CONFIG_ONLY=1`은 service를 시작하지 않고 provisioning 파일만 생성합니다.
 
-### 4. Dashboard 열기
+### 4. Open the Dashboards
 
 client에서 controller를 거쳐 monitoring host로 SSH forwarding을 엽니다.
 
@@ -69,7 +70,7 @@ ssh -NT -L 13000:127.0.0.1:13000 -J <user>@<controller-ssh-alias> <user>@<monito
 화면 링크는 시간·cluster·node·run 선택을 유지합니다.
 같은 경로의 `grafana/`와 `compose.yaml`은 별도 Docker Compose 예시입니다.
 
-## Synthetic live demo
+## Synthetic Live Demo
 
 실제 GPU나 storage를 사용하지 않고 dashboard 동작을 보여 주려면 monitoring host에서 `DEMO_LIVE=1`을 지정합니다.
 
@@ -91,7 +92,7 @@ Live demo에서는 `cluster=demo-b300`, `node=All`, `run_id=live-demo`를 선택
 | `data_wait` | read·busy time이 증가함 |
 | `checkpoint` | storage write가 증가함 |
 
-### Run Overview 동작 예
+### Run Overview Example
 
 아래 30초 GIF는 `DEMO_LIVE=1`의 `demo-b300` Run Overview를 재생합니다.
 Exporter target 상태, training·GPU sample age, GPU utilization matrix가 synthetic 값의 변화에 따라 갱신됩니다.
@@ -115,7 +116,7 @@ Simulator는 100초마다 정상 학습, data wait, collective 통신, checkpoin
 - 통신 패널은 interface·RDMA port counter이고 endpoint 쌍별 traffic matrix가 아닙니다.
 - Data & Storage의 device·filesystem 지표를 특정 run의 단독 사용량으로 읽지 않습니다.
 
-## SSD health
+## SSD Health
 
 SSD health는 실험별 write attribution이 아니라 장치 이상과 장기 열화를 확인하는 선택 기능입니다.
 `smartctl_exporter`는 기본 설치 script에 포함되지만 `smartctl`은 운영체제의 `smartmontools` package로 설치해야 합니다.
@@ -183,7 +184,7 @@ exporter를 배치한 뒤 target과 topology label을 다음처럼 추가합니�
 ]
 ```
 
-## Live framework metrics
+## Live Framework Metrics
 
 `node` role에 launcher와 같은 `FRAMEWORK_METRICS_DIR`를 지정하면 [`framework_metrics_textfile`](../../observability/profiling_lab/framework_metrics_textfile.py)이 rank JSON을 주기적으로 읽습니다.
 `training_loss`, `training_tokens_per_second`, `training_step_time_seconds`, `training_step`과 Megatron의 `training_timer_seconds{timer="..."}`를 GPU sampler와 같은 textfile collector에 씁니다.
