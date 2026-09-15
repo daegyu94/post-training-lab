@@ -28,6 +28,7 @@ Spark 노드에서 다음 순서로 실행한다.
 따라서 ABI가 있는 `torch`와 `vLLM`은 공유 `.venv`에 설치하지 않고, 각 Spark 노드의 `/home/spark/.local/ptl/venvs/verl`에 Python 3.12 전용 환경으로 설치한다.
 기존 SFT용 가상환경도 변경하지 않는다.
 설치 기준은 [`backends/verl/requirements-spark.txt`](../../backends/verl/requirements-spark.txt)의 고정된 `verl`·`vLLM` 버전이다.
+Verl v1 `separate_async`는 PyPI 배포물에 포함되지 않은 `TransferQueue==0.1.8`도 필요하므로 같은 파일에서 함께 설치한다.
 
 Calculator smoke는 Verl의 stateless function tool을 사용한다.
 `verl_lab.function_tools`가 안전한 정수 계산기만 노출하고, `verl_lab.reward`가 마지막 `#### <integer>`를 rule reward로 채점한다.

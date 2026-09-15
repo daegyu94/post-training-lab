@@ -20,7 +20,7 @@ export PYTHONPATH="$repo_root/backends/verl${PYTHONPATH:+:$PYTHONPATH}"
 "$python_bin" -m verl_lab.prepare_smoke "$data_dir"
 
 exec "$python_bin" -m verl.trainer.main_ppo \
-  ray_kwargs.ray_init.address=auto \
+  +ray_kwargs.ray_init.address=auto \
   algorithm.adv_estimator=grpo \
   algorithm.use_kl_in_reward=False \
   data.train_files="$data_dir/train.parquet" \
@@ -51,6 +51,7 @@ exec "$python_bin" -m verl.trainer.main_ppo \
   actor_rollout_ref.rollout.enforce_eager=True \
   actor_rollout_ref.rollout.max_num_batched_tokens=512 \
   actor_rollout_ref.rollout.max_num_seqs=4 \
+  actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=1 \
   actor_rollout_ref.rollout.n=2 \
   actor_rollout_ref.rollout.checkpoint_engine.backend=nccl \
   actor_rollout_ref.rollout.agent.default_agent_loop=tool_agent \
@@ -70,4 +71,5 @@ exec "$python_bin" -m verl.trainer.main_ppo \
   trainer.save_freq=-1 \
   trainer.test_freq=-1 \
   trainer.resume_mode=disable \
-  trainer.default_local_dir="$output_dir"
+  trainer.default_local_dir="$output_dir" \
+  "$@"

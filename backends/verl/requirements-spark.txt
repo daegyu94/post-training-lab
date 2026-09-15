@@ -1,3 +1,4 @@
 # Install into the node-local Python 3.12 environment on each Spark node.
 verl==0.9.0
 vllm==0.29.0
+TransferQueue==0.1.8
