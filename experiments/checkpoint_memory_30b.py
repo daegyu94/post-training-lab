@@ -201,52 +201,11 @@ def summarize_resources(lines: list[str]) -> dict[str, Any]:
     }
 
 
-def collect_post_run(
-    plan: dict[str, Any],
-    run_output: Path,
-    _: dict[str, Any],
-    *,
-    remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
-) -> dict[str, Any]:
-    by_rank = {}
-    for rank in plan["ranks"]:
-        remote_probe = str(Path(rank["output"]) / "measurements" / f"checkpoint-io-rank-{rank['rank']}.json")
-        script = str(Path(rank["checkout"]) / "experiments" / "checkpoint_io_probe.py")
-        command = " ".join([
-            shlex.quote(rank["env"]["PYTHON"]), shlex.quote(script),
-            "--checkpoint-dir", shlex.quote(rank["env"]["CHECKPOINT_DIR"]),
-            "--output", shlex.quote(remote_probe),
-        ])
-        result = remote_run(
-            ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", rank["host"], command],
-            check=False, capture_output=True, text=True, timeout=1800,
-        )
-        if result.returncode:
-            raise RuntimeError(f"checkpoint I/O probe failed on rank {rank['rank']}: {result.stderr.strip()}")
-        probe = json.loads(result.stdout.strip().splitlines()[-1])
-        resource_path = str(Path(rank["output"]) / "measurements" / f"resources-node-{rank['rank']}.jsonl")
-        resource = remote_run(
-            ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", rank["host"], f"cat -- {shlex.quote(resource_path)}"],
-            check=False, capture_output=True, text=True, timeout=35,
-        )
-        if resource.returncode:
-            raise RuntimeError(f"cannot fetch resource samples for rank {rank['rank']}")
-        destination = run_output / "measurements"
-        destination.mkdir(parents=True, exist_ok=True)
-        (destination / f"checkpoint-io-rank-{rank['rank']}.json").write_text(
-            json.dumps(probe, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
-        (destination / f"resources-node-{rank['rank']}.jsonl").write_text(resource.stdout, encoding="utf-8")
-        by_rank[str(rank["rank"])] = {"checkpoint_io": probe, "resources": summarize_resources(resource.stdout.splitlines())}
-    return {"ranks": by_rank, "aggregate": aggregate_probe(by_rank)}
-
-
 def cleanup_checkpoints(
     plan: dict[str, Any], _run_output: Path, _item: dict[str, Any],
     *, remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
 ) -> None:
-    """Delete a run's node-local checkpoint directory once its metrics and read
-    probes are already captured, so local NVMe isn't exhausted across repeats."""
+    """Delete node-local checkpoints after their metrics and inventory are captured."""
     for rank in plan["ranks"]:
         checkpoint_dir = rank["env"].get("CHECKPOINT_DIR")
         if not checkpoint_dir:
@@ -260,7 +219,7 @@ def cleanup_checkpoints(
             raise RuntimeError(f"checkpoint cleanup failed on rank {rank['rank']}: {result.stderr.strip()}")
 
 
-def collect_write_only_post_run(
+def collect_post_run(
     plan: dict[str, Any], output: Path, _item: dict[str, Any],
     *, remote_run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
 ) -> dict[str, Any]:
@@ -312,35 +271,6 @@ def reclaim_remote(
         )
 
 
-def aggregate_probe(by_rank: dict[str, Any]) -> dict[str, Any]:
-    result: dict[str, Any] = {
-        "logical_checkpoint_bytes": sum(item["checkpoint_io"]["inventory"]["logical_bytes"] for item in by_rank.values()),
-        "allocated_checkpoint_bytes": sum(item["checkpoint_io"]["inventory"]["allocated_bytes"] for item in by_rank.values()),
-        "host_mem_available_min_bytes": min(item["resources"]["mem_available_min_bytes"] for item in by_rank.values()),
-        "host_memory_pressure_max_bytes": max(item["resources"]["host_memory_pressure_bytes"] for item in by_rank.values()),
-        "stage_device_write_bytes": sum(item["resources"]["device_write_bytes_delta"] for item in by_rank.values()),
-    }
-    reads = {}
-    for condition in ("warm_after_write", "cold_buffered", "warm_buffered", "direct"):
-        values = [item["checkpoint_io"]["reads"].get(condition) for item in by_rank.values()]
-        if any(value is None for value in values):
-            reads[condition] = None
-            continue
-        elapsed = max(float(value["seconds"]) for value in values)
-        logical = sum(int(value["logical_bytes"]) for value in values)
-        physical = sum(int(value["physical_read_bytes"]) for value in values)
-        reads[condition] = {
-            "seconds_max_across_ranks": elapsed,
-            "logical_bytes": logical,
-            "physical_read_bytes": physical,
-            "logical_bytes_per_second": logical / elapsed if elapsed > 0 else None,
-            "physical_to_logical_ratio": physical / logical if logical else None,
-            "rank_classifications": [value.get("classification") for value in values],
-        }
-    result["reads"] = reads
-    return result
-
-
 def relative_mad(values: list[float]) -> float | None:
     if not values:
         return None
@@ -357,11 +287,6 @@ def checkpoint_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
             if item.get("status") == "passed" and not item.get("warmup")
             and item.get("variant") == variant and item.get("post_run")
         ]
-        throughputs = [
-            item["post_run"]["aggregate"].get("reads", {}).get("cold_buffered", {}).get("logical_bytes_per_second")
-            for item in selected
-        ]
-        throughputs = [float(value) for value in throughputs if value is not None]
         sizes = [float(item["post_run"]["aggregate"]["logical_checkpoint_bytes"]) for item in selected]
         save = [item["metrics"]["save_call_host_seconds_max_across_ranks"] for item in selected]
         save = [float(value) for value in save if value is not None]
@@ -375,7 +300,6 @@ def checkpoint_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
         summary[variant] = {
             "run_count": len(selected),
             "logical_checkpoint_bytes_median": statistics.median(sizes) if sizes else None,
-            "cold_buffered_read_bytes_per_second_median": statistics.median(throughputs) if throughputs else None,
             "save_call_seconds_median": statistics.median(save) if save else None,
             "save_call_relative_mad": dispersion,
             "save_plus_finalization_host_seconds_median": (
@@ -733,8 +657,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--steps", type=int, default=8)
     parser.add_argument("--within-run-warmup", type=int, default=2)
     parser.add_argument("--checkpoint-interval", type=int, default=2)
-    parser.add_argument("--write-only", action="store_true",
-                        help="checkpoint phase only: inventory local writes without reading them")
     parser.add_argument("--timeout", type=int, default=3600)
     parser.add_argument("--resume", action="store_true",
                          help="memory phase only: continue into an existing --output, reusing "
@@ -784,7 +706,7 @@ def main(argv: list[str] | None = None) -> int:
                 within_run_warmup=args.within_run_warmup,
                 checkpoint_intervals=[args.checkpoint_interval, args.checkpoint_interval],
                 timeout=args.timeout,
-                post_run_fn=(collect_write_only_post_run if args.write_only else collect_post_run) if args.execute else None,
+                post_run_fn=collect_post_run if args.execute else None,
                 cleanup_fn=cleanup_checkpoints if args.execute else None,
             )
         result["cohorts"] = cohort_plan

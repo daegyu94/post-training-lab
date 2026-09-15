@@ -5,23 +5,7 @@ from types import SimpleNamespace
 from experiments import checkpoint_memory_30b
 
 
-def test_aggregate_probe_sums_ranks_and_uses_slowest_time() -> None:
-    def rank(seconds, logical, physical):
-        read = {"seconds": seconds, "logical_bytes": logical, "physical_read_bytes": physical, "classification": "valid"}
-        return {
-            "checkpoint_io": {"inventory": {"logical_bytes": logical, "allocated_bytes": logical},
-                              "reads": {name: dict(read) for name in ("warm_after_write", "cold_buffered", "warm_buffered", "direct")}},
-            "resources": {"mem_available_min_bytes": 100, "host_memory_pressure_bytes": 20, "device_write_bytes_delta": 30},
-        }
-
-    result = checkpoint_memory_30b.aggregate_probe({"0": rank(2, 100, 90), "1": rank(4, 200, 180)})
-
-    assert result["logical_checkpoint_bytes"] == 300
-    assert result["stage_device_write_bytes"] == 60
-    assert result["reads"]["cold_buffered"]["logical_bytes_per_second"] == 75
-
-
-def test_write_only_collection_inventories_without_read_probe(tmp_path: Path, monkeypatch) -> None:
+def test_post_run_collection_inventories_without_read_probe(tmp_path: Path, monkeypatch) -> None:
     resources = {
         "0": {"mem_available_min_bytes": 90, "device_write_bytes_delta": 30},
         "1": {"mem_available_min_bytes": 80, "device_write_bytes_delta": 40},
@@ -39,7 +23,7 @@ def test_write_only_collection_inventories_without_read_probe(tmp_path: Path, mo
             "logical_bytes": size, "allocated_bytes": size, "file_count": 1,
         }), stderr="")
 
-    result = checkpoint_memory_30b.collect_write_only_post_run(plan, tmp_path, {}, remote_run=remote_run)
+    result = checkpoint_memory_30b.collect_post_run(plan, tmp_path, {}, remote_run=remote_run)
 
     assert result["aggregate"]["logical_checkpoint_bytes"] == 300
     assert result["aggregate"]["stage_device_write_bytes"] == 70
@@ -106,7 +90,6 @@ def test_checkpoint_summary_derives_variant_names_from_records() -> None:
             },
             "post_run": {"aggregate": {
                 "logical_checkpoint_bytes": size,
-                "reads": {"cold_buffered": {"logical_bytes_per_second": 1e9}},
             }},
         }
 

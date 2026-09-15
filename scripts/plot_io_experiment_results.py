@@ -88,10 +88,17 @@ def full_sft(root: Path) -> list[tuple[str, float, float]]:
     return result
 
 
-def save(fig, output: Path, name: str, title: str, note: str) -> None:
+def save(
+    fig, output: Path, name: str, title: str, note: str, axes_shift_y: float = 0.0
+) -> None:
     fig.suptitle(title, fontsize=14, fontweight="bold")
     fig.text(0.5, 0.02, note, ha="center", fontsize=9, color="#444444")
     fig.tight_layout(rect=(0.02, 0.10, 0.98, 0.93))
+    if axes_shift_y:
+        position = fig.axes[0].get_position()
+        fig.axes[0].set_position(
+            (position.x0, position.y0 + axes_shift_y, position.width, position.height)
+        )
     path = output / name
     fig.savefig(path, metadata={"Date": None})
     plt.close(fig)
@@ -119,8 +126,14 @@ def main() -> None:
     ax.set(xticks=x, xticklabels=labels, ylabel="Restore time (seconds)")
     ax.legend(); ax.grid(axis="y", alpha=0.2); ax.set_axisbelow(True)
     ax.spines[["top", "right"]].set_visible(False)
-    save(fig, args.output_dir, "single-node-model-restore.svg", "Single-node 30B model restore",
-         "Mean +/- sample standard deviation, n=3; every restore starts a new process.")
+    save(
+        fig,
+        args.output_dir,
+        "single-node-model-restore.svg",
+        "Single-node 30B model restore",
+        "Mean +/- sample standard deviation, n=3; every restore starts a new process.",
+        axes_shift_y=0.03,
+    )
 
     rows = distributed(args.results_root)
     labels = [f"{model}\n{variant}" for model, variant, _ in rows]

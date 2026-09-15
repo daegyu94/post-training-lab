@@ -27,7 +27,7 @@ L 0 0
 z
 " style="fill: #ffffff"/>
   </g>
-  <g id="axes_1">
+  <g id="axes_1" transform="translate(0 -10.8)">
    <g id="patch_2">
     <path d="M 56.722109 298.28
 L 695.88 298.28

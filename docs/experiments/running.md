@@ -60,7 +60,7 @@ python experiments/estimate_memory.py \
 | Megatron LoRA EP=2 | 34.759 GiB | 30.8 GiB | −11.4% |
 
 추정값은 CUDA context·allocator 단편화·workspace를 제외하므로 **실측보다 낮게 나오는 쪽으로 치우칩니다**(표에서 최대 −11%).
-따라서 예산에 근접한 `FITS`는 실제 적합성을 보장하지 않습니다 — 추정 96.6 GiB/rank가 119 GiB 예산 안이었는데도 실제로는 global OOM이 난 [Full-SFT capacity](30b-results.md#full-sft-capacity)가 그 사례입니다.
+따라서 예산에 근접한 `FITS`는 실제 적합성을 보장하지 않습니다 — 추정 90.0 GiB/rank가 119 GiB 예산 안이었는데도 실제로는 OOM이 난 [Full-SFT capacity](30b-results.md#full-sft-capacity)가 그 사례입니다.
 
 ## Build an Experiment from Knobs
 
