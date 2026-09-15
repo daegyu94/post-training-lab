@@ -19,7 +19,14 @@
 `지원`은 짧은 실행의 성공과 저장 경로를 뜻하며 장기 수렴이나 모델 품질을 보장하지 않습니다.
 분산 restore·resume과 NFS checkpoint는 현재 실행·검증 범위에 포함하지 않습니다.
 
-30B LoRA의 memory, recompute와 checkpoint 비교 수치는 [30B 실측 결과](experiments/measured-results.md)에만 기록합니다.
+## 실측 결과
+
+| 비교 | 결과 |
+| --- | --- |
+| Sequence length별 memory | [Qwen·GLM 실측](experiments/measured-results.md#sequence-memory) |
+| Full·selective recompute | [Qwen 실측](experiments/measured-results.md#recompute) |
+| Sync·async checkpoint | [LoRA rank 8·251의 100-step 실측](experiments/measured-results.md#async-checkpoint-scaling) |
+| LoRA 비율별 checkpoint 크기 | [Qwen 실측](experiments/measured-results.md#lora-ratio) |
 
 ## 유지하는 preset
 

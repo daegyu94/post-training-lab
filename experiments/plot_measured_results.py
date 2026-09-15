@@ -45,30 +45,35 @@ def plot_memory(output: Path) -> None:
     recompute = table("Recompute")
     assert len(sequence) == len(recompute) == 4
 
-    figure, axes = plt.subplots(1, 3, figsize=(13.5, 4.2))
+    figure, axis = plt.subplots(figsize=(5.4, 4.2))
     x = range(2)
     for offset, model, color in ((-0.18, "Qwen", BLUE), (0.18, "GLM", ORANGE)):
         rows = [row for row in sequence if row[0] == model]
-        axes[0].bar(
+        axis.bar(
             [value + offset for value in x],
             [float(row[2]) for row in rows],
             0.36,
             color=color,
             label=model,
         )
-    axes[0].set(title="Sequence memory", xlabel="Sequence length", ylabel="Peak allocated (GiB)")
-    axes[0].set_xticks(list(x), ("4096", "8192"))
-    axes[0].legend()
+    axis.set(title="Sequence memory", xlabel="Sequence length", ylabel="Peak allocated (GiB)")
+    axis.set_xticks(list(x), ("4096", "8192"))
+    axis.legend()
+    axis.grid(axis="y", alpha=0.2)
+    axis.set_axisbelow(True)
+    axis.spines[["top", "right"]].set_visible(False)
+    save(figure, output, "measured-sequence-memory.svg")
 
+    figure, axes = plt.subplots(1, 2, figsize=(9, 4.2))
     lengths = (2048, 4096)
     x = range(len(lengths))
     for offset, mode, color in ((-0.18, "full", BLUE), (0.18, "selective", ORANGE)):
         rows = [row for row in recompute if row[1] == mode]
-        axes[1].bar([value + offset for value in x], [float(row[2]) for row in rows], 0.36, label=mode, color=color)
-        axes[2].bar([value + offset for value in x], [float(row[3]) for row in rows], 0.36, label=mode, color=color)
-    axes[1].set(title="Recompute step time", ylabel="Steady step (ms)")
-    axes[2].set(title="Recompute memory", ylabel="Peak allocated (GiB)")
-    for axis in axes[1:]:
+        axes[0].bar([value + offset for value in x], [float(row[2]) for row in rows], 0.36, label=mode, color=color)
+        axes[1].bar([value + offset for value in x], [float(row[3]) for row in rows], 0.36, label=mode, color=color)
+    axes[0].set(title="Recompute step time", ylabel="Steady step (ms)")
+    axes[1].set(title="Recompute memory", ylabel="Peak allocated (GiB)")
+    for axis in axes:
         axis.set_xticks(list(x), [str(value) for value in lengths])
         axis.set_xlabel("Sequence length")
         axis.legend()
@@ -76,7 +81,7 @@ def plot_memory(output: Path) -> None:
         axis.grid(axis="y", alpha=0.2)
         axis.set_axisbelow(True)
         axis.spines[["top", "right"]].set_visible(False)
-    save(figure, output, "measured-memory.svg")
+    save(figure, output, "measured-recompute.svg")
 
 
 def plot_checkpoint(output: Path) -> None:
@@ -85,12 +90,12 @@ def plot_checkpoint(output: Path) -> None:
     assert [row[0] for row in checkpoint] == ["8", "8", "251", "251"]
     assert [int(row[1]) for row in ratios] == [25, 126, 251]
 
-    figure, axes = plt.subplots(2, 2, figsize=(10, 7.5))
+    figure, axes = plt.subplots(1, 2, figsize=(9, 4.2))
     payloads = ("rank 8\n73 MB/save", "rank 251\n2.25 GB/save")
     x = range(2)
     for axis, column, title in (
-        (axes[0, 0], 6, "Direct checkpoint wait"),
-        (axes[0, 1], 7, "100-step time after model ready"),
+        (axes[0], 6, "Direct checkpoint wait"),
+        (axes[1], 7, "100-step time after model ready"),
     ):
         for offset, mode, color in ((-0.18, "sync", BLUE), (0.18, "async", ORANGE)):
             rows = [row for row in checkpoint if row[2] == mode]
@@ -105,11 +110,16 @@ def plot_checkpoint(output: Path) -> None:
         axis.set_xticks(list(x), payloads)
         axis.set(title=title, ylabel="Seconds")
         axis.legend()
+        axis.grid(axis="y", alpha=0.2)
+        axis.set_axisbelow(True)
+        axis.spines[["top", "right"]].set_visible(False)
+    save(figure, output, "measured-async-checkpoint.svg")
 
+    figure, axes = plt.subplots(1, 2, figsize=(9, 4.2))
     ratio_labels = [row[0] for row in ratios]
     for axis, column, title, unit, color in (
-        (axes[1, 0], 3, "Checkpoint size by LoRA ratio", "MB", BLUE),
-        (axes[1, 1], 4, "Save time by LoRA ratio", "Seconds", ORANGE),
+        (axes[0], 3, "Checkpoint size by LoRA ratio", "MB", BLUE),
+        (axes[1], 4, "Save time by LoRA ratio", "Seconds", ORANGE),
     ):
         values = [float(row[column]) for row in ratios]
         bars = axis.bar(ratio_labels, values, color=color, width=0.6)
@@ -119,7 +129,7 @@ def plot_checkpoint(output: Path) -> None:
         axis.grid(axis="y", alpha=0.2)
         axis.set_axisbelow(True)
         axis.spines[["top", "right"]].set_visible(False)
-    save(figure, output, "measured-checkpoint.svg")
+    save(figure, output, "measured-lora-ratio.svg")
 
 
 def main() -> None:

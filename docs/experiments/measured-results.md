@@ -30,9 +30,11 @@ Checkpoint 크기는 두 rank의 최신 shard logical byte 합이며, 시간은 
 | GLM | 4096 | 34.537 | 41.311 |
 | GLM | 8192 | 38.942 | 49.859 |
 
+![Sequence length별 Qwen·GLM memory](../figures/measured-sequence-memory.svg)
+
 ## Recompute
 
-Qwen에서 selective recompute는 full보다 steady step이 26.8~27.9% 짧았지만 peak allocated는 35.0~62.9% 컸습니다.
+Qwen에서 selective recompute는 full보다 steady step이 26.8\~27.9% 짧았지만 peak allocated는 35.0\~62.9% 컸습니다.
 Steady step은 4-step run의 첫 step을 제외한 median이고, memory는 측정 run 전체의 최댓값입니다.
 
 | Length | Mode | Steady step median (ms) | Peak allocated max (GiB) | Peak reserved max (GiB) |
@@ -41,6 +43,8 @@ Steady step은 4-step run의 첫 step을 제외한 median이고, memory는 측�
 | 2048 | selective | 2304.3 | 43.413 | 46.270 |
 | 4096 | full | 6343.5 | 34.321 | 39.990 |
 | 4096 | selective | 4572.3 | 55.905 | 59.492 |
+
+![Full·selective recompute의 step time과 memory](../figures/measured-recompute.svg)
 
 ## Async checkpoint scaling
 
@@ -55,6 +59,8 @@ Qwen 100-step run에서 10 step마다 checkpoint를 저장하고, LoRA rank 8과
 | 8 | 0.0319 | async | 0.730 | 3.515 | 0.765 | 4.280 | 336.050 | 3226.20 | 0.23 |
 | 251 | 0.9998 | sync | 22.468 | 12.474 | 0.000 | 12.474 | 356.404 | 3339.25 | 0.88 |
 | 251 | 0.9998 | async | 22.468 | 4.296 | 1.566 | 5.830 | 349.785 | 3335.35 | 1.13 |
+
+![LoRA checkpoint 크기별 sync·async 비교](../figures/measured-async-checkpoint.svg)
 
 작은 payload에서 async는 direct wait를 1.9% 줄였지만 post-ready는 0.10%, steady step은 0.20% 길어 실질적인 이득이 없었습니다.
 큰 payload에서는 direct wait가 53.3%, post-ready가 1.86% 줄었고 steady step 차이는 -0.12%였습니다.
@@ -81,9 +87,7 @@ Trainable 비율의 분모는 전체 모델이 아니라 Megatron 로그의 rank
 | 0.5% | 126 | 0.5019 | 1128.4 | 2.03 | 0.13 |
 | 1.0% | 251 | 0.9998 | 2246.6 | 2.61 | 0.60 |
 
-![Sequence length와 recompute의 실측 memory](../figures/measured-memory.svg)
-
-![Node-local checkpoint와 LoRA ratio의 실측 결과](../figures/measured-checkpoint.svg)
+![LoRA 비율별 checkpoint 크기와 save 시간](../figures/measured-lora-ratio.svg)
 
 그래프는 위 표를 직접 읽어 그립니다.
 다시 만들려면 `python experiments/plot_measured_results.py`를 실행합니다.
