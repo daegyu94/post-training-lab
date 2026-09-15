@@ -81,6 +81,20 @@ DEMO_LIVE=1 DEMO_SERVER_HOST=spark1 bash scripts/run_spark_observability.sh serv
 Grafana는 이 명령을 실행한 host의 loopback에 열리므로, SSH forwarding의 최종 host도 그 host여야 합니다.
 예를 들어 controller에서 실행했다면 위의 `spark1` forwarding 예시 대신 controller로 연결합니다.
 
+### Dashboard 구성
+
+세 dashboard는 `cluster`, `node`, `run_id` filter와 시간 범위를 공유하며 화면 링크로 선택값을 넘깁니다.
+Live demo에서는 `cluster=demo-b300`, `node=All`, `run_id=live-demo`를 선택합니다.
+
+| Dashboard | 주요 panel | Live demo에서 볼 구간 |
+| --- | --- | --- |
+| Run Overview | target 상태·sample age, GPU utilization matrix, rank별 throughput·step time·loss | 시작 화면과 정상 학습 대비 |
+| Compute & Communication | GPU health·memory, rank timer, RoCE interface throughput, GPU allocation·compute topology | `collective`에서 communication timer와 RoCE traffic 상승 |
+| Data & Storage | node disk throughput·IOPS·busy time·filesystem, storage topology, SSD SMART | `data_wait`의 read/busy time과 `checkpoint`의 write 증가 |
+
+Data & Storage는 storage system·storage node·SSD filter를 추가로 제공하며, 모든 storage node를 보려면 기본 `All`을 유지합니다.
+Topology panel은 전달된 연결 관계를 표시하며, 직접 측정한 link bandwidth나 endpoint 쌍별 traffic matrix는 아닙니다.
+
 Simulator는 100초마다 정상 학습, data wait, collective 통신, checkpoint, recovery를 반복합니다.
 기존 dashboard JSON은 변경하지 않으며, Prometheus가 `spark`와 `storage-smart` job으로 scrape하는 metric만 합성합니다.
 `examples/live-demo/gpu_topology.yaml`과 `storage_topology.yaml`은 JSON-compatible YAML이라 추가 Python package 없이 읽습니다.
