@@ -62,7 +62,8 @@ print(snapshot_download(
 PY
 ```
 
-No Robots 학습 8개·검증 2개는 **한 번 생성해 다른 노드로 복사**하고 `data_dir`를 node-local로 지정합니다([Datasets](datasets.md#public-data)).
+No Robots 원본을 준비한 뒤 Qwen2.5 tokenizer 기준 2048 token 이하의 학습 4개·검증 2개를 `experiments/prepare_checkpoint_cohort.py`로 각 노드에 선택합니다.
+두 backend의 `data_dir`는 이 고정 cohort를 가리켜야 하며, Megatron은 초과 행을 자동으로 자르지 않습니다.
 
 ## 4. Configure the Setup
 
