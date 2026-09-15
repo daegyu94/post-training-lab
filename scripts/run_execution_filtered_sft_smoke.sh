@@ -14,6 +14,7 @@ stage_dir="${STAGE_DIR:?set STAGE_DIR to a new NFS output path}"
 limit_per_split="${LIMIT_PER_SPLIT:-2}"
 initial_sft_steps="${INITIAL_SFT_STEPS:-32}"
 filtered_sft_steps="${FILTERED_SFT_STEPS:-1}"
+rlvr_steps="${RLVR_STEPS:-1}"
 lora_rank="${LORA_RANK:-8}"
 num_candidates="${NUM_TRAIN_CANDIDATES:-8}"
 max_new_tokens="${MAX_NEW_TOKENS:-128}"
@@ -59,11 +60,18 @@ fi
   --output-dir "$work_dir/checkpoints/filtered" \
   --max-steps "$filtered_sft_steps" --per-device-batch-size 1 \
   --gradient-accumulation-steps 1
+"$python_bin" -m execution_feedback.rlvr \
+  --model-dir "$work_dir/checkpoints/filtered/model" --tasks "$work_dir/data/tasks.jsonl" \
+  --output-dir "$work_dir/checkpoints/rlvr" --max-steps "$rlvr_steps" \
+  --num-generations 2 --max-completion-length "$max_new_tokens"
 
 cp "$work_dir/data/tasks.jsonl" "$stage_dir/tasks.jsonl"
 cp "$work_dir/feedback/manifest.json" "$stage_dir/feedback-manifest.json"
 cp "$work_dir/checkpoints/filtered/model/adapter_config.json" "$stage_dir/adapter_config.json"
 cp "$work_dir/checkpoints/filtered/model/adapter_model.safetensors" "$stage_dir/adapter_model.safetensors"
 cp "$work_dir/checkpoints/filtered/execution_feedback_training.json" "$stage_dir/filtered-sft-training.json"
+mkdir "$stage_dir/rlvr-adapter"
+cp "$work_dir/checkpoints/rlvr/model/adapter_config.json" "$stage_dir/rlvr-adapter/adapter_config.json"
+cp "$work_dir/checkpoints/rlvr/model/adapter_model.safetensors" "$stage_dir/rlvr-adapter/adapter_model.safetensors"
 
 echo "filtered-SFT stage artifacts: $stage_dir"

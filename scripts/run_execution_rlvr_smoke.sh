@@ -10,11 +10,9 @@ fi
 
 ssh_config="${SSH_CONFIG:-/dev/null}"
 spark1_host="${SPARK1_HOST:-spark@spark1}"
-spark2_host="${SPARK2_HOST:-spark@spark2}"
 spark_repo="${SPARK_REPO:-/home/spark/shared/$(basename "$repo_root")}"
 spark1_work_dir="${SPARK1_WORK_ROOT:-/mnt/post-training/execution-rlvr}/$run_id"
 stage_dir="${STAGE_ROOT:-/home/spark/shared/execution-rlvr}/$run_id"
-trainer_output="${TRAINER_OUTPUT_ROOT:-/mnt/post-training/verl/checkpoints/execution-rlvr}/$run_id"
 model_dir="${MODEL_DIR:-/home/spark/.local/ptl/models/Qwen2.5-0.5B-Instruct}"
 
 run_remote() {
@@ -28,18 +26,7 @@ run_remote "$spark1_host" env \
   MODEL_DIR="$model_dir" WORK_DIR="$spark1_work_dir" STAGE_DIR="$stage_dir" \
   LIMIT_PER_SPLIT="${LIMIT_PER_SPLIT:-2}" INITIAL_SFT_STEPS="${INITIAL_SFT_STEPS:-32}" \
   FILTERED_SFT_STEPS="${FILTERED_SFT_STEPS:-1}" LORA_RANK="${LORA_RANK:-8}" \
+  RLVR_STEPS="${RLVR_MAX_STEPS:-1}" \
   NUM_TRAIN_CANDIDATES="${NUM_TRAIN_CANDIDATES:-8}" MAX_NEW_TOKENS="${MAX_NEW_TOKENS:-128}" \
   DOCKER_WORKERS="${DOCKER_WORKERS:-1}" \
   bash "$spark_repo/scripts/run_execution_filtered_sft_smoke.sh"
-
-run_remote "$spark2_host" env \
-  VERL_PYTHON="${VERL_PYTHON:-/home/spark/.local/ptl/venvs/verl/bin/python}" \
-  MODEL_DIR="$model_dir" TASKS="$stage_dir/tasks.jsonl" LORA_ADAPTER="$stage_dir" \
-  DATA_DIR="$stage_dir/verl-data" OUTPUT_DIR="$trainer_output" \
-  MAX_STEPS="${RLVR_MAX_STEPS:-1}" \
-  EXECUTION_REWARD_IMAGE="${EXECUTION_REWARD_IMAGE:-python:3.12-slim}" \
-  EXECUTION_REWARD_TIMEOUT_SECONDS="${EXECUTION_REWARD_TIMEOUT_SECONDS:-10}" \
-  EXECUTION_REWARD_MEMORY="${EXECUTION_REWARD_MEMORY:-256m}" \
-  EXECUTION_REWARD_CPUS="${EXECUTION_REWARD_CPUS:-1}" \
-  EXECUTION_REWARD_PIDS_LIMIT="${EXECUTION_REWARD_PIDS_LIMIT:-64}" \
-  bash "$spark_repo/backends/verl/scripts/run_execution_grpo_smoke.sh"
