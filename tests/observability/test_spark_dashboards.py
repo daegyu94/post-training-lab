@@ -107,6 +107,35 @@ def test_server_config_rejects_duplicate_target_names(tmp_path: Path) -> None:
     assert "node names must be unique" in result.stderr
 
 
+def test_demo_server_host_delegates_to_the_spark_node(tmp_path: Path) -> None:
+    script = ROOT / "observability" / "scripts" / "run_spark_observability.sh"
+    ssh = tmp_path / "ssh"
+    arguments = tmp_path / "ssh-arguments.txt"
+    ssh.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$SSH_ARGUMENTS"\n')
+    ssh.chmod(0o755)
+    environment = os.environ | {
+        "DEMO_LIVE": "1",
+        "DEMO_SERVER_HOST": "spark1",
+        "SSH_ARGUMENTS": str(arguments),
+        "PATH": str(tmp_path) + os.pathsep + os.environ["PATH"],
+    }
+
+    result = subprocess.run(
+        ["bash", str(script), "server"],
+        cwd=ROOT,
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert arguments.read_text().splitlines() == [
+        "spark@spark1",
+        "cd /home/spark/shared/post-training-lab/observability && exec env DEMO_LIVE=1 bash scripts/run_spark_observability.sh server",
+    ]
+
+
 def test_storage_role_starts_smartctl_exporter_with_slow_polling(tmp_path: Path) -> None:
     script = ROOT / "observability" / "scripts" / "run_spark_observability.sh"
     smartctl = tmp_path / "smartctl"

@@ -72,6 +72,12 @@ cd observability
 DEMO_LIVE=1 bash scripts/run_spark_observability.sh server
 ```
 
+controller에서 ARM64 server host로 실행을 넘기려면 hostname을 지정합니다.
+
+```bash
+DEMO_LIVE=1 DEMO_SERVER_HOST=spark1 bash scripts/run_spark_observability.sh server
+```
+
 Grafana는 이 명령을 실행한 host의 loopback에 열리므로, SSH forwarding의 최종 host도 그 host여야 합니다.
 예를 들어 controller에서 실행했다면 위의 `spark1` forwarding 예시 대신 controller로 연결합니다.
 

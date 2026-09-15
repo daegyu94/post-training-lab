@@ -1,12 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+role="${1:?Use node, storage, or server}"
+if [[ -n "${DEMO_SERVER_HOST:-}" ]]; then
+  if [[ "$role" != server || "${DEMO_LIVE:-0}" != 1 ]]; then
+    echo "DEMO_SERVER_HOST requires DEMO_LIVE=1 and the server role" >&2
+    exit 2
+  fi
+  if [[ ! "$DEMO_SERVER_HOST" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+    echo "DEMO_SERVER_HOST must contain only letters, digits, dots, underscores, or hyphens" >&2
+    exit 2
+  fi
+  exec ssh "spark@$DEMO_SERVER_HOST" \
+    'cd /home/spark/shared/post-training-lab/observability && exec env DEMO_LIVE=1 bash scripts/run_spark_observability.sh server'
+fi
 export PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}"
 tools_dir="${TOOLS_DIR:-$HOME/.local/share/profiling-lab-tools}"
 output_dir="${OUTPUT_DIR:-$PWD/artifacts/spark/monitoring-$(hostname)}"
 mkdir -p "$output_dir"
 output_dir="$(cd "$output_dir" && pwd)"
-role="${1:?Use node, storage, or server}"
 pids=()
 cleanup() {
   trap - EXIT INT TERM
