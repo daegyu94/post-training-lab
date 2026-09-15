@@ -100,6 +100,23 @@ sync는 각 save가 끝날 때까지 학습을 멈추고, async는 save를 queue
 | sync | 729.64 MB | 4.336 s | 0.000 s | 4.336 s | 336.043 s | 3224.05 ms | 3471.18 ms |
 | async | 729.64 MB | 3.476 s | 0.679 s | 4.155 s | 336.251 s | 3226.00 ms | 3442.65 ms |
 
+Checkpoint 하나는 두 rank 합계 약 72.96 MB, rank당 약 36.4 MB입니다.
+10 step의 compute가 약 32초인 데 비해 write가 작아 async background write는 다음 checkpoint 전에 끝날 시간이 충분했습니다.
+Sync의 checkpoint 직접 대기도 전체 실행의 약 1.3%뿐이므로 async가 이를 모두 숨겨도 전체 시간에서 보일 수 있는 효과가 작습니다.
+
+```text
+time >
+sync compute  | step 10 |             | step 11 | step 12 |
+sync I/O                  | write      |
+
+async compute | step 10 | Q | step 11 | step 12 | step 13 |
+async I/O                   | write ------------> |
+                              overlap ----------> |
+```
+
+`Q`는 checkpoint enqueue입니다.
+Async는 write를 뒤따르는 compute와 겹치지만 마지막 checkpoint 뒤에는 겹칠 step이 없어 남은 write를 finalization에서 기다립니다.
+
 `Model-ready 이후`는 stage 시작부터 model-ready까지 걸린 시간을 stage 전체 시간에서 뺀 뒤 두 rank 중 긴 값을 취합니다.
 100 step, checkpoint 대기와 마지막 finalization을 포함하고 모델 초기화는 제외합니다.
 Async는 이 값이 0.06%, steady-step median은 0.06% 길고 p95는 0.82% 짧아 한 번의 실행에서는 실질적인 step-time 증가가 보이지 않았습니다.
