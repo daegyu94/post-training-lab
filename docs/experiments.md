@@ -27,8 +27,7 @@ Experiment 파일은 모델·데이터 revision과 학습 조건을, setup은 �
 | 알고 싶은 것 | 먼저 볼 결과 | 현재까지 말할 수 있는 것 |
 | --- | --- | --- |
 | 30B SFT와 checkpoint 재로딩이 되는가? | [30B GPU Results](experiments/30b-results.md#30b-gpu-results) | 1-step 실행과 재로딩까지 확인. 장기 수렴·품질 검증은 아님 |
-| DeepSpeed runtime offload로 30B full SFT가 가능한가? | [ZeRO-3 NVMe topology comparison](experiments/30b-results.md#ultrachat-full-sft-topology-comparison-2026-09-14) | 1노드는 OOM, 2노드는 Qwen·GLM 모두 학습·평가·native checkpoint 복구 통과 |
-| 30B full SFT는 이 장치에 들어가는가? | [Full-SFT capacity](experiments/30b-results.md#full-sft-capacity) | 2노드 Qwen Megatron pilot은 추정 90.0 GiB/rank였지만 첫 step 전 OOM. 별도 single-node TRL 실험은 두 모델 모두 OOM |
+| 30B full SFT는 어떤 node·offload 구성에서 가능한가? | [ZeRO-3 NVMe topology comparison](experiments/30b-results.md#ultrachat-full-sft-topology-comparison-2026-09-14)·[Full-SFT capacity](experiments/30b-results.md#full-sft-capacity) | 검증한 구성 중 2-node TRL ZeRO-3 NVMe는 Qwen·GLM의 학습·평가·native checkpoint 복구 통과. 2-node Megatron Qwen은 첫 step 전, single-node TRL 두 모델은 checkpoint 전 OOM |
 | 100B\~1T에 필요한 용량은? | [Scaling Estimates](experiments/scaling-estimates.md#scaling-estimates-100b-to-1t) | 가정한 dtype·optimizer·sharding에 따른 계산. 해당 규모 GPU 실행 결과가 아님 |
 
 ### Checkpoint I/O
