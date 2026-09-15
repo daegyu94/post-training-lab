@@ -1,9 +1,9 @@
-# 실험
+# Experiments
 
 이 문서는 저장소에서 유지하는 실험과 현재 지원 상태의 단일 기준입니다.
 모든 GPU 실험은 `spark1`·`spark2`에서 노드당 process 하나를 사용하며, checkpoint는 각 노드의 local NVMe에 저장합니다.
 
-## 지원 상태
+## Support status
 
 | 대상 | 상태 | 검증 범위 |
 | --- | --- | --- |
@@ -19,7 +19,7 @@
 `지원`은 짧은 실행의 성공과 저장 경로를 뜻하며 장기 수렴이나 모델 품질을 보장하지 않습니다.
 분산 restore·resume과 NFS checkpoint는 현재 실행·검증 범위에 포함하지 않습니다.
 
-## 실측 결과
+## Measured results
 
 | 비교 | 결과 |
 | --- | --- |
@@ -28,7 +28,7 @@
 | Sync·async checkpoint | [LoRA rank 8·251의 100-step 실측](experiments/measured-results.md#async-checkpoint-scaling) |
 | LoRA 비율별 checkpoint 크기 | [Qwen 실측](experiments/measured-results.md#lora-ratio) |
 
-## 유지하는 preset
+## Presets
 
 | 파일 | 용도 |
 | --- | --- |
@@ -43,7 +43,7 @@
 분산 preset은 모두 `STAGE=train`을 사용합니다.
 Megatron preset의 `CHECKPOINT_PLACEMENT=local`은 rank마다 `<OUTPUT_DIR>/checkpoints`에 shard를 저장하며 cross-node 복원을 보장하지 않습니다.
 
-## 실행
+## Running experiments
 
 기본 runner는 dry-run으로 계획만 출력합니다.
 계획의 모델·데이터 revision, host, node-local 경로를 확인한 뒤 `--execute`를 추가합니다.
@@ -69,7 +69,7 @@ python experiments/checkpoint_memory_30b.py \
 `--model glm`은 GLM preset과 cohort를 선택합니다.
 `experiments/build.py`는 개별 knob로 일반 실험을 만들며 기본 stage와 Megatron checkpoint 배치는 각각 `train`, `local`입니다.
 
-## 판정 기준
+## Acceptance criteria
 
 다음 조건을 모두 만족해야 GPU 실행을 성공으로 판정합니다.
 

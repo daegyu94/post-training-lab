@@ -406,12 +406,13 @@ def test_checkpoint_plan_validates_variant_identity_and_preserves_ratio_sweep(tm
         checkpoint_memory_30b.resolve_checkpoint_plan('qwen', changed)
 
 
-def test_recompute_plan_uses_the_controlled_30b_cohort_and_attention_backend():
+def test_specialized_plans_support_both_models():
     path = checkpoint_memory_30b.ROOT / "experiments/megatron/recompute-30b.json"
 
     assert checkpoint_memory_30b.resolve_checkpoint_plan("qwen", path) == path
+    assert checkpoint_memory_30b.resolve_checkpoint_plan("glm", path) == path
     plan = checkpoint_memory_30b.benchmarks.load_benchmark_plan(path)
-    assert plan["common_env"]["MODEL_ID"] == checkpoint_memory_30b.MODELS["qwen"]["id"]
+    assert "MODEL_ID" not in plan["common_env"]
     assert plan["common_env"]["TRANSFORMER_IMPL"] == "transformer_engine"
     assert {cell["name"] for cell in plan["cells"]} == {
         "recompute-length-2048", "recompute-length-4096",
@@ -421,6 +422,10 @@ def test_recompute_plan_uses_the_controlled_30b_cohort_and_attention_backend():
             path.with_name(name)
         )
         assert controlled["common_env"]["TRANSFORMER_IMPL"] == "transformer_engine"
+    for name in ("lora-ratio-checkpoint-io.json", "async-checkpoint-scale-30b.json"):
+        specialized = path.with_name(name)
+        assert checkpoint_memory_30b.resolve_checkpoint_plan("qwen", specialized) == specialized
+        assert checkpoint_memory_30b.resolve_checkpoint_plan("glm", specialized) == specialized
 
 
 def test_resume_rejects_other_model_even_without_root_manifest(tmp_path):
