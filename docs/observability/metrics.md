@@ -1,16 +1,16 @@
 # Metrics Contract
 
 Metrics Contract는 관측 데이터를 기록하고 비교할 때 사용할 이름·단위·측정 범위를 정의합니다.
-기준 파일은 [`config/metrics.json`](../../observability/config/metrics.json)이며, 서로 다른 collector와 framework가 같은 의미의 값을 같은 방식으로 표현하도록 돕습니다.
+기준 파일은 [`config/metrics.json`](../../observability/config/metrics.json)이며, 서로 다른 collector와 application이 같은 의미의 값을 같은 방식으로 표현하도록 돕습니다.
 
 이 파일은 모든 metric을 자동으로 수집하거나 Prometheus 이름을 자동 변환하는 runtime registry가 아닙니다.
-현재 dashboard는 exporter의 원본 metric을 직접 조회하고, framework metric은 textfile collector가 별도로 발행합니다.
+현재 dashboard는 exporter의 원본 metric을 직접 조회하고, application metric은 textfile collector가 별도로 발행합니다.
 
 ## Who Uses the Contract
 
 | 사용자 | 사용 목적 | 현재 연결 방식 |
 | --- | --- | --- |
-| Collector·framework adapter 개발자 | 새 metric의 canonical name, unit, scope 결정 | 계약을 구현 기준으로 사용 |
+| Collector·application adapter 개발자 | 새 metric의 canonical name, unit, scope 결정 | 계약을 구현 기준으로 사용 |
 | Summary·분석 코드 개발자 | 서로 다른 run과 backend의 값을 같은 단위로 비교 | canonical vocabulary를 출력 기준으로 사용 |
 | Dashboard 작성자 | exporter 원본 metric의 의미와 변환 단위 확인 | 원본 Prometheus metric을 직접 query |
 | Schema validator·test | 계약 파일의 구조, 필수 field, 중복 검사 | [`schema.py`](../../observability/profiling_lab/schema.py)가 JSON을 검증 |
@@ -26,7 +26,7 @@ metric을 실제로 수집하려면 collector나 adapter 구현이 별도로 필
 | `metrics` | canonical metric 정의 목록 |
 | `recommended_labels` | 비교와 filtering에 사용할 label 후보 |
 | `manifest_only_fields` | Prometheus label 대신 manifest에 기록할 값 |
-| `phase_vocabulary` | framework 간에 공통으로 사용할 실행 단계 이름 |
+| `phase_vocabulary` | application 간에 공통으로 사용할 실행 단계 이름 |
 
 기존 metric의 의미나 단위를 바꾸는 호환성 파괴 변경에만 `schema_version`을 올립니다.
 같은 의미를 유지한 새 metric 추가는 현재 version에서 처리합니다.
@@ -65,9 +65,9 @@ Label은 Prometheus에서 시계열을 filtering하고 비교하는 데 사용�
 
 권장 label 후보:
 
-- 실행: `run_id`, `cluster`, `job`, `framework`, `role`, `phase`
+- 실행: `run_id`, `cluster`, `job`, `producer`, `role`, `phase`
 - 위치: `node`, `gpu`, `device`, `interface`
-- 병렬 실행: `rank`, `local_rank`, `tp_rank`, `pp_rank`, `dp_rank`, `parallel_group`
+- 병렬 실행: `worker_id`, `local_rank`, `tp_rank`, `pp_rank`, `dp_rank`, `parallel_group`
 - 작업 종류: `operation`, `timer`
 
 다음 값은 종류가 많거나 문자열이 길어 Prometheus label로 적합하지 않습니다.
@@ -83,7 +83,7 @@ Prompt, request ID, timestamp, trace ID처럼 계속 새 값이 생기는 항목
 
 ## Workflow Phases
 
-`phase_vocabulary`는 framework가 달라도 같은 lifecycle 구간을 비교하기 위한 이름입니다.
+`phase_vocabulary`는 application이 달라도 같은 lifecycle 구간을 비교하기 위한 이름입니다.
 
 | Phase | 대표 신호 |
 | --- | --- |
@@ -112,7 +112,7 @@ bytes와 duration을 모두 얻으면 유효 대역폭을 계산하고 같은 pa
 | GPU·host → checkpoint storage | checkpoint timer, storage throughput·volume | writer·rank coordination trace |
 
 Node Exporter와 DCGM만으로는 bytes가 어떤 phase나 rank에서 발생했는지 알 수 없습니다.
-Framework phase marker와 rank map을 같은 `run_id`로 연결해야 합니다.
+Application phase marker와 rank map을 같은 `run_id`로 연결해야 합니다.
 
 RoCE는 TCP/IP와 RDMA counter를 함께 확인합니다.
 
@@ -122,14 +122,15 @@ RoCE는 TCP/IP와 RDMA counter를 함께 확인합니다.
 
 NCCL IB transport처럼 kernel network stack을 우회하는 traffic은 `network_*`만으로 판단할 수 없습니다.
 
-## Framework Integration
+## Application Integration
 
 Runner는 output 이름을 `OBSERVATORY_RUN_ID`로 설정합니다.
-TRL·Megatron callback은 `<output>/framework-metrics/`의 rank JSON을 atomic replace합니다.
+TRL·Megatron callback은 `<output>/observatory-metrics/`의 worker JSON을 atomic replace합니다.
+다른 application을 연결하는 방법은 [Application Metrics Guide](application-metrics.md)를 따릅니다.
 
 | 사용 경로 | Reader |
 | --- | --- |
-| 실시간 dashboard | [textfile collector](monitoring.md#live-framework-metrics) |
+| 실시간 dashboard | [textfile collector](monitoring.md#live-application-metrics) |
 | 종료된 run 요약 | [`show_run`](analysis.md#inspect-run-state) |
 
 처리량의 의미는 framework마다 다릅니다.

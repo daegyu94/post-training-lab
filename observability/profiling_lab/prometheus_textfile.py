@@ -1,4 +1,4 @@
-"""Write application gauges for the Prometheus Node Exporter textfile collector."""
+"""Write metrics for the Prometheus Node Exporter textfile collector."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ class GaugeSample:
     help: str
     value: float
     labels: Mapping[str, str] = field(default_factory=dict)
+    kind: str = "gauge"
 
 
 def _escape_help(value: str) -> str:
@@ -30,15 +31,18 @@ def _escape_label(value: str) -> str:
 
 
 def format_gauges(samples: Iterable[GaugeSample]) -> str:
-    """Return Prometheus text exposition for gauge samples."""
-    grouped_help: dict[str, str] = {}
+    """Return Prometheus text exposition for metric samples."""
+    definitions: dict[str, tuple[str, str]] = {}
     materialized = list(samples)
     for sample in materialized:
         if not _METRIC_NAME.fullmatch(sample.name):
             raise ValueError(f"invalid metric name: {sample.name}")
-        if sample.name in grouped_help and grouped_help[sample.name] != sample.help:
-            raise ValueError(f"inconsistent help for metric: {sample.name}")
-        grouped_help[sample.name] = sample.help
+        if sample.kind not in {"gauge", "counter"}:
+            raise ValueError(f"invalid metric kind: {sample.kind}")
+        definition = (sample.help, sample.kind)
+        if sample.name in definitions and definitions[sample.name] != definition:
+            raise ValueError(f"inconsistent definition for metric: {sample.name}")
+        definitions[sample.name] = definition
         for label in sample.labels:
             if not _LABEL_NAME.fullmatch(label):
                 raise ValueError(f"invalid label name: {label}")
@@ -48,7 +52,7 @@ def format_gauges(samples: Iterable[GaugeSample]) -> str:
     for sample in materialized:
         if sample.name not in emitted:
             lines.append(f"# HELP {sample.name} {_escape_help(sample.help)}")
-            lines.append(f"# TYPE {sample.name} gauge")
+            lines.append(f"# TYPE {sample.name} {sample.kind}")
             emitted.add(sample.name)
         label_text = ""
         if sample.labels:
@@ -60,7 +64,7 @@ def format_gauges(samples: Iterable[GaugeSample]) -> str:
 
 
 def write_gauges(directory: Path, filename: str, samples: Iterable[GaugeSample]) -> Path:
-    """Atomically replace one rank-owned ``.prom`` file."""
+    """Atomically replace one producer-owned ``.prom`` file."""
     if Path(filename).name != filename or not filename.endswith(".prom"):
         raise ValueError("filename must be a basename ending in .prom")
     directory.mkdir(parents=True, exist_ok=True)

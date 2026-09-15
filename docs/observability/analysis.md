@@ -19,7 +19,7 @@ run summary와 [monitoring dashboard](monitoring.md)만으로 답할 수 없을 
 ## Analysis Workflow
 
 1. Dashboard에서 이상이 발생한 시간 범위와 node·rank·run을 기록합니다.
-2. `show_run`으로 실행 상태와 마지막 framework metric을 확인합니다.
+2. `show_run`으로 실행 상태와 마지막 application metric을 확인합니다.
 3. 원인이 남아 있으면 같은 조건에서 짧은 trace를 수집합니다.
 4. 통신 병목이 의심되면 별도의 NCCL baseline과 비교합니다.
 5. 원인을 수정한 뒤 profiler를 끈 실행에서 효과를 다시 측정합니다.
@@ -35,16 +35,16 @@ Synthetic trace나 NCCL baseline을 실제 LLM throughput으로 해석하지 않
 | --- | --- |
 | Megatron `run-metadata-<stage>.json` | stage별 실행 metadata와 상태 |
 | TRL `summary-<stage>.json` | stage별 summary |
-| `framework-metrics/<framework>-rank-<rank>.json` | rank별 마지막 step과 metric |
+| `observatory-metrics/<producer>-<role>-<worker>.json` | worker별 마지막 step과 metric |
 
 ```bash
 PYTHONPATH=observability python3 -m profiling_lab.show_run '<output-dir>'
 ```
 
-framework metric을 보려면 실행 시 `OBSERVATORY_RUN_ID`와 `FRAMEWORK_METRICS_DIR`가 설정되어 있어야 합니다.
+Application metric을 보려면 실행 시 `OBSERVATORY_RUN_ID`와 `OBSERVATORY_METRICS_DIR`가 설정되어 있어야 합니다.
 output directory가 node-local이라 controller에서 보이지 않으면 해당 node에서 명령을 실행합니다.
 
-`show_run`이 보여 주는 framework metric은 마지막 snapshot입니다.
+`show_run`이 보여 주는 application metric은 마지막 snapshot입니다.
 전체 loss 추이나 step별 변화는 `logs/`의 학습 log를 확인합니다.
 
 ## Capture a Focused Trace
@@ -90,7 +90,7 @@ PYTHON='<cuda-python>' \
 각 rank의 log·manifest·JSON 결과를 확인하고, `capture`에서는 `traces/`도 확인합니다.
 이 workload는 trace 절차를 검증하는 synthetic DDP이며 실제 LLM 실행이 아닙니다.
 
-실제 PyTorch training loop에 profiler를 넣는 방법은 [Framework Integration](metrics.md#framework-integration)을 따릅니다.
+실제 PyTorch training loop에 profiler를 넣는 방법은 [Application Integration](metrics.md#application-integration)을 따릅니다.
 
 ## Compare a Hardware Baseline
 

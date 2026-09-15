@@ -7,7 +7,7 @@ helper script는 ARM64와 x86_64 Linux를 지원하며 특정 workload launcher�
 ## Monitoring Flow
 
 1. 각 node에서 collector를 실행합니다.
-2. 필요하면 같은 node에서 framework metrics와 topology 수집을 추가합니다.
+2. 필요하면 같은 node에서 application metrics와 topology 수집을 추가합니다.
 3. monitoring host에서 Prometheus와 Grafana를 시작합니다.
 4. GUI가 있는 client에서 Grafana dashboard를 엽니다.
 
@@ -36,7 +36,7 @@ bash scripts/install_observability_tools.sh server
 
 - node exporter: host 지표를 19100 포트에 노출
 - GPU sampler: GPU 지표를 수집하고 textfile metric과 JSONL을 생성
-- 선택 기능: framework metrics, topology, local SSD health
+- 선택 기능: application metrics, topology, local SSD health
 
 GPU sampler의 기본 실행 시간은 15분입니다.
 시간이 지나면 sampler가 종료되고 script가 함께 시작한 exporter와 선택적 collector를 정리한 뒤 `node` role도 종료됩니다.
@@ -48,25 +48,25 @@ DURATION=3600 \
   bash scripts/run_observability.sh node
 ```
 
-#### Live Framework Metrics
+#### Live Application Metrics
 
-학습 loss·처리량·step time을 dashboard에 표시하려면 launcher가 쓰는 framework metrics 디렉터리를 같은 node의 collector에 전달합니다.
+학습 loss·처리량·step time을 dashboard에 표시하려면 launcher가 쓰는 application metrics 디렉터리를 같은 node의 collector에 전달합니다.
 
 ```bash
 NODE_ADDR='<node-management-address>' \
-FRAMEWORK_METRICS_DIR='<launcher-output>/framework-metrics' \
+OBSERVATORY_METRICS_DIR='<launcher-output>/observatory-metrics' \
 DURATION=3600 \
   bash scripts/run_observability.sh node
 ```
 
-[`framework_metrics_textfile`](../../observability/profiling_lab/framework_metrics_textfile.py)은 rank JSON을 읽어 다음 metric을 node exporter의 textfile collector로 전달합니다.
+[`app_metrics_textfile`](../../observability/profiling_lab/app_metrics_textfile.py)은 worker JSON을 읽어 다음 metric을 node exporter의 textfile collector로 전달합니다.
 
 - 공통: `training_loss`, `training_tokens_per_second`, `training_step_time_seconds`, `training_step`
 - Megatron: `training_timer_seconds{timer="..."}`
 
-`FRAMEWORK_METRICS_DIR`를 생략하면 framework metrics만 수집하지 않으며 host·GPU monitoring은 계속됩니다.
+`OBSERVATORY_METRICS_DIR`를 생략하면 application metrics만 수집하지 않으며 host·GPU monitoring은 계속됩니다.
 각 node에는 node-local 경로를 지정해야 합니다.
-여러 node가 같은 NFS 디렉터리를 읽으면 동일한 rank가 여러 `instance`에 중복됩니다.
+여러 node가 같은 NFS 디렉터리를 읽으면 동일한 worker가 여러 `instance`에 중복됩니다.
 
 Dashboard의 freshness 처리는 다음과 같습니다.
 
@@ -74,7 +74,7 @@ Dashboard의 freshness 처리는 다음과 같습니다.
 | --- | --- | --- |
 | GPU metric | 30초 | panel에서 숨김 |
 | 학습 metric·GPU allocation | `Training sample max age (s)` 300초 | panel에서 숨김 |
-| rank별 sample age | 제한 없이 표시 | 갱신이 중단된 rank 확인에 사용 |
+| worker별 sample age | 제한 없이 표시 | 갱신이 중단된 worker 확인에 사용 |
 
 긴 step에서는 `Training sample max age (s)`를 늘립니다.
 오래되거나 없는 allocation 정보를 GPU가 비어 있다는 뜻으로 해석하지 않습니다.
@@ -115,8 +115,8 @@ client browser에서 `http://localhost:13000`을 엽니다.
 
 | Dashboard | 확인할 내용 |
 | --- | --- |
-| Run Overview (`run-overview.json`, uid `observability-overview`) | target 상태·sample age, GPU utilization matrix, rank별 throughput·step time·loss |
-| Compute & Communication | GPU health·memory, rank timer, interface throughput, GPU allocation·compute topology |
+| Run Overview (`run-overview.json`, uid `observability-overview`) | target 상태·sample age, GPU utilization matrix, worker별 throughput·step time·loss |
+| Compute & Communication | GPU health·memory, worker timer, interface throughput, GPU allocation·compute topology |
 | Data & Storage | node-local device·filesystem 성능, storage topology, 선택적 SSD SMART |
 
 화면 링크는 시간·cluster·node·run 선택을 유지합니다.

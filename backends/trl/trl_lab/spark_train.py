@@ -437,8 +437,8 @@ def main() -> None:
         trainable_parameter_count = sum(parameter.numel() for parameter in trainable)
         sample_candidates = _sample_trainable_parameters(trainable_named) if config.distributed_backend == "ddp" else []
         before_sample = {name: parameter.detach().reshape(-1)[:16].float().cpu().clone() for name, parameter in sample_candidates} if args.stage == "train" else {}
-        from trl_lab.observatory import make_trl_callback
-        callback = make_trl_callback()
+        from profiling_lab.trainer_metrics import make_trainer_callback
+        callback = make_trainer_callback(producer="trl")
         trainer_kwargs = dict(model=model, args=training_args, train_dataset=datasets["train"], eval_dataset=datasets["validation"], processing_class=tokenizer)
         if callback is not None:
             trainer_kwargs["callbacks"] = [callback]

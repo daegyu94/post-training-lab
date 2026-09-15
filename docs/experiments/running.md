@@ -37,7 +37,7 @@ Preset을 고를 때 알아야 할 것:
 `experiments/run.py`는 `--backend`, `--setup`, `--experiment`, `--output`을 요구합니다.
 기본은 dry-run이고 `--timeout`은 기본 900초의 양의 정수이며 기존 출력 디렉터리는 재사용할 수 없습니다.
 모든 preset은 `MODEL_ID`, `MODEL_REVISION`, `DATASET_ID`, `DATASET_REVISION`을 명시해야 하고, 백엔드가 지원하는 모든 CLI 옵션이 runner에 노출된 것은 아닙니다.
-Runner는 output 디렉터리 이름을 `OBSERVATORY_RUN_ID`로 예약해 framework metric과 host telemetry를 같은 실행에 연결합니다.
+Runner는 output 디렉터리 이름을 `OBSERVATORY_RUN_ID`로 예약해 application metric과 host telemetry를 같은 실행에 연결합니다.
 
 ## Estimate Memory Before Running
 

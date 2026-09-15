@@ -239,20 +239,20 @@ def test_dashboards_keep_matrix_and_freshness_scopes_separate() -> None:
                     assert '$node' not in expr  # The publisher need not be the selected node.
                 if "$training_max_age" in expr:
                     assert variables["training_max_age"]["current"]["value"] == "300"
-                    assert "and on(cluster, instance, run_id, framework, node, rank, local_rank)" in expr
+                    assert "and on(cluster, instance, run_id, producer, role, worker_id, node, local_rank)" in expr
                 if "profiling_gpu_" in expr and "sample age" not in panel["title"].lower():
                     assert "profiling_gpu_sample_timestamp_seconds" in expr
                     assert "< 30" in expr
             if panel["title"] == "GPU allocation matrix":
                 expr = panel["targets"][0]["expr"]
-                assert '"cluster", "instance", "run_id", "framework", "rank"' in expr
+                assert '"cluster", "instance", "run_id", "producer", "role", "worker_id"' in expr
                 assert "$training_max_age" in expr
             if panel["title"] in {"Compute topology matrix", "Storage topology matrix"}:
                 expr = panel["targets"][0]["expr"]
                 assert '"cluster", "source"' in expr and '"cluster", "destination"' in expr
                 options = panel["transformations"][0]["options"]
                 assert (options["rowField"], options["columnField"]) == ("source_key", "destination_key")
-            if panel["title"] == "Training sample age by rank":
+            if panel["title"] == "Training sample age by worker":
                 assert "max(" not in panel["targets"][0]["expr"]
                 assert "$training_max_age" not in panel["targets"][0]["expr"]
             if panel["type"] == "stat":

@@ -16,6 +16,15 @@ def dpo_needs_precomputed_ref_logps(is_adapter: bool, lora_r: int) -> bool:
     return not (is_adapter or bool(lora_r))
 
 
+def _metrics_callbacks() -> dict[str, list[object]]:
+    if not (os.environ.get("OBSERVATORY_METRICS_DIR") or os.environ.get("OBSERVATORY_RUN_ID")):
+        return {}
+    from profiling_lab.trainer_metrics import make_trainer_callback
+
+    callback = make_trainer_callback(producer="execution-feedback")
+    return {"callbacks": [callback]} if callback is not None else {}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=("sft", "dpo"), required=True)
@@ -109,7 +118,11 @@ def main() -> None:
         # Qwen3-30B-A3B under CPU offload. "nll" is the same loss unchunked, with
         # no forward patching.
         training_args = SFTConfig(max_length=args.max_length, loss_type="nll", **common)
-        trainer = SFTTrainer(model=model, args=training_args, train_dataset=dataset["train"], eval_dataset=dataset.get("validation"), processing_class=tokenizer)
+        trainer = SFTTrainer(
+            model=model, args=training_args, train_dataset=dataset["train"],
+            eval_dataset=dataset.get("validation"), processing_class=tokenizer,
+            **_metrics_callbacks(),
+        )
     else:
         from trl import DPOConfig, DPOTrainer
         # With ref_model=None and no PEFT adapter, DPOTrainer reloads the whole
@@ -126,7 +139,11 @@ def main() -> None:
             max_length=args.max_length, beta=args.beta,
             precompute_ref_log_probs=dpo_needs_precomputed_ref_logps(is_adapter, args.lora_r), **common,
         )
-        trainer = DPOTrainer(model=model, ref_model=None, args=training_args, train_dataset=dataset["train"], eval_dataset=dataset.get("validation"), processing_class=tokenizer)
+        trainer = DPOTrainer(
+            model=model, ref_model=None, args=training_args, train_dataset=dataset["train"],
+            eval_dataset=dataset.get("validation"), processing_class=tokenizer,
+            **_metrics_callbacks(),
+        )
     started = time.perf_counter()
     result = trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
     trainer.save_model(str(args.output_dir / "model"))

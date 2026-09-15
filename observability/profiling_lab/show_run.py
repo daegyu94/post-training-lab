@@ -2,8 +2,7 @@
 
 No collector, no database: everything here already sits on disk in the
 run's output-dir -- Megatron's run-metadata-<stage>.json / TRL's
-summary-<stage>.json, and (if the run was started with OBSERVATORY_RUN_ID
-and FRAMEWORK_METRICS_DIR) the last framework-metrics sample per rank.
+summary-<stage>.json, and the last application metric snapshot per worker.
 """
 
 from __future__ import annotations
@@ -48,19 +47,22 @@ def summarize(output_dir: Path) -> str:
         lines.append(f"\n[{path.name}]")
         lines.extend(_flatten(data))
 
-    metrics_dir = output_dir / "framework-metrics"
-    metrics_files = sorted(metrics_dir.glob("*-rank-*.json")) if metrics_dir.is_dir() else []
+    metrics_dir = output_dir / "observatory-metrics"
+    metrics_files = sorted(metrics_dir.glob("*.json")) if metrics_dir.is_dir() else []
     if not metrics_files:
-        lines.append("\n(no framework-metrics -- run wasn't started with OBSERVATORY_RUN_ID/FRAMEWORK_METRICS_DIR)")
+        lines.append("\n(no observatory-metrics -- metrics were not enabled for this run)")
     for path in metrics_files:
-        sample = _load(path)
-        if sample is None:
+        snapshot = _load(path)
+        if snapshot is None or snapshot.get("schema_version") != 2:
             continue
-        m = sample.get("metrics", {})
+        metrics = " ".join(
+            f"{sample.get('name')}={sample.get('value')}"
+            for sample in snapshot.get("samples", [])
+            if isinstance(sample, dict)
+        )
         lines.append(
-            f"\n[{sample.get('framework')} rank {sample.get('rank')}] step {sample.get('step')}: "
-            f"loss={m.get('training_loss')} tokens/s={m.get('training_tokens_per_second')} "
-            f"step_time={m.get('training_step_time_seconds')}"
+            f"\n[{snapshot.get('producer')}/{snapshot.get('role')} worker "
+            f"{snapshot.get('worker_id')}] step {snapshot.get('step')}: {metrics}"
         )
 
     return "\n".join(lines)

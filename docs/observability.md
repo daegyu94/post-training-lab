@@ -9,12 +9,14 @@ Synthetic demo는 dashboard 동작을 보여 주기 위한 예시이며 실제 L
 분산 실행을 관측하려면 먼저 [분산 실행 모니터링](observability/monitoring.md)에서 collector와 dashboard 설정 방법을 확인합니다.
 이상이 발견되면 [실행 분석](observability/analysis.md)에 따라 run history를 확인하고, 필요한 구간의 selected-rank trace를 수집하거나 hardware baseline과 비교합니다.
 지표를 추가하거나 해석할 때는 [Metrics Contract](observability/metrics.md)에 정의된 이름·단위·측정 범위를 따릅니다.
+Training이나 agentic RL application에 metric을 연결할 때는 [Application Metrics Guide](observability/application-metrics.md)를 따릅니다.
 
 | 목적 | 문서 |
 | --- | --- |
-| node collector, monitoring server, dashboard, SSD health, framework metrics | [분산 실행 모니터링](observability/monitoring.md) |
+| application에 metric emitter나 Trainer callback 연결 | [Application Metrics Guide](observability/application-metrics.md) |
+| node collector, monitoring server, dashboard, SSD health, application metrics | [분산 실행 모니터링](observability/monitoring.md) |
 | 과거 실행 요약, selected-rank PyTorch trace, NCCL baseline | [실행 분석](observability/analysis.md) |
-| metric 이름·단위·scope, label, workflow phase, framework integration | [Metrics Contract](observability/metrics.md) |
+| metric 이름·단위·scope, label, workflow phase | [Metrics Contract](observability/metrics.md) |
 
 ## Local Validation
 

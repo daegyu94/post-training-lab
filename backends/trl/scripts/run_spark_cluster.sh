@@ -106,7 +106,7 @@ run_stage() {
     exit 2
   fi
   echo "[workflow] running stage=$current_stage rank=$NODE_RANK/$nnodes"
-  RANK_LOG_DIR="$output_dir/logs" FRAMEWORK_METRICS_DIR="${FRAMEWORK_METRICS_DIR:-$output_dir/framework-metrics}" \
+  RANK_LOG_DIR="$output_dir/logs" OBSERVATORY_METRICS_DIR="${OBSERVATORY_METRICS_DIR:-$output_dir/observatory-metrics}" \
     "$python_bin" -m torch.distributed.run \
       --nnodes "$nnodes" --nproc-per-node "$nproc_per_node" --node-rank "$NODE_RANK" \
       --master-addr "$MASTER_ADDR" --master-port "$master_port" \

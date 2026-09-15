@@ -6,8 +6,10 @@
     "job",
     "node",
     "gpu",
-    "framework",
+    "producer",
     "role",
+    "worker_id",
+    "local_rank",
     "phase",
     "device",
     "interface",
@@ -84,7 +86,7 @@
       "category": "training",
       "unit": "s",
       "scope": "node",
-      "source": "framework-metrics textfile bridge",
+      "source": "application-metrics textfile bridge",
       "policy": "always"
     },
     {

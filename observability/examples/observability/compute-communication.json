@@ -252,7 +252,7 @@
     {
       "id": 7,
       "type": "timeseries",
-      "title": "Rank-local framework timers",
+      "title": "Worker-local application timers",
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -266,8 +266,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "(training_timer_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"}) and on(cluster, instance, run_id, framework, node, rank, local_rank) (time() - training_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} < $training_max_age)",
-          "legendFormat": "{{cluster}}/{{instance}} {{run_id}} {{framework}} rank {{rank}} {{timer}}"
+          "expr": "(training_timer_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"}) and on(cluster, instance, run_id, producer, role, worker_id, node, local_rank) (time() - training_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} < $training_max_age)",
+          "legendFormat": "{{cluster}}/{{instance}} {{run_id}} {{producer}}/{{role}} worker {{worker_id}} {{timer}}"
         }
       ],
       "fieldConfig": {
@@ -283,7 +283,7 @@
           "placement": "bottom"
         }
       },
-      "description": " Samples beyond Training sample max age are hidden; increase it for long steps. Throughput is per-rank reporting, not a sum across ranks."
+      "description": " Samples beyond Training sample max age are hidden; increase it for long steps. Throughput is per-worker reporting, not a sum across workers."
     },
     {
       "id": 8,
@@ -384,7 +384,7 @@
       "id": 11,
       "type": "table",
       "title": "GPU allocation matrix",
-      "description": "Rows: cluster/node/run/framework/rank; columns: CUDA_VISIBLE_DEVICES identifiers (index or UUID, not normalized to sampler indexes). Only recent explicitly reported assignments appear. This is snapshot evidence, not process liveness; long steps may require a larger Training sample max age.",
+      "description": "Rows: cluster/node/run/producer/role/worker; columns: CUDA_VISIBLE_DEVICES identifiers (index or UUID, not normalized to sampler indexes). Only recent explicitly reported assignments appear. This is snapshot evidence, not process liveness; long steps may require a larger Training sample max age.",
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -398,7 +398,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "label_join((training_gpu_allocation{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} and on(cluster, instance, run_id, framework, node, rank, local_rank) (time() - training_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} < $training_max_age)), \"worker\", \"/\", \"cluster\", \"instance\", \"run_id\", \"framework\", \"rank\")",
+          "expr": "label_join((training_gpu_allocation{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} and on(cluster, instance, run_id, producer, role, worker_id, node, local_rank) (time() - training_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} < $training_max_age)), \"worker\", \"/\", \"cluster\", \"instance\", \"run_id\", \"producer\", \"role\", \"worker_id\")",
           "format": "table",
           "instant": true
         }

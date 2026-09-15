@@ -100,7 +100,7 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "Training sample age by rank",
+      "title": "Training sample age by worker",
       "gridPos": {
         "h": 5,
         "w": 6,
@@ -116,7 +116,7 @@
           "refId": "A",
           "expr": "time() - training_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"}",
           "instant": true,
-          "legendFormat": "{{instance}} · rank {{rank}}"
+          "legendFormat": "{{instance}} {{producer}}/{{role}} worker {{worker_id}}"
         }
       ],
       "fieldConfig": {
@@ -135,7 +135,7 @@
           "values": false
         }
       },
-      "description": "Age of each selected rank snapshot, including stale ones. A fresh rank must not hide a stalled rank; age alone does not prove whether a process is alive."
+      "description": "Age of each selected worker snapshot, including stale ones. A fresh worker must not hide a stalled worker; age alone does not prove whether a process is alive."
     },
     {
       "id": 4,
@@ -251,8 +251,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "(training_tokens_per_second{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"}) and on(cluster, instance, run_id, framework, node, rank, local_rank) (time() - training_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} < $training_max_age)",
-          "legendFormat": "{{cluster}}/{{instance}} {{run_id}} {{framework}} rank {{rank}}"
+          "expr": "(training_tokens_per_second{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"}) and on(cluster, instance, run_id, producer, role, worker_id, node, local_rank) (time() - training_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} < $training_max_age)",
+          "legendFormat": "{{cluster}}/{{instance}} {{run_id}} {{producer}}/{{role}} worker {{worker_id}}"
         }
       ],
       "fieldConfig": {
@@ -268,7 +268,7 @@
           "placement": "bottom"
         }
       },
-      "description": " Samples beyond Training sample max age are hidden; increase it for long steps. Throughput is per-rank reporting, not a sum across ranks."
+      "description": " Samples beyond Training sample max age are hidden; increase it for long steps. Throughput is per-worker reporting, not a sum across workers."
     },
     {
       "id": 7,
@@ -287,8 +287,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "(training_step_time_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"}) and on(cluster, instance, run_id, framework, node, rank, local_rank) (time() - training_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} < $training_max_age)",
-          "legendFormat": "{{cluster}}/{{instance}} {{run_id}} {{framework}} rank {{rank}}"
+          "expr": "(training_step_time_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"}) and on(cluster, instance, run_id, producer, role, worker_id, node, local_rank) (time() - training_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} < $training_max_age)",
+          "legendFormat": "{{cluster}}/{{instance}} {{run_id}} {{producer}}/{{role}} worker {{worker_id}}"
         }
       ],
       "fieldConfig": {
@@ -304,7 +304,7 @@
           "placement": "bottom"
         }
       },
-      "description": " Samples beyond Training sample max age are hidden; increase it for long steps. Throughput is per-rank reporting, not a sum across ranks."
+      "description": " Samples beyond Training sample max age are hidden; increase it for long steps. Step time is per-worker reporting, not a sum across workers."
     },
     {
       "id": 8,
@@ -323,8 +323,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "(training_loss{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"}) and on(cluster, instance, run_id, framework, node, rank, local_rank) (time() - training_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} < $training_max_age)",
-          "legendFormat": "{{cluster}}/{{instance}} {{run_id}} {{framework}} rank {{rank}}"
+          "expr": "(training_loss{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"}) and on(cluster, instance, run_id, producer, role, worker_id, node, local_rank) (time() - training_sample_timestamp_seconds{job=\"observability\",cluster=~\"$cluster\",instance=~\"$node\",run_id=~\"$run_id\"} < $training_max_age)",
+          "legendFormat": "{{cluster}}/{{instance}} {{run_id}} {{producer}}/{{role}} worker {{worker_id}}"
         }
       ],
       "fieldConfig": {
@@ -340,7 +340,7 @@
           "placement": "bottom"
         }
       },
-      "description": " Samples beyond Training sample max age are hidden; increase it for long steps. Throughput is per-rank reporting, not a sum across ranks."
+      "description": " Samples beyond Training sample max age are hidden; increase it for long steps. Loss is per-worker reporting, not a sum across workers."
     },
     {
       "id": 9,

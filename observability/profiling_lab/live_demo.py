@@ -116,7 +116,10 @@ class Demo:
         ]
         for rank in range(self.gpu["gpus_per_node"]):
             wobble = math.sin(now / 4 + rank) * 2
-            labels = {"run_id": "live-demo", "framework": "synthetic", "node": node, "rank": str(rank), "local_rank": str(rank)}
+            labels = {
+                "run_id": "live-demo", "producer": "synthetic", "role": "trainer",
+                "node": node, "worker_id": str(rank), "local_rank": str(rank),
+            }
             samples += [
                 GaugeSample("profiling_gpu_utilization_percent", "Synthetic GPU utilization.", max(0, min(100, value["gpu"] + wobble)), {"gpu": str(rank)}),
                 GaugeSample("profiling_gpu_power_watts", "Synthetic GPU power.", 820 + value["gpu"] * 3, {"gpu": str(rank)}),
@@ -125,14 +128,14 @@ class Demo:
                 GaugeSample("profiling_gpu_process_memory_bytes", "Synthetic training process GPU memory.", 144 * _GIB, {"pid": str(9000 + rank), "gpu_uuid": f"DEMO-{node}-{rank}"}),
                 GaugeSample("training_sample_timestamp_seconds", "Synthetic training sample timestamp.", time.time(), labels),
                 GaugeSample("training_step", "Synthetic training step.", int(now - self.started), labels),
-                GaugeSample("training_tokens_per_second", "Synthetic rank throughput.", value["tokens"], labels),
+                GaugeSample("training_tokens_per_second", "Synthetic worker throughput.", value["tokens"], labels),
                 GaugeSample("training_step_time_seconds", "Synthetic training step duration.", value["step"], labels),
                 GaugeSample("training_loss", "Synthetic training loss.", 1.4 + rank * .01, labels),
-                GaugeSample("training_gpu_allocation", "Synthetic rank GPU allocation.", 1, {**labels, "gpu": str(rank)}),
+                GaugeSample("training_gpu_allocation", "Synthetic worker GPU allocation.", 1, {**labels, "gpu": str(rank)}),
             ]
             timers = {"forward": .28, "backward": .47, "communication": .12 if phase != "collective" else .48,
                       "data_loader": .08 if phase != "data_wait" else .62, "checkpoint": .01 if phase != "checkpoint" else .40}
-            samples.extend(GaugeSample("training_timer_seconds", "Synthetic rank timer.", timer, {**labels, "timer": name}) for name, timer in timers.items())
+            samples.extend(GaugeSample("training_timer_seconds", "Synthetic worker timer.", timer, {**labels, "timer": name}) for name, timer in timers.items())
         return samples
 
     def _storage_node(self, node: str, now: float, phase: str, value: dict[str, float]) -> list[GaugeSample]:

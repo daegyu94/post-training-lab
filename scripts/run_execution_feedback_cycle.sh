@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export PYTHONPATH="$ROOT_DIR/observability${PYTHONPATH:+:$PYTHONPATH}"
 PYTHON="${PYTHON:-python}"
 WORK_DIR="${WORK_DIR:-$ROOT_DIR/output/execution-feedback-cycle}"
 SFT_CHECKPOINT="${SFT_CHECKPOINT:?set SFT_CHECKPOINT to the common starting checkpoint}"

@@ -1,28 +1,24 @@
-"""TRL callback for the live framework metric spool."""
+"""Hugging Face Trainer adapter for portable application metrics."""
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
-import sys
 import time
 from typing import Any, Callable
 
-from profiling_lab.framework_metrics import configured_output, write_framework_metrics
+from profiling_lab.app_metrics import Metric, MetricEmitter
 
 
 class _MetricsCallback:
     def __init__(
         self,
-        output: tuple[Path, str],
+        emitter: MetricEmitter,
         *,
         clock: Callable[[], float] = time.perf_counter,
     ) -> None:
-        self.directory, self.run_id = output
+        self.emitter = emitter
         self.clock = clock
         self.previous_time = clock()
         self.previous_tokens = 0
-        self.warned = False
 
     def on_train_begin(self, args: Any, state: Any, control: Any, **_: Any) -> None:
         self.previous_time = self.clock()
@@ -34,35 +30,23 @@ class _MetricsCallback:
         now = self.clock()
         elapsed = now - self.previous_time
         tokens = int(getattr(state, "num_input_tokens_seen", self.previous_tokens))
-        metrics = {
-            "training_loss": float(logs["loss"]),
-            "training_step_time_seconds": elapsed,
-        }
+        samples = [
+            Metric("training_loss", float(logs["loss"])),
+            Metric("training_step_time_seconds", elapsed),
+        ]
         if elapsed > 0 and tokens > self.previous_tokens:
-            metrics["training_tokens_per_second"] = (tokens - self.previous_tokens) / elapsed
+            samples.append(Metric("training_tokens_per_second", (tokens - self.previous_tokens) / elapsed))
         self.previous_time, self.previous_tokens = now, tokens
-        try:
-            write_framework_metrics(
-                self.directory,
-                run_id=self.run_id,
-                framework="trl",
-                rank=int(os.environ.get("RANK", "0")),
-                step=int(state.global_step),
-                metrics=metrics,
-            )
-        except (OSError, ValueError) as exc:
-            if not self.warned:
-                print(f"[metrics] export disabled after error: {exc}", file=sys.stderr)
-                self.warned = True
+        self.emitter.emit(step=int(state.global_step), samples=samples)
 
 
-def make_trl_callback() -> Any | None:
-    output = configured_output()
-    if output is None:
+def make_trainer_callback(*, producer: str, role: str = "trainer") -> Any | None:
+    emitter = MetricEmitter.from_env(producer=producer, role=role)
+    if emitter is None:
         return None
     from transformers import TrainerCallback
 
     class LocalMetricsCallback(_MetricsCallback, TrainerCallback):
         pass
 
-    return LocalMetricsCallback(output)
+    return LocalMetricsCallback(emitter)
