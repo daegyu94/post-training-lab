@@ -31,6 +31,7 @@
 | `experiments/megatron/{qwen3-30b-lora,glm-4.7-flash-30b-lora}.json` | Qwen·GLM 30B LoRA와 local checkpoint |
 | `experiments/megatron/checkpoint-memory-30b.json` | 모델을 `--model`로 선택하는 sync/async 반복 측정 |
 | `experiments/megatron/{recompute-30b,lora-ratio-checkpoint-io}.json` | 재계산과 LoRA checkpoint 크기 비교 |
+| `experiments/megatron/async-checkpoint-scale-30b.json` | 100-step에서 작은·큰 LoRA checkpoint의 sync/async 비교 |
 
 분산 preset은 모두 `STAGE=train`을 사용합니다.
 Megatron preset의 `CHECKPOINT_PLACEMENT=local`은 rank마다 `<OUTPUT_DIR>/checkpoints`에 shard를 저장하며 cross-node 복원을 보장하지 않습니다.

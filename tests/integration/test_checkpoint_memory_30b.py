@@ -350,6 +350,28 @@ def test_checkpoint_cli_selects_glm_plan_with_glm_cohort(tmp_path, monkeypatch, 
     assert result['repeats'] == 3
 
 
+def test_checkpoint_cli_uses_custom_plan_defaults(tmp_path, monkeypatch, capsys):
+    setup = _two_node_setup()
+    setup["setup"] = "spark"
+    path = tmp_path / "setup.json"
+    path.write_text(json.dumps(setup), encoding="utf-8")
+    monkeypatch.setattr(checkpoint_memory_30b, "GENERATED", tmp_path / "generated")
+    monkeypatch.setattr(checkpoint_memory_30b.benchmarks, "_git_head", lambda: "test")
+    plan = checkpoint_memory_30b.ROOT / "experiments/megatron/async-checkpoint-scale-30b.json"
+
+    code = checkpoint_memory_30b.main([
+        "--setup", str(path), "--plan", str(plan), "--output", str(tmp_path / "out"),
+    ])
+
+    assert code == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["steps"] == 100
+    assert result["repeats"] == 3
+    assert result["within_run_warmup"] == 10
+    assert result["effective_common_env"]["SAVE_INTERVAL"] == 10
+    assert len(result["planned_runs"]) == 16
+
+
 def test_trl_dcp_cli_uses_the_512_token_cohort(tmp_path, monkeypatch, capsys) -> None:
     setup = _two_node_setup()
     setup["setup"] = "spark"

@@ -80,29 +80,42 @@ def plot_memory(output: Path) -> None:
 
 
 def plot_checkpoint(output: Path) -> None:
-    checkpoint = table("Node-local checkpoint")
+    checkpoint = table("Async checkpoint scaling")
     ratios = table("LoRA ratio")
-    assert len(checkpoint) == 4 and [int(row[1]) for row in ratios] == [25, 126, 251]
+    assert [row[0] for row in checkpoint] == ["8", "8", "251", "251"]
+    assert [int(row[1]) for row in ratios] == [25, 126, 251]
 
-    figure, axes = plt.subplots(1, 3, figsize=(13.5, 4.2))
-    labels = [f"{row[0]}\n{row[1]}" for row in checkpoint]
-    enqueue = [float(row[3]) for row in checkpoint]
-    finalize = [float(row[4]) for row in checkpoint]
-    axes[0].bar(labels, enqueue, label="save/enqueue", color=BLUE)
-    axes[0].bar(labels, finalize, bottom=enqueue, label="finalize", color=ORANGE)
-    axes[0].set(title="Checkpoint host phases", ylabel="Seconds")
-    axes[0].legend()
+    figure, axes = plt.subplots(2, 2, figsize=(10, 7.5))
+    payloads = ("rank 8\n73 MB/save", "rank 251\n2.25 GB/save")
+    x = range(2)
+    for axis, column, title in (
+        (axes[0, 0], 6, "Direct checkpoint wait"),
+        (axes[0, 1], 7, "100-step time after model ready"),
+    ):
+        for offset, mode, color in ((-0.18, "sync", BLUE), (0.18, "async", ORANGE)):
+            rows = [row for row in checkpoint if row[2] == mode]
+            bars = axis.bar(
+                [value + offset for value in x],
+                [float(row[column]) for row in rows],
+                0.36,
+                label=mode,
+                color=color,
+            )
+            axis.bar_label(bars, fmt="%.2f", padding=3)
+        axis.set_xticks(list(x), payloads)
+        axis.set(title=title, ylabel="Seconds")
+        axis.legend()
 
     ratio_labels = [row[0] for row in ratios]
     for axis, column, title, unit, color in (
-        (axes[1], 3, "Checkpoint size", "MB", BLUE),
-        (axes[2], 4, "Save time", "Seconds", ORANGE),
+        (axes[1, 0], 3, "Checkpoint size by LoRA ratio", "MB", BLUE),
+        (axes[1, 1], 4, "Save time by LoRA ratio", "Seconds", ORANGE),
     ):
         values = [float(row[column]) for row in ratios]
         bars = axis.bar(ratio_labels, values, color=color, width=0.6)
         axis.bar_label(bars, fmt="%.2f" if column == 4 else "%.1f", padding=3)
         axis.set(title=title, xlabel="Target trainable ratio", ylabel=unit)
-    for axis in axes:
+    for axis in axes.flat:
         axis.grid(axis="y", alpha=0.2)
         axis.set_axisbelow(True)
         axis.spines[["top", "right"]].set_visible(False)

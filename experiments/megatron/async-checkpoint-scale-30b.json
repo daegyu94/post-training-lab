@@ -1,0 +1,52 @@
+{
+  "backend": "megatron",
+  "setup": "spark",
+  "base_experiment": "experiments/megatron/qwen3-30b-lora.json",
+  "defaults": {
+    "steps": 100,
+    "repeats": 3,
+    "within_run_warmup": 10,
+    "checkpoint_intervals": [10, 10]
+  },
+  "common_env": {
+    "MODEL_ID": "Qwen/Qwen3-30B-A3B",
+    "MODEL_REVISION": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+    "DATASET_ID": "HuggingFaceH4/ultrachat_200k",
+    "DATASET_REVISION": "8049631c405ae6576f93f445c6b8166f76f5505a",
+    "FINETUNING_MODE": "lora",
+    "LORA_DIM": 8,
+    "GLOBAL_BATCH_SIZE": 2,
+    "MICRO_BATCH_SIZE": 1,
+    "TP": 1,
+    "PP": 1,
+    "EP": 2,
+    "TRANSFORMER_IMPL": "transformer_engine",
+    "MAX_LENGTH": 2048,
+    "PAD_TO_MAX_LENGTH": true,
+    "SAVE_INTERVAL": 10,
+    "SAVE_OPTIMIZER": true,
+    "CHECKPOINT_PLACEMENT": "local",
+    "RESOURCE_SAMPLING": true,
+    "MEASURE_TIMING": true,
+    "SEED": 42,
+    "STAGE": "train"
+  },
+  "cells": [
+    {
+      "name": "rank-8",
+      "varying": ["CHECKPOINT_MODE"],
+      "variants": [
+        {"name": "rank8-sync", "env": {"CHECKPOINT_MODE": "sync"}},
+        {"name": "rank8-async", "env": {"CHECKPOINT_MODE": "async"}}
+      ]
+    },
+    {
+      "name": "rank-251",
+      "varying": ["CHECKPOINT_MODE"],
+      "variants": [
+        {"name": "rank251-sync", "env": {"LORA_DIM": 251, "CHECKPOINT_MODE": "sync"}},
+        {"name": "rank251-async", "env": {"LORA_DIM": 251, "CHECKPOINT_MODE": "async"}}
+      ]
+    }
+  ]
+}

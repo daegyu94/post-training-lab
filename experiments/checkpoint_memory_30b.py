@@ -651,14 +651,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--phase", choices=("checkpoint", "memory"), default="checkpoint")
-    # 3, matching the memory phase's per-condition repeats. Qwen's published
-    # 5-repeat checkpoint result re-medianed over its first 3 runs moves by
-    # +0.57% (sync) / -1.41% (async) with rMAD still ~1-2.5%, far under the 10%
-    # rule that would call for more runs, so the extra two runs bought nothing.
-    parser.add_argument("--repeats", type=int, default=3)
-    parser.add_argument("--steps", type=int, default=8)
-    parser.add_argument("--within-run-warmup", type=int, default=2)
-    parser.add_argument("--checkpoint-interval", type=int, default=2)
+    parser.add_argument("--repeats", type=int)
+    parser.add_argument("--steps", type=int)
+    parser.add_argument("--within-run-warmup", type=int)
+    parser.add_argument("--checkpoint-interval", type=int)
     parser.add_argument("--timeout", type=int, default=3600)
     parser.add_argument("--resume", action="store_true",
                          help="memory phase only: continue into an existing --output, reusing "
@@ -676,7 +672,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.output.exists() and not args.resume:
             raise run.ConfigError(f"refusing to reuse output directory: {args.output}")
-        if min(args.repeats, args.steps, args.checkpoint_interval, args.timeout) < 1 or args.within_run_warmup < 0:
+        positive = (args.repeats, args.steps, args.checkpoint_interval, args.timeout)
+        if any(value is not None and value < 1 for value in positive):
+            raise run.ConfigError("counts must be positive and --within-run-warmup non-negative")
+        if args.within_run_warmup is not None and args.within_run_warmup < 0:
             raise run.ConfigError("counts must be positive and --within-run-warmup non-negative")
         if args.resume:
             validate_resume_model(args.output, args.model)
@@ -707,7 +706,10 @@ def main(argv: list[str] | None = None) -> int:
                 steps=args.steps,
                 repeats=args.repeats,
                 within_run_warmup=args.within_run_warmup,
-                checkpoint_intervals=[args.checkpoint_interval, args.checkpoint_interval],
+                checkpoint_intervals=(
+                    [args.checkpoint_interval, args.checkpoint_interval]
+                    if args.checkpoint_interval is not None else None
+                ),
                 timeout=args.timeout,
                 post_run_fn=collect_post_run if args.execute else None,
                 cleanup_fn=cleanup_checkpoints if args.execute else None,
