@@ -178,9 +178,10 @@ def test_run_benchmark_raises_clear_error_for_unknown_cell_prefix(tmp_path: Path
 
 def test_run_benchmark_uses_fake_runner_and_fetch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     plan = _plan()
-    plan["cells"][0]["name"] = "recompute-test"
-    plan["cells"][0]["variants"][0]["name"] = "full"
-    plan["cells"][0]["variants"][1]["name"] = "selective"
+    plan["cells"][0]["name"] = "checkpoint-rank8"
+    plan["cells"][0]["varying"] = ["CHECKPOINT_MODE"]
+    plan["cells"][0]["variants"][0].update(name="rank8-sync", env={"CHECKPOINT_MODE": "sync"})
+    plan["cells"][0]["variants"][1].update(name="rank8-async", env={"CHECKPOINT_MODE": "async"})
     plan["base_experiment"] = "base.json"
     plan_path = tmp_path / "plan.json"
     plan_path.write_text(json.dumps(plan), encoding="utf-8")
@@ -219,6 +220,7 @@ def test_run_benchmark_uses_fake_runner_and_fetch(tmp_path: Path, monkeypatch: p
     assert result["status"] == "passed"
     assert len(result["records"]) == 4
     assert all(value["count"] == 1 for value in result["summaries"].values())
+    assert {record["parsed"]["variant"] for record in result["records"]} == {"sync", "async"}
     assert [value[0] for value in captured[:2]] == [1, 1]
     assert all(value[1].startswith("result--") for value in captured)
 

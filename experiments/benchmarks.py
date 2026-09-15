@@ -354,7 +354,8 @@ def run_benchmark(*, setup_path: Path, benchmark_path: Path, output: Path, execu
                     feature = next(name for prefix, name in cell_feature_prefixes if item["cell"].startswith(prefix))
                 except StopIteration:
                     raise ValueError(f"cell {item['cell']!r} does not match a known feature prefix") from None
-                record["parsed"] = parse_megatron_log(log, feature=feature, variant=item["variant"], run_index=item["run_index"], warmup_steps=item.get("warmup_steps", 0), exit_code=0, completed=True)
+                parse_variant = variant.get("env", {}).get("CHECKPOINT_MODE", item["variant"]) if feature == "checkpoint" else item["variant"]
+                record["parsed"] = parse_megatron_log(log, feature=feature, variant=str(parse_variant), run_index=item["run_index"], warmup_steps=item.get("warmup_steps", 0), exit_code=0, completed=True)
                 if len(record["parsed"]["steps"]) != effective_steps:
                     raise ValueError(f"native log contains {len(record['parsed']['steps'])} steps; expected {effective_steps}")
                 record["metrics_by_rank"] = fetch_fn(plan, run_output)

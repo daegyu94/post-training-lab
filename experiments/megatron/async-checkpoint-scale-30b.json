@@ -31,7 +31,7 @@
   },
   "cells": [
     {
-      "name": "rank-8",
+      "name": "checkpoint-rank-8",
       "varying": ["CHECKPOINT_MODE"],
       "variants": [
         {"name": "rank8-sync", "env": {"CHECKPOINT_MODE": "sync"}},
@@ -39,7 +39,7 @@
       ]
     },
     {
-      "name": "rank-251",
+      "name": "checkpoint-rank-251",
       "varying": ["CHECKPOINT_MODE"],
       "variants": [
         {"name": "rank251-sync", "env": {"LORA_DIM": 251, "CHECKPOINT_MODE": "sync"}},
