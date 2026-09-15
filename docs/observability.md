@@ -92,6 +92,14 @@ Live demo에서는 `cluster=demo-b300`, `node=All`, `run_id=live-demo`를 선택
 | Compute & Communication | GPU health·memory, rank timer, RoCE interface throughput, GPU allocation·compute topology | `collective`에서 communication timer와 RoCE traffic 상승 |
 | Data & Storage | node disk throughput·IOPS·busy time·filesystem, storage topology, SSD SMART | `data_wait`의 read/busy time과 `checkpoint`의 write 증가 |
 
+### Run Overview 동작 예
+
+아래 30초 GIF는 `DEMO_LIVE=1`의 `demo-b300` Run Overview를 재생합니다.
+Exporter target 상태, training·GPU sample age, GPU utilization matrix가 synthetic 값의 변화에 따라 갱신됩니다.
+실제 LLM 학습의 측정 결과가 아니므로 dashboard 구성과 이상 구간 확인 흐름을 설명하는 용도로만 사용합니다.
+
+![30초 Run Overview synthetic live demo](figures/post-training-run-overview-30s.gif)
+
 Data & Storage는 storage system·storage node·SSD filter를 추가로 제공하며, 모든 storage node를 보려면 기본 `All`을 유지합니다.
 Topology panel은 전달된 연결 관계를 표시하며, 직접 측정한 link bandwidth나 endpoint 쌍별 traffic matrix는 아닙니다.
 
