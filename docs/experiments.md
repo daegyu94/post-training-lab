@@ -23,6 +23,7 @@
 
 | 비교 | 결과 |
 | --- | --- |
+| TRL ZeRO-3 NVMe full SFT checkpoint | [Qwen·GLM 실측](experiments/measured-results.md#trl-full-sft-checkpoint) |
 | Sequence length별 memory | [Qwen·GLM 실측](experiments/measured-results.md#sequence-memory) |
 | Full·selective recompute | [Qwen·GLM 실측](experiments/measured-results.md#recompute) |
 | Sync·async checkpoint | [Qwen·GLM LoRA rank 8·251의 100-step 실측](experiments/measured-results.md#async-checkpoint-scaling) |

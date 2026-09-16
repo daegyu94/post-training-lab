@@ -1,9 +1,22 @@
 # 30B 실측 결과
 
-이 문서는 현재 유지하는 Megatron 30B LoRA 실험의 실측값을 기록하는 단일 기준입니다.
+이 문서는 현재 유지하는 30B 실험의 실측값을 기록하는 단일 기준입니다.
 지원 여부와 실행법은 [Experiments](../experiments.md)를 따르며, 여기서는 비교 조건과 결과만 보존합니다.
 
-## 공통 조건
+## TRL full SFT checkpoint
+
+Qwen과 GLM을 각각 2노드에서 BF16, AdamW, DeepSpeed ZeRO-3 parameter·optimizer NVMe offload로 1 optimizer step 학습한 성공 run입니다.
+두 run은 UltraChat revision `8049631c405ae6576f93f445c6b8166f76f5505a`, max length 512, train/eval sample 4/1을 사용했으며 각각 1회 측정값입니다.
+
+| Model | Rank 0 node-local logical size | Save elapsed |
+| --- | ---: | ---: |
+| Qwen3-30B-A3B | 451.7 GiB (484,990,956,789 bytes) | 720.2 s |
+| GLM-4.7-Flash | 167.3 GiB (179,681,022,652 bytes) | 300.6 s |
+
+Logical size는 rank 0의 node-local `<OUTPUT_DIR>/model`에서 파일 크기를 합산한 값이며, 두 노드의 shard를 합친 cluster-wide 크기가 아닙니다.
+Save elapsed는 rank 0에서 `trainer.save_model()` 전체를 감싼 wall-clock 시간이므로 serialization·DeepSpeed 협조·local NVMe write를 포함하며, SSD 순수 write latency나 throughput으로 해석하지 않습니다.
+
+## Megatron LoRA 공통 조건
 
 | 항목 | 값 |
 | --- | --- |
@@ -111,7 +124,8 @@ Ratio label은 Qwen의 목표 비율이며 GLM은 같은 rank에서 실제 train
 
 ## 해석 범위
 
-- 모든 결과는 짧은 LoRA run의 기술적 비교이며 장기 수렴, 품질 또는 full SFT 성능을 뜻하지 않습니다.
+- Full SFT는 1-step 실행 가능성과 checkpoint save를 확인한 것으로 장기 수렴이나 품질을 뜻하지 않습니다.
+- LoRA 결과는 짧은 run의 기술적 비교이며 장기 수렴, 품질 또는 full SFT 성능을 뜻하지 않습니다.
 - 서로 다른 절의 값은 표에 명시한 조건이 같을 때만 비교합니다.
 - Checkpoint는 node-local save만 측정했습니다. Shared storage가 없으므로 distributed restore·resume은 측정하지 않았습니다.
-- 로컬 원본은 `results/refresh-memory-te-{qwen,glm}-bee4520/manifest.json`, `results/refresh-recompute-qwen-bee4520/manifest.json`, `results/lora-ratio-checkpoint-io/manifest.json`, `results/qwen-async-sync-100step-3x-2b2002c/manifest.json`, `results/qwen-async-sync-rank251-100step-3x-2b2002c/manifest.json`, `results/glm-recompute-54be3ee/manifest.json`, `results/glm-lora-ratio-54be3ee/manifest.json`, `results/glm-async-sync-100step-3x-68091dd/manifest.json`입니다. `results/`는 Git에 포함하지 않으며 추적되는 기준은 이 문서의 표입니다.
+- 로컬 원본은 full SFT의 `results/trl-ultrachat-fullsft-2node-20260914/summary-train.json`, `results/trl-ultrachat-glm-fullsft-2node-retry1-20260914/summary-train.json`과 LoRA의 `results/refresh-memory-te-{qwen,glm}-bee4520/manifest.json`, `results/refresh-recompute-qwen-bee4520/manifest.json`, `results/lora-ratio-checkpoint-io/manifest.json`, `results/qwen-async-sync-100step-3x-2b2002c/manifest.json`, `results/qwen-async-sync-rank251-100step-3x-2b2002c/manifest.json`, `results/glm-recompute-54be3ee/manifest.json`, `results/glm-lora-ratio-54be3ee/manifest.json`, `results/glm-async-sync-100step-3x-68091dd/manifest.json`입니다. `results/`는 Git에 포함하지 않으며 추적되는 기준은 이 문서의 표입니다.
