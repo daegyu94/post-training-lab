@@ -37,7 +37,7 @@ TOOLS_DIR='<controller-local-tools>' \
 
 - node exporter: host 지표를 19100 포트에 노출
 - GPU sampler: GPU 지표를 수집하고 textfile metric과 JSONL을 생성
-- 선택 기능: application metrics, topology, local SSD health
+- 선택 기능: application metrics, topology, local SSD health, node-local log 전송
 
 GPU sampler의 기본 실행 시간은 15분입니다.
 시간이 지나면 sampler가 종료되고 script가 함께 시작한 exporter와 선택적 collector를 정리한 뒤 `node` role도 종료됩니다.
@@ -120,7 +120,57 @@ Controller에서 Prometheus target, Grafana health와 실제 run metric을 확�
 Spark node의 기존 server data는 즉시 삭제하지 않고 rollback 기간 동안 보존합니다.
 문제가 생기면 controller server를 종료하고 기존 Spark node server를 다시 시작하며 workload와 node collector는 중단하지 않습니다.
 
-### 4. Open the Dashboards
+### 4. Enable Run Logs
+
+Loki는 controller에서 실행하고 각 Spark node의 Alloy가 그 node의 local log file을 전송합니다.
+공유 NFS는 code 배포에만 사용하며 log 원본, Alloy position과 Loki data에는 사용하지 않습니다.
+
+먼저 controller의 management address에 Loki를 bind합니다.
+이 구성은 인증을 사용하지 않으므로 public interface가 아니라 Spark node만 접근할 수 있는 관리망 주소를 지정합니다.
+기본 보존 기간은 7일이며 `LOKI_RETENTION`으로 바꿀 수 있습니다.
+
+```bash
+TOOLS_DIR='<controller-local-tools>' \
+OUTPUT_DIR='<controller-local-monitoring-state>' \
+CLUSTER_NAME='<cluster-name>' \
+OBSERVABILITY_TARGETS='trainer-0=<first-node-address>,rollout-0=<second-node-address>' \
+ENABLE_LOGS=1 \
+LOKI_LISTEN_ADDR='<controller-management-address>' \
+  bash scripts/run_observability.sh server
+```
+
+각 Spark node에서 workload 이름과 node-local output root를 `OBSERVABILITY_LOG_ROOTS`에 전달합니다.
+Alloy는 각 root의 `<run-id>/logs/**/*.log`를 찾으므로 launcher 종류와 무관하게 같은 규칙을 사용할 수 있습니다.
+TRL, Megatron과 Verl launcher가 이 규칙을 사용하며 이후 agentic RL workload도 `logs` 아래에 file을 기록하면 별도 Loki 연동 코드가 필요 없습니다.
+
+```bash
+NODE_ADDR='<node-management-address>' \
+NODE_NAME='<node-name>' \
+OUTPUT_DIR='<node-local-monitoring-state>' \
+CLUSTER_NAME='<cluster-name>' \
+LOKI_PUSH_URL='http://<controller-management-address>:13100/loki/api/v1/push' \
+OBSERVABILITY_LOG_ROOTS='trl=<node-local-trl-output-root>,megatron=<node-local-megatron-output-root>,verl=<node-local-verl-output-root>' \
+DURATION=3600 \
+  bash scripts/run_observability.sh node
+```
+
+`run_observability.sh`는 log root의 filesystem을 확인하고 NFS/NFS4이면 시작을 거부합니다.
+Alloy는 읽은 offset을 node-local `OUTPUT_DIR/alloy-data`에 저장하므로 재시작 뒤 이미 전송한 구간부터 이어서 처리합니다.
+처음 연결할 때는 과거 file 전체를 한꺼번에 적재하지 않도록 기본 24시간보다 오래된 file을 제외하며 `ALLOY_IGNORE_OLDER_THAN`으로 조정할 수 있습니다.
+Alloy는 `cluster`, `node`, `workload`만 직접 index label로 설정하고 `run_id`, 상대 log file과 원본 경로는 log record 안에 넣어 stream cardinality 증가를 막습니다.
+
+`Post-Training Run Logs` dashboard에서 cluster, node, workload와 run을 선택합니다.
+Run Overview의 `Run Logs` 링크는 현재 시간 범위와 run 선택을 유지합니다.
+
+```bash
+PYTHONPATH=observability python -m profiling_lab.observability validate-stack \
+  --prometheus-url http://127.0.0.1:19090 \
+  --grafana-url http://127.0.0.1:13000 \
+  --loki-url http://<controller-management-address>:13100 \
+  --output '<validation-summary.json>'
+```
+
+### 5. Open the Dashboards
 
 Controller에는 GUI browser가 없으므로 browser가 있는 client에서 SSH port forwarding을 사용합니다.
 다음 명령은 controller의 Grafana port를 client의 `localhost:13000`으로 전달합니다.
@@ -134,11 +184,12 @@ client browser에서 `http://localhost:13000`을 엽니다.
 | Dashboard | 확인할 내용 |
 | --- | --- |
 | Run Overview (`run-overview.json`, uid `observability-overview`) | target 상태·sample age, GPU utilization matrix, worker별 throughput·step time·loss |
+| Run Logs | node-local run log 검색과 시간순 history |
 | Compute & Communication | GPU health·memory, worker timer, interface throughput, GPU allocation·compute topology |
 | Data & Storage | node-local device·filesystem 성능, storage topology, 선택적 SSD SMART |
 
 화면 링크는 시간·cluster·node·run 선택을 유지합니다.
-`server` role은 `examples/observability/`의 세 dashboard를 provisioning 경로로 복사합니다.
+`server` role은 `examples/observability/`의 metric dashboard 세 개를 provisioning 경로로 복사하고 `ENABLE_LOGS=1`이면 Run Logs도 추가합니다.
 같은 경로의 `grafana/`와 `compose.yaml`은 별도 Docker Compose 예시입니다.
 
 ## Synthetic Live Demo

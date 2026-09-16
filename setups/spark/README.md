@@ -1,6 +1,6 @@
 # Spark Cluster Setup
 
-Controller는 Git·설정·실행 기록과 monitoring server를 관리하고, NVIDIA DGX Spark `spark1`·`spark2`는 학습 rank와 collector를 실행합니다.
+Controller는 Git·설정·실행 기록과 Prometheus·Grafana·Loki를 관리하고, NVIDIA DGX Spark `spark1`·`spark2`는 학습 rank와 metric·log collector를 실행합니다.
 각 노드는 자체 CUDA Python 환경과 node-local 모델·데이터를 사용합니다.
 
 ```text
@@ -10,6 +10,7 @@ Controller는 Git·설정·실행 기록과 monitoring server를 관리하고, N
  |                    |  ssh spark@spark2  | rank 0 / GPU work  |
  | experiments/run.py | -----------------> +--------------------+
  | Prometheus/Grafana |                              |
+ | Loki               |                              |
  | controller logs    |                              |
  +--------------------+                              | rendezvous + NCCL
           |                                          | (MASTER_ADDR and

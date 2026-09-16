@@ -64,8 +64,6 @@ def test_validate_stack_writes_failure_summary(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    target_dir = tmp_path / "targets"
-    write_targets(target_dir)
     output = tmp_path / "summary.json"
 
     def fail_readiness(url: str, timeout: float) -> None:
@@ -73,7 +71,7 @@ def test_validate_stack_writes_failure_summary(
 
     monkeypatch.setattr(observability, "_wait_until_ready", fail_readiness)
     args = Namespace(
-        target_dir=target_dir,
+        target_dir=None,
         prometheus_url="http://127.0.0.1:9090",
         grafana_url="http://127.0.0.1:3000",
         output=output,
@@ -141,3 +139,45 @@ def test_validate_stack_applies_target_health_policy(
         "up": 1,
         "down": 1,
     }
+
+
+def test_validate_stack_checks_loki_when_requested(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "summary.json"
+    checked: list[str] = []
+    monkeypatch.setattr(
+        observability,
+        "_wait_until_ready",
+        lambda url, timeout: checked.append(url),
+    )
+
+    def read_json(url: str) -> dict:
+        if url.endswith("/api/health"):
+            return {"database": "ok"}
+        if url.endswith("/loki/api/v1/labels"):
+            return {"status": "success", "data": []}
+        if "/api/v1/targets" in url:
+            return {"status": "success", "data": {"activeTargets": []}}
+        return {"status": "success", "data": {"result": []}}
+
+    monkeypatch.setattr(observability, "_read_json", read_json)
+    args = Namespace(
+        target_dir=None,
+        prometheus_url="http://127.0.0.1:9090",
+        grafana_url="http://127.0.0.1:3000",
+        loki_url="http://127.0.0.1:3100",
+        output=output,
+        timeout=0.01,
+        require_targets_up=False,
+    )
+
+    assert observability.validate_stack(args) == 0
+    assert "http://127.0.0.1:3100/ready" in checked
+    summary = json.loads(output.read_text(encoding="utf-8"))
+    assert summary["validation"]["loki_enabled"]
+    assert summary["validation"]["loki_ready"]
+    assert summary["validation"]["loki_query_ok"]
+    assert not summary["validation"]["target_files_checked"]
+    assert summary["validation"]["target_files_valid"]

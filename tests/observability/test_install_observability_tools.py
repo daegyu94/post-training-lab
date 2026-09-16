@@ -28,6 +28,10 @@ def test_installer_selects_release_architecture(
         'done\n'
     )
     (bin_dir / "tar").write_text("#!/bin/sh\nexit 0\n")
+    (bin_dir / "unzip").write_text(
+        "#!/bin/sh\ntouch loki-linux-amd64 loki-linux-arm64 "
+        "alloy-linux-amd64 alloy-linux-arm64\n"
+    )
     for path in bin_dir.iterdir():
         path.chmod(0o755)
 
@@ -51,3 +55,43 @@ def test_installer_selects_release_architecture(
     assert f"smartctl_exporter-0.14.0.linux-{release_arch}.tar.gz" in urls
     assert f"prometheus-3.5.0.linux-{release_arch}.tar.gz" in urls
     assert f"grafana-12.1.0.linux-{release_arch}.tar.gz" in urls
+    assert f"loki-linux-{release_arch}.zip" in urls
+
+
+def test_node_installer_downloads_alloy(tmp_path: Path) -> None:
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (bin_dir / "uname").write_text(
+        '#!/bin/sh\ncase "$1" in -s) echo Linux ;; -m) echo aarch64 ;; esac\n'
+    )
+    (bin_dir / "curl").write_text(
+        '#!/bin/sh\nprintf "%s\\n" "$*" >> "$CURL_LOG"\n'
+        'while test "$#" -gt 0; do\n'
+        '  if test "$1" = --output; then shift; : > "$1"; fi\n'
+        '  shift\n'
+        'done\n'
+    )
+    (bin_dir / "tar").write_text("#!/bin/sh\nexit 0\n")
+    (bin_dir / "unzip").write_text(
+        "#!/bin/sh\ntouch loki-linux-amd64 loki-linux-arm64 "
+        "alloy-linux-amd64 alloy-linux-arm64\n"
+    )
+    for path in bin_dir.iterdir():
+        path.chmod(0o755)
+
+    curl_log = tmp_path / "curl.log"
+    result = subprocess.run(
+        ["bash", str(ROOT / "observability/scripts/install_observability_tools.sh"), "node"],
+        env=os.environ
+        | {
+            "CURL_LOG": str(curl_log),
+            "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"],
+            "TOOLS_DIR": str(tmp_path / "tools"),
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "alloy-linux-arm64.zip" in curl_log.read_text()

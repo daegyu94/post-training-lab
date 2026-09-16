@@ -102,6 +102,7 @@ def test_execution_launcher_passes_string_env_and_adapter_rank(tmp_path: Path) -
             "MODEL_DIR": str(model_dir),
             "LORA_ADAPTER": str(adapter_dir),
             "TASKS": str(tasks),
+            "OUTPUT_DIR": str(tmp_path / "output"),
         },
         check=True,
         capture_output=True,
@@ -113,3 +114,4 @@ def test_execution_launcher_passes_string_env_and_adapter_rank(tmp_path: Path) -
     assert '<+ray_kwargs.ray_init.runtime_env.env_vars.EXECUTION_REWARD_PIDS_LIMIT="64">' in result.stdout
     assert "<+actor_rollout_ref.model.override_config.attn_implementation=sdpa>" in result.stdout
     assert "<actor_rollout_ref.model.lora_rank=8>" in result.stdout
+    assert (tmp_path / "output/logs/trainer.log").read_text() in result.stdout

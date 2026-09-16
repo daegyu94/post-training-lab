@@ -17,6 +17,13 @@
       "title": "Data & Storage",
       "type": "link",
       "url": "/d/post-training-data-storage?${cluster:queryparam}&${node:queryparam}&${run_id:queryparam}"
+    },
+    {
+      "includeTimeRange": true,
+      "keepTime": true,
+      "title": "Run Logs",
+      "type": "link",
+      "url": "/d/post-training-run-logs?${cluster:queryparam}&${node:queryparam}&${run_id:queryparam}"
     }
   ],
   "panels": [

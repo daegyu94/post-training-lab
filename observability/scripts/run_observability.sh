@@ -81,6 +81,96 @@ start_smartctl_exporter() {
 }
 if [[ "$role" == node ]]; then
   : "${NODE_ADDR:?Set NODE_ADDR to this node management address}"
+  if [[ -n "${LOKI_PUSH_URL:-}" || -n "${OBSERVABILITY_LOG_ROOTS:-}" ]]; then
+    : "${LOKI_PUSH_URL:?Set LOKI_PUSH_URL when OBSERVABILITY_LOG_ROOTS is set}"
+    : "${OBSERVABILITY_LOG_ROOTS:?Set OBSERVABILITY_LOG_ROOTS when LOKI_PUSH_URL is set}"
+    cluster_name="${CLUSTER_NAME:-observability-cluster}"
+    node_name="${NODE_NAME:-$(hostname -s)}"
+    if [[ ! "$cluster_name" =~ ^[A-Za-z0-9_.-]+$ || ! "$node_name" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+      echo "CLUSTER_NAME and NODE_NAME must contain only letters, digits, dots, underscores, or hyphens" >&2
+      exit 2
+    fi
+    if [[ ! "$LOKI_PUSH_URL" =~ ^https?://[A-Za-z0-9_.:-]+/[^\"[:space:]]*$ ]]; then
+      echo "LOKI_PUSH_URL must be an HTTP(S) URL without spaces or quotes" >&2
+      exit 2
+    fi
+    IFS=',' read -r -a log_roots <<< "$OBSERVABILITY_LOG_ROOTS"
+    cat > "$output_dir/alloy.alloy" <<EOF
+logging {
+  level = "info"
+}
+
+loki.source.file "workloads" {
+  targets = [
+EOF
+    seen_workloads=""
+    for entry in "${log_roots[@]}"; do
+      workload="${entry%%=*}"
+      root="${entry#*=}"
+      if [[ "$workload" == "$entry" || ! "$workload" =~ ^[A-Za-z0-9_.-]+$ || "$root" != /* || ! -d "$root" ]]; then
+        echo "OBSERVABILITY_LOG_ROOTS entries must be workload=/existing/absolute/local/path" >&2
+        exit 2
+      fi
+      if [[ " $seen_workloads " == *" $workload "* ]]; then
+        echo "OBSERVABILITY_LOG_ROOTS workload names must be unique: $workload" >&2
+        exit 2
+      fi
+      fs_type="$(findmnt -T "$root" -n -o FSTYPE)"
+      if [[ "$fs_type" == nfs || "$fs_type" == nfs4 ]]; then
+        echo "log root must be node-local, not $fs_type: $root" >&2
+        exit 2
+      fi
+      seen_workloads+=" $workload"
+      escaped_root="${root//\\/\\\\}"
+      escaped_root="${escaped_root//\"/\\\"}"
+      cat >> "$output_dir/alloy.alloy" <<EOF
+    { __path__ = "$escaped_root/*/logs/**/*.log", cluster = "$cluster_name", node = "$node_name", workload = "$workload" },
+EOF
+    done
+    cat >> "$output_dir/alloy.alloy" <<EOF
+  ]
+  forward_to = [loki.relabel.run_path.receiver]
+  file_match {
+    enabled = true
+    ignore_older_than = "${ALLOY_IGNORE_OLDER_THAN:-24h}"
+    sync_period = "2s"
+  }
+}
+
+loki.relabel "run_path" {
+  forward_to = [loki.process.pack_metadata.receiver]
+  rule {
+    source_labels = ["filename"]
+    regex = "^.*/([^/]+)/logs/(.*)$"
+    target_label = "run_id"
+    replacement = "\$1"
+  }
+  rule {
+    source_labels = ["filename"]
+    regex = "^.*/([^/]+)/logs/(.*)$"
+    target_label = "log_file"
+    replacement = "\$2"
+  }
+}
+
+loki.process "pack_metadata" {
+  forward_to = [loki.write.controller.receiver]
+  stage.pack {
+    labels = ["filename", "run_id", "log_file"]
+  }
+}
+
+loki.write "controller" {
+  endpoint {
+    url = "$LOKI_PUSH_URL"
+  }
+}
+EOF
+    alloy="${ALLOY:-$tools_dir/alloy-linux-$release_arch}"
+    [[ -x "$alloy" ]] || { echo "Alloy not found or not executable: $alloy" >&2; exit 1; }
+    "$alloy" validate "$output_dir/alloy.alloy"
+    if [[ "${NODE_CONFIG_ONLY:-0}" == 1 ]]; then exit 0; fi
+  fi
   mkdir -p "$output_dir/textfile"
   "$tools_dir/node_exporter-1.9.1.linux-$release_arch/node_exporter" \
     --web.listen-address="$NODE_ADDR:19100" \
@@ -103,6 +193,13 @@ if [[ "$role" == node ]]; then
     "${PYTHON:-python3}" -m profiling_lab.topology_textfile \
       --topology-dir "$TOPOLOGY_DIR" --textfile-dir "$output_dir/textfile" \
       --interval "${TOPOLOGY_INTERVAL:-10}" &
+    pids+=("$!")
+  fi
+  if [[ -n "${LOKI_PUSH_URL:-}" ]]; then
+    mkdir -p "$output_dir/alloy-data"
+    "$alloy" run --disable-reporting --storage.path="$output_dir/alloy-data" \
+      --server.http.listen-addr=127.0.0.1:12345 "$output_dir/alloy.alloy" \
+      > "$output_dir/alloy.log" 2>&1 &
     pids+=("$!")
   fi
 elif [[ "$role" == storage ]]; then
@@ -215,6 +312,59 @@ datasources:
     url: http://127.0.0.1:19090
     isDefault: true
 EOF
+  if [[ "${ENABLE_LOGS:-0}" == 1 ]]; then
+    loki_listen_addr="${LOKI_LISTEN_ADDR:-127.0.0.1}"
+    if [[ ! "$loki_listen_addr" =~ ^[A-Za-z0-9_.:-]+$ ]]; then
+      echo "LOKI_LISTEN_ADDR must be an IP address or hostname" >&2
+      exit 2
+    fi
+    cat >> "$output_dir/provisioning/datasources/default.yaml" <<EOF
+  - name: Loki
+    uid: observability-loki
+    type: loki
+    access: proxy
+    url: http://$loki_listen_addr:13100
+EOF
+    cat > "$output_dir/loki.yaml" <<EOF
+auth_enabled: false
+server:
+  http_listen_address: $loki_listen_addr
+  http_listen_port: 13100
+  grpc_listen_address: 127.0.0.1
+  grpc_listen_port: 0
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: $output_dir/loki-data
+  storage:
+    filesystem:
+      chunks_directory: $output_dir/loki-data/chunks
+      rules_directory: $output_dir/loki-data/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+compactor:
+  working_directory: $output_dir/loki-data/compactor
+  retention_enabled: true
+  delete_request_store: filesystem
+limits_config:
+  retention_period: ${LOKI_RETENTION:-168h}
+analytics:
+  reporting_enabled: false
+EOF
+    loki="${LOKI:-$tools_dir/loki-linux-$release_arch}"
+    [[ -x "$loki" ]] || { echo "Loki not found or not executable: $loki" >&2; exit 1; }
+    "$loki" -config.file="$output_dir/loki.yaml" -verify-config=true
+  fi
   cat > "$output_dir/provisioning/dashboards/default.yaml" <<EOF
 apiVersion: 1
 providers:
@@ -224,11 +374,18 @@ providers:
       path: $output_dir/dashboards
 EOF
   cp examples/observability/{run-overview,compute-communication,data-storage}.json "$output_dir/dashboards/"
+  if [[ "${ENABLE_LOGS:-0}" == 1 ]]; then
+    cp examples/observability/run-logs.json "$output_dir/dashboards/"
+  fi
   if [[ "${SERVER_CONFIG_ONLY:-0}" == 1 ]]; then exit 0; fi
   "$tools_dir/prometheus-3.5.0.linux-$release_arch/prometheus" \
     --config.file="$output_dir/prometheus.yml" --storage.tsdb.path="$output_dir/prometheus-data" \
     --storage.tsdb.retention.time=1d --web.listen-address=127.0.0.1:19090 > "$output_dir/prometheus.log" 2>&1 &
   pids+=("$!")
+  if [[ "${ENABLE_LOGS:-0}" == 1 ]]; then
+    "$loki" -config.file="$output_dir/loki.yaml" > "$output_dir/loki.log" 2>&1 &
+    pids+=("$!")
+  fi
   export GF_AUTH_ANONYMOUS_ENABLED=true GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
   if [[ -n "${GRAFANA_ADMIN_PASSWORD:-}" ]]; then
     export GF_SECURITY_ADMIN_PASSWORD="$GRAFANA_ADMIN_PASSWORD"

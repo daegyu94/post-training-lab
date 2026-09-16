@@ -15,6 +15,7 @@ output_dir="${OUTPUT_DIR:-/mnt/post-training/verl/checkpoints/calculator-smoke}"
 
 [[ -x "$python_bin" ]] || { echo "missing Verl Python: $python_bin" >&2; exit 2; }
 [[ -f "$model_dir/config.json" ]] || { echo "missing model: $model_dir" >&2; exit 2; }
+mkdir -p "$output_dir/logs"
 export PATH="$(dirname "$python_bin"):$PATH"
 export NCCL_SOCKET_IFNAME="${NCCL_SOCKET_IFNAME:-enp1s0f0np0}"
 export NCCL_IB_HCA="${NCCL_IB_HCA:-rocep1s0f0}"
@@ -84,4 +85,4 @@ exec "$python_bin" -m verl.trainer.main_ppo \
   trainer.resume_mode=disable \
   trainer.default_local_dir="$output_dir" \
   hydra.run.dir="$output_dir/hydra" \
-  "$@"
+  "$@" > >(tee -a "$output_dir/logs/trainer.log") 2>&1

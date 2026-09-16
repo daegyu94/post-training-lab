@@ -106,13 +106,16 @@ def _wait_until_ready(url: str, timeout: float) -> None:
 
 def validate_stack(args: argparse.Namespace) -> int:
     """Validate live endpoints, write a summary, and return a process status."""
-    target_files = validate_target_files(args.target_dir)
+    target_files = validate_target_files(args.target_dir) if args.target_dir else None
     started = time.monotonic()
     errors: list[str] = []
     prometheus_ready = False
     grafana_ready = False
     grafana_database_ok = False
     prometheus_query_ok = False
+    loki_url = getattr(args, "loki_url", None)
+    loki_ready = not loki_url
+    loki_query_ok = not loki_url
     target_status = {"configured": 0, "up": 0, "down": 0}
 
     try:
@@ -135,6 +138,19 @@ def validate_stack(args: argparse.Namespace) -> int:
             errors.append("Grafana database health is not ok")
     except (RuntimeError, ValueError, HTTPError, URLError) as error:
         errors.append(str(error))
+
+    if loki_url:
+        try:
+            _wait_until_ready(f"{loki_url.rstrip('/')}/ready", args.timeout)
+            loki_ready = True
+            loki_query_ok = (
+                _read_json(f"{loki_url.rstrip('/')}/loki/api/v1/labels").get("status")
+                == "success"
+            )
+            if not loki_query_ok:
+                errors.append("Loki test query did not report success")
+        except (RuntimeError, ValueError, HTTPError, URLError) as error:
+            errors.append(str(error))
 
     if prometheus_ready:
         try:
@@ -165,6 +181,8 @@ def validate_stack(args: argparse.Namespace) -> int:
             grafana_ready,
             grafana_database_ok,
             prometheus_query_ok,
+            loki_ready,
+            loki_query_ok,
             targets_acceptable,
         )
     )
@@ -173,7 +191,8 @@ def validate_stack(args: argparse.Namespace) -> int:
         configuration={
             "prometheus_url": args.prometheus_url,
             "grafana_url": args.grafana_url,
-            "target_dir": str(args.target_dir),
+            "loki_url": loki_url,
+            "target_dir": str(args.target_dir) if args.target_dir else None,
             "require_targets_up": args.require_targets_up,
         },
         environment={
@@ -185,15 +204,19 @@ def validate_stack(args: argparse.Namespace) -> int:
         performance={"validation_seconds": elapsed},
         artifacts={
             "summary_file": str(args.output),
-            "target_dir": str(args.target_dir),
+            "target_dir": str(args.target_dir) if args.target_dir else None,
         },
         validation={
+            "target_files_checked": target_files is not None,
             "target_files_valid": True,
             "target_files": target_files,
             "prometheus_ready": prometheus_ready,
             "prometheus_query_ok": prometheus_query_ok,
             "grafana_ready": grafana_ready,
             "grafana_database_ok": grafana_database_ok,
+            "loki_enabled": bool(loki_url),
+            "loki_ready": loki_ready,
+            "loki_query_ok": loki_query_ok,
             "prometheus_targets": target_status,
             "stack_valid": stack_valid,
             "errors": errors,
@@ -229,9 +252,10 @@ def parse_args() -> argparse.Namespace:
         "validate-stack",
         help="validate running Prometheus and Grafana services",
     )
-    stack.add_argument("--target-dir", type=Path, required=True)
+    stack.add_argument("--target-dir", type=Path)
     stack.add_argument("--prometheus-url", default="http://127.0.0.1:9090")
     stack.add_argument("--grafana-url", default="http://127.0.0.1:3000")
+    stack.add_argument("--loki-url")
     stack.add_argument("--output", type=Path, required=True)
     stack.add_argument("--timeout", type=float, default=60.0)
     stack.add_argument("--require-targets-up", action="store_true")

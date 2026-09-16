@@ -9,6 +9,7 @@ case "$machine" in
   *) echo "Unsupported architecture: $machine (expected ARM64 or x86_64)" >&2; exit 2 ;;
 esac
 tools_dir="${TOOLS_DIR:-$HOME/.local/share/observability-tools}"
+role="${1:-node}"
 mkdir -p "$tools_dir"
 cd "$tools_dir"
 download() {
@@ -19,10 +20,20 @@ download "https://github.com/prometheus/node_exporter/releases/download/v1.9.1/n
 tar xzf node_exporter.tar.gz
 download "https://github.com/prometheus-community/smartctl_exporter/releases/download/v0.14.0/smartctl_exporter-0.14.0.linux-$release_arch.tar.gz" smartctl_exporter.tar.gz
 tar xzf smartctl_exporter.tar.gz
-if [[ "${1:-node}" == server ]]; then
+if [[ "$role" == server ]]; then
   download "https://github.com/prometheus/prometheus/releases/download/v3.5.0/prometheus-3.5.0.linux-$release_arch.tar.gz" prometheus.tar.gz
   tar xzf prometheus.tar.gz
   download "https://dl.grafana.com/oss/release/grafana-12.1.0.linux-$release_arch.tar.gz" grafana.tar.gz
   tar xzf grafana.tar.gz
+  download "https://github.com/grafana/loki/releases/download/v3.7.3/loki-linux-$release_arch.zip" loki.zip
+  unzip -qo loki.zip
+  chmod 0755 "loki-linux-$release_arch"
+elif [[ "$role" == node ]]; then
+  download "https://github.com/grafana/alloy/releases/download/v1.19.2/alloy-linux-$release_arch.zip" alloy.zip
+  unzip -qo alloy.zip
+  chmod 0755 "alloy-linux-$release_arch"
+else
+  echo "Use node or server" >&2
+  exit 2
 fi
-sha256sum ./*.tar.gz > downloaded-archives.sha256
+sha256sum ./*.tar.gz ./*.zip > downloaded-archives.sha256

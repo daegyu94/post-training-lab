@@ -26,6 +26,7 @@ pids_limit="${EXECUTION_REWARD_PIDS_LIMIT:-64}"
 [[ -f "$adapter_dir/adapter_model.safetensors" ]] || { echo "missing adapter weights: $adapter_dir" >&2; exit 2; }
 [[ -f "$tasks_path" ]] || { echo "missing execution tasks: $tasks_path" >&2; exit 2; }
 docker image inspect "$image" >/dev/null || { echo "missing Docker image: $image" >&2; exit 2; }
+mkdir -p "$output_dir/logs"
 lora_rank="$("$python_bin" -c 'import json, sys; print(json.load(open(sys.argv[1]))["r"])' "$adapter_dir/adapter_config.json")"
 
 export PATH="$(dirname "$python_bin"):$PATH"
@@ -103,4 +104,4 @@ exec "$python_bin" -m verl.trainer.main_ppo \
   trainer.resume_mode=disable \
   trainer.default_local_dir="$output_dir" \
   hydra.run.dir="$output_dir/hydra" \
-  "$@"
+  "$@" > >(tee -a "$output_dir/logs/trainer.log") 2>&1
