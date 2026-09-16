@@ -11,7 +11,8 @@
 | TRL DeepSpeed ZeRO-3 NVMe full SFT | 지원 | 2노드 분산 학습, parameter·optimizer runtime offload와 node-local 저장 |
 | Megatron Qwen·GLM LoRA | 지원 | 2노드 EP=2 학습, sync/async node-local 저장 |
 | Megatron recompute 비교 | 지원 | Qwen·GLM LoRA의 full/selective 비교 |
-| Verl agentic GRPO | 정적 검증만 완료 | GPU runtime 검증 전에는 지원으로 간주하지 않음 |
+| Verl agentic GRPO | 0.5B GPU smoke 지원 | 2노드 rollout·trainer 분리 실행과 1-step LoRA update |
+| NeMo RL·verl GRPO 비교 | 1-step 실측 완료 | [동일 0.5B·2-GPU 조건과 zero-advantage 한계](experiments/nemo-rl-vs-verl.md) |
 | 분산 restore·resume | TODO | 모든 rank shard가 보이는 shared checkpoint storage가 필요함 |
 | Single-node 30B full SFT | 미지원 | NVMe runtime offload를 사용해도 host memory와 swap 소진으로 checkpoint 전에 OOM |
 
@@ -28,6 +29,7 @@
 | Full·selective recompute | [Qwen·GLM 실측](experiments/measured-results.md#recompute) |
 | Sync·async checkpoint | [Qwen·GLM LoRA rank 8·251의 100-step 실측](experiments/measured-results.md#async-checkpoint-scaling) |
 | LoRA 비율별 checkpoint 크기 | [Qwen·GLM 실측](experiments/measured-results.md#lora-ratio) |
+| NeMo RL·verl GRPO | [0.5B 2-GPU 1-step 실측](experiments/nemo-rl-vs-verl.md#2026-09-1617-결과) |
 
 ## Presets
 
