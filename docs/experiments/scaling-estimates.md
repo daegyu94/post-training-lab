@@ -1,7 +1,7 @@
 # Scaling Estimates: 100B to 1T
 
-이 문서는 동일한 dtype과 optimizer 가정을 30.5B~1T 모델에 적용해 학습 state와 checkpoint에 필요한 **용량의 규모**를 계산합니다.
-QLoRA와 100B~1T 수치는 실행 결과나 GPU 구매·배치 수량이 아니라 초기 계획을 위한 추정값이며, 실제 지원 상태는 [Experiments](../experiments.md#지원-상태)를 따릅니다.
+이 문서는 동일한 dtype과 optimizer 가정을 30.5B\~1T 모델에 적용해 학습 state와 checkpoint에 필요한 **용량의 규모**를 계산합니다.
+QLoRA와 100B\~1T 수치는 실행 결과나 GPU 구매·배치 수량이 아니라 초기 계획을 위한 추정값이며, 실제 지원 상태는 [Experiments](../experiments.md#support-status)를 따릅니다.
 여기서 [QLoRA](https://arxiv.org/abs/2305.14314)는 4-bit frozen base 위에서 LoRA adapter를 학습하는 방식이며 full SFT와 학습 대상이 다릅니다.
 
 > **핵심**: full FT는 parameter당 16 bytes, LoRA는 BF16 base 2 bytes와 adapter state, QLoRA는 4-bit base 0.5 bytes와 같은 adapter state를 가정합니다.
