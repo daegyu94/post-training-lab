@@ -34,36 +34,47 @@ Checkpoint 크기는 두 rank의 최신 shard logical byte 합이며, 시간은 
 
 ## Recompute
 
-Qwen에서 selective recompute는 full보다 steady step이 26.8\~27.9% 짧았지만 peak allocated는 35.0\~62.9% 컸습니다.
+Selective recompute는 full보다 steady step이 Qwen에서 26.8\~27.9%, GLM에서 11.7\~13.5% 짧았습니다.
+반면 peak allocated는 Qwen에서 35.0\~62.9%, GLM에서 39.9\~72.7% 컸습니다.
 Steady step은 4-step run의 첫 step을 제외한 median이고, memory는 측정 run 전체의 최댓값입니다.
 
-| Length | Mode | Steady step median (ms) | Peak allocated max (GiB) | Peak reserved max (GiB) |
-| ---: | --- | ---: | ---: | ---: |
-| 2048 | full | 3148.1 | 32.150 | 36.564 |
-| 2048 | selective | 2304.3 | 43.413 | 46.270 |
-| 4096 | full | 6343.5 | 34.321 | 39.990 |
-| 4096 | selective | 4572.3 | 55.905 | 59.492 |
+| Model | Length | Mode | Steady step median (ms) | Peak allocated max (GiB) | Peak reserved max (GiB) |
+| --- | ---: | --- | ---: | ---: | ---: |
+| Qwen | 2048 | full | 3148.1 | 32.150 | 36.564 |
+| Qwen | 2048 | selective | 2304.3 | 43.413 | 46.270 |
+| Qwen | 4096 | full | 6343.5 | 34.321 | 39.990 |
+| Qwen | 4096 | selective | 4572.3 | 55.905 | 59.492 |
+| GLM | 2048 | full | 3369.4 | 32.337 | 36.902 |
+| GLM | 2048 | selective | 2974.4 | 45.249 | 46.959 |
+| GLM | 4096 | full | 8280.5 | 34.538 | 41.309 |
+| GLM | 4096 | selective | 7163.5 | 59.635 | 62.613 |
 
 ![Full·selective recompute의 step time과 memory](../figures/measured-recompute.svg)
 
 ## Async checkpoint scaling
 
-Qwen 100-step run에서 10 step마다 checkpoint를 저장하고, LoRA rank 8과 251의 sync·async를 각각 3회 측정했습니다.
+Qwen·GLM 100-step run에서 10 step마다 checkpoint를 저장하고, LoRA rank 8과 251의 sync·async를 각각 3회 측정했습니다.
 `Post-ready`는 rank별 stage 시간에서 model-ready 시간을 뺀 뒤 큰 값을 run 대표값으로 삼은 median입니다.
 `Direct wait`는 각 run의 save/enqueue와 종료 전 blocking finalization을 더한 값의 median입니다.
 각 시간 열은 run별로 따로 median을 구하므로 열끼리 정확히 더해지지 않을 수 있습니다.
 
-| LoRA rank | Trainable (%) | Mode | Checkpoint 10개 합 (GB) | Save/enqueue 합 (s) | Finalize (s) | Direct wait (s) | Post-ready (s) | Steady step (ms) | Save rMAD (%) |
-| ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 8 | 0.0319 | sync | 0.730 | 4.365 | 0.000 | 4.365 | 335.723 | 3219.85 | 0.12 |
-| 8 | 0.0319 | async | 0.730 | 3.515 | 0.765 | 4.280 | 336.050 | 3226.20 | 0.23 |
-| 251 | 0.9998 | sync | 22.468 | 12.474 | 0.000 | 12.474 | 356.404 | 3339.25 | 0.88 |
-| 251 | 0.9998 | async | 22.468 | 4.296 | 1.566 | 5.830 | 349.785 | 3335.35 | 1.13 |
+| Model | LoRA rank | Trainable (%) | Mode | Checkpoint 10개 합 (GB) | Save/enqueue 합 (s) | Finalize (s) | Direct wait (s) | Post-ready (s) | Steady step (ms) | Save rMAD (%) |
+| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Qwen | 8 | 0.0319 | sync | 0.730 | 4.365 | 0.000 | 4.365 | 335.723 | 3219.85 | 0.12 |
+| Qwen | 8 | 0.0319 | async | 0.730 | 3.515 | 0.765 | 4.280 | 336.050 | 3226.20 | 0.23 |
+| Qwen | 251 | 0.9998 | sync | 22.468 | 12.474 | 0.000 | 12.474 | 356.404 | 3339.25 | 0.88 |
+| Qwen | 251 | 0.9998 | async | 22.468 | 4.296 | 1.566 | 5.830 | 349.785 | 3335.35 | 1.13 |
+| GLM | 8 | 0.0655 | sync | 1.506 | 6.097 | 0.000 | 6.098 | 355.279 | 3402.90 | 0.80 |
+| GLM | 8 | 0.0655 | async | 1.506 | 3.805 | 0.740 | 4.526 | 354.341 | 3402.90 | 1.13 |
+| GLM | 251 | 2.0141 | sync | 46.226 | 22.834 | 0.000 | 22.834 | 398.483 | 3664.80 | 1.35 |
+| GLM | 251 | 2.0141 | async | 46.226 | 6.305 | 2.666 | 8.972 | 386.873 | 3672.55 | 0.98 |
 
 ![LoRA checkpoint 크기별 sync·async 비교](../figures/measured-async-checkpoint.svg)
 
-작은 payload에서 async는 direct wait를 1.9% 줄였지만 post-ready는 0.10%, steady step은 0.20% 길어 실질적인 이득이 없었습니다.
-큰 payload에서는 direct wait가 53.3%, post-ready가 1.86% 줄었고 steady step 차이는 -0.12%였습니다.
+Qwen rank 8에서 async는 direct wait를 1.9% 줄였지만 post-ready는 0.10%, steady step은 0.20% 길어 실질적인 이득이 없었습니다.
+Qwen rank 251에서는 direct wait가 53.3%, post-ready가 1.86% 줄었습니다.
+GLM rank 8에서는 direct wait가 25.8%, post-ready가 0.26% 줄었고 steady step은 같았습니다.
+GLM rank 251에서는 direct wait가 60.7%, post-ready가 2.91% 줄었으며 steady step은 0.21% 길었습니다.
 Async 효과는 checkpoint가 커지면 나타났지만 compute가 전체 시간을 지배하므로 direct wait 감소가 그대로 end-to-end 개선율이 되지는 않았습니다.
 
 같은 matrix를 다시 실행할 때는 preset의 100-step·3회 반복·interval 10 기본값을 사용합니다.
@@ -71,6 +82,7 @@ Async 효과는 checkpoint가 커지면 나타났지만 compute가 전체 시간
 ```bash
 python experiments/checkpoint_memory_30b.py \
   --setup setups/spark/local.json \
+  --model qwen \
   --plan experiments/megatron/async-checkpoint-scale-30b.json \
   --output results/async-checkpoint-scale-30b \
   --execute
@@ -78,14 +90,19 @@ python experiments/checkpoint_memory_30b.py \
 
 ## LoRA ratio
 
-Qwen의 고정 target module에서 trainable 비율을 약 10배 늘리면 checkpoint 크기는 9.99배, save 시간은 1.81배가 됐습니다.
+같은 LoRA rank 25·126·251을 적용했을 때 rank 25에서 251로 늘리면 checkpoint 크기는 Qwen 9.99배, GLM 9.97배가 됐습니다.
+Save 시간은 Qwen 1.81배, GLM 2.55배가 됐습니다.
 Trainable 비율의 분모는 전체 모델이 아니라 Megatron 로그의 rank-local shard입니다.
+Ratio label은 Qwen의 목표 비율이며 GLM은 같은 rank에서 실제 trainable 비율이 더 큽니다.
 
-| Target ratio | LoRA rank | Measured trainable (%) | Checkpoint median (MB) | Save median (s) | Save rMAD (%) |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| 0.1% | 25 | 0.0996 | 224.9 | 1.44 | 2.10 |
-| 0.5% | 126 | 0.5019 | 1128.4 | 2.03 | 0.13 |
-| 1.0% | 251 | 0.9998 | 2246.6 | 2.61 | 0.60 |
+| Model | Ratio label | LoRA rank | Measured trainable (%) | Checkpoint median (MB) | Save median (s) | Save rMAD (%) |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Qwen | 0.1% | 25 | 0.0996 | 224.9 | 1.44 | 2.10 |
+| Qwen | 0.5% | 126 | 0.5019 | 1128.4 | 2.03 | 0.13 |
+| Qwen | 1.0% | 251 | 0.9998 | 2246.6 | 2.61 | 0.60 |
+| GLM | 0.1% | 25 | 0.2043 | 463.5 | 1.80 | 0.13 |
+| GLM | 0.5% | 126 | 1.0213 | 2322.2 | 3.10 | 0.53 |
+| GLM | 1.0% | 251 | 2.0141 | 4622.6 | 4.59 | 1.39 |
 
 ![LoRA 비율별 checkpoint 크기와 save 시간](../figures/measured-lora-ratio.svg)
 
@@ -97,4 +114,4 @@ Trainable 비율의 분모는 전체 모델이 아니라 Megatron 로그의 rank
 - 모든 결과는 짧은 LoRA run의 기술적 비교이며 장기 수렴, 품질 또는 full SFT 성능을 뜻하지 않습니다.
 - 서로 다른 절의 값은 표에 명시한 조건이 같을 때만 비교합니다.
 - Checkpoint는 node-local save만 측정했습니다. Shared storage가 없으므로 distributed restore·resume은 측정하지 않았습니다.
-- 로컬 원본은 `results/refresh-memory-te-{qwen,glm}-bee4520/manifest.json`, `results/refresh-recompute-qwen-bee4520/manifest.json`, `results/lora-ratio-checkpoint-io/manifest.json`, `results/qwen-async-sync-100step-3x-2b2002c/manifest.json`, `results/qwen-async-sync-rank251-100step-3x-2b2002c/manifest.json`입니다. `results/`는 Git에 포함하지 않으며 추적되는 기준은 이 문서의 표입니다.
+- 로컬 원본은 `results/refresh-memory-te-{qwen,glm}-bee4520/manifest.json`, `results/refresh-recompute-qwen-bee4520/manifest.json`, `results/lora-ratio-checkpoint-io/manifest.json`, `results/qwen-async-sync-100step-3x-2b2002c/manifest.json`, `results/qwen-async-sync-rank251-100step-3x-2b2002c/manifest.json`, `results/glm-recompute-54be3ee/manifest.json`, `results/glm-lora-ratio-54be3ee/manifest.json`, `results/glm-async-sync-100step-3x-68091dd/manifest.json`입니다. `results/`는 Git에 포함하지 않으며 추적되는 기준은 이 문서의 표입니다.

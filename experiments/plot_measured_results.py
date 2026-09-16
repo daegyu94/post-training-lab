@@ -43,7 +43,7 @@ def save(figure, output: Path, name: str) -> None:
 def plot_memory(output: Path) -> None:
     sequence = table("Sequence memory")
     recompute = table("Recompute")
-    assert len(sequence) == len(recompute) == 4
+    assert len(sequence) == 4 and len(recompute) == 8
 
     figure, axis = plt.subplots(figsize=(5.4, 4.2))
     x = range(2)
@@ -64,20 +64,20 @@ def plot_memory(output: Path) -> None:
     axis.spines[["top", "right"]].set_visible(False)
     save(figure, output, "measured-sequence-memory.svg")
 
-    figure, axes = plt.subplots(1, 2, figsize=(9, 4.2))
+    figure, axes = plt.subplots(2, 2, figsize=(9, 7.5))
     lengths = (2048, 4096)
     x = range(len(lengths))
-    for offset, mode, color in ((-0.18, "full", BLUE), (0.18, "selective", ORANGE)):
-        rows = [row for row in recompute if row[1] == mode]
-        axes[0].bar([value + offset for value in x], [float(row[2]) for row in rows], 0.36, label=mode, color=color)
-        axes[1].bar([value + offset for value in x], [float(row[3]) for row in rows], 0.36, label=mode, color=color)
-    axes[0].set(title="Recompute step time", ylabel="Steady step (ms)")
-    axes[1].set(title="Recompute memory", ylabel="Peak allocated (GiB)")
-    for axis in axes:
+    for model_index, model in enumerate(("Qwen", "GLM")):
+        for offset, mode, color in ((-0.18, "full", BLUE), (0.18, "selective", ORANGE)):
+            rows = [row for row in recompute if row[0] == model and row[2] == mode]
+            axes[model_index, 0].bar([value + offset for value in x], [float(row[3]) for row in rows], 0.36, label=mode, color=color)
+            axes[model_index, 1].bar([value + offset for value in x], [float(row[4]) for row in rows], 0.36, label=mode, color=color)
+        axes[model_index, 0].set(title=f"{model}: step time", ylabel="Steady step (ms)")
+        axes[model_index, 1].set(title=f"{model}: memory", ylabel="Peak allocated (GiB)")
+    for axis in axes.flat:
         axis.set_xticks(list(x), [str(value) for value in lengths])
         axis.set_xlabel("Sequence length")
         axis.legend()
-    for axis in axes:
         axis.grid(axis="y", alpha=0.2)
         axis.set_axisbelow(True)
         axis.spines[["top", "right"]].set_visible(False)
@@ -87,44 +87,59 @@ def plot_memory(output: Path) -> None:
 def plot_checkpoint(output: Path) -> None:
     checkpoint = table("Async checkpoint scaling")
     ratios = table("LoRA ratio")
-    assert [row[0] for row in checkpoint] == ["8", "8", "251", "251"]
-    assert [int(row[1]) for row in ratios] == [25, 126, 251]
+    assert [(row[0], row[1]) for row in checkpoint] == [
+        (model, rank) for model in ("Qwen", "GLM") for rank in ("8", "8", "251", "251")
+    ]
+    assert [(row[0], int(row[2])) for row in ratios] == [
+        (model, rank) for model in ("Qwen", "GLM") for rank in (25, 126, 251)
+    ]
 
-    figure, axes = plt.subplots(1, 2, figsize=(9, 4.2))
-    payloads = ("rank 8\n73 MB/save", "rank 251\n2.25 GB/save")
+    figure, axes = plt.subplots(2, 2, figsize=(9, 7.5))
     x = range(2)
-    for axis, column, title in (
-        (axes[0], 6, "Direct checkpoint wait"),
-        (axes[1], 7, "100-step time after model ready"),
-    ):
-        for offset, mode, color in ((-0.18, "sync", BLUE), (0.18, "async", ORANGE)):
-            rows = [row for row in checkpoint if row[2] == mode]
-            bars = axis.bar(
-                [value + offset for value in x],
-                [float(row[column]) for row in rows],
-                0.36,
-                label=mode,
-                color=color,
-            )
-            axis.bar_label(bars, fmt="%.2f", padding=3)
-        axis.set_xticks(list(x), payloads)
-        axis.set(title=title, ylabel="Seconds")
-        axis.legend()
+    for model_index, model in enumerate(("Qwen", "GLM")):
+        sync_rows = [row for row in checkpoint if row[0] == model and row[3] == "sync"]
+        payloads = []
+        for row in sync_rows:
+            per_save_gb = float(row[4]) / 10
+            size = f"{per_save_gb * 1000:.0f} MB" if per_save_gb < 1 else f"{per_save_gb:.2f} GB"
+            payloads.append(f"rank {row[1]}\n{size}/save")
+        for column, title, axis in (
+            (7, "Direct checkpoint wait", axes[model_index, 0]),
+            (8, "100-step time after model ready", axes[model_index, 1]),
+        ):
+            for offset, mode, color in ((-0.18, "sync", BLUE), (0.18, "async", ORANGE)):
+                rows = [row for row in checkpoint if row[0] == model and row[3] == mode]
+                bars = axis.bar(
+                    [value + offset for value in x],
+                    [float(row[column]) for row in rows],
+                    0.36,
+                    label=mode,
+                    color=color,
+                )
+                axis.bar_label(bars, fmt="%.2f", padding=3)
+            axis.set_xticks(list(x), payloads)
+            axis.set(title=f"{model}: {title}", ylabel="Seconds")
+            axis.legend()
+    for axis in axes.flat:
         axis.grid(axis="y", alpha=0.2)
         axis.set_axisbelow(True)
         axis.spines[["top", "right"]].set_visible(False)
     save(figure, output, "measured-async-checkpoint.svg")
 
     figure, axes = plt.subplots(1, 2, figsize=(9, 4.2))
-    ratio_labels = [row[0] for row in ratios]
-    for axis, column, title, unit, color in (
-        (axes[0], 3, "Checkpoint size by LoRA ratio", "MB", BLUE),
-        (axes[1], 4, "Save time by LoRA ratio", "Seconds", ORANGE),
+    ratio_labels = [row[2] for row in ratios if row[0] == "Qwen"]
+    x = range(len(ratio_labels))
+    for axis, column, title, unit in (
+        (axes[0], 4, "Checkpoint size by LoRA rank", "MB"),
+        (axes[1], 5, "Save time by LoRA rank", "Seconds"),
     ):
-        values = [float(row[column]) for row in ratios]
-        bars = axis.bar(ratio_labels, values, color=color, width=0.6)
-        axis.bar_label(bars, fmt="%.2f" if column == 4 else "%.1f", padding=3)
-        axis.set(title=title, xlabel="Target trainable ratio", ylabel=unit)
+        for offset, model, color in ((-0.18, "Qwen", BLUE), (0.18, "GLM", ORANGE)):
+            rows = [row for row in ratios if row[0] == model]
+            bars = axis.bar([value + offset for value in x], [float(row[column]) for row in rows], 0.36, color=color, label=model)
+            axis.bar_label(bars, fmt="%.2f" if column == 5 else "%.1f", padding=3)
+        axis.set_xticks(list(x), ratio_labels)
+        axis.set(title=title, xlabel="LoRA rank", ylabel=unit)
+        axis.legend()
     for axis in axes.flat:
         axis.grid(axis="y", alpha=0.2)
         axis.set_axisbelow(True)

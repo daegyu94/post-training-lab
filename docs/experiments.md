@@ -11,7 +11,7 @@
 | TRL DeepSpeed ZeRO-3 NVMe full SFT | 지원 | 2노드 분산 학습, runtime offload와 node-local 저장 |
 | QLoRA | 추정만 제공 | 구현·GPU 검증 없이 [규모별 용량](experiments/scaling-estimates.md)만 비교 |
 | Megatron Qwen·GLM LoRA | 지원 | 2노드 EP=2 학습, sync/async node-local 저장 |
-| Megatron recompute 비교 | 지원 | Qwen LoRA의 full/selective 비교 |
+| Megatron recompute 비교 | 지원 | Qwen·GLM LoRA의 full/selective 비교 |
 | Verl agentic GRPO | 정적 검증만 완료 | GPU runtime 검증 전에는 지원으로 간주하지 않음 |
 | 분산 restore·resume | TODO | 모든 rank shard가 보이는 shared checkpoint storage가 필요함 |
 | Single-node 30B full SFT | 미지원 | NVMe runtime offload를 사용해도 host memory와 swap 소진으로 checkpoint 전에 OOM |
@@ -24,9 +24,9 @@
 | 비교 | 결과 |
 | --- | --- |
 | Sequence length별 memory | [Qwen·GLM 실측](experiments/measured-results.md#sequence-memory) |
-| Full·selective recompute | [Qwen 실측](experiments/measured-results.md#recompute) |
-| Sync·async checkpoint | [LoRA rank 8·251의 100-step 실측](experiments/measured-results.md#async-checkpoint-scaling) |
-| LoRA 비율별 checkpoint 크기 | [Qwen 실측](experiments/measured-results.md#lora-ratio) |
+| Full·selective recompute | [Qwen·GLM 실측](experiments/measured-results.md#recompute) |
+| Sync·async checkpoint | [Qwen·GLM LoRA rank 8·251의 100-step 실측](experiments/measured-results.md#async-checkpoint-scaling) |
+| LoRA 비율별 checkpoint 크기 | [Qwen·GLM 실측](experiments/measured-results.md#lora-ratio) |
 
 ## Presets
 
