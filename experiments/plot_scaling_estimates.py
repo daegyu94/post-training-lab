@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import argparse
+import math
 from pathlib import Path
 
 
 GIB = 1024**3
 TIB = 1024**4
 ADAPTER_FRACTION = 0.001
-MODEL_SIZES_B = (30.5, 100, 500, 1000)
+MODEL_SIZES_B = (30.5, 100, 500, 1000, 2800)
+MODEL_LABELS = ("30.5B", "100B", "500B", "1T", "Kimi K3\n2.8T")
+KIMI_K3_PARAMETERS = 2.8e12
+B300_NODE_MANAGED_BYTES = 8 * 288e9 * 0.95
 
 
 def training_state_bytes(parameters: float, method: str) -> float:
@@ -73,7 +77,7 @@ def main() -> None:
         axis.set_xlabel("Model parameters (billions)")
         axis.set_xscale("log")
         axis.set_yscale("log")
-        axis.set_xticks(MODEL_SIZES_B, labels=("30.5B", "100B", "500B", "1T"))
+        axis.set_xticks(MODEL_SIZES_B, labels=MODEL_LABELS)
         axis.grid(True, which="both", alpha=0.25)
 
     figure.tight_layout()
@@ -87,6 +91,10 @@ def main() -> None:
 
     assert round(training_state_bytes(1e12, "QLoRA") / GIB, 1) == 480.6
     assert round(restart_checkpoint_bytes(1e12, "Full FT") / TIB, 2) == 12.73
+    assert math.ceil(KIMI_K3_PARAMETERS * 0.5 * 1.2 / B300_NODE_MANAGED_BYTES) == 1
+    assert math.ceil(training_state_bytes(KIMI_K3_PARAMETERS, "QLoRA") / B300_NODE_MANAGED_BYTES) == 1
+    assert math.ceil(training_state_bytes(KIMI_K3_PARAMETERS, "LoRA") / B300_NODE_MANAGED_BYTES) == 3
+    assert math.ceil(training_state_bytes(KIMI_K3_PARAMETERS, "Full FT") / B300_NODE_MANAGED_BYTES) == 21
 
 
 if __name__ == "__main__":
