@@ -17,7 +17,7 @@ B300_NODE_MANAGED_BYTES = 8 * 288e9 * 0.95
 
 
 def training_state_bytes(parameters: float, method: str) -> float:
-    base_bytes = {"Full FT": 0.0, "LoRA": 2.0, "QLoRA": 0.5}[method]
+    base_bytes = {"Full FT": 0.0, "LoRA": 2.0}[method]
     trainable_fraction = 1.0 if method == "Full FT" else ADAPTER_FRACTION
     return parameters * (base_bytes + 16.0 * trainable_fraction)
 
@@ -39,8 +39,8 @@ def main() -> None:
     import matplotlib.pyplot as plt
 
     plt.rcParams["svg.hashsalt"] = "post-training-lab"
-    methods = ("Full FT", "LoRA", "QLoRA")
-    colors = {"Full FT": "#d95f02", "LoRA": "#1b9e77", "QLoRA": "#7570b3"}
+    methods = ("Full FT", "LoRA")
+    colors = {"Full FT": "#d95f02", "LoRA": "#1b9e77"}
     parameters = [size * 1e9 for size in MODEL_SIZES_B]
     figure, axes = plt.subplots(1, 2, figsize=(10, 4.2))
 
@@ -68,7 +68,7 @@ def main() -> None:
         [restart_checkpoint_bytes(value, "LoRA") / TIB for value in parameters],
         marker="o",
         color=colors["LoRA"],
-        label="LoRA / QLoRA adapter",
+        label="LoRA adapter",
     )
     axes[1].set_title("Restart checkpoint (base excluded)")
     axes[1].legend()
@@ -89,10 +89,9 @@ def main() -> None:
         encoding="utf-8",
     )
 
-    assert round(training_state_bytes(1e12, "QLoRA") / GIB, 1) == 480.6
+    assert round(training_state_bytes(1e12, "LoRA") / GIB, 1) == 1877.5
     assert round(restart_checkpoint_bytes(1e12, "Full FT") / TIB, 2) == 12.73
     assert math.ceil(KIMI_K3_PARAMETERS * 0.5 * 1.2 / B300_NODE_MANAGED_BYTES) == 1
-    assert math.ceil(training_state_bytes(KIMI_K3_PARAMETERS, "QLoRA") / B300_NODE_MANAGED_BYTES) == 1
     assert math.ceil(training_state_bytes(KIMI_K3_PARAMETERS, "LoRA") / B300_NODE_MANAGED_BYTES) == 3
     assert math.ceil(training_state_bytes(KIMI_K3_PARAMETERS, "Full FT") / B300_NODE_MANAGED_BYTES) == 21
 

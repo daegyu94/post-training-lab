@@ -1,12 +1,11 @@
 # Scaling Estimates: 30B to Kimi K3 2.8T
 
-이 문서는 동일한 dtype과 optimizer 가정을 30.5B\~2.8T 모델에 적용해 학습 state와 checkpoint에 필요한 **용량의 규모**를 계산합니다.
-QLoRA와 100B\~2.8T 수치는 실행 결과나 GPU 구매·배치 수량이 아니라 초기 계획을 위한 추정값이며, 실제 지원 상태는 [Experiments](../experiments.md#support-status)를 따릅니다.
-여기서 [QLoRA](https://arxiv.org/abs/2305.14314)는 4-bit frozen base 위에서 LoRA adapter를 학습하는 방식이며 full SFT와 학습 대상이 다릅니다.
+이 문서는 Megatron에서 사용하는 BF16 full FT와 LoRA state 가정을 30.5B\~2.8T 모델에 적용해 학습 state와 checkpoint에 필요한 **용량의 규모**를 계산합니다.
+100B\~2.8T 수치는 실행 결과나 GPU 구매·배치 수량이 아니라 초기 계획을 위한 추정값이며, 실제 지원 상태는 [Experiments](../experiments.md#support-status)를 따릅니다.
 
-> **핵심**: full FT는 parameter당 16 bytes, LoRA는 BF16 base 2 bytes와 adapter state, QLoRA는 4-bit base 0.5 bytes와 같은 adapter state를 가정합니다.
-> 1T 학습 state는 각각 14.55 TiB, 1877.5 GiB, 480.6 GiB입니다.
-> Kimi K3 2.8T에서는 각각 40.75 TiB, 5.13 TiB, 1.31 TiB입니다.
+> **핵심**: full FT는 parameter당 16 bytes, LoRA는 BF16 base 2 bytes와 adapter state를 가정합니다.
+> 1T 학습 state는 각각 14.55 TiB와 1877.5 GiB입니다.
+> Kimi K3 2.8T에서는 각각 40.75 TiB와 5.13 TiB입니다.
 
 ## 가정
 
@@ -23,22 +22,19 @@ Parameter 하나가 차지하는 용량은 다음과 같이 가정합니다.
 | 저장 항목 | 가정한 bytes/parameter |
 | --- | ---: |
 | BF16 weight | 2 |
-| 4-bit weight | 0.5 |
 | BF16 gradient | 2 (학습 대상만) |
 | FP32 master weight + Adam 1차·2차 moment | 12 (학습 대상만) |
 
-이 값을 Full FT, LoRA와 QLoRA에 적용하면 다음 공식이 됩니다.
+이 값을 Full FT와 LoRA에 적용하면 다음 공식이 됩니다.
 
 | 방식 | 학습 중 model state | 배포용 weight | 재시작용 checkpoint |
 | --- | ---: | ---: | ---: |
 | Full FT | `16P` | `2P` | `14P` |
 | LoRA | `2P + 16fP` | `2fP` | `14fP` |
-| QLoRA | `0.5P + 16fP` | `2fP` | `14fP` |
 
 학습 중 model state에는 weight, 학습 대상의 gradient와 optimizer state가 포함됩니다.
 Checkpoint에는 gradient를 저장하지 않으며, 재시작용 checkpoint에는 weight와 optimizer state를 포함합니다.
-LoRA와 QLoRA adapter checkpoint는 frozen base를 포함하지 않으므로 base model의 revision과 가중치를 별도로 보존해야 합니다.
-QLoRA의 0.5 bytes는 순수 4-bit weight만 계산한 하한으로 quantization metadata와 runtime 임시 buffer를 제외합니다.
+LoRA adapter checkpoint는 frozen base를 포함하지 않으므로 base model의 revision과 가중치를 별도로 보존해야 합니다.
 
 12 bytes는 Adam moment만의 크기가 아니라 **master weight를 포함한 이 저장 방식의 가정**입니다.
 Framework의 gradient dtype·master copy·optimizer state 저장 정책에 따라 달라집니다.
@@ -47,26 +43,26 @@ Framework의 gradient dtype·master copy·optimizer state 저장 정책에 따�
 
 > **표에서 바로 읽을 결론**: Full FT는 100B부터 학습 state가 1.46 TiB, 재시작용 checkpoint가 1.27 TiB입니다.
 > 1T에서는 각각 14.55 TiB와 12.73 TiB까지 늘어납니다.
-> LoRA와 QLoRA는 adapter checkpoint 크기가 같지만, 학습 중 frozen base는 각각 BF16과 4-bit로 유지합니다.
+> LoRA의 학습 중 frozen base는 BF16으로 유지합니다.
 
 아래 값은 모든 rank에 분산하기 전 **전체 모델의 합계**이며, rank당 크기나 실제 peak memory가 아닙니다.
 Metadata·padding·중복 저장은 제외합니다.
 
-| 모델 규모 | Full FT 학습 state | LoRA 학습 state | QLoRA 학습 state | Full-state checkpoint | Adapter weights | Adapter + Adam checkpoint |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 30.5B (anchor) | 0.44 TiB | 57.3 GiB | 14.7 GiB | 0.39 TiB | 0.06 GiB | 0.40 GiB |
-| 100B | 1.46 TiB | 187.8 GiB | 48.1 GiB | 1.27 TiB | 0.19 GiB | 1.30 GiB |
-| 500B | 7.28 TiB | 938.8 GiB | 240.3 GiB | 6.37 TiB | 0.93 GiB | 6.52 GiB |
-| 1T | 14.55 TiB | 1877.5 GiB | 480.6 GiB | 12.73 TiB | 1.86 GiB | 13.04 GiB |
-| Kimi K3 2.8T | 40.75 TiB | 5.13 TiB | 1.31 TiB | 35.65 TiB | 5.22 GiB | 36.51 GiB |
+| 모델 규모 | Full FT 학습 state | LoRA 학습 state | Full-state checkpoint | Adapter weights | Adapter + Adam checkpoint |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 30.5B (anchor) | 0.44 TiB | 57.3 GiB | 0.39 TiB | 0.06 GiB | 0.40 GiB |
+| 100B | 1.46 TiB | 187.8 GiB | 1.27 TiB | 0.19 GiB | 1.30 GiB |
+| 500B | 7.28 TiB | 938.8 GiB | 6.37 TiB | 0.93 GiB | 6.52 GiB |
+| 1T | 14.55 TiB | 1877.5 GiB | 12.73 TiB | 1.86 GiB | 13.04 GiB |
+| Kimi K3 2.8T | 40.75 TiB | 5.13 TiB | 35.65 TiB | 5.22 GiB | 36.51 GiB |
 
-![Full FT, LoRA와 QLoRA의 규모별 용량 추정 그래프](../figures/scaling-estimates.svg)
+![Full FT와 LoRA의 규모별 용량 추정 그래프](../figures/scaling-estimates.svg)
 
 그래프는 위 공식에서 생성하며 두 축 모두 로그 척도입니다.
 다시 만들려면 `python experiments/plot_scaling_estimates.py`를 실행합니다.
 
 1T의 배포용 LoRA weight는 약 **1.86 GiB**, 재시작용 LoRA+Adam checkpoint는 **13.04 GiB**입니다.
-Full FT의 재시작용 checkpoint 12.73 TiB와 비교하면 약 1,000배 작지만, 별도로 보존해야 하는 BF16 base 1.82 TiB 또는 순수 4-bit base 하한 465.7 GiB는 이 값에 포함되지 않습니다.
+Full FT의 재시작용 checkpoint 12.73 TiB와 비교하면 약 1,000배 작지만, 별도로 보존해야 하는 BF16 base 1.82 TiB는 이 값에 포함되지 않습니다.
 
 ## Kimi K3 on B300 GPU nodes
 
@@ -84,12 +80,12 @@ GPU node 하나는 [NVIDIA HGX B300](https://docs.nvidia.com/enterprise-referenc
 | Kimi K3 시나리오 | 계산 | 필요 용량 | 최소 B300×8 node 수 |
 | --- | ---: | ---: | ---: |
 | MXFP4 inference | `0.5P × 1.2` | 1.6800 TB | 1 |
-| QLoRA, `f=0.1%` | `0.5P + 16fP` | 1.4448 TB | 1 |
 | LoRA, `f=0.1%` | `2P + 16fP` | 5.6448 TB | 3 |
 | Full FT | `16P` | 44.8000 TB | 21 |
 
 Inference의 20% headroom은 vLLM recipe와 같은 weight 용량 추정이며, B300 8장 TP=8 단일 node 실행은 [vLLM 가이드](https://github.com/vllm-project/vllm-project.github.io/blob/main/_posts/2026-07-27-k3.md)에 제시된 구성입니다.
-반면 QLoRA·LoRA·Full FT 행은 activation, KV cache, framework workspace와 통신 buffer를 제외한 sharding 하한이며 이 저장소에서 구현하거나 GPU로 검증한 구성이 아닙니다.
+반면 LoRA·Full FT 행은 activation, KV cache, framework workspace와 통신 buffer를 제외한 sharding 하한이며 이 저장소에서 구현하거나 GPU로 검증한 구성이 아닙니다.
+[Megatron Bridge의 Kimi K3 지원](https://docs.nvidia.com/nemo/megatron-bridge/nightly/models/kimi/kimi-k3.html)은 HF→Megatron 변환과 greedy inference까지만 검증되어 있으며 pretrain·SFT·LoRA는 검증되지 않았으므로, 실제 학습 검증은 TODO로 남깁니다.
 `N>1`은 하나의 분산 replica, node별 TP=8 replica 또는 prefill/decode 분리로 사용할 수 있으므로 node 수만으로 처리량을 추정하지 않습니다.
 
 ## 이상적인 sharding 하한

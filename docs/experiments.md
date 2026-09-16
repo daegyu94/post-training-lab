@@ -8,8 +8,7 @@
 | 대상 | 상태 | 검증 범위 |
 | --- | --- | --- |
 | TRL DDP LoRA | 지원 | 분산 학습과 node-local 저장 |
-| TRL DeepSpeed ZeRO-3 NVMe full SFT | 지원 | 2노드 분산 학습, runtime offload와 node-local 저장 |
-| QLoRA | 추정만 제공 | 구현·GPU 검증 없이 [규모별 용량](experiments/scaling-estimates.md)만 비교 |
+| TRL DeepSpeed ZeRO-3 NVMe full SFT | 지원 | 2노드 분산 학습, parameter·optimizer runtime offload와 node-local 저장 |
 | Megatron Qwen·GLM LoRA | 지원 | 2노드 EP=2 학습, sync/async node-local 저장 |
 | Megatron recompute 비교 | 지원 | Qwen·GLM LoRA의 full/selective 비교 |
 | Verl agentic GRPO | 정적 검증만 완료 | GPU runtime 검증 전에는 지원으로 간주하지 않음 |
@@ -17,6 +16,7 @@
 | Single-node 30B full SFT | 미지원 | NVMe runtime offload를 사용해도 host memory와 swap 소진으로 checkpoint 전에 OOM |
 
 `지원`은 짧은 실행의 성공과 저장 경로를 뜻하며 장기 수렴이나 모델 품질을 보장하지 않습니다.
+30B LoRA 실측과 scaling 산정은 Megatron을 기준으로 하며, full SFT만 현재 Megatron 경로에 parameter·optimizer runtime offload가 없어 TRL DeepSpeed ZeRO-3를 사용합니다.
 분산 restore·resume과 NFS checkpoint는 현재 실행·검증 범위에 포함하지 않습니다.
 
 ## Measured results
