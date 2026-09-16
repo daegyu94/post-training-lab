@@ -102,6 +102,7 @@ Metric 기록이 실패하면 emitter가 한 번 경고한 뒤 비활성화되�
 ```bash
 cd /path/to/post-training-lab/observability
 NODE_ADDR='<node-management-address>' \
+OUTPUT_DIR='<node-local-monitoring-state>' \
 OBSERVATORY_METRICS_DIR='/path/to/output/observatory-metrics' \
 DURATION=3600 \
   bash scripts/run_observability.sh node

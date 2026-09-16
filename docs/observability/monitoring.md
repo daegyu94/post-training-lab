@@ -8,7 +8,7 @@ helper script는 ARM64와 x86_64 Linux를 지원하며 특정 workload launcher�
 
 1. 각 node에서 collector를 실행합니다.
 2. 필요하면 같은 node에서 application metrics와 topology 수집을 추가합니다.
-3. monitoring host에서 Prometheus와 Grafana를 시작합니다.
+3. controller의 local storage에서 Prometheus와 Grafana를 시작합니다.
 4. GUI가 있는 client에서 Grafana dashboard를 엽니다.
 
 ## Start Monitoring
@@ -18,7 +18,7 @@ helper script는 ARM64와 x86_64 Linux를 지원하며 특정 workload launcher�
 `install_observability_tools.sh`는 host architecture에 맞는 userspace 도구를 내려받습니다.
 driver와 system package는 설치하지 않습니다.
 
-관측할 node에서는 기본 도구를, monitoring host에서는 server 도구를 설치합니다.
+관측할 node에서는 기본 도구를, controller에서는 server 도구를 설치합니다.
 
 ```bash
 cd observability
@@ -27,7 +27,8 @@ bash scripts/install_observability_tools.sh
 
 ```bash
 cd observability
-bash scripts/install_observability_tools.sh server
+TOOLS_DIR='<controller-local-tools>' \
+  bash scripts/install_observability_tools.sh server
 ```
 
 ### 2. Start Collectors on Each Node
@@ -44,6 +45,7 @@ GPU sampler의 기본 실행 시간은 15분입니다.
 
 ```bash
 NODE_ADDR='<node-management-address>' \
+OUTPUT_DIR='<node-local-monitoring-state>' \
 DURATION=3600 \
   bash scripts/run_observability.sh node
 ```
@@ -54,6 +56,7 @@ DURATION=3600 \
 
 ```bash
 NODE_ADDR='<node-management-address>' \
+OUTPUT_DIR='<node-local-monitoring-state>' \
 OBSERVATORY_METRICS_DIR='<launcher-output>/observatory-metrics' \
 DURATION=3600 \
   bash scripts/run_observability.sh node
@@ -84,10 +87,16 @@ Dashboard의 freshness 처리는 다음과 같습니다.
 
 ### 3. Start the Monitoring Server
 
+Monitoring server는 GPU workload와 자원 경합이 없도록 controller에서 실행합니다.
+`OUTPUT_DIR`과 `TOOLS_DIR`에는 NFS checkout 밖의 controller-local 경로를 지정합니다.
+Controller가 각 node의 management address와 exporter port에 접근할 수 있어야 합니다.
+
 `OBSERVABILITY_TARGETS`에 `이름=주소` 항목을 쉼표로 연결합니다.
 node 수와 역할은 고정하지 않습니다.
 
 ```bash
+TOOLS_DIR='<controller-local-tools>' \
+OUTPUT_DIR='<controller-local-monitoring-state>' \
 CLUSTER_NAME='<cluster-name>' \
 OBSERVABILITY_TARGETS='trainer-0=<first-node-address>,rollout-0=<second-node-address>' \
   bash scripts/run_observability.sh server
@@ -95,20 +104,29 @@ OBSERVABILITY_TARGETS='trainer-0=<first-node-address>,rollout-0=<second-node-add
 
 | 항목 | 동작 |
 | --- | --- |
-| Prometheus | monitoring host의 `127.0.0.1:19090`에서 실행 |
-| Grafana | monitoring host의 `127.0.0.1:13000`에서 실행 |
+| Prometheus | controller의 `127.0.0.1:19090`에서 실행 |
+| Grafana | controller의 `127.0.0.1:13000`에서 실행 |
 | 기본 접근 권한 | anonymous Viewer |
 | 관리자 비밀번호 | 필요할 때만 `GRAFANA_ADMIN_PASSWORD`로 지정 |
 | 설정만 생성 | `SERVER_CONFIG_ONLY=1`이면 service를 시작하지 않고 provisioning 파일만 생성 |
 | 종료 | server를 실행한 terminal에서 세션을 종료하면 함께 시작한 service를 정리 |
 
+#### Move an Existing Server to the Controller
+
+기존 Spark node에서 monitoring server를 실행 중이면 먼저 해당 server를 유지한 채 controller server를 병행 실행합니다.
+두 Prometheus가 같은 exporter를 scrape해도 서로 다른 local TSDB에 저장하므로 이전 검증 동안 함께 실행할 수 있습니다.
+
+Controller에서 Prometheus target, Grafana health와 실제 run metric을 확인한 뒤 Spark node의 server를 종료합니다.
+Spark node의 기존 server data는 즉시 삭제하지 않고 rollback 기간 동안 보존합니다.
+문제가 생기면 controller server를 종료하고 기존 Spark node server를 다시 시작하며 workload와 node collector는 중단하지 않습니다.
+
 ### 4. Open the Dashboards
 
-controller에는 GUI browser가 없으므로, browser가 있는 client에서 controller를 jump host로 사용합니다.
-다음 명령은 monitoring host의 Grafana port를 client의 `localhost:13000`으로 전달합니다.
+Controller에는 GUI browser가 없으므로 browser가 있는 client에서 SSH port forwarding을 사용합니다.
+다음 명령은 controller의 Grafana port를 client의 `localhost:13000`으로 전달합니다.
 
 ```bash
-ssh -NT -L 13000:127.0.0.1:13000 -J <user>@<controller-ssh-alias> <user>@<monitoring-host>
+ssh -NT -L 13000:127.0.0.1:13000 <user>@<controller-ssh-alias>
 ```
 
 client browser에서 `http://localhost:13000`을 엽니다.
@@ -125,11 +143,14 @@ client browser에서 `http://localhost:13000`을 엽니다.
 
 ## Synthetic Live Demo
 
-실제 GPU나 storage 없이 dashboard 동작을 확인하려면 monitoring host에서 실행합니다.
+실제 GPU나 storage 없이 dashboard 동작을 확인하려면 controller에서 실행합니다.
 
 ```bash
 cd observability
-DEMO_LIVE=1 bash scripts/run_observability.sh server
+TOOLS_DIR='<controller-local-tools>' \
+OUTPUT_DIR='<controller-local-monitoring-state>' \
+DEMO_LIVE=1 \
+  bash scripts/run_observability.sh server
 ```
 
 | 구성 | Demo 값 |
@@ -193,6 +214,7 @@ compute node의 local SSD는 기존 `node` role에서 활성화합니다.
 
 ```bash
 NODE_ADDR='<node-management-address>' \
+OUTPUT_DIR='<node-local-monitoring-state>' \
 ENABLE_SSD_HEALTH=1 \
   bash scripts/run_observability.sh node
 ```
@@ -204,6 +226,7 @@ helper script를 사용할 수 없는 host에서는 `smartctl_exporter`를 따�
 
 ```bash
 NODE_ADDR='<storage-node-management-address>' \
+OUTPUT_DIR='<storage-node-local-monitoring-state>' \
 SMARTCTL_EXPORTER='<smartctl-exporter-path>' \
   bash scripts/run_observability.sh storage
 ```
@@ -219,9 +242,11 @@ SMARTCTL_EXPORTER='<smartctl-exporter-path>' \
 
 ### Add Storage Targets
 
-Monitoring server에는 compute target과 storage target을 함께 전달합니다.
+Controller의 monitoring server에는 compute target과 storage target을 함께 전달합니다.
 
 ```bash
+TOOLS_DIR='<controller-local-tools>' \
+OUTPUT_DIR='<controller-local-monitoring-state>' \
 CLUSTER_NAME='<cluster-name>' \
 OBSERVABILITY_TARGETS='trainer-0=<trainer-address>,trainer-1=<trainer-address>' \
 STORAGE_SYSTEM='3fs' \

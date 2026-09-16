@@ -1,6 +1,6 @@
 # Spark Cluster Setup
 
-Controller는 Git·설정·실행 기록을 관리하고, NVIDIA DGX Spark `spark1`·`spark2`는 학습 rank를 실행합니다.
+Controller는 Git·설정·실행 기록과 monitoring server를 관리하고, NVIDIA DGX Spark `spark1`·`spark2`는 학습 rank와 collector를 실행합니다.
 각 노드는 자체 CUDA Python 환경과 node-local 모델·데이터를 사용합니다.
 
 ```text
@@ -9,6 +9,7 @@ Controller는 Git·설정·실행 기록을 관리하고, NVIDIA DGX Spark `spar
  | controller         | -----------------> | spark1             |
  |                    |  ssh spark@spark2  | rank 0 / GPU work  |
  | experiments/run.py | -----------------> +--------------------+
+ | Prometheus/Grafana |                              |
  | controller logs    |                              |
  +--------------------+                              | rendezvous + NCCL
           |                                          | (MASTER_ADDR and
@@ -25,6 +26,7 @@ Controller는 Git·설정·실행 기록을 관리하고, NVIDIA DGX Spark `spar
 
 별도 storage cluster가 없는 이 PoC에서는 **모델·데이터와 checkpoint를 node-local에 둡니다**.
 공유 NFS checkout은 코드 실행에만 사용합니다.
+Prometheus와 Grafana의 실행 데이터는 NFS checkout 밖의 controller-local 경로에 둡니다.
 
 공유 mount 경로는 host마다 다를 수 있으므로 `checkout`·`model_dirs`·`data_dir`·`output_root`에는 **실행 노드 기준** 절대 경로를 씁니다.
 `output_root`는 공통 경로 문자열 또는 backend별 객체로 지정합니다.
