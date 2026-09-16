@@ -26,6 +26,7 @@ pids_limit="${EXECUTION_REWARD_PIDS_LIMIT:-64}"
 [[ -f "$adapter_dir/adapter_model.safetensors" ]] || { echo "missing adapter weights: $adapter_dir" >&2; exit 2; }
 [[ -f "$tasks_path" ]] || { echo "missing execution tasks: $tasks_path" >&2; exit 2; }
 docker image inspect "$image" >/dev/null || { echo "missing Docker image: $image" >&2; exit 2; }
+lora_rank="$("$python_bin" -c 'import json, sys; print(json.load(open(sys.argv[1]))["r"])' "$adapter_dir/adapter_config.json")"
 
 export PATH="$(dirname "$python_bin"):$PATH"
 export NCCL_SOCKET_IFNAME="${NCCL_SOCKET_IFNAME:-enp1s0f0np0}"
@@ -46,10 +47,10 @@ exec "$python_bin" -m verl.trainer.main_ppo \
   +ray_kwargs.ray_init.runtime_env.env_vars.NCCL_IB_HCA="$NCCL_IB_HCA" \
   +ray_kwargs.ray_init.runtime_env.env_vars.PYTHONPATH="$PYTHONPATH" \
   +ray_kwargs.ray_init.runtime_env.env_vars.EXECUTION_REWARD_IMAGE="$EXECUTION_REWARD_IMAGE" \
-  +ray_kwargs.ray_init.runtime_env.env_vars.EXECUTION_REWARD_TIMEOUT_SECONDS="$EXECUTION_REWARD_TIMEOUT_SECONDS" \
+  +ray_kwargs.ray_init.runtime_env.env_vars.EXECUTION_REWARD_TIMEOUT_SECONDS="\"$EXECUTION_REWARD_TIMEOUT_SECONDS\"" \
   +ray_kwargs.ray_init.runtime_env.env_vars.EXECUTION_REWARD_MEMORY="$EXECUTION_REWARD_MEMORY" \
-  +ray_kwargs.ray_init.runtime_env.env_vars.EXECUTION_REWARD_CPUS="$EXECUTION_REWARD_CPUS" \
-  +ray_kwargs.ray_init.runtime_env.env_vars.EXECUTION_REWARD_PIDS_LIMIT="$EXECUTION_REWARD_PIDS_LIMIT" \
+  +ray_kwargs.ray_init.runtime_env.env_vars.EXECUTION_REWARD_CPUS="\"$EXECUTION_REWARD_CPUS\"" \
+  +ray_kwargs.ray_init.runtime_env.env_vars.EXECUTION_REWARD_PIDS_LIMIT="\"$EXECUTION_REWARD_PIDS_LIMIT\"" \
   algorithm.adv_estimator=grpo \
   algorithm.use_kl_in_reward=False \
   data.train_files="$data_dir/train.parquet" \
@@ -64,6 +65,8 @@ exec "$python_bin" -m verl.trainer.main_ppo \
   reward.custom_reward_function.name=compute_score \
   actor_rollout_ref.hybrid_engine=True \
   actor_rollout_ref.model.path="$model_dir" \
+  +actor_rollout_ref.model.override_config.attn_implementation=sdpa \
+  actor_rollout_ref.model.lora_rank="$lora_rank" \
   actor_rollout_ref.model.lora_adapter_path="$adapter_dir" \
   actor_rollout_ref.model.lora.merge=True \
   actor_rollout_ref.model.enable_gradient_checkpointing=True \
