@@ -27,10 +27,10 @@ flowchart TD
 | `backends/megatron/` | Bridge 설정·Core 분산 모델과 checkpoint | Serving 배포, 데이터 변환 |
 | `backends/verl/` | Agentic-RL 및 framework 비교 smoke의 data, reward와 launcher | 장기 수렴·품질 평가 |
 | `backends/nemo_rl/` | 공식 NeMo RL container에서 framework 비교 smoke를 실행하는 launcher | NeMo RL source와 dependency vendoring |
-| `observability/` | 계측·baseline·trace helper | 모든 학습 loop에 자동 hook 설치 |
+| `third_party/post-training-telemetry/` | 계측·baseline·trace helper ([post-training-telemetry](https://github.com/daegyu94/post-training-telemetry) submodule) | 모든 학습 loop에 자동 hook 설치 |
 | `tests/` | CPU 회귀와 mock 기반 실행 계약 검사 | 실제 GPU 실행 보장 |
 
-TRL Spark는 `observability/run_summary.py` 대신 자체 stage summary를 생성하므로 summary는 백엔드별 생성 코드를 기준으로 읽습니다.
+TRL Spark는 telemetry의 `run_summary.py` 대신 자체 stage summary를 생성하므로 summary는 백엔드별 생성 코드를 기준으로 읽습니다.
 Runner는 summary나 가중치를 controller로 자동 수집하지 않습니다.
 
 ## Configuration Contract

@@ -21,7 +21,7 @@ Controller에는 Python 3.10 이상과 Git이, 학습에는 준비된 Spark 노�
 | Verl agentic-RL smoke를 준비하려면? | [Verl Backend](docs/backends/verl.md) |
 | NeMo RL과 verl을 같은 Spark 조건에서 비교하려면? | [NeMo RL vs verl](docs/experiments/nemo-rl-vs-verl.md) |
 | 실험 결과가 무엇을 의미하고 어디까지 비교 가능한가? | [Experiments](docs/experiments.md) |
-| 자원·통신·저장소를 어떻게 관측하는가? | [Observability](docs/observability.md) |
+| 자원·통신·저장소를 어떻게 관측하는가? | [Post-Training Telemetry](third_party/post-training-telemetry/README.md) (submodule) |
 | 클러스터 토폴로지와 노드 준비는? | [Spark Cluster Setup](setups/spark/README.md) |
 
 디렉터리별 책임과 각 경로가 포함하지 않는 책임은 [Architecture](docs/architecture.md#responsibilities)에 있습니다.

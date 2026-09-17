@@ -20,8 +20,14 @@
 - `spark1`, `spark2`에서는 Git 명령을 실행하지 않습니다. 두 노드는 NFS를 통해 controller와 같은 worktree를 보므로 별도 Git 작업이 필요하지 않습니다.
 - Spark 노드는 실제 workload와 해당 노드에서 필요한 실행 검증에만 사용합니다.
 
+## Telemetry Submodule
+
+- 계측 코드는 별도 저장소 [post-training-telemetry](https://github.com/daegyu94/post-training-telemetry)이며 `third_party/post-training-telemetry` submodule로 참조합니다.
+- clone 뒤나 submodule commit이 바뀐 뒤에는 controller에서 `git submodule update --init`을 실행합니다. Spark 노드는 NFS로 같은 checkout을 봅니다.
+- telemetry 코드를 바꿀 때는 submodule 안에서 commit·push한 뒤 이 저장소에서 submodule commit을 갱신합니다. 검사는 submodule 저장소의 README를 따릅니다.
+
 ## Validation and Execution Evidence
 
-- 기본 저장소 검사는 `python -m pytest -q`, `python -m compileall -q backends datasets_lab experiments observability tests`와 `backends/*/scripts/*.sh`, `observability/scripts/*.sh`, `setups/spark/*.sh`, `scripts/*.sh`의 `bash -n`입니다.
+- 기본 저장소 검사는 `python -m pytest -q`, `python -m compileall -q backends datasets_lab experiments tests`와 `backends/*/scripts/*.sh`, `setups/spark/*.sh`, `scripts/*.sh`의 `bash -n`입니다.
 - 정적 검사, CPU 테스트, dry-run과 실제 GPU 실행을 구분하고 한 단계의 성공을 다른 단계의 증거로 사용하지 않습니다.
 - `setups/spark/local.json`, 모델 가중치, 실행 산출물과 과거 run log는 커밋하지 않습니다.

@@ -25,7 +25,8 @@ export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.local/ptl/cache}"
 export HF_HOME="${HF_HOME:-$XDG_CACHE_HOME/huggingface}"
 export TORCH_EXTENSIONS_DIR="${TORCH_EXTENSIONS_DIR:-$XDG_CACHE_HOME/torch_extensions}"
 repo_root="$(cd "$(dirname "$0")/../../.." && pwd)"
-export PYTHONPATH="$repo_root/observability${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH="$repo_root/third_party/post-training-telemetry${PYTHONPATH:+:$PYTHONPATH}"
+[[ -f "$repo_root/third_party/post-training-telemetry/resource_sampler.py" ]] || { echo "third_party/post-training-telemetry is empty; run git submodule update --init on the controller" >&2; exit 1; }
 load_checkpoint="${LOAD_CHECKPOINT:-}"
 export NNODES="$nnodes" NPROC_PER_NODE="$nproc_per_node"
 
@@ -129,7 +130,7 @@ stop_sampler() {
 }
 if [[ "${RESOURCE_SAMPLING:-false}" == "true" ]]; then
   mkdir -p "$output_dir/measurements"
-  "$python_bin" "$repo_root/observability/resource_sampler.py" \
+  "$python_bin" "$repo_root/third_party/post-training-telemetry/resource_sampler.py" \
     --target "$output_dir" \
     --output "$output_dir/measurements/resources-node-${NODE_RANK}.jsonl" &
   sampler_pid=$!

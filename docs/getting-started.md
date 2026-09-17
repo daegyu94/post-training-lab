@@ -25,7 +25,7 @@ Exit 0과 JSON의 `backend: trl`, 두 rank의 환경변수·출력 경로를 확
 공통 runner는 1\~2개 노드와 노드당 process 하나를 지원합니다.
 각 참여 노드에 다음이 필요합니다.
 
-- Controller와 같은 commit의 깨끗한 Git checkout (NFS 공유 checkout을 그대로 사용)
+- Controller와 같은 commit의 깨끗한 Git checkout (NFS 공유 checkout을 그대로 사용, controller에서 `git submodule update --init`으로 `third_party/post-training-telemetry`까지 준비)
 - ARM64·CUDA 환경에 맞는 백엔드별 node-local Python 가상환경
 - 동일 revision의 완전한 node-local 모델 snapshot
 - 같은 JSONL과 manifest가 보이는 node-local 데이터 디렉터리
