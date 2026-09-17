@@ -23,7 +23,7 @@ HARDWARE_EXACT = {"PYTHON_HEADERS", "CPATH"}
 COMMON_RESERVED = {
     "NODE_RANK", "PYTHON", "OUTPUT_DIR", "NNODES", "NPROC_PER_NODE",
     "MASTER_ADDR", "MASTER_PORT", "MODEL_DIR", "DATA_DIR",
-    "OBSERVATORY_RUN_ID", "OBSERVATORY_METRICS_DIR", "CHECKPOINT_DIR",
+    "TELEMETRY_RUN_ID", "TELEMETRY_METRICS_DIR", "CHECKPOINT_DIR",
 }
 TRL_ENV = {
     "MODEL_ID", "MODEL_REVISION", "DATASET_ID", "DATASET_REVISION",
@@ -296,7 +296,7 @@ def build_plan(setup: dict[str, Any], experiment: dict[str, Any], setup_path: Pa
             "MASTER_ADDR": master_addr, "MASTER_PORT": str(setup["master_port"]),
             "PYTHON": node["python"][experiment["backend"]], "MODEL_DIR": node["model_dirs"][model_id],
             "DATA_DIR": node["data_dir"], "OUTPUT_DIR": remote_output,
-            "OBSERVATORY_RUN_ID": run_id,
+            "TELEMETRY_RUN_ID": run_id,
         })
         if experiment["backend"] == "megatron":
             env["CHECKPOINT_DIR"] = os.path.join(remote_output, "checkpoints")

@@ -320,7 +320,7 @@ def _cluster_skeleton(spec: ModelSpec, args: Namespace):
         ),
         logger=LoggerConfig(
             log_interval=1,
-            timing_log_level=1 if os.environ.get("OBSERVATORY_RUN_ID") else 0,
+            timing_log_level=1 if os.environ.get("TELEMETRY_RUN_ID") else 0,
             tensorboard_dir=str(args.output_dir / "tensorboard"),
         ),
         mixed_precision="bf16_mixed",
@@ -433,7 +433,7 @@ def build_cluster_config(args: Namespace):
     cfg.scheduler.lr_decay_iters = schedule_steps
     cfg.scheduler.max_steps = schedule_steps
     cfg.logger.log_interval = 1
-    cfg.logger.timing_log_level = 1 if os.environ.get("OBSERVATORY_RUN_ID") else 0
+    cfg.logger.timing_log_level = 1 if os.environ.get("TELEMETRY_RUN_ID") else 0
     cfg.logger.tensorboard_dir = str(args.output_dir / "tensorboard")
     cfg.rng.seed = args.seed
 

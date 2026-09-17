@@ -13,7 +13,7 @@ from pathlib import Path
 
 from megatron_lab.cluster import ClusterTopology
 from megatron_lab.config import DATASET_ID
-from run_summary import make_run_summary
+from post_training_telemetry.run_summary import make_run_summary
 
 
 LOSS_PATTERN = re.compile(r"lm loss value:\s*([0-9.+\-Ee]+)")

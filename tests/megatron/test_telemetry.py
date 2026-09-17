@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 import types
 
-from megatron_lab.observatory import _MetricsCallback
-from observatory_metrics import MetricEmitter
+from megatron_lab.telemetry import _MetricsCallback
+from post_training_telemetry.metrics import MetricEmitter
 
 
 class Timer:
