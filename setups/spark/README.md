@@ -29,6 +29,21 @@ Controller는 Git·설정·실행 기록과 Prometheus·Grafana·Loki를 관리�
 공유 NFS checkout은 코드 실행에만 사용합니다.
 Prometheus와 Grafana의 실행 데이터는 NFS checkout 밖의 controller-local 경로에 둡니다.
 
+## Start Cluster Telemetry
+
+각 Spark node에는 먼저 telemetry node 도구를 `$HOME/telemetry-tools`에 설치합니다.
+그 뒤 controller에서 setup의 `host`와 `checkout`을 사용해 node collector와 monitoring server를 함께 실행합니다.
+
+```bash
+TOOLS_DIR=$HOME/telemetry-tools \
+OUTPUT_DIR=$HOME/telemetry-data \
+python scripts/run_telemetry_cluster.py --setup setups/spark/local.json
+```
+
+기본 수집 시간은 1시간이며 `--duration`으로 초 단위로 바꿀 수 있습니다.
+`Ctrl+C`를 누르거나 process 하나가 종료되면 controller server와 모든 원격 collector를 함께 정리합니다.
+새 setup도 `setup`, `nodes[].host`, `nodes[].checkout`을 제공하면 같은 명령을 사용할 수 있습니다.
+
 공유 mount 경로는 host마다 다를 수 있으므로 `checkout`·`model_dirs`·`data_dir`·`output_root`에는 **실행 노드 기준** 절대 경로를 씁니다.
 `output_root`는 공통 경로 문자열 또는 backend별 객체로 지정합니다.
 
