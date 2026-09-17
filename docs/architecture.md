@@ -30,6 +30,9 @@ flowchart TD
 | `third_party/post-training-telemetry/` | 계측·baseline·trace helper ([post-training-telemetry](https://github.com/daegyu94/post-training-telemetry) submodule) | 모든 학습 loop에 자동 hook 설치 |
 | `tests/` | CPU 회귀와 mock 기반 실행 계약 검사 | 실제 GPU 실행 보장 |
 
+TRL과 Megatron launcher는 telemetry submodule 루트를 `PYTHONPATH`에 추가하여 checkout된 commit을 사용합니다.
+이 방식이 이 저장소의 기본값이며, 독립된 application을 위한 선택적 package 설치 방법은 [telemetry README](../third_party/post-training-telemetry/README.md#python-package-usage)를 따릅니다.
+
 TRL Spark는 telemetry의 `run_summary.py` 대신 자체 stage summary를 생성하므로 summary는 백엔드별 생성 코드를 기준으로 읽습니다.
 Runner는 summary나 가중치를 controller로 자동 수집하지 않습니다.
 
